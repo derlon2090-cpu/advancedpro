@@ -6,7 +6,7 @@
     <title>الباقات | Advanced Pro Nano</title>
     <meta
       name="description"
-      content="استعرض باقات Advanced Pro Nano وقارن بينها قبل البدء."
+      content="استعرض باقات Advanced Pro Nano واختر الخطة المناسبة لك."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -37,7 +37,7 @@
 
         <div class="header-actions">
           <a class="btn btn-secondary" href="how-it-works.html">كيف تعمل</a>
-          <a class="btn btn-primary" href="activate.html">ابدأ الآن</a>
+          <a class="btn btn-primary" href="activate.html">فعّل كودك</a>
         </div>
       </div>
     </header>
@@ -46,25 +46,27 @@
       <section class="page-hero">
         <div class="container">
           <div class="section-title">
-            <span class="section-kicker">Pricing Plans</span>
-            <h2>اختر الخطة المناسبة لك</h2>
-            <p>كل باقة تمنحك رصيدًا واضحًا وحدودًا محددة، ويمكن توسيعها لاحقًا حسب حجم الاستخدام.</p>
+            <span class="section-kicker">الباقات</span>
+            <h2>اختر الباقة المناسبة لك</h2>
+            <p>باقات مرنة تناسب احتياجاتك، مع تحكم كامل في الصور والمقاطع والمدة.</p>
           </div>
 
           <div class="packages-grid">
             <article class="plan-card">
               <div class="package-meta">
                 <h3>Starter</h3>
-                <span class="pill pill-soft">انطلاقة سريعة</span>
+                <span class="pill pill-soft">بداية سريعة</span>
               </div>
               <div class="plan-price">$19 <small>/ 15 يوم</small></div>
               <ul class="package-list">
                 <li><span>50 صورة</span><strong>مضمنة</strong></li>
                 <li><span>10 مقاطع</span><strong>مضمنة</strong></li>
-                <li><span>مدة الفيديو</span><strong>5 ثوانٍ</strong></li>
-                <li><span>نوع الاستخدام</span><strong>ثابت</strong></li>
+                <li><span>مدة المقطع</span><strong>5 ثوانٍ</strong></li>
+                <li><span>الصلاحية</span><strong>15 يوم</strong></li>
               </ul>
-              <a class="btn btn-secondary" href="activate.html">اشترك الآن</a>
+              <button class="btn btn-secondary" type="button" data-purchase-plan="Starter">
+                اشترك الآن
+              </button>
             </article>
 
             <article class="plan-card featured">
@@ -76,25 +78,29 @@
               <ul class="package-list">
                 <li><span>150 صورة</span><strong>مضمنة</strong></li>
                 <li><span>40 مقطعًا</span><strong>مضمنة</strong></li>
-                <li><span>مدة الفيديو</span><strong>8 ثوانٍ</strong></li>
-                <li><span>نوع الاستخدام</span><strong>للمبدعين</strong></li>
+                <li><span>مدة المقطع</span><strong>8 ثوانٍ</strong></li>
+                <li><span>الصلاحية</span><strong>30 يوم</strong></li>
               </ul>
-              <a class="btn btn-primary" href="activate.html">اشترك الآن</a>
+              <button class="btn btn-primary" type="button" data-purchase-plan="Creator">
+                اشترك الآن
+              </button>
             </article>
 
             <article class="plan-card">
               <div class="package-meta">
                 <h3>Pro</h3>
-                <span class="pill pill-soft">أعلى سعة</span>
+                <span class="pill pill-soft">استخدام أعلى</span>
               </div>
               <div class="plan-price">$119 <small>/ 30 يوم</small></div>
               <ul class="package-list">
                 <li><span>500 صورة</span><strong>مضمنة</strong></li>
                 <li><span>120 مقطعًا</span><strong>مضمنة</strong></li>
-                <li><span>مدة الفيديو</span><strong>10 ثوانٍ</strong></li>
-                <li><span>نوع الاستخدام</span><strong>مرن وكثيف</strong></li>
+                <li><span>مدة المقطع</span><strong>10 ثوانٍ</strong></li>
+                <li><span>الصلاحية</span><strong>30 يوم</strong></li>
               </ul>
-              <a class="btn btn-secondary" href="activate.html">اشترك الآن</a>
+              <button class="btn btn-secondary" type="button" data-purchase-plan="Pro">
+                اشترك الآن
+              </button>
             </article>
           </div>
         </div>
@@ -104,19 +110,34 @@
         <div class="container compare-grid">
           <article class="compare-panel">
             <h3>مقارنة سريعة</h3>
-            <div class="compare-row"><span>أفضل سعر للبداية</span><strong>Starter</strong></div>
+            <div class="compare-row"><span>أفضل بداية</span><strong>Starter</strong></div>
             <div class="compare-row"><span>أفضل توازن</span><strong>Creator</strong></div>
-            <div class="compare-row"><span>أعلى استخدام</span><strong>Pro</strong></div>
+            <div class="compare-row"><span>أعلى سعة</span><strong>Pro</strong></div>
           </article>
 
           <article class="compare-panel">
-            <h3>ملاحظات مهمة</h3>
-            <div class="compare-row"><span>الشراء</span><strong>عبر المتجر أو الكود</strong></div>
-            <div class="compare-row"><span>الصلاحية</span><strong>حسب كل باقة</strong></div>
-            <div class="compare-row"><span>الترقية لاحقًا</span><strong>متاحة</strong></div>
+            <h3>طريقة الاشتراك</h3>
+            <div class="compare-row"><span>المتجر</span><strong>متاح</strong></div>
+            <div class="compare-row"><span>واتساب</span><strong>متاح</strong></div>
+            <div class="compare-row"><span>الرسالة</span><strong>جاهزة حسب الباقة</strong></div>
           </article>
         </div>
       </section>
+
+      <section>
+        <div class="container">
+          <div class="cta-band">
+            <h2>اختر الباقة ثم أكمل بالطريقة الأنسب لك</h2>
+            <p>عند الضغط على اشترك الآن ستظهر لك خيارات الشراء من المتجر أو التواصل عبر واتساب.</p>
+            <div class="hero-actions">
+              <a class="btn btn-primary" href="activate.html">فعّل كودك</a>
+              <a class="btn btn-secondary" href="index.html">العودة للرئيسية</a>
+            </div>
+          </div>
+        </div>
+      </section>
     </main>
+
+    <script src="site.js"></script>
   </body>
 </html>
