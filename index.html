@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Advanced Pro Nano | منصة ذكاء اصطناعي للأكواد والباقات</title>
+    <title>Advanced Pro Nano | منصة الصور والمقاطع بالذكاء الاصطناعي</title>
     <meta
       name="description"
-      content="نموذج واجهة احترافي لمنصة Advanced Pro Nano لتوليد الصور والمقاطع بالذكاء الاصطناعي مع نظام أكواد وباقات ولوحة إدارة متقدمة."
+      content="Advanced Pro Nano منصة احترافية تمنحك تفعيلًا سريعًا، رصيدًا واضحًا، وباقات مرنة لإنشاء الصور والمقاطع بالذكاء الاصطناعي."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -14,809 +14,7 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap"
       rel="stylesheet"
     />
-    <style>
-      :root {
-        --blue: #2f80ff;
-        --purple: #7b61ff;
-        --pink: #e85aae;
-        --ink: #111111;
-        --soft-bg: #f8faff;
-        --white: #ffffff;
-        --muted: #63708b;
-        --surface: rgba(255, 255, 255, 0.84);
-        --hero-gradient: linear-gradient(135deg, #2f80ff 0%, #7b61ff 50%, #e85aae 100%);
-        --soft-shadow: 0 28px 70px rgba(76, 103, 168, 0.18);
-        --card-shadow: 0 16px 36px rgba(84, 109, 177, 0.12);
-        --radius-xl: 32px;
-        --radius-lg: 24px;
-        --radius-md: 18px;
-        --max-width: 1220px;
-      }
-
-      * {
-        box-sizing: border-box;
-      }
-
-      html {
-        scroll-behavior: smooth;
-      }
-
-      body {
-        margin: 0;
-        min-height: 100vh;
-        font-family: "IBM Plex Sans Arabic", "Segoe UI", sans-serif;
-        color: var(--ink);
-        background:
-          radial-gradient(circle at 15% 20%, rgba(47, 128, 255, 0.16), transparent 22%),
-          radial-gradient(circle at 85% 15%, rgba(232, 90, 174, 0.16), transparent 20%),
-          radial-gradient(circle at 75% 65%, rgba(123, 97, 255, 0.16), transparent 22%),
-          linear-gradient(180deg, #ffffff 0%, #f9fbff 48%, #eef3ff 100%);
-        overflow-x: hidden;
-      }
-
-      body::before {
-        content: "";
-        position: fixed;
-        inset: 0;
-        background-image:
-          linear-gradient(rgba(255, 255, 255, 0.45) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(255, 255, 255, 0.45) 1px, transparent 1px);
-        background-size: 56px 56px;
-        mask-image: radial-gradient(circle at center, black 36%, transparent 92%);
-        opacity: 0.45;
-        pointer-events: none;
-      }
-
-      a {
-        color: inherit;
-        text-decoration: none;
-      }
-
-      .container {
-        width: min(calc(100% - 32px), var(--max-width));
-        margin: 0 auto;
-      }
-
-      .site-header {
-        position: sticky;
-        top: 0;
-        z-index: 20;
-        backdrop-filter: blur(18px);
-        background: rgba(248, 250, 255, 0.72);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.68);
-      }
-
-      .header-inner,
-      .brand,
-      .nav-links,
-      .header-actions,
-      .hero-actions,
-      .tag-row,
-      .plans-toggle,
-      .cta-actions {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        flex-wrap: wrap;
-      }
-
-      .header-inner {
-        justify-content: space-between;
-        min-height: 88px;
-        gap: 20px;
-      }
-
-      .brand-mark {
-        position: relative;
-        width: 56px;
-        height: 56px;
-        display: grid;
-        place-items: center;
-        border-radius: 18px;
-        color: var(--white);
-        background: var(--hero-gradient);
-        box-shadow: 0 18px 34px rgba(123, 97, 255, 0.28);
-        font-family: "Space Grotesk", sans-serif;
-        font-weight: 700;
-        letter-spacing: 0.08em;
-      }
-
-      .brand-mark::before {
-        content: "";
-        position: absolute;
-        inset: 1px;
-        border-radius: 17px;
-        background:
-          radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.42), transparent 40%),
-          linear-gradient(145deg, rgba(255, 255, 255, 0.1), transparent 58%);
-      }
-
-      .brand-copy strong,
-      .section-title h2,
-      .hero h1,
-      .highlight-card strong,
-      .dashboard-card strong,
-      .dashboard-wide strong,
-      .price,
-      .schema-card h3,
-      .roadmap-item strong {
-        font-family: "Space Grotesk", "IBM Plex Sans Arabic", sans-serif;
-      }
-
-      .brand-copy strong {
-        display: block;
-        font-size: 1.03rem;
-      }
-
-      .brand-copy span,
-      .nav-links a,
-      .section-title p,
-      .card p,
-      .card li,
-      .spec-block p {
-        color: var(--muted);
-      }
-
-      .nav-links a {
-        position: relative;
-        font-size: 0.98rem;
-      }
-
-      .nav-links a::after {
-        content: "";
-        position: absolute;
-        right: 0;
-        bottom: -8px;
-        width: 100%;
-        height: 2px;
-        border-radius: 99px;
-        background: var(--hero-gradient);
-        transform: scaleX(0);
-        transform-origin: right;
-        transition: transform 0.24s ease;
-      }
-
-      .nav-links a:hover::after {
-        transform: scaleX(1);
-      }
-
-      .btn,
-      .toggle-btn {
-        border: 0;
-        border-radius: 999px;
-        padding: 14px 22px;
-        font: inherit;
-        cursor: pointer;
-        transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
-      }
-
-      .btn:hover,
-      .toggle-btn:hover {
-        transform: translateY(-2px);
-      }
-
-      .btn-primary,
-      .toggle-btn.is-active {
-        color: var(--white);
-        background: var(--hero-gradient);
-        box-shadow: 0 16px 28px rgba(123, 97, 255, 0.22);
-      }
-
-      .btn-secondary,
-      .toggle-btn {
-        color: #2b3b60;
-        background: rgba(255, 255, 255, 0.76);
-        box-shadow: inset 0 0 0 1px rgba(43, 59, 96, 0.08);
-      }
-
-      section {
-        padding: 38px 0;
-      }
-
-      .hero {
-        padding: 54px 0 34px;
-      }
-
-      .hero-grid,
-      .demo-layout,
-      .cta-grid {
-        display: grid;
-        grid-template-columns: minmax(0, 1.1fr) minmax(340px, 0.9fr);
-        gap: 36px;
-        align-items: center;
-      }
-
-      .eyebrow,
-      .section-kicker,
-      .tag,
-      .pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        border-radius: 999px;
-      }
-
-      .eyebrow {
-        padding: 10px 16px;
-        color: #30426d;
-        background: rgba(255, 255, 255, 0.72);
-        box-shadow: inset 0 0 0 1px rgba(47, 128, 255, 0.14);
-      }
-
-      .eyebrow::before {
-        content: "";
-        width: 9px;
-        height: 9px;
-        border-radius: 999px;
-        background: var(--hero-gradient);
-        box-shadow: 0 0 14px rgba(123, 97, 255, 0.32);
-      }
-
-      h1,
-      h2,
-      h3 {
-        margin: 0;
-        line-height: 1.1;
-      }
-
-      .hero h1 {
-        margin-top: 22px;
-        max-width: 12ch;
-        font-size: clamp(2.6rem, 5vw, 5.2rem);
-        letter-spacing: -0.04em;
-      }
-
-      .hero h1 span {
-        background: var(--hero-gradient);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-      }
-
-      .hero p,
-      .section-title p,
-      .card p,
-      .card li,
-      .spec-block p,
-      .cta-panel p {
-        line-height: 1.85;
-      }
-
-      .hero p {
-        max-width: 60ch;
-        margin: 20px 0 0;
-        font-size: 1.08rem;
-        color: #42526f;
-      }
-
-      .hero-highlights,
-      .dashboard-grid,
-      .grid-3,
-      .grid-2,
-      .package-grid,
-      .architecture-grid,
-      .schema-grid,
-      .roadmap {
-        display: grid;
-        gap: 18px;
-      }
-
-      .hero-highlights,
-      .grid-3,
-      .package-grid,
-      .architecture-grid,
-      .schema-grid,
-      .roadmap {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-      }
-
-      .grid-2,
-      .dashboard-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .highlight-card,
-      .card,
-      .package-card,
-      .activation-card,
-      .workspace-card,
-      .spec-block,
-      .schema-card,
-      .roadmap-item,
-      .journey-step {
-        position: relative;
-        padding: 24px;
-        border-radius: var(--radius-lg);
-        background: var(--surface);
-        box-shadow: var(--card-shadow);
-        border: 1px solid rgba(255, 255, 255, 0.84);
-      }
-
-      .highlight-card strong {
-        display: block;
-        margin-bottom: 8px;
-        font-size: 1.4rem;
-      }
-
-      .highlight-card span {
-        color: var(--muted);
-        line-height: 1.7;
-      }
-
-      .hero-panel {
-        position: relative;
-        padding: 22px;
-        border-radius: var(--radius-xl);
-        background:
-          linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.74)),
-          var(--hero-gradient);
-        box-shadow: var(--soft-shadow);
-        border: 1px solid rgba(255, 255, 255, 0.78);
-        overflow: hidden;
-      }
-
-      .hero-panel::before,
-      .hero-panel::after {
-        content: "";
-        position: absolute;
-        border-radius: 999px;
-      }
-
-      .hero-panel::before {
-        width: 190px;
-        height: 190px;
-        left: -48px;
-        top: -56px;
-        background: rgba(47, 128, 255, 0.18);
-      }
-
-      .hero-panel::after {
-        width: 240px;
-        height: 240px;
-        right: -62px;
-        bottom: -80px;
-        background: rgba(232, 90, 174, 0.16);
-      }
-
-      .mock-window {
-        position: relative;
-        border-radius: 28px;
-        padding: 18px;
-        background: rgba(250, 252, 255, 0.86);
-        box-shadow: inset 0 0 0 1px rgba(108, 136, 212, 0.14);
-      }
-
-      .window-top,
-      .quota-row,
-      .feed-item,
-      .package-list div,
-      .workspace-top,
-      .activity-item,
-      .spec-list div {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-      }
-
-      .window-top {
-        margin-bottom: 18px;
-      }
-
-      .window-dots {
-        display: flex;
-        gap: 8px;
-      }
-
-      .window-dots span {
-        width: 10px;
-        height: 10px;
-        border-radius: 999px;
-        background: rgba(94, 112, 157, 0.3);
-      }
-
-      .window-badge,
-      .section-kicker,
-      .tag,
-      .pill {
-        padding: 8px 14px;
-      }
-
-      .window-badge,
-      .section-kicker,
-      .tag {
-        color: #355082;
-        background: rgba(47, 128, 255, 0.1);
-      }
-
-      .dashboard-card,
-      .dashboard-wide,
-      .dashboard-feed,
-      .result-grid div,
-      .activity-panel {
-        border-radius: 22px;
-        background: rgba(255, 255, 255, 0.88);
-        box-shadow: 0 14px 26px rgba(82, 112, 184, 0.1);
-      }
-
-      .dashboard-card,
-      .dashboard-wide,
-      .dashboard-feed,
-      .activity-panel {
-        padding: 16px;
-      }
-
-      .dashboard-card strong,
-      .dashboard-wide strong {
-        display: block;
-        margin-top: 12px;
-        font-size: 2rem;
-      }
-
-      .dashboard-wide,
-      .dashboard-feed,
-      .package-list,
-      .activation-form,
-      .spec-list {
-        margin-top: 14px;
-      }
-
-      .dashboard-feed span,
-      .dashboard-card span,
-      .dashboard-wide span,
-      .feed-item small,
-      .field label,
-      .activity-item small {
-        color: var(--muted);
-      }
-
-      .quota-bar {
-        flex: 1;
-        height: 10px;
-        border-radius: 999px;
-        background: rgba(47, 128, 255, 0.1);
-        overflow: hidden;
-      }
-
-      .quota-bar span {
-        display: block;
-        width: 72%;
-        height: 100%;
-        background: var(--hero-gradient);
-      }
-    </style>
-    <style>
-      .section-header {
-        display: flex;
-        align-items: end;
-        justify-content: space-between;
-        gap: 24px;
-        margin-bottom: 28px;
-      }
-
-      .section-title {
-        max-width: 680px;
-      }
-
-      .section-title h2 {
-        font-size: clamp(1.85rem, 3vw, 3rem);
-        letter-spacing: -0.03em;
-      }
-
-      .card::before,
-      .package-card::before {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background:
-          linear-gradient(180deg, rgba(255, 255, 255, 0.38), transparent 42%),
-          linear-gradient(120deg, transparent, rgba(123, 97, 255, 0.04), transparent);
-        pointer-events: none;
-      }
-
-      .card ul {
-        margin: 16px 0 0;
-        padding: 0 18px 0 0;
-      }
-
-      .card li + li,
-      .activity-item + .activity-item {
-        margin-top: 8px;
-      }
-
-      .tag.alt {
-        color: #78408f;
-        background: rgba(232, 90, 174, 0.08);
-      }
-
-      .journey {
-        display: grid;
-        grid-template-columns: repeat(5, minmax(0, 1fr));
-        gap: 16px;
-      }
-
-      .journey-step::before,
-      .roadmap-item strong {
-        display: inline-grid;
-        place-items: center;
-        width: 42px;
-        height: 42px;
-        border-radius: 14px;
-        color: var(--white);
-        background: var(--hero-gradient);
-        box-shadow: 0 12px 22px rgba(123, 97, 255, 0.22);
-      }
-
-      .journey-step::before {
-        content: attr(data-step);
-        margin-bottom: 18px;
-      }
-
-      .plan-card {
-        display: none;
-      }
-
-      .plan-card.is-active {
-        display: block;
-      }
-
-      .package-card.featured {
-        background:
-          linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.72)),
-          var(--hero-gradient);
-        box-shadow: 0 22px 44px rgba(123, 97, 255, 0.18);
-      }
-
-      .package-card.featured::after {
-        content: "الأكثر طلبًا";
-        position: absolute;
-        top: 18px;
-        left: 18px;
-        padding: 8px 12px;
-        border-radius: 999px;
-        font-size: 0.82rem;
-        color: var(--white);
-        background: rgba(17, 17, 17, 0.72);
-      }
-
-      .package-name {
-        font-size: 1.35rem;
-        font-weight: 700;
-      }
-
-      .price {
-        margin: 16px 0;
-        font-size: 2.6rem;
-      }
-
-      .price small {
-        font-size: 1rem;
-        color: var(--muted);
-      }
-
-      .package-list {
-        display: grid;
-        gap: 10px;
-        margin-bottom: 24px;
-      }
-
-      .demo-layout {
-        grid-template-columns: 0.95fr 1.05fr;
-        gap: 18px;
-      }
-
-      .activation-form,
-      .field,
-      .mini-metrics,
-      .workspace-shot,
-      .result-grid {
-        display: grid;
-        gap: 14px;
-      }
-
-      .field input,
-      .field textarea,
-      .field select {
-        width: 100%;
-        border: 1px solid rgba(47, 128, 255, 0.12);
-        border-radius: 16px;
-        padding: 14px 16px;
-        font: inherit;
-        background: rgba(248, 250, 255, 0.84);
-        color: var(--ink);
-        outline: none;
-      }
-
-      .field textarea {
-        min-height: 140px;
-        resize: vertical;
-      }
-
-      .field input:focus,
-      .field textarea:focus,
-      .field select:focus {
-        border-color: rgba(123, 97, 255, 0.42);
-        box-shadow: 0 0 0 4px rgba(123, 97, 255, 0.08);
-      }
-
-      .mini-metrics {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        margin-top: 20px;
-      }
-
-      .mini-metrics div,
-      .schema-card,
-      .roadmap-item,
-      .result-grid div,
-      .activity-panel {
-        border-radius: 20px;
-        background: rgba(248, 250, 255, 0.92);
-      }
-
-      .mini-metrics div {
-        padding: 14px;
-        text-align: center;
-      }
-
-      .mini-metrics strong {
-        display: block;
-        font-family: "Space Grotesk", sans-serif;
-        font-size: 1.4rem;
-      }
-
-      .workspace-shot {
-        grid-template-columns: 1.3fr 0.7fr;
-        margin-top: 18px;
-      }
-
-      .result-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .result-grid div {
-        aspect-ratio: 1 / 1;
-        background:
-          radial-gradient(circle at 25% 20%, rgba(255, 255, 255, 0.58), transparent 34%),
-          linear-gradient(145deg, rgba(47, 128, 255, 0.88), rgba(123, 97, 255, 0.82), rgba(232, 90, 174, 0.82));
-        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28);
-      }
-
-      .schema-card {
-        padding: 22px;
-      }
-
-      .schema-card code {
-        display: block;
-        margin-top: 14px;
-        font-family: Consolas, monospace;
-        font-size: 0.92rem;
-        line-height: 1.9;
-        color: #34425e;
-        white-space: pre-line;
-      }
-
-      .cta {
-        padding-bottom: 80px;
-      }
-
-      .cta-panel {
-        position: relative;
-        padding: 34px;
-        border-radius: 34px;
-        color: var(--white);
-        background: var(--hero-gradient);
-        box-shadow: 0 28px 56px rgba(123, 97, 255, 0.24);
-        overflow: hidden;
-      }
-
-      .cta-panel::before {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background:
-          radial-gradient(circle at 15% 25%, rgba(255, 255, 255, 0.18), transparent 28%),
-          radial-gradient(circle at 80% 75%, rgba(255, 255, 255, 0.16), transparent 24%);
-      }
-
-      .cta-panel > * {
-        position: relative;
-      }
-
-      .cta-grid {
-        grid-template-columns: 1fr auto;
-        gap: 22px;
-      }
-
-      .cta-actions .btn-primary {
-        background: rgba(17, 17, 17, 0.88);
-        box-shadow: none;
-      }
-
-      .cta-actions .btn-secondary {
-        color: var(--white);
-        background: rgba(255, 255, 255, 0.14);
-        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.24);
-      }
-
-      .pill {
-        min-width: 74px;
-        justify-content: center;
-        font-size: 0.84rem;
-      }
-
-      .pill-success {
-        color: #1f6e55;
-        background: rgba(61, 193, 142, 0.12);
-      }
-
-      .pill-info {
-        color: #355082;
-        background: rgba(47, 128, 255, 0.12);
-      }
-
-      .reveal {
-        opacity: 0;
-        transform: translateY(24px);
-        transition: opacity 0.7s ease, transform 0.7s ease;
-      }
-
-      .reveal.is-visible {
-        opacity: 1;
-        transform: translateY(0);
-      }
-
-      @media (max-width: 1100px) {
-        .hero-grid,
-        .demo-layout,
-        .cta-grid,
-        .architecture-grid,
-        .schema-grid,
-        .package-grid,
-        .roadmap,
-        .journey,
-        .grid-3,
-        .grid-2 {
-          grid-template-columns: 1fr;
-        }
-
-        .workspace-shot,
-        .dashboard-grid,
-        .mini-metrics,
-        .hero-highlights {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-      }
-
-      @media (max-width: 820px) {
-        .site-header {
-          position: static;
-        }
-
-        .header-inner,
-        .hero-actions,
-        .header-actions,
-        .section-header {
-          flex-direction: column;
-          align-items: stretch;
-        }
-
-        .nav-links {
-          width: 100%;
-          justify-content: center;
-        }
-
-        .workspace-shot,
-        .dashboard-grid,
-        .mini-metrics,
-        .hero-highlights {
-          grid-template-columns: 1fr;
-        }
-
-        .container {
-          width: min(calc(100% - 22px), var(--max-width));
-        }
-      }
-    </style>
+    <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <header class="site-header">
@@ -830,16 +28,16 @@
         </a>
 
         <nav class="nav-links">
-          <a href="#identity">الهوية</a>
+          <a href="#how-it-works">كيف تعمل</a>
+          <a href="#activation">التفعيل</a>
           <a href="#packages">الباقات</a>
-          <a href="#journey">رحلة المستخدم</a>
-          <a href="#engine">المنظومة</a>
-          <a href="#schema">الشرح التقني</a>
+          <a href="#faq">الأسئلة الشائعة</a>
+          <a href="technical.html">للمطورين</a>
         </nav>
 
         <div class="header-actions">
-          <a class="btn btn-secondary" href="#activation">تفعيل كود</a>
-          <a class="btn btn-primary" href="#packages">ابدأ الآن</a>
+          <a class="btn btn-secondary" href="#packages">عرض الباقات</a>
+          <a class="btn btn-primary" href="#activation">فعّل كودك</a>
         </div>
       </div>
     </header>
@@ -847,92 +45,88 @@
     <main id="top">
       <section class="hero">
         <div class="container hero-grid">
-          <div class="hero-copy reveal">
-            <span class="eyebrow">براند تقني فاخر لنظام أكواد وباقات ذكي</span>
-            <h1>
-              أنشئ صورًا ومقاطع <span>بالذكاء الاصطناعي</span> داخل منصة قابلة للبيع والتوسع
+          <div class="hero-copy">
+            <span class="eyebrow">منصة احترافية للأكواد والباقات المرنة</span>
+            <h1 class="hero-title">
+              أنشئ صورًا ومقاطع <span>بالذكاء الاصطناعي</span> عبر أكواد وباقات مرنة
             </h1>
-            <p>
-              Advanced Pro Nano هي منصة احترافية لتوليد الصور والمقاطع بالذكاء الاصطناعي، مبنية
-              حول الأكواد والباقات والاشتراكات المرنة، مع لوحة إدارة تتحكم في الرصيد، مدة المقاطع،
-              التفعيل، التجديدات، والربط مع متجر Advanced Pro.
+            <p class="hero-subtitle">
+              منصة احترافية تمنحك رصيدًا واضحًا، تفعيلًا سريعًا، وتجربة إنتاج سهلة لإنشاء الصور
+              والمقاطع المدعومة بالذكاء الاصطناعي.
             </p>
 
             <div class="hero-actions">
-              <a class="btn btn-primary" href="#activation">جرّب رحلة التفعيل</a>
-              <a class="btn btn-secondary" href="#engine">استعرض الآلية التشغيلية</a>
+              <a class="btn btn-primary" href="#activation">فعّل كودك الآن</a>
+              <a class="btn btn-secondary" href="#packages">استعرض الباقات</a>
             </div>
 
-            <div class="hero-highlights">
-              <div class="highlight-card">
-                <strong>Code First</strong>
-                <span>بيع الباقات كأكواد أو تفعيل مباشر عبر Webhook من المتجر.</span>
+            <div class="metrics-strip">
+              <div class="stat-card">
+                <strong>تفعيل فوري</strong>
+                <span>أدخل الكود أو اشتر الباقة وابدأ مباشرة داخل حسابك.</span>
               </div>
-              <div class="highlight-card">
-                <strong>Smart Quotas</strong>
-                <span>صور، مقاطع، مدة فيديو، صلاحية، وتجديد دوري بنمط reset أو topup.</span>
+              <div class="stat-card">
+                <strong>رصيد واضح</strong>
+                <span>اعرف عدد الصور والمقاطع ومدة الفيديو وتاريخ الانتهاء بسهولة.</span>
               </div>
-              <div class="highlight-card">
-                <strong>Admin Control</strong>
-                <span>لوحة تحكم دقيقة للسجلات، الخطط، الاستخدام، والربط بالمزود الخارجي.</span>
+              <div class="stat-card">
+                <strong>صور ومقاطع</strong>
+                <span>تجربة واحدة موحدة لإنتاج الصور والفيديو عبر المزود الخارجي.</span>
               </div>
             </div>
           </div>
 
-          <div class="hero-panel reveal">
-            <div class="mock-window">
-              <div class="window-top">
-                <div class="window-dots">
+          <div class="hero-panel">
+            <div class="mock-shell">
+              <div class="mock-top">
+                <div class="mock-dots">
                   <span></span>
                   <span></span>
                   <span></span>
                 </div>
-                <div class="window-badge">Advanced Pro Nano Dashboard</div>
+                <span class="mock-badge">لوحة Advanced Pro Nano</span>
               </div>
 
-              <div class="dashboard-grid">
-                <div class="dashboard-card">
-                  <span>الصور المتبقية</span>
+              <div class="mock-stats">
+                <div class="mock-stat">
                   <strong>148</strong>
+                  <span>صورة متبقية</span>
                 </div>
-                <div class="dashboard-card">
-                  <span>المقاطع المتبقية</span>
+                <div class="mock-stat">
                   <strong>32</strong>
+                  <span>مقطع متبقٍ</span>
+                </div>
+                <div class="mock-stat">
+                  <strong>10s</strong>
+                  <span>أقصى مدة للفيديو</span>
+                </div>
+                <div class="mock-stat">
+                  <strong>غدًا</strong>
+                  <span>موعد التجديد القادم</span>
                 </div>
               </div>
 
-              <div class="dashboard-wide">
-                <span>أقصى مدة للفيديو</span>
-                <strong>10s</strong>
-                <div class="quota-row">
-                  <span>تجديد يومي</span>
-                  <div class="quota-bar"><span></span></div>
-                  <span>غدًا 09:00</span>
-                </div>
-              </div>
-
-              <div class="dashboard-feed">
-                <span>آخر العمليات</span>
-                <div class="feed-item">
+              <div class="timeline">
+                <div class="timeline-item">
                   <div>
-                    <strong>توليد صورة ببرومبت سينمائي</strong>
-                    <small>خصم 1 صورة</small>
+                    <strong>تفعيل الكود</strong>
+                    <div class="meta-line">ADV-NANO-15 • اشتراك نشط</div>
                   </div>
-                  <span class="pill pill-success">Completed</span>
+                  <span class="pill pill-soft">Active</span>
                 </div>
-                <div class="feed-item">
+                <div class="timeline-item">
                   <div>
-                    <strong>توليد مقطع 8 ثوانٍ</strong>
-                    <small>قيد المعالجة</small>
+                    <strong>توليد صورة</strong>
+                    <div class="meta-line">خصم 1 من رصيد الصور</div>
                   </div>
-                  <span class="pill pill-info">Queue</span>
+                  <span class="pill pill-soft">Ready</span>
                 </div>
-                <div class="feed-item">
+                <div class="timeline-item">
                   <div>
-                    <strong>تفعيل الكود ADV-NANO-15</strong>
-                    <small>خطة متجددة يوميًا</small>
+                    <strong>توليد مقطع</strong>
+                    <div class="meta-line">قيد التنفيذ داخل Queue</div>
                   </div>
-                  <span class="pill pill-success">Active</span>
+                  <span class="pill pill-soft">Processing</span>
                 </div>
               </div>
             </div>
@@ -940,569 +134,310 @@
         </div>
       </section>
 
-      <section id="identity">
+      <section id="how-it-works">
         <div class="container">
-          <div class="section-header reveal">
-            <div class="section-title">
-              <span class="section-kicker">Brand Direction</span>
-              <h2>هوية بصرية تجمع بين الفخامة والوضوح والسرعة</h2>
-              <p>
-                الاتجاه الأنسب هنا هو Minimal + Futuristic مع واجهات ناعمة، بطاقات زجاجية، حواف
-                دائرية، وتدرج لوني يعكس منتجًا متقدمًا وقابلًا للتسويق كمنصة مستقلة تحت مظلة
-                Advanced Pro.
-              </p>
-            </div>
-
-            <div class="tag-row">
-              <span class="tag">#2F80FF Primary Blue</span>
-              <span class="tag">#7B61FF Purple</span>
-              <span class="tag alt">#E85AAE Pink Accent</span>
-            </div>
+          <div class="section-title">
+            <span class="section-kicker">كيف تعمل المنصة</span>
+            <h2>كيف تعمل المنصة؟</h2>
+            <p>
+              كل ما يحتاجه المستخدم واضح وبسيط: تفعيل، رصيد، إنتاج، ثم متابعة النتائج من داخل
+              لوحة واحدة.
+            </p>
           </div>
 
-          <div class="grid-3 reveal">
-            <article class="card">
-              <h3>النظام الاسمي</h3>
-              <p>
-                البراند الرئيسي يبقى <strong>Advanced Pro</strong>، بينما يحمل المنتج اسمًا فرعيًا
-                واضحًا وقابلًا للتوسع. هذا النموذج مبني على اسم <strong>Advanced Pro Nano</strong>
-                مع إمكانية تطوير نسخة أخرى باسم Vision مستقبلًا.
-              </p>
-              <ul>
-                <li>الشعار المختصر: AP</li>
-                <li>الاسم التجاري: Advanced Pro Nano</li>
-                <li>النسخة المختصرة: AP Nano</li>
-              </ul>
+          <div class="steps-grid">
+            <article class="step-card">
+              <span class="step-number">01</span>
+              <h3>فعّل الكود أو اشتر الباقة</h3>
+              <p>يمكن البدء عبر كود تفعيل أو عبر باقة يتم شراؤها من متجر Advanced Pro.</p>
             </article>
 
-            <article class="card">
-              <h3>أسلوب الشعار</h3>
-              <p>
-                مونوجرام هندسي مكوّن من A + P، سميك وواضح، يناسب أيقونة تطبيق أو FavIcon أو ختم
-                رقمي في لوحات التحكم وصفحات الدفع.
-              </p>
-              <ul>
-                <li>تداخل ذكي بين الحرفين</li>
-                <li>نسخة Gradient ونسخة بيضاء</li>
-                <li>مناسب للويب والموبايل</li>
-              </ul>
+            <article class="step-card">
+              <span class="step-number">02</span>
+              <h3>اطّلع على رصيدك وصلاحيتك</h3>
+              <p>تظهر لك الصور والمقاطع المتبقية، الحد الأقصى للمدة، والانتهاء أو موعد التجديد.</p>
             </article>
 
-            <article class="card">
-              <h3>شخصية الواجهة</h3>
-              <p>
-                واجهة نظيفة ومركزة على المنتج، تبرز الرصيد، الباقات، التفعيل، وسجل الأعمال بدون
-                ازدحام. الهدف أن تبدو أداة SaaS مدفوعة وليست مجرد صفحة توليد بسيطة.
-              </p>
-              <ul>
-                <li>خلفية فاتحة نظيفة</li>
-                <li>مساحات محسوبة ومريحة</li>
-                <li>لمعات خفيفة وحركة دخول هادئة</li>
-              </ul>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <section id="packages">
-        <div class="container">
-          <div class="section-header reveal">
-            <div class="section-title">
-              <span class="section-kicker">Commercial Structure</span>
-              <h2>الباقات ليست دخولًا فقط، بل وحدات استخدام قابلة للبيع والتحكم</h2>
-              <p>
-                المنصة تبيع حصص صور ومقاطع ومدة فيديو وصلاحية وتجديدات مرنة. كل باقة يمكن ربطها
-                بخطة داخلية أو كود تفعيل أو طلب قادم من متجر Advanced Pro.
-              </p>
-            </div>
-            <div class="plans-toggle" aria-label="أنواع الباقات">
-              <button class="toggle-btn is-active" data-plan="fixed">كمية ثابتة</button>
-              <button class="toggle-btn" data-plan="renewal">تجديد دوري</button>
-              <button class="toggle-btn" data-plan="vip">VIP / أولوية</button>
-            </div>
-          </div>
-
-          <div class="plan-cards reveal">
-            <div class="plan-card is-active" data-plan-card="fixed">
-              <div class="package-grid">
-                <article class="package-card">
-                  <div class="package-name">Starter</div>
-                  <div class="price">$19 <small>/ 15 يوم</small></div>
-                  <p>انطلاقة مناسبة للمستخدم الجديد الذي يريد تجربة مرنة وسريعة.</p>
-                  <div class="package-list">
-                    <div><span>الصور</span><strong>50</strong></div>
-                    <div><span>المقاطع</span><strong>10</strong></div>
-                    <div><span>مدة المقطع</span><strong>5 ثوانٍ</strong></div>
-                    <div><span>التجديد</span><strong>بدون</strong></div>
-                  </div>
-                  <button class="btn btn-secondary">شراء الباقة</button>
-                </article>
-
-                <article class="package-card featured">
-                  <div class="package-name">Creator</div>
-                  <div class="price">$49 <small>/ 30 يوم</small></div>
-                  <p>أفضل توازن بين الصور والمقاطع للمبدعين وصنّاع المحتوى.</p>
-                  <div class="package-list">
-                    <div><span>الصور</span><strong>150</strong></div>
-                    <div><span>المقاطع</span><strong>40</strong></div>
-                    <div><span>مدة المقطع</span><strong>8 ثوانٍ</strong></div>
-                    <div><span>التجديد</span><strong>بدون</strong></div>
-                  </div>
-                  <button class="btn btn-primary">ابدأ بالباقة</button>
-                </article>
-
-                <article class="package-card">
-                  <div class="package-name">Pro</div>
-                  <div class="price">$119 <small>/ 30 يوم</small></div>
-                  <p>رصيد أعلى ومجال أكبر لفرق التسويق والإنتاج اليومي.</p>
-                  <div class="package-list">
-                    <div><span>الصور</span><strong>500</strong></div>
-                    <div><span>المقاطع</span><strong>120</strong></div>
-                    <div><span>مدة المقطع</span><strong>10 ثوانٍ</strong></div>
-                    <div><span>التجديد</span><strong>مرن</strong></div>
-                  </div>
-                  <button class="btn btn-secondary">عرض التفاصيل</button>
-                </article>
-              </div>
-            </div>
-
-            <div class="plan-card" data-plan-card="renewal">
-              <div class="grid-3">
-                <article class="card">
-                  <h3>Daily Reset Plan</h3>
-                  <p>
-                    يحصل المستخدم يوميًا على رصيد محدد، ويعاد تعيين الرصيد في موعد التجديد بدل
-                    التراكم. هذا النموذج ممتاز للباقات قصيرة الأجل.
-                  </p>
-                  <ul>
-                    <li>10 صور يوميًا</li>
-                    <li>5 مقاطع يوميًا</li>
-                    <li>لمدة 15 يومًا</li>
-                    <li><code>renewal_mode = reset</code></li>
-                  </ul>
-                </article>
-
-                <article class="card">
-                  <h3>Top-Up Renewal</h3>
-                  <p>
-                    يضيف النظام رصيدًا جديدًا عند كل دورة بدل استبدال الرصيد الحالي. مناسب للباقات
-                    الممتدة أو العروض الخاصة بالمستخدمين النشطين.
-                  </p>
-                  <ul>
-                    <li>إضافة 10 صور و10 مقاطع</li>
-                    <li>كل 24 ساعة أو كل 7 أيام</li>
-                    <li>عدد دورات محدود أو مفتوح</li>
-                    <li><code>renewal_mode = topup</code></li>
-                  </ul>
-                </article>
-
-                <article class="card">
-                  <h3>خيارات الضبط</h3>
-                  <p>
-                    الأدمن يتحكم في كل شيء: مدة الخطة، عدد الدورات، ترحيل الرصيد، الربط بالحساب،
-                    عدد التفعيلات، وتاريخ الانتهاء النهائي للكود أو الباقة.
-                  </p>
-                  <ul>
-                    <li>Starts on Redeem</li>
-                    <li>Carry Over Enabled</li>
-                    <li>Max Redemptions</li>
-                    <li>Expires At / End At</li>
-                  </ul>
-                </article>
-              </div>
-            </div>
-
-            <div class="plan-card" data-plan-card="vip">
-              <div class="grid-3">
-                <article class="card">
-                  <h3>أولوية التنفيذ</h3>
-                  <p>
-                    الطلبات المرسلة من باقات VIP تدخل في Queue ذات أولوية أعلى، ما يحسن وقت
-                    المعالجة ورضا العملاء الأعلى قيمة.
-                  </p>
-                </article>
-
-                <article class="card">
-                  <h3>جودة ومزايا أعلى</h3>
-                  <p>
-                    يمكن ربط الباقة بموديلات أقوى، مدد فيديو أكبر، عدد متوازٍ أعلى، أو إمكانية
-                    إعادة التوليد السريع داخل نفس الطلب.
-                  </p>
-                </article>
-
-                <article class="card">
-                  <h3>دعم تجاري موسّع</h3>
-                  <p>
-                    هذه الفئة مناسبة لعملاء الشركات، الوكلاء، أو مستقبل white-label، مع مرونة أكبر
-                    في التسعير والربط والمتابعة.
-                  </p>
-                </article>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="journey">
-        <div class="container">
-          <div class="section-header reveal">
-            <div class="section-title">
-              <span class="section-kicker">User Journey</span>
-              <h2>رحلة مستخدم واضحة من التفعيل وحتى التنزيل وإعادة التوليد</h2>
-              <p>
-                كل خطوة مصممة لتقليل الاحتكاك: يفعّل الكود أو يشتري الباقة، يرى رصيده بوضوح،
-                ويبدأ الإنتاج مباشرة مع سجل كامل لكل عملية.
-              </p>
-            </div>
-          </div>
-
-          <div class="journey reveal">
-            <article class="journey-step" data-step="01">
-              <h3>الدخول للمنصة</h3>
-              <p>المستخدم يشاهد الصفحة الرئيسية، المزايا، والباقات المتاحة مع خيار سريع للتفعيل.</p>
+            <article class="step-card">
+              <span class="step-number">03</span>
+              <h3>ابدأ توليد الصور أو المقاطع</h3>
+              <p>اكتب البرومبت واختر نوع الإخراج، ثم يرسل الطلب مباشرة إلى محرك التوليد.</p>
             </article>
 
-            <article class="journey-step" data-step="02">
-              <h3>تفعيل كود أو شراء باقة</h3>
-              <p>يمكن الربط عبر كود يدوي أو طلب مدفوع يصل من المتجر مباشرة إلى المنصة.</p>
-            </article>
-
-            <article class="journey-step" data-step="03">
-              <h3>ظهور الرصيد والصلاحية</h3>
-              <p>الواجهة تعرض الصور المتبقية، المقاطع، مدة الفيديو، تاريخ الانتهاء، والتجديد القادم.</p>
-            </article>
-
-            <article class="journey-step" data-step="04">
-              <h3>تنفيذ الطلب</h3>
-              <p>المستخدم يكتب Prompt ويحدد النوع والمدة، ثم يدخل الطلب في النظام أو الـ Queue.</p>
-            </article>
-
-            <article class="journey-step" data-step="05">
-              <h3>حفظ النتيجة والسجل</h3>
-              <p>تُحفظ الملفات، يخصم الرصيد، ويتولد سجل واضح في أعمالي و usage_logs ولوحة الأدمن.</p>
+            <article class="step-card">
+              <span class="step-number">04</span>
+              <h3>تابع النتائج وسجل الاستخدام</h3>
+              <p>جميع النتائج والحالات والخصومات تظهر لك بوضوح داخل حسابك في مكان واحد.</p>
             </article>
           </div>
         </div>
       </section>
 
       <section id="activation">
-        <div class="container">
-          <div class="section-header reveal">
-            <div class="section-title">
-              <span class="section-kicker">Activation + Workspace</span>
-              <h2>واجهة تشغيلية تجمع بين التفعيل، الرصيد، والإنتاج في لوحة واحدة</h2>
-              <p>
-                هذا النموذج يوضح كيف يمكن أن تبدو صفحة المستخدم بعد التفعيل: بطاقة اشتراك واضحة،
-                ونموذج توليد مباشر، ومساحة أعمال تحفظ الصور والمقاطع والحالات.
-              </p>
+        <div class="container activation-grid">
+          <article class="activation-card">
+            <span class="section-kicker">تفعيل فوري</span>
+            <h2>فعّل اشتراكك الآن</h2>
+            <p class="hero-subtitle">
+              أدخل الكود وربط بريدك الإلكتروني ليتم التفعيل بسرعة، ثم ابدأ مباشرة في استخدام الرصيد
+              داخل المنصة.
+            </p>
+
+            <form class="code-form">
+              <div class="field">
+                <label for="codeInput">كود التفعيل</label>
+                <input id="codeInput" type="text" placeholder="ADV-NANO-15" />
+              </div>
+
+              <div class="field">
+                <label for="emailInput">البريد الإلكتروني</label>
+                <input id="emailInput" type="email" placeholder="name@advpro.ai" />
+              </div>
+
+              <button class="btn btn-primary" type="button">تفعيل الكود</button>
+            </form>
+
+            <div class="mini-metrics">
+              <div class="mini-metric">
+                <strong>10</strong>
+                <span>صور يومية</span>
+              </div>
+              <div class="mini-metric">
+                <strong>10</strong>
+                <span>مقاطع يومية</span>
+              </div>
+              <div class="mini-metric">
+                <strong>8s</strong>
+                <span>أقصى مدة</span>
+              </div>
+              <div class="mini-metric">
+                <strong>15</strong>
+                <span>يوم صلاحية</span>
+              </div>
             </div>
+          </article>
+
+          <article class="form-card">
+            <span class="section-kicker">معاينة سريعة</span>
+            <h3>بعد التفعيل ستحصل على لوحة واضحة وسريعة</h3>
+            <p class="hero-subtitle">
+              الرصيد، مدة الفيديو، وحالة الأعمال تظهر لك مباشرة دون تعقيد أو قوائم طويلة.
+            </p>
+
+            <div class="mock-stats">
+              <div class="mock-stat">
+                <strong>300</strong>
+                <span>رصيد الصور</span>
+              </div>
+              <div class="mock-stat">
+                <strong>100</strong>
+                <span>رصيد المقاطع</span>
+              </div>
+              <div class="mock-stat">
+                <strong>30 يوم</strong>
+                <span>مدة الاشتراك</span>
+              </div>
+              <div class="mock-stat">
+                <strong>10s</strong>
+                <span>حد الفيديو</span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="packages">
+        <div class="container">
+          <div class="section-title">
+            <span class="section-kicker">الباقات</span>
+            <h2>اختر الباقة المناسبة لك</h2>
+            <p>ابدأ بما يناسبك الآن، ثم توسع لاحقًا حسب حجم الاستخدام أو تكرار الإنتاج.</p>
           </div>
 
-          <div class="demo-layout reveal">
-            <article class="activation-card">
-              <h3>تفعيل الاشتراك</h3>
-              <p>أدخل كودك أو اربط طلبك المدفوع للحصول على الرصيد مباشرة داخل الحساب.</p>
+          <div class="packages-grid">
+            <article class="plan-card">
+              <div class="package-meta">
+                <h3>Starter</h3>
+                <span class="pill pill-soft">انطلاقة سريعة</span>
+              </div>
+              <div class="plan-price">$19 <small>/ 15 يوم</small></div>
+              <ul class="package-list">
+                <li><span>50 صورة</span><strong>مضمنة</strong></li>
+                <li><span>10 مقاطع</span><strong>مضمنة</strong></li>
+                <li><span>مدة الفيديو</span><strong>5 ثوانٍ</strong></li>
+                <li><span>نوع الاستخدام</span><strong>ثابت</strong></li>
+              </ul>
+              <a class="btn btn-secondary" href="#activation">اشترك الآن</a>
+            </article>
 
-              <form class="activation-form">
-                <div class="field">
-                  <label for="codeInput">كود التفعيل</label>
-                  <input id="codeInput" type="text" value="ADV-NANO-15" />
-                </div>
+            <article class="plan-card featured">
+              <div class="package-meta">
+                <h3>Creator</h3>
+                <span class="pill pill-dark">الأكثر شيوعًا</span>
+              </div>
+              <div class="plan-price">$49 <small>/ 30 يوم</small></div>
+              <ul class="package-list">
+                <li><span>150 صورة</span><strong>مضمنة</strong></li>
+                <li><span>40 مقطعًا</span><strong>مضمنة</strong></li>
+                <li><span>مدة الفيديو</span><strong>8 ثوانٍ</strong></li>
+                <li><span>نوع الاستخدام</span><strong>مثالي للمبدعين</strong></li>
+              </ul>
+              <a class="btn btn-primary" href="#activation">اشترك الآن</a>
+            </article>
 
-                <div class="field">
-                  <label for="emailInput">البريد الإلكتروني</label>
-                  <input id="emailInput" type="email" value="name@advpro.ai" />
-                </div>
+            <article class="plan-card">
+              <div class="package-meta">
+                <h3>Pro</h3>
+                <span class="pill pill-soft">أعلى سعة</span>
+              </div>
+              <div class="plan-price">$119 <small>/ 30 يوم</small></div>
+              <ul class="package-list">
+                <li><span>500 صورة</span><strong>مضمنة</strong></li>
+                <li><span>120 مقطعًا</span><strong>مضمنة</strong></li>
+                <li><span>مدة الفيديو</span><strong>10 ثوانٍ</strong></li>
+                <li><span>نوع الاستخدام</span><strong>كثيف ومرن</strong></li>
+              </ul>
+              <a class="btn btn-secondary" href="#activation">اشترك الآن</a>
+            </article>
+          </div>
+        </div>
+      </section>
 
-                <button class="btn btn-primary" type="button">تفعيل الرصيد</button>
-              </form>
+      <section id="dashboard">
+        <div class="container">
+          <div class="section-title">
+            <span class="section-kicker">لوحة المستخدم</span>
+            <h2>بعد التفعيل، هذه هي لوحة التحكم التي تحصل عليها</h2>
+            <p>واجهة هادئة وواضحة تركز على ما يهم: الرصيد، الحالة، الأعمال، وسرعة الوصول.</p>
+          </div>
 
-              <div class="mini-metrics">
-                <div>
-                  <strong>10</strong>
-                  <span>صور يومية</span>
+          <div class="proof-grid">
+            <article class="mock-card">
+              <h3>لوحة الاستخدام</h3>
+              <div class="mock-stats">
+                <div class="mock-stat">
+                  <strong>148</strong>
+                  <span>الصورة المتبقية</span>
                 </div>
-                <div>
-                  <strong>10</strong>
-                  <span>مقاطع يومية</span>
+                <div class="mock-stat">
+                  <strong>32</strong>
+                  <span>المقاطع المتبقية</span>
                 </div>
-                <div>
-                  <strong>8s</strong>
+                <div class="mock-stat">
+                  <strong>10s</strong>
                   <span>أقصى مدة</span>
                 </div>
-                <div>
-                  <strong>15</strong>
-                  <span>يوم صلاحية</span>
+                <div class="mock-stat">
+                  <strong>09:00</strong>
+                  <span>التجديد القادم</span>
                 </div>
               </div>
             </article>
 
-            <article class="workspace-card">
-              <div class="workspace-top">
-                <div>
-                  <h3>منطقة التوليد</h3>
-                  <p>واجهة سريعة لطلبات الصور والمقاطع مع تحكم كامل في الحد والنتائج.</p>
-                </div>
-                <span class="pill pill-success">Active Plan</span>
-              </div>
-
-              <div class="activation-form">
-                <div class="field">
-                  <label for="promptInput">Prompt</label>
-                  <textarea id="promptInput">لقطة مستقبلية لمدينة عربية فاخرة بإضاءة سينمائية وهوية تقنية راقية</textarea>
-                </div>
-
-                <div class="grid-2">
-                  <div class="field">
-                    <label for="typeSelect">نوع الإخراج</label>
-                    <select id="typeSelect">
-                      <option>Image</option>
-                      <option>Video</option>
-                    </select>
-                  </div>
-
-                  <div class="field">
-                    <label for="durationSelect">مدة الفيديو</label>
-                    <select id="durationSelect">
-                      <option>5 ثوانٍ</option>
-                      <option selected>8 ثوانٍ</option>
-                      <option>10 ثوانٍ</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <div class="workspace-shot">
-                <div class="result-grid">
-                  <div></div>
-                  <div></div>
-                  <div></div>
-                  <div></div>
-                </div>
-
-                <div class="activity-panel">
-                  <h3>أعمالي</h3>
-                  <div class="activity-item">
-                    <div>
-                      <strong>صورة إعلانية</strong>
-                      <small>اليوم 08:32</small>
-                    </div>
-                    <span class="pill pill-success">Ready</span>
-                  </div>
-                  <div class="activity-item">
-                    <div>
-                      <strong>مقطع منتج</strong>
-                      <small>اليوم 08:37</small>
-                    </div>
-                    <span class="pill pill-info">Processing</span>
-                  </div>
-                  <div class="activity-item">
-                    <div>
-                      <strong>إعادة توليد</strong>
-                      <small>خصم 1 صورة</small>
-                    </div>
-                    <span class="pill pill-success">Logged</span>
-                  </div>
-                </div>
+            <article class="mock-card">
+              <h3>أعمالي</h3>
+              <div class="result-grid">
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
               </div>
             </article>
           </div>
         </div>
       </section>
 
-      <section id="engine">
+      <section id="why-us">
         <div class="container">
-          <div class="section-header reveal">
-            <div class="section-title">
-              <span class="section-kicker">Operating Model</span>
-              <h2>المنظومة الخلفية مبنية على 5 أنظمة رئيسية قابلة للتدرج</h2>
-              <p>
-                الهدف ليس مجرد توليد محتوى، بل تشغيل منتج SaaS قابل للبيع، التحكم، الربط، والتوسع
-                لاحقًا إلى موزعين أو white-label أو تكاملات مدفوعة.
-              </p>
-            </div>
+          <div class="section-title">
+            <span class="section-kicker">لماذا نحن</span>
+            <h2>لماذا Advanced Pro Nano؟</h2>
+            <p>المنصة مصممة لتكون سهلة للمستخدم، ومربحة في الإدارة، وقابلة للتوسع لاحقًا.</p>
           </div>
 
-          <div class="architecture-grid reveal">
-            <article class="spec-block">
-              <h3>A) نظام المستخدمين</h3>
-              <p>تسجيل، دخول، ربط اشتراك بالحساب، التحكم في الحالة، وإظهار الأرصدة والنتائج.</p>
-              <div class="spec-list">
-                <div><span>Auth</span><strong>Email / Provider</strong></div>
-                <div><span>Role</span><strong>User / Admin</strong></div>
-                <div><span>Status</span><strong>Active / Suspended</strong></div>
-              </div>
+          <div class="why-grid">
+            <article class="card">
+              <h3>أكواد مرنة</h3>
+              <p>يمكنك تفعيل الباقات عبر أكواد فردية أو متعددة الاستخدام حسب نموذج البيع الخاص بك.</p>
             </article>
 
-            <article class="spec-block">
-              <h3>B) نظام الأكواد</h3>
-              <p>يربط كل كود بخطة Usage Plan، مع شروط التفعيل والصلاحية وعدد مرات الاستخدام.</p>
-              <div class="spec-list">
-                <div><span>Plan Link</span><strong>plan_id</strong></div>
-                <div><span>Redemption</span><strong>Single / Multi</strong></div>
-                <div><span>Timing</span><strong>Starts on redeem</strong></div>
-              </div>
+            <article class="card">
+              <h3>تحكم بالحدود</h3>
+              <p>عدد الصور، المقاطع، مدة الفيديو، والصلاحية كلها واضحة وقابلة للإدارة بسهولة.</p>
             </article>
 
-            <article class="spec-block">
-              <h3>C) نظام الباقات والمتجر</h3>
-              <p>يعرض باقات للبيع في الواجهة مع أوامر شراء وربط لاحق مع متجر Advanced Pro أو Webhooks.</p>
-              <div class="spec-list">
-                <div><span>Packages</span><strong>Public Catalog</strong></div>
-                <div><span>Orders</span><strong>Payment + Mapping</strong></div>
-                <div><span>Webhook</span><strong>Auto Activation</strong></div>
-              </div>
+            <article class="card">
+              <h3>تجديدات ذكية</h3>
+              <p>يمكن تشغيل باقات ثابتة أو متجددة بحسب الخطة التسويقية أو نموذج الاشتراك الذي تختاره.</p>
             </article>
 
-            <article class="spec-block">
-              <h3>D) نظام التوليد</h3>
-              <p>يستقبل الصور والمقاطع، يرسلها للمزود، يتابع الحالة، ويحفظ المخرجات مع الخصم.</p>
-              <div class="spec-list">
-                <div><span>Provider</span><strong>Gemini أو غيره</strong></div>
-                <div><span>Status</span><strong>Pending / Completed</strong></div>
-                <div><span>Logs</span><strong>Usage + API Trace</strong></div>
-              </div>
+            <article class="card">
+              <h3>لوحة استخدام واضحة</h3>
+              <p>المستخدم يرى الرصيد والحالات والنتائج دون أن يضيع بين تفاصيل تقنية غير مهمة له.</p>
             </article>
 
-            <article class="spec-block">
-              <h3>E) لوحة الأدمن</h3>
-              <p>تتحكم في الخطط، الأكواد، الباقات، الإيرادات، السجلات، وسلامة الربط مع الـ API.</p>
-              <div class="spec-list">
-                <div><span>Plans</span><strong>Quotas + Renewal</strong></div>
-                <div><span>Codes</span><strong>Generate + Export</strong></div>
-                <div><span>Reports</span><strong>Revenue + Usage</strong></div>
-              </div>
+            <article class="card">
+              <h3>ربط مع المتجر</h3>
+              <p>المنصة جاهزة للربط لاحقًا مع متجر Advanced Pro عبر الأكواد أو Webhooks.</p>
             </article>
 
-            <article class="spec-block">
-              <h3>منطق التجديد الدوري</h3>
-              <p>Job دوري يبحث عن الاشتراكات النشطة ويطبق topup أو reset ثم يحدث next_renewal_at.</p>
-              <div class="spec-list">
-                <div><span>Cron</span><strong>كل ساعة أو يوميًا</strong></div>
-                <div><span>Mode</span><strong>reset / topup</strong></div>
-                <div><span>Expiry</span><strong>Deactivate when ended</strong></div>
-              </div>
+            <article class="card">
+              <h3>جاهزة للتوسع</h3>
+              <p>يمكن تطويرها لاحقًا إلى نظام موزعين أو White-label أو تطبيق جوال عند الحاجة.</p>
             </article>
           </div>
         </div>
       </section>
 
-      <section id="schema">
+      <section id="faq">
         <div class="container">
-          <div class="section-header reveal">
-            <div class="section-title">
-              <span class="section-kicker">Technical Brief</span>
-              <h2>تلخيص تقني واضح للمبرمج: موديل البيانات ومنطق التنفيذ</h2>
-              <p>
-                هذا الجزء يترجم الفكرة إلى كيانات جاهزة للبناء برمجيًا. النموذج التالي مناسب كبداية
-                MVP، ثم يمكن توسيعه لاحقًا للتسويق بالعمولة أو reseller APIs أو white-label.
-              </p>
-            </div>
+          <div class="section-title">
+            <span class="section-kicker">الأسئلة الشائعة</span>
+            <h2>الأسئلة الشائعة</h2>
+            <p>أوضح الأسئلة التي يحتاجها العميل قبل أن يبدأ.</p>
           </div>
 
-          <div class="schema-grid reveal">
-            <article class="schema-card">
-              <h3>users</h3>
-              <code>id
-name
-email
-password / auth_provider
-role
-status
-created_at</code>
+          <div class="faq-grid">
+            <article class="faq-card">
+              <details>
+                <summary>كيف أفعّل الكود؟</summary>
+                <p>ادخل إلى قسم التفعيل، أضف الكود مع بريدك الإلكتروني، ثم اضغط على زر التفعيل.</p>
+              </details>
             </article>
 
-            <article class="schema-card">
-              <h3>plans</h3>
-              <code>id
-name
-description
-image_quota
-video_quota
-video_max_duration_seconds
-validity_days
-renewal_enabled
-renewal_every_days
-renewal_mode
-renewal_image_quota
-renewal_video_quota
-renewal_max_cycles
-carry_over_enabled
-active</code>
+            <article class="faq-card">
+              <details>
+                <summary>هل أستطيع شراء باقة بدل الكود؟</summary>
+                <p>نعم، يمكن ربط المنصة بالباقات المباعة من متجر Advanced Pro حسب نموذج التشغيل.</p>
+              </details>
             </article>
 
-            <article class="schema-card">
-              <h3>codes</h3>
-              <code>id
-code
-plan_id
-max_redemptions
-redeemed_count
-starts_on_redeem
-expires_at
-active
-created_by
-created_at</code>
+            <article class="faq-card">
+              <details>
+                <summary>هل الرصيد يتجدد؟</summary>
+                <p>يعتمد ذلك على نوع الباقة. بعض الباقات ثابتة، وبعضها يعمل بتجديد دوري حسب الإعداد.</p>
+              </details>
             </article>
 
-            <article class="schema-card">
-              <h3>user_entitlements</h3>
-              <code>id
-user_id
-source_type
-source_id
-plan_id
-start_at
-end_at
-status
-next_renewal_at
-renewals_used
-image_balance
-video_balance
-video_max_duration_seconds
-created_at</code>
+            <article class="faq-card">
+              <details>
+                <summary>كم مدة الفيديو المتاحة؟</summary>
+                <p>تختلف المدة حسب الباقة، مثل 5 أو 8 أو 10 ثوانٍ كحد أقصى لكل مقطع.</p>
+              </details>
             </article>
 
-            <article class="schema-card">
-              <h3>packages + orders</h3>
-              <code>packages:
-name
-slug
-price
-currency
-featured
-active
-
-orders:
-user_id
-package_id
-amount
-payment_status
-payment_gateway
-external_order_id
-paid_at</code>
+            <article class="faq-card">
+              <details>
+                <summary>ماذا يحدث إذا انتهت المدة أو الرصيد؟</summary>
+                <p>يتوقف الاستخدام حتى يتم تجديد الباقة أو تفعيل كود جديد أو شراء باقة أخرى.</p>
+              </details>
             </article>
 
-            <article class="schema-card">
-              <h3>generations + usage_logs</h3>
-              <code>generations:
-type
-prompt
-status
-provider
-model_name
-duration_seconds
-credits_used
-output_url
-error_message
-
-usage_logs:
-subscription_id
-generation_id
-type
-amount_used
-balance_before
-balance_after</code>
+            <article class="faq-card">
+              <details>
+                <summary>هل توجد صفحة تقنية للمطور؟</summary>
+                <p>نعم، تم فصل الشرح التقني الآن في صفحة مستقلة حتى تبقى الصفحة الرئيسية واضحة للعميل.</p>
+              </details>
             </article>
           </div>
         </div>
@@ -1510,101 +445,34 @@ balance_after</code>
 
       <section>
         <div class="container">
-          <div class="section-header reveal">
-            <div class="section-title">
-              <span class="section-kicker">Execution Roadmap</span>
-              <h2>أفضل ترتيب للتنفيذ من MVP إلى منصة كاملة</h2>
-              <p>
-                البداية الذكية هنا تكون بنظام الأكواد أولًا لأنه الأسرع في الإطلاق، ثم يضاف الربط
-                التلقائي مع المتجر والتجديدات والإشعارات لاحقًا.
-              </p>
+          <div class="cta-band">
+            <h2>ابدأ الآن بتفعيل كودك أو اختيار الباقة الأنسب</h2>
+            <p>
+              صفحة الهبوط الآن مركزة على التجربة الفعلية للمستخدم، بينما تم نقل التفاصيل التقنية إلى
+              صفحة مستقلة للمطورين.
+            </p>
+            <div class="hero-actions">
+              <a class="btn btn-primary" href="#activation">فعّل كودك</a>
+              <a class="btn btn-secondary" href="technical.html">عرض الصفحة التقنية</a>
             </div>
           </div>
 
-          <div class="roadmap reveal">
-            <article class="roadmap-item">
-              <strong>1</strong>
-              <h3>MVP</h3>
-              <p>
-                تسجيل ودخول، تفعيل كود، رصيد صور ومقاطع، توليد صورة/مقطع، لوحة أدمن للأكواد
-                والخطط، وصفحة باقات وسجل استخدام.
-              </p>
-            </article>
-
-            <article class="roadmap-item">
-              <strong>2</strong>
-              <h3>Growth Layer</h3>
-              <p>
-                ربط متجر Advanced Pro عبر Webhooks، دعم التجديدات الدورية، التنبيهات، والتقارير
-                التحليلية وسجلات API التفصيلية.
-              </p>
-            </article>
-
-            <article class="roadmap-item">
-              <strong>3</strong>
-              <h3>Scale Layer</h3>
-              <p>
-                نظام إحالة، reseller codes، واجهة API للموزعين، تحسين السرعة والـ Queue، ثم تطبيق
-                جوال أو نسخة white-label مستقبلية.
-              </p>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <section class="cta">
-        <div class="container">
-          <div class="cta-panel reveal">
-            <div class="cta-grid">
-              <div>
-                <h2>منصة جاهزة لتُعرض، تُشرح، وتتحول مباشرة إلى أساس تنفيذ</h2>
-                <p>
-                  النموذج الحالي يجمع الهوية، القيمة التجارية، آلية التشغيل، ومخطط التنفيذ التقني
-                  في صفحة واحدة. الخطوة التالية المنطقية هي تحويله إلى مشروع فعلي متعدد الصفحات مع
-                  Backend ولوحة إدارة وربط API.
-                </p>
-              </div>
-
-              <div class="cta-actions">
-                <a class="btn btn-primary" href="#schema">عرض الشرح التقني</a>
-                <a class="btn btn-secondary" href="#top">العودة للأعلى</a>
-              </div>
+          <footer class="footer-card">
+            <div class="footer-links">
+              <a href="#packages">الباقات</a>
+              <a href="#activation">التفعيل</a>
+              <a href="#faq">الدعم</a>
+              <a href="technical.html">للمطورين</a>
+              <a href="https://advproai.com">المتجر</a>
             </div>
-          </div>
+            <div class="footer-meta">
+              <span>Advanced Pro Nano</span>
+              <span>الخصوصية</span>
+              <span>الشروط</span>
+            </div>
+          </footer>
         </div>
       </section>
     </main>
-
-    <script>
-      const toggleButtons = document.querySelectorAll(".toggle-btn");
-      const planCards = document.querySelectorAll(".plan-card");
-
-      toggleButtons.forEach((button) => {
-        button.addEventListener("click", () => {
-          const target = button.dataset.plan;
-
-          toggleButtons.forEach((item) => item.classList.remove("is-active"));
-          planCards.forEach((card) => card.classList.remove("is-active"));
-
-          button.classList.add("is-active");
-          document
-            .querySelector(`[data-plan-card="${target}"]`)
-            ?.classList.add("is-active");
-        });
-      });
-
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              entry.target.classList.add("is-visible");
-            }
-          });
-        },
-        { threshold: 0.18 }
-      );
-
-      document.querySelectorAll(".reveal").forEach((element) => observer.observe(element));
-    </script>
   </body>
 </html>
