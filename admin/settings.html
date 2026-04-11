@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>إعدادات المنصة | Advanced Pro Nano</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body data-page="admin-settings" data-requires-admin="true">
+    <main class="admin-shell">
+      <aside class="admin-sidebar">
+        <a class="brand brand--column" href="/admin">
+          <span class="brand-mark">AP</span>
+          <span class="brand-copy">
+            <strong>Advanced Pro Nano</strong>
+            <span>Admin Panel</span>
+          </span>
+        </a>
+
+        <nav class="admin-nav">
+          <a href="/admin">الرئيسية</a>
+          <a href="/admin/users">المستخدمون</a>
+          <a href="/admin/codes">الأكواد</a>
+          <a href="/admin/subscriptions">الاشتراكات</a>
+          <a class="is-active" href="/admin/settings">الإعدادات</a>
+        </nav>
+
+        <div class="admin-sidebar__footer">
+          <a class="btn btn-secondary btn-block" href="/dashboard">لوحة المستخدم</a>
+          <button class="btn btn-primary btn-block" type="button" data-logout>تسجيل الخروج</button>
+        </div>
+      </aside>
+
+      <section class="admin-main">
+        <div class="admin-toolbar">
+          <div>
+            <span class="section-kicker">Settings</span>
+            <h1>إعدادات المنصة</h1>
+          </div>
+        </div>
+
+        <article class="page-card">
+          <form id="adminSettingsForm" class="stack-form">
+            <div class="field">
+              <label for="storeUrl">رابط المتجر</label>
+              <input id="storeUrl" name="storeUrl" type="url" />
+            </div>
+            <div class="field">
+              <label for="supportWhatsapp">رقم واتساب</label>
+              <input id="supportWhatsapp" name="supportWhatsapp" type="text" />
+            </div>
+            <div class="field">
+              <label for="supportWhatsappMessage">الرسالة الجاهزة</label>
+              <textarea id="supportWhatsappMessage" name="supportWhatsappMessage" rows="4"></textarea>
+            </div>
+            <div class="status-message" hidden data-admin-settings-message></div>
+            <button class="btn btn-primary" type="submit">حفظ الإعدادات</button>
+          </form>
+        </article>
+      </section>
+    </main>
+
+    <script src="/portal.js"></script>
+  </body>
+</html>

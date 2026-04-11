@@ -6,7 +6,7 @@
     <title>تفعيل الكود | Advanced Pro Nano</title>
     <meta
       name="description"
-      content="فعّل كود اشتراكك في Advanced Pro Nano عبر صفحة مستقلة وواضحة."
+      content="فعّل الكود على حسابك مباشرة مع التحقق من البريد الإلكتروني المخصص للكود."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -14,88 +14,86 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="/styles.css" />
   </head>
-  <body>
+  <body data-page="activate" data-requires-auth="true">
     <header class="site-header">
       <div class="container header-inner">
-        <a class="brand" href="index.html">
+        <a class="brand" href="/">
           <span class="brand-mark">AP</span>
           <span class="brand-copy">
             <strong>Advanced Pro Nano</strong>
-            <span>Activation</span>
+            <span>Code Activation</span>
           </span>
         </a>
 
         <nav class="nav-links">
-          <a href="index.html">الرئيسية</a>
-          <a href="pricing.html">الباقات</a>
-          <a href="how-it-works.html">كيف تعمل</a>
-          <a class="is-active" href="activate.html">التفعيل</a>
-          <a href="login.html">تسجيل الدخول</a>
+          <a href="/">الرئيسية</a>
+          <a href="/pricing">الباقات</a>
+          <a href="/how-it-works">كيف تعمل</a>
+          <a class="is-active" href="/activate">التفعيل</a>
+          <a data-auth-state href="/dashboard">لوحة التحكم</a>
         </nav>
 
         <div class="header-actions">
-          <a class="btn btn-secondary" href="pricing.html">عرض الباقات</a>
-          <a class="btn btn-primary" href="#activate-form">فعّل كودك</a>
+          <a class="btn btn-secondary" href="/dashboard">لوحة التحكم</a>
+          <a class="btn btn-primary" href="/profile">الملف الشخصي</a>
         </div>
       </div>
     </header>
 
     <main>
       <section class="page-hero">
-        <div class="container">
-          <div class="section-title">
-            <span class="section-kicker">التفعيل</span>
-            <h2>فعّل اشتراكك الآن</h2>
-            <p>أدخل الكود والبريد الإلكتروني لتفعيل رصيدك والبدء فورًا.</p>
-          </div>
+        <div class="container auth-grid">
+          <article class="page-card auth-card">
+            <span class="section-kicker">Activation</span>
+            <h1>فعّل اشتراكك الآن</h1>
+            <p>أدخل الكود وسيتم التحقق من البريد الحالي قبل إضافة الرصيد إلى حسابك.</p>
 
-          <div class="activation-grid">
-            <article class="activation-card" id="activate-form">
-              <h3>بيانات التفعيل</h3>
-              <form class="code-form">
-                <div class="field">
-                  <label for="activateCode">كود التفعيل</label>
-                  <input id="activateCode" type="text" placeholder="ADV-NANO-15" />
-                </div>
-
-                <div class="field">
-                  <label for="activateEmail">البريد الإلكتروني</label>
-                  <input id="activateEmail" type="email" placeholder="name@advpro.ai" />
-                </div>
-
-                <button class="btn btn-primary" type="button">تفعيل الكود</button>
-              </form>
-            </article>
-
-            <article class="form-card">
-              <span class="section-kicker">مثال رصيد</span>
-              <h3>بعد التفعيل</h3>
-              <div class="mini-metrics">
-                <div class="mini-metric">
-                  <strong>10</strong>
-                  <span>صور يومية</span>
-                </div>
-                <div class="mini-metric">
-                  <strong>10</strong>
-                  <span>مقاطع يومية</span>
-                </div>
-                <div class="mini-metric">
-                  <strong>8s</strong>
-                  <span>مدة المقطع</span>
-                </div>
-                <div class="mini-metric">
-                  <strong>15</strong>
-                  <span>يوم صلاحية</span>
-                </div>
+            <form id="activationForm" class="stack-form">
+              <div class="field">
+                <label for="activateCode">كود التفعيل</label>
+                <input id="activateCode" name="code" type="text" placeholder="ADV-PRO-123" required />
               </div>
-            </article>
-          </div>
+
+              <div class="field">
+                <label for="activateEmail">البريد المرتبط بالحساب</label>
+                <input id="activateEmail" type="email" readonly />
+                <small class="field-hint">التفعيل يتم على الحساب المسجل حاليًا فقط.</small>
+              </div>
+
+              <div class="status-message" hidden data-form-message></div>
+              <button class="btn btn-primary btn-block" type="submit">تفعيل الكود</button>
+            </form>
+          </article>
+
+          <article class="page-card auth-side">
+            <span class="section-kicker">What You Get</span>
+            <h2>بعد نجاح التفعيل</h2>
+            <div class="mini-metrics">
+              <div class="mini-metric">
+                <strong>صور</strong>
+                <span>رصيد واضح داخل لوحة التحكم</span>
+              </div>
+              <div class="mini-metric">
+                <strong>مقاطع</strong>
+                <span>متابعة فورية للاستهلاك المتبقي</span>
+              </div>
+              <div class="mini-metric">
+                <strong>المدة</strong>
+                <span>أقصى مدة للفيديو حسب الباقة</span>
+              </div>
+              <div class="mini-metric">
+                <strong>الأمان</strong>
+                <span>رفض التفعيل إذا كان الكود لبريد آخر</span>
+              </div>
+            </div>
+          </article>
         </div>
       </section>
     </main>
 
-    <script src="site.js"></script>
+    <script src="/site.js"></script>
+    <script src="/portal.js"></script>
   </body>
 </html>

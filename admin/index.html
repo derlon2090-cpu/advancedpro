@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>لوحة الأدمن | Advanced Pro Nano</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body data-page="admin" data-requires-admin="true">
+    <main class="admin-shell">
+      <aside class="admin-sidebar">
+        <a class="brand brand--column" href="/admin">
+          <span class="brand-mark">AP</span>
+          <span class="brand-copy">
+            <strong>Advanced Pro Nano</strong>
+            <span>Admin Panel</span>
+          </span>
+        </a>
+
+        <nav class="admin-nav">
+          <a class="is-active" href="/admin">الرئيسية</a>
+          <a href="/admin/users">المستخدمون</a>
+          <a href="/admin/codes">الأكواد</a>
+          <a href="/admin/subscriptions">الاشتراكات</a>
+          <a href="/admin/settings">الإعدادات</a>
+        </nav>
+
+        <div class="admin-sidebar__footer">
+          <a class="btn btn-secondary btn-block" href="/dashboard">لوحة المستخدم</a>
+          <button class="btn btn-primary btn-block" type="button" data-logout>تسجيل الخروج</button>
+        </div>
+      </aside>
+
+      <section class="admin-main">
+        <div class="admin-toolbar">
+          <div>
+            <span class="section-kicker">Overview</span>
+            <h1>لوحة الإدارة</h1>
+          </div>
+        </div>
+
+        <div class="info-grid" data-admin-summary></div>
+
+        <div class="page-grid">
+          <article class="page-card">
+            <div class="page-card__top">
+              <h2>أقسام الإدارة</h2>
+            </div>
+            <div class="quick-links">
+              <a class="quick-link" href="/admin/users">إدارة المستخدمين</a>
+              <a class="quick-link" href="/admin/codes">إنشاء وتعديل الأكواد</a>
+              <a class="quick-link" href="/admin/subscriptions">متابعة الاشتراكات</a>
+              <a class="quick-link" href="/admin/settings">إعدادات المنصة</a>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <script src="/portal.js"></script>
+  </body>
+</html>

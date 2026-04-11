@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>الملف الشخصي | Advanced Pro Nano</title>
+    <meta
+      name="description"
+      content="الملف الشخصي للمستخدم في Advanced Pro Nano مع معلومات الحساب والاشتراك وتغيير كلمة المرور."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body data-page="profile" data-requires-auth="true">
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="brand" href="/">
+          <span class="brand-mark">AP</span>
+          <span class="brand-copy">
+            <strong>Advanced Pro Nano</strong>
+            <span>User Profile</span>
+          </span>
+        </a>
+
+        <nav class="nav-links">
+          <a href="/">الرئيسية</a>
+          <a href="/dashboard">لوحة التحكم</a>
+          <a class="is-active" href="/profile">الملف الشخصي</a>
+          <a href="/activate">التفعيل</a>
+        </nav>
+
+        <div class="header-actions">
+          <a class="btn btn-secondary" href="/dashboard">العودة للوحة التحكم</a>
+          <button class="btn btn-primary" type="button" data-logout>تسجيل الخروج</button>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="page-hero">
+        <div class="container page-grid">
+          <article class="page-card">
+            <div class="page-card__top">
+              <h1>المعلومات الأساسية</h1>
+            </div>
+            <div data-profile-account></div>
+          </article>
+
+          <article class="page-card">
+            <div class="page-card__top">
+              <h2>معلومات الاشتراك</h2>
+            </div>
+            <div data-profile-subscription></div>
+          </article>
+
+          <article class="page-card">
+            <div class="page-card__top">
+              <h2>تعديل الاسم</h2>
+            </div>
+            <form id="profileForm" class="stack-form">
+              <div class="field">
+                <label for="profileName">الاسم الكامل</label>
+                <input id="profileName" name="fullName" type="text" required />
+              </div>
+              <div class="status-message" hidden data-profile-message></div>
+              <button class="btn btn-primary" type="submit">حفظ التعديل</button>
+            </form>
+          </article>
+
+          <article class="page-card">
+            <div class="page-card__top">
+              <h2>تغيير كلمة المرور</h2>
+            </div>
+            <form id="passwordForm" class="stack-form">
+              <div class="field">
+                <label for="currentPassword">كلمة المرور الحالية</label>
+                <div class="password-input">
+                  <input id="currentPassword" name="currentPassword" type="password" required />
+                  <button class="password-toggle" type="button" data-password-toggle></button>
+                </div>
+              </div>
+              <div class="field">
+                <label for="newPassword">كلمة المرور الجديدة</label>
+                <div class="password-input">
+                  <input id="newPassword" name="newPassword" type="password" required />
+                  <button class="password-toggle" type="button" data-password-toggle></button>
+                </div>
+              </div>
+              <div class="field">
+                <label for="confirmPassword">تأكيد كلمة المرور</label>
+                <div class="password-input">
+                  <input id="confirmPassword" name="confirmPassword" type="password" required />
+                  <button class="password-toggle" type="button" data-password-toggle></button>
+                </div>
+              </div>
+              <div class="status-message" hidden data-password-message></div>
+              <button class="btn btn-primary" type="submit">تحديث كلمة المرور</button>
+            </form>
+          </article>
+
+          <article class="page-card page-card--full">
+            <div class="page-card__top">
+              <h2>آخر الاستخدامات</h2>
+            </div>
+            <div data-profile-usage></div>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <script src="/site.js"></script>
+    <script src="/portal.js"></script>
+  </body>
+</html>

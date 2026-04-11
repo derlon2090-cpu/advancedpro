@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>لوحة التحكم | Advanced Pro Nano</title>
+    <meta
+      name="description"
+      content="لوحة تحكم المستخدم في Advanced Pro Nano لمتابعة الرصيد والاشتراك وسجل الاستخدام."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body data-page="dashboard" data-requires-auth="true">
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="brand" href="/">
+          <span class="brand-mark">AP</span>
+          <span class="brand-copy">
+            <strong>Advanced Pro Nano</strong>
+            <span>User Dashboard</span>
+          </span>
+        </a>
+
+        <nav class="nav-links">
+          <a href="/">الرئيسية</a>
+          <a href="/activate">التفعيل</a>
+          <a class="is-active" href="/dashboard">لوحة التحكم</a>
+          <a href="/profile">الملف الشخصي</a>
+        </nav>
+
+        <div class="header-actions">
+          <a class="btn btn-secondary" href="/profile">الملف الشخصي</a>
+          <button class="btn btn-primary" type="button" data-logout>تسجيل الخروج</button>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="page-hero">
+        <div class="container">
+          <div class="section-title section-title--left">
+            <span class="section-kicker">Dashboard</span>
+            <h1>مرحبًا <span class="gradient-text" data-dashboard-name>...</span></h1>
+            <p>هنا تجد رصيدك الحالي، تفاصيل اشتراكك، وآخر العمليات التي تمت على حسابك.</p>
+          </div>
+
+          <div class="info-grid" data-dashboard-summary></div>
+
+          <div class="page-grid">
+            <article class="page-card">
+              <div class="page-card__top">
+                <h2>سجل الاستخدام</h2>
+                <a class="btn btn-ghost" href="/activate">تفعيل كود جديد</a>
+              </div>
+              <div data-dashboard-usage></div>
+            </article>
+
+            <article class="page-card">
+              <div class="page-card__top">
+                <h2>روابط سريعة</h2>
+              </div>
+              <div class="quick-links">
+                <a class="quick-link" href="/activate">تفعيل كود</a>
+                <a class="quick-link" href="/profile">تعديل الملف الشخصي</a>
+                <a class="quick-link" href="/pricing">شراء باقة جديدة</a>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="/site.js"></script>
+    <script src="/portal.js"></script>
+  </body>
+</html>

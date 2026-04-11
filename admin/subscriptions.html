@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>إدارة الاشتراكات | Advanced Pro Nano</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body data-page="admin-subscriptions" data-requires-admin="true">
+    <main class="admin-shell">
+      <aside class="admin-sidebar">
+        <a class="brand brand--column" href="/admin">
+          <span class="brand-mark">AP</span>
+          <span class="brand-copy">
+            <strong>Advanced Pro Nano</strong>
+            <span>Admin Panel</span>
+          </span>
+        </a>
+
+        <nav class="admin-nav">
+          <a href="/admin">الرئيسية</a>
+          <a href="/admin/users">المستخدمون</a>
+          <a href="/admin/codes">الأكواد</a>
+          <a class="is-active" href="/admin/subscriptions">الاشتراكات</a>
+          <a href="/admin/settings">الإعدادات</a>
+        </nav>
+
+        <div class="admin-sidebar__footer">
+          <a class="btn btn-secondary btn-block" href="/dashboard">لوحة المستخدم</a>
+          <button class="btn btn-primary btn-block" type="button" data-logout>تسجيل الخروج</button>
+        </div>
+      </aside>
+
+      <section class="admin-main">
+        <div class="admin-toolbar">
+          <div>
+            <span class="section-kicker">Subscriptions</span>
+            <h1>متابعة الاشتراكات</h1>
+          </div>
+        </div>
+
+        <article class="page-card">
+          <form id="adminSubscriptionForm" class="split-form split-form--compact">
+            <input name="id" type="hidden" />
+            <div class="field">
+              <label>الحالة</label>
+              <select name="status">
+                <option value="active">active</option>
+                <option value="expired">expired</option>
+                <option value="cancelled">cancelled</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>رصيد الصور</label>
+              <input name="imageBalance" type="number" min="0" value="0" />
+            </div>
+            <div class="field">
+              <label>رصيد المقاطع</label>
+              <input name="videoBalance" type="number" min="0" value="0" />
+            </div>
+            <div class="field">
+              <label>تاريخ النهاية</label>
+              <input name="endAt" type="datetime-local" />
+            </div>
+            <div class="inline-actions">
+              <button class="btn btn-primary" type="submit">حفظ الاشتراك</button>
+            </div>
+          </form>
+
+          <div class="status-message" hidden data-admin-subscriptions-message></div>
+        </article>
+
+        <article class="page-card">
+          <form id="adminSubscriptionsSearch" class="toolbar-form">
+            <input name="search" type="search" placeholder="ابحث بالمستخدم أو الباقة أو الكود" />
+            <button class="btn btn-secondary" type="submit">بحث</button>
+          </form>
+          <div data-admin-subscriptions></div>
+        </article>
+      </section>
+    </main>
+
+    <script src="/portal.js"></script>
+  </body>
+</html>

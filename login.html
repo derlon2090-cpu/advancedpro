@@ -6,7 +6,7 @@
     <title>تسجيل الدخول | Advanced Pro Nano</title>
     <meta
       name="description"
-      content="تسجيل الدخول إلى منصة Advanced Pro Nano للوصول إلى الرصيد والأعمال."
+      content="سجل الدخول إلى منصة Advanced Pro Nano للوصول إلى الرصيد، الأكواد، والاشتراكات."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -14,73 +14,91 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="/styles.css" />
   </head>
-  <body>
+  <body data-page="login" data-guest-only="true">
     <header class="site-header">
       <div class="container header-inner">
-        <a class="brand" href="index.html">
+        <a class="brand" href="/">
           <span class="brand-mark">AP</span>
           <span class="brand-copy">
             <strong>Advanced Pro Nano</strong>
-            <span>Login</span>
+            <span>AI Media Platform</span>
           </span>
         </a>
 
         <nav class="nav-links">
-          <a href="index.html">الرئيسية</a>
-          <a href="pricing.html">الباقات</a>
-          <a href="how-it-works.html">كيف تعمل</a>
-          <a href="activate.html">التفعيل</a>
-          <a class="is-active" href="login.html">تسجيل الدخول</a>
+          <a href="/">الرئيسية</a>
+          <a href="/pricing">الباقات</a>
+          <a href="/how-it-works">كيف تعمل</a>
+          <a href="/activate">التفعيل</a>
+          <a class="is-active" href="/login">تسجيل الدخول</a>
         </nav>
 
         <div class="header-actions">
-          <a class="btn btn-secondary" href="activate.html">فعّل كودك</a>
-          <a class="btn btn-primary" href="#login-form">ابدأ الآن</a>
+          <a class="btn btn-secondary" href="/register">إنشاء حساب</a>
+          <a class="btn btn-primary" href="/activate">فعّل كودك</a>
         </div>
       </div>
     </header>
 
     <main>
       <section class="page-hero">
-        <div class="container login-grid">
-          <article class="login-card" id="login-form">
+        <div class="container auth-grid">
+          <article class="page-card auth-card">
             <span class="section-kicker">Login</span>
-            <h3>تسجيل الدخول إلى حسابك</h3>
-            <p>استخدم بريدك الإلكتروني للوصول إلى الرصيد، الأعمال، وسجل الاستخدام.</p>
+            <h1>تسجيل الدخول إلى حسابك</h1>
+            <p>ادخل بريدك الإلكتروني وكلمة المرور للوصول إلى الرصيد ولوحة التحكم الخاصة بك.</p>
 
-            <form class="code-form">
+            <form id="loginForm" class="stack-form">
               <div class="field">
                 <label for="loginEmail">البريد الإلكتروني</label>
-                <input id="loginEmail" type="email" placeholder="name@advpro.ai" />
+                <input id="loginEmail" name="email" type="email" placeholder="name@example.com" required />
               </div>
 
               <div class="field">
                 <label for="loginPassword">كلمة المرور</label>
-                <input id="loginPassword" type="password" placeholder="••••••••" />
+                <div class="password-input">
+                  <input
+                    id="loginPassword"
+                    name="password"
+                    type="password"
+                    placeholder="********"
+                    required
+                  />
+                  <button class="password-toggle" type="button" data-password-toggle></button>
+                </div>
               </div>
 
-              <button class="btn btn-primary" type="button">تسجيل الدخول</button>
+              <div class="form-links">
+                <a href="/forgot-password">نسيت كلمة المرور؟</a>
+                <a href="/register">إنشاء حساب جديد</a>
+              </div>
+
+              <div class="status-message" hidden data-form-message></div>
+              <button class="btn btn-primary btn-block" type="submit">تسجيل الدخول</button>
             </form>
           </article>
 
-          <article class="login-card">
-            <span class="section-kicker">معلومة مهمة</span>
-            <h3>هل لديك كود جديد؟</h3>
-            <p>
-              إذا كنت قادمًا لأول مرة ومعك كود اشتراك، انتقل إلى صفحة التفعيل ثم اربط الاشتراك
-              بحسابك قبل البدء.
-            </p>
+          <article class="page-card auth-side">
+            <span class="section-kicker">وصول سريع</span>
+            <h2>ابدأ من حساب واحد واضح وآمن</h2>
+            <ul class="feature-list">
+              <li>منع تكرار البريد الإلكتروني وحفظ كلمة المرور بشكل مشفر.</li>
+              <li>الوصول المباشر إلى لوحة التحكم بعد تسجيل الدخول.</li>
+              <li>تفعيل الأكواد على نفس الحساب لمنع التسرب والمشاركة.</li>
+            </ul>
+
             <div class="hero-actions">
-              <a class="btn btn-secondary" href="activate.html">الانتقال للتفعيل</a>
-              <a class="btn btn-ghost" href="pricing.html">عرض الباقات</a>
+              <a class="btn btn-secondary" href="/activate">لدي كود جاهز</a>
+              <a class="btn btn-ghost" href="/pricing">عرض الباقات</a>
             </div>
           </article>
         </div>
       </section>
     </main>
 
-    <script src="site.js"></script>
+    <script src="/site.js"></script>
+    <script src="/portal.js"></script>
   </body>
 </html>

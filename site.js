@@ -1,13 +1,39 @@
-const STORE_URL = "https://advproai.com";
-const WHATSAPP_NUMBER = "966556915980";
-const DEFAULT_WHATSAPP_MESSAGE = "السلام عليكم أبغى الاشتراك في Advanced Pro";
+const siteConfig = {
+  storeUrl: "https://advproai.com",
+  supportWhatsapp: "966556915980",
+  supportWhatsappMessage: "السلام عليكم أبغى الاشتراك في Advanced Pro",
+};
+
+async function loadSiteConfig() {
+  try {
+    const response = await fetch("/api/public/settings", {
+      credentials: "same-origin",
+    });
+
+    if (!response.ok) {
+      return;
+    }
+
+    const payload = await response.json();
+
+    if (payload.settings) {
+      siteConfig.storeUrl = payload.settings.storeUrl || siteConfig.storeUrl;
+      siteConfig.supportWhatsapp =
+        payload.settings.supportWhatsapp || siteConfig.supportWhatsapp;
+      siteConfig.supportWhatsappMessage =
+        payload.settings.supportWhatsappMessage || siteConfig.supportWhatsappMessage;
+    }
+  } catch (error) {
+    return;
+  }
+}
 
 function buildWhatsAppLink(plan) {
   const message = plan
     ? `السلام عليكم أبغى باقة ${plan}`
-    : DEFAULT_WHATSAPP_MESSAGE;
+    : siteConfig.supportWhatsappMessage;
 
-  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+  return `https://wa.me/${siteConfig.supportWhatsapp}?text=${encodeURIComponent(message)}`;
 }
 
 function createWhatsAppButton() {
@@ -48,14 +74,14 @@ function createPurchaseModal() {
           <p>يمكنك الشراء مباشرة من المتجر أو التواصل معنا عبر واتساب.</p>
         </div>
         <button class="purchase-modal__close" type="button" aria-label="إغلاق" data-modal-close>
-          x
+          ×
         </button>
       </div>
       <div class="purchase-modal__selected" data-selected-plan>اختر الباقة المناسبة لك.</div>
       <div class="purchase-modal__actions">
         <a
           class="purchase-modal__action purchase-modal__action--store"
-          href="${STORE_URL}"
+          href="${siteConfig.storeUrl}"
           target="_blank"
           rel="noreferrer"
           data-store-link
@@ -91,6 +117,7 @@ function setupPurchaseModal() {
   const modal = createPurchaseModal();
   const selectedPlan = modal.querySelector("[data-selected-plan]");
   const whatsappLink = modal.querySelector("[data-whatsapp-link]");
+  const storeLink = modal.querySelector("[data-store-link]");
 
   const closeModal = () => {
     modal.hidden = true;
@@ -102,6 +129,7 @@ function setupPurchaseModal() {
       ? `الباقة المحددة: ${plan}`
       : "يمكنك اختيار المتجر أو واتساب.";
     whatsappLink.href = buildWhatsAppLink(plan);
+    storeLink.href = siteConfig.storeUrl;
     modal.hidden = false;
     document.body.classList.add("modal-open");
   };
@@ -124,7 +152,8 @@ function setupPurchaseModal() {
   });
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  await loadSiteConfig();
   createWhatsAppButton();
   setupPurchaseModal();
 });

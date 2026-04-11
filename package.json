@@ -1,0 +1,17 @@
+{
+  "name": "advancedpro",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Advanced Pro Nano membership MVP with MySQL-backed auth and activation flow.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "check": "node --check site.js && node --check portal.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.11.3"
+  }
+}
