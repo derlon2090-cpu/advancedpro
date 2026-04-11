@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>للمطورين | Advanced Pro Nano</title>
+    <meta
+      name="description"
+      content="الصفحة التقنية الخاصة بمنصة Advanced Pro Nano، وتشمل المنظومة الخلفية، موديل البيانات، وآلية التنفيذ."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="brand" href="index.html">
+          <span class="brand-mark">AP</span>
+          <span class="brand-copy">
+            <strong>Advanced Pro Nano</strong>
+            <span>Developers</span>
+          </span>
+        </a>
+
+        <nav class="nav-links">
+          <a href="#systems">الأنظمة</a>
+          <a href="#workflow">آلية العمل</a>
+          <a href="#schema">الجداول</a>
+          <a href="#roadmap">خارطة التنفيذ</a>
+        </nav>
+
+        <div class="header-actions">
+          <a class="btn btn-secondary" href="index.html">العودة للرئيسية</a>
+          <a class="btn btn-primary" href="activate.html">ابدأ الآن</a>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="page-hero">
+        <div class="container page-hero-grid">
+          <div>
+            <span class="section-kicker">للمطورين</span>
+            <h1>الشرح التقني الخاص بمنصة <span class="gradient-text">Advanced Pro Nano</span></h1>
+            <p>
+              هذه الصفحة تجمع المنظومة الخلفية، منطق الأكواد والباقات، الجداول الأساسية، وآلية
+              التجديد والتنفيذ. تم فصلها عن الصفحة الرئيسية حتى تبقى تجربة العميل مركزة وواضحة.
+            </p>
+            <div class="badge-row">
+              <span class="badge">Codes + Plans</span>
+              <span class="badge">User Entitlements</span>
+              <span class="badge">Generations + Logs</span>
+              <span class="badge">Renewal Logic</span>
+            </div>
+          </div>
+
+          <article class="page-card">
+            <h3>ملخص سريع</h3>
+            <ul>
+              <li>المنصة مبنية على تفعيل أكواد أو شراء باقات ثم تحويلها إلى رصيد فعلي للمستخدم.</li>
+              <li>الرصيد يشمل الصور، المقاطع، مدة الفيديو، والصلاحية أو التجديد الدوري.</li>
+              <li>لوحة الأدمن تتحكم في الخطط، الأكواد، الباقات، الاستخدام، والربط مع مزود التوليد.</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section id="systems" class="page-section">
+        <div class="container">
+          <div class="section-title">
+            <span class="section-kicker">الأنظمة الأساسية</span>
+            <h2>الأنظمة الرئيسية</h2>
+            <p>هذا هو التقسيم الأنسب لبناء المنصة بطريقة قابلة للصيانة والتوسع.</p>
+          </div>
+
+          <div class="page-grid">
+            <article class="page-card">
+              <h3>A) نظام المستخدمين</h3>
+              <p>تسجيل، دخول، حالة الحساب، وربط الاشتراك أو الكود بالمستخدم.</p>
+              <ul>
+                <li>Auth عبر البريد أو مزود خارجي</li>
+                <li>Roles: user / admin</li>
+                <li>عرض الأرصدة والحالة ونتائج التوليد</li>
+              </ul>
+            </article>
+
+            <article class="page-card">
+              <h3>B) نظام الأكواد</h3>
+              <p>الأكواد ترتبط بخطة داخلية تحدد حدود الاستخدام ومدة الصلاحية والتجديد.</p>
+              <ul>
+                <li>Plan binding</li>
+                <li>Single / Multi redemption</li>
+                <li>Starts on redeem / fixed expiry</li>
+              </ul>
+            </article>
+
+            <article class="page-card">
+              <h3>C) نظام الباقات والطلبات</h3>
+              <p>عرض باقات عامة للبيع وربط كل طلب مدفوع باشتراك فعلي للمستخدم.</p>
+              <ul>
+                <li>Packages catalog</li>
+                <li>Orders + payment tracking</li>
+                <li>Webhook auto-activation لاحقًا</li>
+              </ul>
+            </article>
+
+            <article class="page-card">
+              <h3>D) نظام التوليد</h3>
+              <p>إرسال الطلبات إلى المزود الخارجي، حفظ الحالة، خصم الرصيد، وحفظ النتائج.</p>
+              <ul>
+                <li>Image / Video generations</li>
+                <li>Pending / Processing / Completed / Failed</li>
+                <li>Usage logs + provider logs</li>
+              </ul>
+            </article>
+
+            <article class="page-card">
+              <h3>E) لوحة الأدمن</h3>
+              <p>إدارة الخطط، الأكواد، الباقات، السجلات، التقارير، واستهلاك المزود الخارجي.</p>
+              <ul>
+                <li>Plans, codes, packages</li>
+                <li>Revenue + usage visibility</li>
+                <li>Manual adjustments when needed</li>
+              </ul>
+            </article>
+
+            <article class="page-card">
+              <h3>F) منطق التجديد الدوري</h3>
+              <p>Job دوري يقرأ الاشتراكات النشطة ويطبق إما topup أو reset حسب نوع الخطة.</p>
+              <ul>
+                <li><code>renewal_mode = topup</code></li>
+                <li><code>renewal_mode = reset</code></li>
+                <li>تحديث <code>next_renewal_at</code> وإيقاف المنتهي</li>
+              </ul>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="workflow" class="page-section">
+        <div class="container">
+          <div class="section-title">
+            <span class="section-kicker">آلية التنفيذ</span>
+            <h2>آلية العمل</h2>
+            <p>المسارات الأساسية التي يجب أن يغطيها الـ Backend من أول التفعيل حتى التوليد.</p>
+          </div>
+
+          <div class="page-grid">
+            <article class="page-card">
+              <h3>1) عند إدخال الكود</h3>
+              <ul>
+                <li>التحقق من وجود الكود وتفعيله وصلاحيته وعدد مرات الاستخدام.</li>
+                <li>إنشاء <code>user_entitlement</code> وربطه بالمستخدم والخطة.</li>
+                <li>نسخ حدود الرصيد ومدة الفيديو وتحديد <code>start_at</code> و <code>end_at</code>.</li>
+              </ul>
+            </article>
+
+            <article class="page-card">
+              <h3>2) عند شراء باقة</h3>
+              <ul>
+                <li>إنشاء <code>order</code> بعد الدفع الناجح.</li>
+                <li>ربط الطلب بالباقة وإنشاء entitlement جديد للمستخدم.</li>
+                <li>إضافة الأرصدة مباشرة أو إرسال كود حسب طريقة التشغيل.</li>
+              </ul>
+            </article>
+
+            <article class="page-card">
+              <h3>3) عند طلب توليد صورة أو مقطع</h3>
+              <ul>
+                <li>التحقق من الاشتراك الفعال وتوفر الرصيد والمدة المسموحة.</li>
+                <li>إنشاء سجل generation بحالة pending ثم إرسال الطلب للمزود.</li>
+                <li>عند النجاح: حفظ النتائج، خصم الرصيد، وتسجيل الاستخدام.</li>
+              </ul>
+            </article>
+
+            <article class="page-card">
+              <h3>4) عند وقت التجديد</h3>
+              <ul>
+                <li>قراءة <code>next_renewal_at</code> لكل اشتراك نشط.</li>
+                <li>تطبيق reset أو topup بناءً على الخطة.</li>
+                <li>زيادة <code>renewals_used</code> وتحديث الدورة القادمة أو إنهاء الاشتراك.</li>
+              </ul>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="schema" class="page-section">
+        <div class="container">
+          <div class="section-title">
+            <span class="section-kicker">موديل البيانات</span>
+            <h2>الجداول الأساسية المقترحة</h2>
+            <p>هذه البنية مناسبة لبداية MVP مع قابلية عالية للتوسع لاحقًا.</p>
+          </div>
+
+          <div class="schema-grid">
+            <article class="schema-card">
+              <h3>users</h3>
+              <span class="code-block">id
+name
+email
+password / auth_provider
+role
+status
+created_at</span>
+            </article>
+
+            <article class="schema-card">
+              <h3>plans</h3>
+              <span class="code-block">id
+name
+image_quota
+video_quota
+video_max_duration_seconds
+validity_days
+renewal_enabled
+renewal_every_days
+renewal_mode
+renewal_image_quota
+renewal_video_quota
+renewal_max_cycles
+carry_over_enabled
+active</span>
+            </article>
+
+            <article class="schema-card">
+              <h3>codes</h3>
+              <span class="code-block">id
+code
+plan_id
+max_redemptions
+redeemed_count
+starts_on_redeem
+expires_at
+active
+created_by
+created_at</span>
+            </article>
+
+            <article class="schema-card">
+              <h3>user_entitlements</h3>
+              <span class="code-block">id
+user_id
+source_type
+source_id
+plan_id
+start_at
+end_at
+status
+next_renewal_at
+renewals_used
+image_balance
+video_balance
+video_max_duration_seconds
+created_at</span>
+            </article>
+
+            <article class="schema-card">
+              <h3>packages + orders</h3>
+              <span class="code-block">packages:
+name
+slug
+price
+currency
+featured
+active
+
+orders:
+user_id
+package_id
+amount
+payment_status
+payment_gateway
+external_order_id
+paid_at</span>
+            </article>
+
+            <article class="schema-card">
+              <h3>generations + usage_logs</h3>
+              <span class="code-block">generations:
+type
+prompt
+status
+provider
+model_name
+duration_seconds
+credits_used
+output_url
+error_message
+
+usage_logs:
+subscription_id
+generation_id
+type
+amount_used
+balance_before
+balance_after</span>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="roadmap" class="page-section">
+        <div class="container">
+          <div class="section-title">
+            <span class="section-kicker">خارطة التنفيذ</span>
+            <h2>أفضل ترتيب للتنفيذ</h2>
+            <p>تقسيم التنفيذ إلى مراحل يقلل المخاطر ويجعل الإطلاق أسرع.</p>
+          </div>
+
+          <div class="page-grid">
+            <article class="page-card">
+              <h3>المرحلة الأولى: MVP</h3>
+              <ul>
+                <li>تسجيل ودخول</li>
+                <li>تفعيل كود</li>
+                <li>رصيد صور ومقاطع</li>
+                <li>توليد صورة أو مقطع</li>
+                <li>لوحة أدمن للأكواد والخطط</li>
+              </ul>
+            </article>
+
+            <article class="page-card">
+              <h3>المرحلة الثانية: Growth</h3>
+              <ul>
+                <li>ربط متجر Advanced Pro</li>
+                <li>Webhooks للتفعيل التلقائي</li>
+                <li>التجديدات الدورية</li>
+                <li>الإشعارات والتقارير</li>
+              </ul>
+            </article>
+
+            <article class="page-card">
+              <h3>المرحلة الثالثة: Scale</h3>
+              <ul>
+                <li>نظام مسوقين وإحالات</li>
+                <li>API للموزعين</li>
+                <li>Reseller codes</li>
+                <li>White-label وتطبيق جوال لاحقًا</li>
+              </ul>
+            </article>
+
+            <article class="page-card">
+              <h3>ملاحظة تنفيذية</h3>
+              <p>
+                البدء بنظام الأكواد أولًا هو أسرع مسار للوصول إلى MVP عملي وقابل للبيع، ثم يضاف
+                الربط الكامل مع المتجر والتجديدات الذكية في المرحلة التالية.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
