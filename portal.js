@@ -5,7 +5,8 @@ const defaultSiteSettings = {
 };
 
 const appConfig = {
-  apiBaseUrl: window.AdvancedProConfig?.apiBaseUrl || "/backend",
+  apiBaseUrl:
+    window.AdvancedProConfig?.apiBaseUrl || "https://advancedpro.onrender.com",
 };
 
 const state = {
@@ -59,8 +60,10 @@ function getEyeIcon(isVisible) {
 
 async function requestJson(url, options = {}) {
   const resolvedUrl = url.startsWith("http") ? url : `${appConfig.apiBaseUrl}${url}`;
+  const isCrossOrigin =
+    resolvedUrl.startsWith("http") && !resolvedUrl.startsWith(window.location.origin);
   const response = await fetch(resolvedUrl, {
-    credentials: "same-origin",
+    credentials: isCrossOrigin ? "include" : "same-origin",
     ...options,
     headers: {
       "Content-Type": "application/json",

@@ -5,13 +5,14 @@ const siteConfig = {
 };
 
 const appConfig = {
-  apiBaseUrl: window.AdvancedProConfig?.apiBaseUrl || "/backend",
+  apiBaseUrl:
+    window.AdvancedProConfig?.apiBaseUrl || "https://advancedpro.onrender.com",
 };
 
 async function loadSiteConfig() {
   try {
     const response = await fetch(`${appConfig.apiBaseUrl}/api/public/settings`, {
-      credentials: "same-origin",
+      credentials: "omit",
     });
 
     if (!response.ok) {

@@ -1,9 +1,3 @@
 {
-  "cleanUrls": true,
-  "rewrites": [
-    {
-      "source": "/backend/:path*",
-      "destination": "https://advancedpro.onrender.com/:path*"
-    }
-  ]
+  "cleanUrls": true
 }
