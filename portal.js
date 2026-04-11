@@ -4,6 +4,10 @@ const defaultSiteSettings = {
   supportWhatsappMessage: "السلام عليكم أبغى الاشتراك في Advanced Pro",
 };
 
+const appConfig = {
+  apiBaseUrl: window.AdvancedProConfig?.apiBaseUrl || "/backend",
+};
+
 const state = {
   currentUser: undefined,
   siteSettings: { ...defaultSiteSettings },
@@ -54,7 +58,8 @@ function getEyeIcon(isVisible) {
 }
 
 async function requestJson(url, options = {}) {
-  const response = await fetch(url, {
+  const resolvedUrl = url.startsWith("http") ? url : `${appConfig.apiBaseUrl}${url}`;
+  const response = await fetch(resolvedUrl, {
     credentials: "same-origin",
     ...options,
     headers: {

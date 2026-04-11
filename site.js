@@ -4,9 +4,13 @@ const siteConfig = {
   supportWhatsappMessage: "السلام عليكم أبغى الاشتراك في Advanced Pro",
 };
 
+const appConfig = {
+  apiBaseUrl: window.AdvancedProConfig?.apiBaseUrl || "/backend",
+};
+
 async function loadSiteConfig() {
   try {
-    const response = await fetch("/api/public/settings", {
+    const response = await fetch(`${appConfig.apiBaseUrl}/api/public/settings`, {
       credentials: "same-origin",
     });
 
