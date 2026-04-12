@@ -147,7 +147,8 @@ function createScrollTopButton() {
   });
 
   const toggleVisibility = () => {
-    const shouldShow = window.scrollY > window.innerHeight * 0.6;
+    const threshold = Math.max(200, window.innerHeight * 0.4);
+    const shouldShow = window.scrollY > threshold;
     button.classList.toggle("is-visible", shouldShow);
   };
 
@@ -367,7 +368,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   createWhatsAppButton();
 
   const path = window.location.pathname;
-  const isHome = path === "/" || path.endsWith("/index.html");
+  const isHome =
+    path === "/" ||
+    path === "/index" ||
+    path.endsWith("/index") ||
+    path.endsWith("/index.html");
   if (isHome) {
     createScrollTopButton();
   }
