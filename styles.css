@@ -387,6 +387,35 @@ html[data-theme="dark"] .btn-icon {
   transform: scale(1.05);
 }
 
+.scroll-down-btn {
+  width: 56px;
+  height: 56px;
+  flex: 0 0 auto;
+  display: inline-grid;
+  place-items: center;
+  border: 0;
+  border-radius: 22px;
+  background: #1fb157;
+  color: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 18px 32px rgba(31, 177, 87, 0.24);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.scroll-down-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 22px 36px rgba(31, 177, 87, 0.3);
+}
+
+.scroll-down-btn:active {
+  transform: translateY(0);
+}
+
+.scroll-down-btn svg {
+  width: 26px;
+  height: 26px;
+}
+
 html[data-theme="dark"] .theme-toggle {
   color: #f2f6ff;
   border-color: rgba(255, 255, 255, 0.09);

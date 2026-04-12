@@ -84,7 +84,17 @@ function createThemeToggle() {
     return;
   }
 
-  let toggleHost = document.querySelector(".header-actions");
+  let toggleHost = document.querySelector(".header-theme");
+
+  if (!toggleHost) {
+    const headerInner = document.querySelector(".header-inner");
+
+    if (headerInner) {
+      toggleHost = document.createElement("div");
+      toggleHost.className = "header-theme";
+      headerInner.prepend(toggleHost);
+    }
+  }
 
   if (!toggleHost) {
     const adminToolbar = document.querySelector(".admin-toolbar");
@@ -111,6 +121,38 @@ function createThemeToggle() {
 
   toggleHost.prepend(button);
   renderThemeToggle(button, document.documentElement.dataset.theme || getSystemTheme());
+}
+
+function createScrollDownButton() {
+  if (document.querySelector("[data-scroll-down]")) {
+    return;
+  }
+
+  const host = document.querySelector(".header-theme");
+
+  if (!host) {
+    return;
+  }
+
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "scroll-down-btn";
+  button.setAttribute("data-scroll-down", "");
+  button.setAttribute("aria-label", "الانتقال للأسفل");
+  button.innerHTML = `
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        fill="currentColor"
+        d="M12 4a1 1 0 0 1 1 1v10.6l3.7-3.7a1 1 0 1 1 1.4 1.4l-5.4 5.4a1 1 0 0 1-1.4 0l-5.4-5.4a1 1 0 1 1 1.4-1.4L11 15.6V5a1 1 0 0 1 1-1"
+      />
+    </svg>
+  `;
+
+  button.addEventListener("click", () => {
+    window.scrollBy({ top: window.innerHeight * 0.8, behavior: "smooth" });
+  });
+
+  host.appendChild(button);
 }
 
 setDocumentTheme(getStoredTheme() || getSystemTheme());
@@ -321,6 +363,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   createThemeToggle();
   applyTheme(document.documentElement.dataset.theme || getStoredTheme() || getSystemTheme());
   createWhatsAppButton();
+  createScrollDownButton();
 
   if (!isAdminExperience) {
     setupPurchaseModal();
