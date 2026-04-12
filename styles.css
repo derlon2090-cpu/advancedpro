@@ -336,36 +336,35 @@ html[data-theme="dark"] .btn-icon {
   }
 }
 
-.theme-toggle {
-  width: 56px;
-  height: 56px;
+.theme-toggle,
+.scroll-top-btn {
+  width: 52px;
+  height: 52px;
   flex: 0 0 auto;
   display: inline-grid;
   place-items: center;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+}
+
+.theme-toggle {
   border: 1px solid rgba(71, 97, 164, 0.2);
-  border-radius: 22px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(243, 247, 255, 0.92));
   color: #15203a;
-  cursor: pointer;
   box-shadow:
-    0 18px 32px rgba(76, 92, 147, 0.15),
+    0 16px 28px rgba(76, 92, 147, 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.98);
-  transition:
-    transform 0.22s ease,
-    box-shadow 0.22s ease,
-    background 0.22s ease,
-    border-color 0.22s ease;
 }
 
-.theme-toggle:hover {
+.theme-toggle:hover,
+.scroll-top-btn:hover {
   transform: translateY(-2px) scale(1.03);
-  box-shadow:
-    0 22px 36px rgba(76, 92, 147, 0.18),
-    inset 0 1px 0 rgba(255, 255, 255, 0.98);
 }
 
-.theme-toggle:active {
+.theme-toggle:active,
+.scroll-top-btn:active {
   transform: translateY(0) scale(0.98);
 }
 
@@ -377,13 +376,15 @@ html[data-theme="dark"] .btn-icon {
     inset 0 1px 0 rgba(255, 255, 255, 0.98);
 }
 
-.theme-toggle svg {
-  width: 24px;
-  height: 24px;
+.theme-toggle svg,
+.scroll-top-btn svg {
+  width: 22px;
+  height: 22px;
   transition: transform 0.22s ease;
 }
 
-.theme-toggle:hover svg {
+.theme-toggle:hover svg,
+.scroll-top-btn:hover svg {
   transform: scale(1.05);
 }
 
@@ -391,17 +392,10 @@ html[data-theme="dark"] .btn-icon {
   position: fixed;
   left: 24px;
   bottom: 28px;
-  width: 58px;
-  height: 58px;
-  display: inline-grid;
-  place-items: center;
   border: 0;
-  border-radius: 999px;
   background: #1fb157;
   color: #ffffff;
-  cursor: pointer;
-  box-shadow: 0 18px 32px rgba(31, 177, 87, 0.24);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+  box-shadow: 0 16px 28px rgba(31, 177, 87, 0.26);
   opacity: 0;
   pointer-events: none;
   z-index: 1100;
@@ -413,17 +407,7 @@ html[data-theme="dark"] .btn-icon {
 }
 
 .scroll-top-btn:hover {
-  transform: translateY(-2px);
   box-shadow: 0 22px 36px rgba(31, 177, 87, 0.3);
-}
-
-.scroll-top-btn:active {
-  transform: translateY(0);
-}
-
-.scroll-top-btn svg {
-  width: 26px;
-  height: 26px;
 }
 
 html[data-theme="dark"] .theme-toggle {
