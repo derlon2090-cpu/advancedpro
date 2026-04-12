@@ -146,14 +146,19 @@ function createScrollTopButton() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   });
 
+  const getScrollTop = () =>
+    window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
+
   const toggleVisibility = () => {
     const threshold = Math.max(200, window.innerHeight * 0.4);
-    const shouldShow = window.scrollY > threshold;
+    const shouldShow = getScrollTop() > threshold;
     button.classList.toggle("is-visible", shouldShow);
   };
 
   toggleVisibility();
-  window.addEventListener("scroll", toggleVisibility);
+  window.addEventListener("scroll", toggleVisibility, { passive: true });
+  document.addEventListener("scroll", toggleVisibility, { passive: true });
+  window.setTimeout(toggleVisibility, 300);
 
   document.body.appendChild(button);
 }
@@ -368,7 +373,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   createWhatsAppButton();
 
   const path = window.location.pathname;
+  const pageId = document.body.dataset.page || "";
   const isHome =
+    pageId === "home" ||
     path === "/" ||
     path === "/index" ||
     path.endsWith("/index") ||
