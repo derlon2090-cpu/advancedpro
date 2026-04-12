@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <linearGradient id="apGradient" x1="20" y1="16" x2="109" y2="110" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2F80FF" />
+      <stop offset="0.5" stop-color="#7B61FF" />
+      <stop offset="1" stop-color="#E85AAE" />
+    </linearGradient>
+    <radialGradient id="lensGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(78 42) rotate(90) scale(28)">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.9" />
+      <stop offset="0.35" stop-color="#A8C3FF" stop-opacity="0.55" />
+      <stop offset="1" stop-color="#7B61FF" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <rect x="8" y="8" width="112" height="112" rx="32" fill="#F8FAFF" />
+  <path
+    d="M23 98L55 27C58.2 20.1 68 20.1 71.2 27L103 98"
+    stroke="url(#apGradient)"
+    stroke-width="11"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M44 68H82"
+    stroke="#111111"
+    stroke-width="9"
+    stroke-linecap="round"
+  />
+  <path
+    d="M67 26V99"
+    stroke="#111111"
+    stroke-width="8.5"
+    stroke-linecap="round"
+  />
+  <circle cx="78" cy="42" r="22" fill="url(#lensGlow)" />
+  <circle
+    cx="78"
+    cy="42"
+    r="16"
+    stroke="url(#apGradient)"
+    stroke-width="9"
+  />
+  <circle cx="78" cy="42" r="6" fill="#111111" />
+  <path
+    d="M88 55L101 72"
+    stroke="url(#apGradient)"
+    stroke-width="8"
+    stroke-linecap="round"
+  />
+</svg>
