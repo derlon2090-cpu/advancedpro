@@ -115,6 +115,10 @@ html[data-theme="dark"] .site-header {
   flex-wrap: wrap;
 }
 
+.header-actions {
+  justify-content: flex-end;
+}
+
 .header-inner {
   justify-content: space-between;
   min-height: 84px;
