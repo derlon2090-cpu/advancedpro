@@ -123,36 +123,38 @@ function createThemeToggle() {
   renderThemeToggle(button, document.documentElement.dataset.theme || getSystemTheme());
 }
 
-function createScrollDownButton() {
-  if (document.querySelector("[data-scroll-down]")) {
-    return;
-  }
-
-  const host = document.querySelector(".header-theme");
-
-  if (!host) {
+function createScrollTopButton() {
+  if (document.querySelector("[data-scroll-top]")) {
     return;
   }
 
   const button = document.createElement("button");
   button.type = "button";
-  button.className = "scroll-down-btn";
-  button.setAttribute("data-scroll-down", "");
-  button.setAttribute("aria-label", "الانتقال للأسفل");
+  button.className = "scroll-top-btn";
+  button.setAttribute("data-scroll-top", "");
+  button.setAttribute("aria-label", "العودة للأعلى");
   button.innerHTML = `
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path
         fill="currentColor"
-        d="M12 4a1 1 0 0 1 1 1v10.6l3.7-3.7a1 1 0 1 1 1.4 1.4l-5.4 5.4a1 1 0 0 1-1.4 0l-5.4-5.4a1 1 0 1 1 1.4-1.4L11 15.6V5a1 1 0 0 1 1-1"
+        d="M12 20a1 1 0 0 1-1-1V8.4l-3.7 3.7a1 1 0 1 1-1.4-1.4l5.4-5.4a1 1 0 0 1 1.4 0l5.4 5.4a1 1 0 1 1-1.4 1.4L13 8.4V19a1 1 0 0 1-1 1"
       />
     </svg>
   `;
 
   button.addEventListener("click", () => {
-    window.scrollBy({ top: window.innerHeight * 0.8, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   });
 
-  host.appendChild(button);
+  const toggleVisibility = () => {
+    const shouldShow = window.scrollY > window.innerHeight * 0.6;
+    button.classList.toggle("is-visible", shouldShow);
+  };
+
+  toggleVisibility();
+  window.addEventListener("scroll", toggleVisibility);
+
+  document.body.appendChild(button);
 }
 
 setDocumentTheme(getStoredTheme() || getSystemTheme());
@@ -363,7 +365,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   createThemeToggle();
   applyTheme(document.documentElement.dataset.theme || getStoredTheme() || getSystemTheme());
   createWhatsAppButton();
-  createScrollDownButton();
+
+  const path = window.location.pathname;
+  const isHome = path === "/" || path.endsWith("/index.html");
+  if (isHome) {
+    createScrollTopButton();
+  }
 
   if (!isAdminExperience) {
     setupPurchaseModal();
