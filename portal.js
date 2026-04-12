@@ -18,6 +18,28 @@ const state = {
   subscriptionRecords: [],
 };
 
+const AUTH_TOKEN_KEY = "advancedpro_token";
+
+function getStoredToken() {
+  try {
+    return window.localStorage.getItem(AUTH_TOKEN_KEY);
+  } catch (error) {
+    return null;
+  }
+}
+
+function setStoredToken(token) {
+  try {
+    if (token) {
+      window.localStorage.setItem(AUTH_TOKEN_KEY, token);
+    } else {
+      window.localStorage.removeItem(AUTH_TOKEN_KEY);
+    }
+  } catch (error) {
+    // Ignore storage failures (private mode, blocked storage).
+  }
+}
+
 function escapeHtml(value) {
   return String(value || "")
     .replaceAll("&", "&amp;")
@@ -143,6 +165,7 @@ async function requestJson(url, options = {}) {
       signal: options.signal || controller?.signal,
       headers: {
         "Content-Type": "application/json",
+        ...(getStoredToken() ? { Authorization: `Bearer ${getStoredToken()}` } : {}),
         ...(options.headers || {}),
       },
     });
@@ -333,6 +356,7 @@ function setupLogoutButtons() {
           method: "POST",
         });
       } finally {
+        setStoredToken(null);
         window.location.href = "/login";
       }
     });
@@ -427,7 +451,12 @@ async function initLoginPage() {
         body: JSON.stringify(values),
       });
       setMessage(message, payload.message, "success");
+      setStoredToken(payload.token);
       let redirect = payload.redirectTo || "/dashboard";
+
+      if (payload?.user?.role === "admin") {
+        redirect = "/admin";
+      }
 
       try {
         const me = await requestJson("/api/me", { method: "GET" });
@@ -485,6 +514,7 @@ async function initRegisterPage() {
         body: JSON.stringify(values),
       });
       setMessage(message, payload.message, "success");
+      setStoredToken(payload.token);
       window.location.href = payload.redirectTo || "/dashboard";
     } catch (error) {
       setMessage(message, error.message, "error");

@@ -50,7 +50,13 @@ router.post(
     return res.json({
       message: "تم إنشاء الحساب بنجاح.",
       token,
-      redirectTo: "/dashboard",
+      user: {
+        id: user.id,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role,
+      },
+      redirectTo: user.role === "admin" ? "/admin" : "/dashboard",
     });
   })
 );
@@ -86,7 +92,13 @@ router.post(
     return res.json({
       message: "تم تسجيل الدخول بنجاح.",
       token,
-      redirectTo: "/dashboard",
+      user: {
+        id: user.id,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role,
+      },
+      redirectTo: user.role === "admin" ? "/admin" : "/dashboard",
     });
   })
 );
