@@ -185,6 +185,39 @@ html[data-theme="dark"] .theme-toggle {
 
 .nav-links a {
   font-size: 0.96rem;
+  position: relative;
+  padding-bottom: 6px;
+  transition: color 0.2s ease, text-shadow 0.2s ease;
+}
+
+.nav-links a::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 0;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--hero-gradient);
+  transition: width 0.25s ease;
+}
+
+.nav-links a:hover {
+  color: #1b2a4a;
+  text-shadow: 0 0 10px rgba(123, 97, 255, 0.2);
+}
+
+.nav-links a:hover::after {
+  width: 100%;
+}
+
+.nav-links a.is-active::after {
+  width: 100%;
+}
+
+html[data-theme="dark"] .nav-links a:hover {
+  color: #eef3ff;
+  text-shadow: 0 0 12px rgba(123, 97, 255, 0.4);
 }
 
 .btn {
