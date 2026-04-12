@@ -424,18 +424,24 @@ function renderUsageList(target, logs) {
     <div class="usage-list">
       ${logs
         .map(
-          (log) => `
+          (log) => {
+            const typeLabel = log.type === "image" ? "صورة" : "مشروع فيديو";
+            const statusLabel = log.outputUrl ? "مكتمل" : "قيد المعالجة";
+            const statusClass = log.outputUrl ? "status-pill--active" : "status-pill--pending";
+
+            return `
             <article class="usage-item">
               <div>
-                <strong>${escapeHtml(log.type === "image" ? "صورة" : "مشروع فيديو")}</strong>
+                <strong>${escapeHtml(typeLabel)}</strong>
                 <p>${escapeHtml(log.promptText || "بدون وصف محفوظ")}</p>
               </div>
               <div class="usage-item__meta">
-                <span>${escapeHtml(log.packageName || "غير محدد")}</span>
                 <span>${formatDate(log.createdAt, true)}</span>
+                <span class="status-pill ${statusClass}">${statusLabel}</span>
               </div>
             </article>
-          `
+          `;
+          }
         )
         .join("")}
     </div>
@@ -629,8 +635,13 @@ async function initDashboardPage() {
   const summaryTarget = document.querySelector("[data-dashboard-summary]");
   const usageTarget = document.querySelector("[data-dashboard-usage]");
   const welcomeTarget = document.querySelector("[data-dashboard-name]");
+  const avatarTarget = document.querySelector("[data-dashboard-avatar]");
+  const subscriptionTarget = document.querySelector("[data-dashboard-subscription]");
+  const planTarget = document.querySelector("[data-dashboard-plan]");
+  const activationForm = document.querySelector("#dashboardActivationForm");
+  const activationMessage = document.querySelector("[data-dashboard-activate-message]");
 
-  try {
+  const loadDashboard = async () => {
     const payload = await requestJson("/api/dashboard", { method: "GET" });
     const dashboard = payload.dashboard;
     const subscription = dashboard.subscription;
@@ -639,12 +650,35 @@ async function initDashboardPage() {
       welcomeTarget.textContent = dashboard.user.fullName;
     }
 
+    if (avatarTarget) {
+      const fallback = dashboard.user.fullName || dashboard.user.email || "U";
+      avatarTarget.textContent = fallback.trim().charAt(0);
+    }
+
+    if (subscriptionTarget) {
+      if (subscription) {
+        const endDate = subscription.endAt ? new Date(subscription.endAt) : null;
+        const daysLeft = endDate
+          ? Math.max(Math.ceil((endDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)), 0)
+          : null;
+        const daysLabel = daysLeft !== null ? `${daysLeft} يوم` : "غير محدد";
+
+        subscriptionTarget.textContent = `باقتك الحالية: ${subscription.packageName} — المتبقي: ${
+          subscription.imageBalance ?? 0
+        } صورة / ${subscription.videoBalance ?? 0} فيديو — ينتهي الاشتراك بعد: ${daysLabel}`;
+      } else {
+        subscriptionTarget.textContent = "لا توجد باقة مفعلة حتى الآن. فعّل كودك للبدء.";
+      }
+    }
+
     if (summaryTarget) {
       summaryTarget.innerHTML = `
         <article class="info-card">
-          <span>الباقة الحالية</span>
-          <strong>${escapeHtml(subscription?.packageName || "لا توجد باقة مفعلة")}</strong>
-          <small>الكود: ${escapeHtml(subscription?.code || "غير متوفر")}</small>
+          <span>الرصيد الحالي</span>
+          <strong>${escapeHtml(subscription?.imageBalance ?? 0)} صورة / ${
+        subscription?.videoBalance ?? 0
+      } فيديو</strong>
+          <small>آخر تحديث فوري داخل حسابك</small>
         </article>
         <article class="info-card">
           <span>الصور المتبقية</span>
@@ -652,19 +686,40 @@ async function initDashboardPage() {
           <small>استهلاكك الإجمالي: ${escapeHtml(dashboard.usageTotals.imagesUsed)}</small>
         </article>
         <article class="info-card">
-          <span>مشاريع الفيديو المتبقية</span>
+          <span>الفيديوهات المتبقية</span>
           <strong>${escapeHtml(subscription?.videoBalance ?? 0)}</strong>
           <small>استهلاكك الإجمالي: ${escapeHtml(dashboard.usageTotals.videosUsed)}</small>
         </article>
         <article class="info-card">
-          <span>أقصى مدة المشروع</span>
-          <strong>${escapeHtml(subscription?.videoMaxDurationSeconds ?? 0)} ثانية</strong>
-          <small>الانتهاء: ${formatDate(subscription?.endAt)}</small>
+          <span>انتهاء الباقة</span>
+          <strong>${formatDate(subscription?.endAt)}</strong>
+          <small>المدة القصوى: ${escapeHtml(subscription?.videoMaxDurationSeconds ?? 0)} ثانية</small>
         </article>
       `;
     }
 
+    if (planTarget) {
+      planTarget.innerHTML = subscription
+        ? `
+          <div class="info-stack">
+            <div><span>اسم الباقة</span><strong>${escapeHtml(subscription.packageName)}</strong></div>
+            <div><span>المتبقي</span><strong>${escapeHtml(
+              subscription.imageBalance ?? 0
+            )} صورة / ${escapeHtml(subscription.videoBalance ?? 0)} فيديو</strong></div>
+            <div><span>أقصى مدة للفيديو</span><strong>${escapeHtml(
+              subscription.videoMaxDurationSeconds ?? 0
+            )} ثانية</strong></div>
+            <div><span>تاريخ الانتهاء</span><strong>${formatDate(subscription.endAt)}</strong></div>
+          </div>
+        `
+        : `<div class="empty-state">لا توجد باقة مفعلة حاليًا.</div>`;
+    }
+
     renderUsageList(usageTarget, dashboard.recentUsage || []);
+  };
+
+  try {
+    await loadDashboard();
   } catch (error) {
     renderLoadError(summaryTarget, "تعذر تحميل لوحة التحكم.", error);
     renderLoadError(
@@ -673,6 +728,36 @@ async function initDashboardPage() {
       error,
       "تأكد من جاهزية الباكند ثم أعد تحديث الصفحة."
     );
+  }
+
+  if (activationForm) {
+    activationForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const button = activationForm.querySelector('button[type="submit"]');
+
+      try {
+        const codeField = activationForm.elements.namedItem("code");
+        const code = String(codeField ? codeField.value : "").trim();
+
+        if (!code) {
+          throw new Error("أدخل كود التفعيل أولًا.");
+        }
+
+        setButtonBusy(button, true, "جاري التفعيل...");
+        setMessage(activationMessage, "");
+        const payload = await requestJson("/api/activate", {
+          method: "POST",
+          body: JSON.stringify({ code }),
+        });
+        setMessage(activationMessage, payload.message, "success");
+        activationForm.reset();
+        await loadDashboard();
+      } catch (error) {
+        setMessage(activationMessage, error.message, "error");
+      } finally {
+        setButtonBusy(button, false);
+      }
+    });
   }
 }
 
@@ -837,13 +922,24 @@ function renderUsersTable(target, users) {
         <tbody>
           ${users
             .map(
-              (user) => `
+              (user) => {
+                const toggleStatus = user.status === "active" ? "suspended" : "active";
+                const toggleLabel = user.status === "active" ? "حظر" : "تفعيل";
+                const statusLabel = user.status === "active" ? "نشط" : "موقوف";
+                const statusClass =
+                  user.status === "active" ? "status-pill--active" : "status-pill--suspended";
+
+                return `
                 <tr data-user-row="${user.id}">
                   <td>
                     <strong>${escapeHtml(user.fullName)}</strong>
                     <span>${escapeHtml(user.email)}</span>
                   </td>
                   <td>${escapeHtml(user.currentPackage || "لا توجد")}</td>
+                  <td>
+                    <span class="status-pill ${statusClass}" data-status-pill>${statusLabel}</span>
+                  </td>
+                  <td>${formatDate(user.subscriptionEndAt)}</td>
                   <td>
                     <select data-user-status>
                       <option value="active" ${user.status === "active" ? "selected" : ""}>نشط</option>
@@ -853,11 +949,12 @@ function renderUsersTable(target, users) {
                       <option value="user" ${user.role === "user" ? "selected" : ""}>User</option>
                       <option value="admin" ${user.role === "admin" ? "selected" : ""}>Admin</option>
                     </select>
+                    <button class="btn btn-secondary btn-sm" type="button" data-user-toggle="${toggleStatus}" data-user-id="${user.id}">${toggleLabel}</button>
+                    <button class="btn btn-secondary btn-sm" type="button" data-user-save="${user.id}">حفظ</button>
                   </td>
-                  <td>${formatDate(user.subscriptionEndAt)}</td>
-                  <td><button class="btn btn-secondary btn-sm" type="button" data-user-save="${user.id}">حفظ</button></td>
                 </tr>
-              `
+              `;
+              }
             )
             .join("")}
         </tbody>
@@ -870,6 +967,16 @@ async function initAdminUsersPage() {
   const form = document.querySelector("#adminUsersSearch");
   const target = document.querySelector("[data-admin-users]");
   const message = document.querySelector("[data-admin-users-message]");
+
+  const updateStatusPill = (row, status) => {
+    const pill = row?.querySelector("[data-status-pill]");
+    if (!pill) {
+      return;
+    }
+    pill.textContent = status === "active" ? "نشط" : "موقوف";
+    pill.classList.toggle("status-pill--active", status === "active");
+    pill.classList.toggle("status-pill--suspended", status === "suspended");
+  };
 
   const loadUsers = async (search = "") => {
     const payload = await requestJson(`/api/admin/users?search=${encodeURIComponent(search)}`, {
@@ -887,6 +994,37 @@ async function initAdminUsersPage() {
   });
 
   target?.addEventListener("click", async (event) => {
+    const toggle = event.target.closest("[data-user-toggle]");
+
+    if (toggle) {
+      const row = toggle.closest("[data-user-row]");
+      const id = Number(toggle.dataset.userId);
+      const nextStatus = toggle.dataset.userToggle;
+
+      try {
+        setButtonBusy(toggle, true, "جاري...");
+        await requestJson("/api/admin/users", {
+          method: "PATCH",
+          body: JSON.stringify({
+            id,
+            status: nextStatus,
+            role: row.querySelector("[data-user-role]").value,
+          }),
+        });
+        row.querySelector("[data-user-status]").value = nextStatus;
+        updateStatusPill(row, nextStatus);
+        toggle.dataset.userToggle = nextStatus === "active" ? "suspended" : "active";
+        toggle.textContent = nextStatus === "active" ? "حظر" : "تفعيل";
+        setMessage(message, "تم تحديث حالة المستخدم.", "success");
+      } catch (error) {
+        setMessage(message, error.message, "error");
+      } finally {
+        setButtonBusy(toggle, false);
+      }
+
+      return;
+    }
+
     const button = event.target.closest("[data-user-save]");
 
     if (!button) {
@@ -906,6 +1044,7 @@ async function initAdminUsersPage() {
           role: row.querySelector("[data-user-role]").value,
         }),
       });
+      updateStatusPill(row, row.querySelector("[data-user-status]").value);
       setMessage(message, "تم تحديث المستخدم.", "success");
     } catch (error) {
       setMessage(message, error.message, "error");
@@ -923,7 +1062,10 @@ function renderCodesTable(target, codes) {
           <tr>
             <th>الكود</th>
             <th>الباقة</th>
-            <th>الرصيد</th>
+            <th>رصيد الصور</th>
+            <th>رصيد الفيديو</th>
+            <th>مدة الفيديو</th>
+            <th>الصلاحية</th>
             <th>الإيميل المخصص</th>
             <th>الحالة</th>
             <th>التحكم</th>
@@ -936,7 +1078,10 @@ function renderCodesTable(target, codes) {
                 <tr>
                   <td><strong>${escapeHtml(code.code)}</strong></td>
                   <td>${escapeHtml(code.planName)}</td>
-                  <td>${code.imageQuota} صورة / ${code.videoQuota} مشروع فيديو</td>
+                  <td>${code.imageQuota} صورة</td>
+                  <td>${code.videoQuota} مشروع فيديو</td>
+                  <td>${code.videoMaxDurationSeconds} ثانية</td>
+                  <td>${code.validityDays} يوم</td>
                   <td>${escapeHtml(code.assignedEmail || "عام")}</td>
                   <td>${code.isActive ? "نشط" : "معطل"} - ${code.redeemedCount}/${code.maxRedemptions}</td>
                   <td><button class="btn btn-secondary btn-sm" type="button" data-code-edit="${code.id}">تعديل</button></td>

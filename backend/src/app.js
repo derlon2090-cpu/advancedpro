@@ -8,8 +8,11 @@ import activateRoutes from "./routes/activate.js";
 import dashboardRoutes from "./routes/dashboard.js";
 import profileRoutes from "./routes/profile.js";
 import generateRoutes from "./routes/generate.js";
+import aiRoutes from "./routes/ai.js";
 import adminRoutes from "./routes/admin.js";
 import { requireAuth } from "./middleware/auth.js";
+import { apiLimiter } from "./middleware/rateLimit.js";
+import { logError } from "./utils/logger.js";
 
 const app = express();
 
@@ -30,6 +33,7 @@ app.use(
 );
 
 app.use(express.json({ limit: "2mb" }));
+app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 app.use(cookieParser());
 app.use(morgan("dev"));
 
@@ -37,6 +41,7 @@ app.get("/api/health", (_req, res) => {
   res.json({ status: "ok" });
 });
 
+app.use("/api", apiLimiter);
 app.use("/api/public", publicRoutes);
 app.use("/api/auth", authRoutes);
 app.get("/api/me", requireAuth, (req, res) => {
@@ -53,11 +58,19 @@ app.use("/api/activate", activateRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/generate", generateRoutes);
+app.use("/api/ai", aiRoutes);
 app.use("/api/admin", adminRoutes);
 
-app.use((err, _req, res, _next) => {
-  const message = err?.message || "حدث خطأ غير متوقع.";
-  res.status(500).json({ message });
+app.use((err, req, res, _next) => {
+  let statusCode = err?.statusCode || 500;
+  let message = err?.message || "حدث خطأ غير متوقع.";
+
+  if (err?.code === "LIMIT_FILE_SIZE") {
+    statusCode = 413;
+    message = "حجم الملف أكبر من المسموح.";
+  }
+  logError(err, { path: req.path, method: req.method, userId: req.user?.id });
+  res.status(statusCode).json({ message });
 });
 
 export default app;

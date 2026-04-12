@@ -107,6 +107,7 @@ model Generation {
   userId    Int
   type      String
   prompt    String
+  status    String   @default("queued")
   resultUrl String?
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id])

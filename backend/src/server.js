@@ -1,16 +1,17 @@
 import app from "./app.js";
 import { prisma } from "./lib/prisma.js";
+import { logError, logInfo } from "./utils/logger.js";
 
 const PORT = process.env.PORT || 3000;
 
 async function start() {
   await prisma.$connect();
   app.listen(PORT, () => {
-    console.log(`Backend running on ${PORT}`);
+    logInfo(`Backend running on ${PORT}`);
   });
 }
 
 start().catch((error) => {
-  console.error("Failed to start server:", error);
+  logError("Failed to start server", { error: error?.message });
   process.exit(1);
 });

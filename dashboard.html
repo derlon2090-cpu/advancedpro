@@ -42,34 +42,63 @@
     </header>
 
     <main>
-      <section class="page-hero">
+      <section class="dashboard-hero">
         <div class="container">
-          <div class="section-title section-title--left">
-            <span class="section-kicker">Dashboard</span>
-            <h1>مرحبًا <span class="gradient-text" data-dashboard-name>...</span></h1>
-            <p>هنا تجد رصيدك الحالي، تفاصيل اشتراكك، وآخر العمليات التي تمت على حسابك.</p>
+          <div class="dashboard-header">
+            <div class="dashboard-welcome">
+              <div class="user-avatar" data-dashboard-avatar>A</div>
+              <div>
+                <span class="section-kicker">لوحة المستخدم</span>
+                <h1>أهلاً، <span class="gradient-text" data-dashboard-name>...</span></h1>
+                <p data-dashboard-subscription>جاري تحميل حالة الاشتراك...</p>
+              </div>
+            </div>
+            <div class="dashboard-cta">
+              <a class="btn btn-primary" href="/activate">ابدأ الآن</a>
+            </div>
           </div>
+
+          <article class="page-card dashboard-actions">
+            <div class="page-card__top">
+              <h2>ابدأ سريعًا</h2>
+              <p>أنشئ محتواك مباشرة بدون تعقيد.</p>
+            </div>
+            <div class="action-grid">
+              <a class="action-tile" href="/dashboard-preview">إنشاء صورة</a>
+              <a class="action-tile" href="/dashboard-preview">إنشاء فيديو</a>
+              <a class="action-tile" href="/dashboard-preview">رفع صورة للتعديل</a>
+              <a class="action-tile" href="#recent-projects">مشاريعي الأخيرة</a>
+            </div>
+          </article>
 
           <div class="info-grid" data-dashboard-summary></div>
 
           <div class="page-grid">
-            <article class="page-card">
+            <article class="page-card" id="recent-projects">
               <div class="page-card__top">
-                <h2>سجل الاستخدام</h2>
-                <a class="btn btn-ghost" href="/activate">تفعيل كود جديد</a>
+                <h2>آخر أعمالك</h2>
+                <a class="btn btn-ghost" href="/dashboard-preview">عرض الكل</a>
               </div>
               <div data-dashboard-usage></div>
             </article>
 
             <article class="page-card">
               <div class="page-card__top">
-                <h2>روابط سريعة</h2>
+                <h2>تفعيل كود</h2>
               </div>
-              <div class="quick-links">
-                <a class="quick-link" href="/activate">تفعيل كود</a>
-                <a class="quick-link" href="/profile">تعديل الملف الشخصي</a>
-                <a class="quick-link" href="/pricing">شراء باقة جديدة</a>
+              <form id="dashboardActivationForm" class="inline-form">
+                <input name="code" type="text" placeholder="أدخل كود التفعيل" required />
+                <button class="btn btn-primary" type="submit">تفعيل</button>
+              </form>
+              <div class="status-message" hidden data-dashboard-activate-message></div>
+            </article>
+
+            <article class="page-card">
+              <div class="page-card__top">
+                <h2>الباقة الحالية</h2>
+                <a class="btn btn-ghost" href="/pricing">ترقية الباقة</a>
               </div>
+              <div data-dashboard-plan></div>
             </article>
           </div>
         </div>

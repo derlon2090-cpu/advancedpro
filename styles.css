@@ -1722,6 +1722,79 @@ li + li {
   gap: 24px;
 }
 
+.dashboard-hero {
+  padding: 48px 0 80px;
+}
+
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.dashboard-welcome {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.user-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  background: var(--gradient);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.4rem;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 18px 40px rgba(47, 128, 255, 0.25);
+}
+
+.dashboard-cta {
+  flex: 0 0 auto;
+}
+
+.dashboard-actions {
+  margin-bottom: 8px;
+}
+
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.action-tile {
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(47, 128, 255, 0.08);
+  color: var(--ink);
+  font-weight: 600;
+  text-align: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.action-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 30px rgba(47, 128, 255, 0.18);
+}
+
+.inline-form {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.inline-form input {
+  flex: 1 1 220px;
+}
+
 .auth-grid {
   grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
 }
@@ -2142,6 +2215,33 @@ li + li {
 .data-table td span,
 .data-table td small {
   color: var(--muted);
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  background: rgba(47, 128, 255, 0.12);
+  color: #355ba7;
+}
+
+.status-pill--active {
+  background: rgba(37, 211, 102, 0.16);
+  color: #13603b;
+}
+
+.status-pill--suspended {
+  background: rgba(232, 90, 174, 0.18);
+  color: #8f205c;
+}
+
+.status-pill--pending {
+  background: rgba(123, 97, 255, 0.16);
+  color: #4c36b4;
 }
 
 .data-table select {
