@@ -1,50 +1,61 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
   <defs>
-    <linearGradient id="apGradient" x1="20" y1="16" x2="109" y2="110" gradientUnits="userSpaceOnUse">
+    <linearGradient id="apStroke" x1="52" y1="18" x2="99" y2="108" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#2F80FF" />
-      <stop offset="0.5" stop-color="#7B61FF" />
+      <stop offset="0.52" stop-color="#7B61FF" />
       <stop offset="1" stop-color="#E85AAE" />
     </linearGradient>
-    <radialGradient id="lensGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(78 42) rotate(90) scale(28)">
-      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.9" />
-      <stop offset="0.35" stop-color="#A8C3FF" stop-opacity="0.55" />
-      <stop offset="1" stop-color="#7B61FF" stop-opacity="0" />
-    </radialGradient>
+    <linearGradient id="orbitGlow" x1="46" y1="16" x2="76" y2="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#A8C7FF" />
+      <stop offset="1" stop-color="#4B6BFF" />
+    </linearGradient>
+    <filter id="logoShadow" x="12" y="10" width="104" height="112" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="12" stdDeviation="10" flood-color="#5669A9" flood-opacity="0.14" />
+    </filter>
   </defs>
 
-  <rect x="8" y="8" width="112" height="112" rx="32" fill="#F8FAFF" />
-  <path
-    d="M23 98L55 27C58.2 20.1 68 20.1 71.2 27L103 98"
-    stroke="url(#apGradient)"
-    stroke-width="11"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-  />
-  <path
-    d="M44 68H82"
-    stroke="#111111"
-    stroke-width="9"
-    stroke-linecap="round"
-  />
-  <path
-    d="M67 26V99"
-    stroke="#111111"
-    stroke-width="8.5"
-    stroke-linecap="round"
-  />
-  <circle cx="78" cy="42" r="22" fill="url(#lensGlow)" />
-  <circle
-    cx="78"
-    cy="42"
-    r="16"
-    stroke="url(#apGradient)"
-    stroke-width="9"
-  />
-  <circle cx="78" cy="42" r="6" fill="#111111" />
-  <path
-    d="M88 55L101 72"
-    stroke="url(#apGradient)"
-    stroke-width="8"
-    stroke-linecap="round"
-  />
+  <g filter="url(#logoShadow)">
+    <path
+      d="M35 103L55 34"
+      stroke="#14182A"
+      stroke-width="12"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+    <path
+      d="M55 34C70 51 83 77 93 103"
+      stroke="url(#apStroke)"
+      stroke-width="12"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+    <path
+      d="M45 73H72"
+      stroke="#14182A"
+      stroke-width="9"
+      stroke-linecap="round"
+    />
+
+    <path
+      d="M69 35C81 36 89 45 89 56C89 66 82 73 72 75"
+      stroke="url(#apStroke)"
+      stroke-width="8"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+
+    <circle cx="60" cy="28" r="12.5" fill="#F5FAFF" stroke="url(#orbitGlow)" stroke-width="7" />
+    <circle cx="60" cy="28" r="4.5" fill="#121526" />
+    <circle cx="57" cy="24.5" r="1.9" fill="#FFFFFF" fill-opacity="0.96" />
+
+    <circle cx="84" cy="22" r="4.2" fill="#6B88FF" fill-opacity="0.92" />
+    <circle cx="84" cy="22" r="1.2" fill="#FFFFFF" fill-opacity="0.92" />
+    <path
+      d="M72 24.5C75.5 21.5 78.5 20 82 20"
+      stroke="url(#orbitGlow)"
+      stroke-width="3"
+      stroke-linecap="round"
+      opacity="0.9"
+    />
+  </g>
 </svg>
