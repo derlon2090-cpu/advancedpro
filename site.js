@@ -9,6 +9,98 @@ const appConfig = {
     window.AdvancedProConfig?.apiBaseUrl || "https://advancedpro.onrender.com",
 };
 
+const THEME_STORAGE_KEY = "advancedpro-theme";
+const THEME_MEDIA_QUERY = "(prefers-color-scheme: dark)";
+
+function getStoredTheme() {
+  try {
+    const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
+    return savedTheme === "dark" || savedTheme === "light" ? savedTheme : "";
+  } catch (error) {
+    return "";
+  }
+}
+
+function getSystemTheme() {
+  return window.matchMedia && window.matchMedia(THEME_MEDIA_QUERY).matches ? "dark" : "light";
+}
+
+function setDocumentTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  document.documentElement.style.colorScheme = theme;
+}
+
+function getThemeToggleIcon(theme) {
+  if (theme === "dark") {
+    return `
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          fill="currentColor"
+          d="M12 4.1a1 1 0 0 1 1 1v1.6a1 1 0 1 1-2 0V5.1a1 1 0 0 1 1-1m0 12.2a1 1 0 0 1 1 1v1.6a1 1 0 1 1-2 0v-1.6a1 1 0 0 1 1-1m7.9-5.1a1 1 0 0 1 0 2h-1.6a1 1 0 1 1 0-2zm-14.2 0a1 1 0 1 1 0 2H4.1a1 1 0 1 1 0-2zm9.02-4.9a1 1 0 0 1 1.42 0l1.13 1.13a1 1 0 1 1-1.42 1.42l-1.13-1.13a1 1 0 0 1 0-1.42m-7.32 7.32a1 1 0 0 1 1.42 0a1 1 0 0 1 0 1.42l-1.13 1.13a1 1 0 1 1-1.42-1.42zm10.87 1.42a1 1 0 0 1 1.42 0l1.13 1.13a1 1 0 1 1-1.42 1.42l-1.13-1.13a1 1 0 0 1 0-1.42m-10.87-8.74a1 1 0 0 1 0 1.42L6.36 8.87a1 1 0 1 1-1.42-1.42l1.13-1.13a1 1 0 0 1 1.42 0M12 8a4 4 0 1 1 0 8a4 4 0 0 1 0-8"
+        />
+      </svg>
+    `;
+  }
+
+  return `
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        fill="currentColor"
+        d="M14.8 3.3c.4 0 .73.27.84.65a8.2 8.2 0 0 0 4.04 4.9c.3.17.47.5.43.84a8.77 8.77 0 1 1-10.8-6.75a.9.9 0 0 1 1.06.94a5.98 5.98 0 0 0 7.14 5.86a.9.9 0 0 1 .74 1.53a7 7 0 1 1-8.6-5.53a7.83 7.83 0 0 0 5.02 5.3a7.77 7.77 0 0 0 3.1.19a9.9 9.9 0 0 1-3.95-5.76a.9.9 0 0 1 .88-1.17"
+      />
+    </svg>
+  `;
+}
+
+function renderThemeToggle(button, theme) {
+  const label = theme === "dark" ? "تفعيل الوضع الشمسي" : "تفعيل الوضع الليلي";
+  button.innerHTML = getThemeToggleIcon(theme);
+  button.setAttribute("aria-label", label);
+  button.setAttribute("title", label);
+  button.dataset.mode = theme;
+}
+
+function applyTheme(theme, persist = false) {
+  const resolvedTheme = theme || getStoredTheme() || getSystemTheme();
+  setDocumentTheme(resolvedTheme);
+
+  if (persist) {
+    try {
+      window.localStorage.setItem(THEME_STORAGE_KEY, resolvedTheme);
+    } catch (error) {
+      // Ignore storage failures and keep the theme applied for this session.
+    }
+  }
+
+  const toggle = document.querySelector("[data-theme-toggle]");
+
+  if (toggle) {
+    renderThemeToggle(toggle, resolvedTheme);
+  }
+}
+
+function createThemeToggle() {
+  const headerActions = document.querySelector(".header-actions");
+
+  if (!headerActions || headerActions.querySelector("[data-theme-toggle]")) {
+    return;
+  }
+
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "theme-toggle";
+  button.setAttribute("data-theme-toggle", "");
+  button.addEventListener("click", () => {
+    const nextTheme = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+    applyTheme(nextTheme, true);
+  });
+
+  headerActions.prepend(button);
+  renderThemeToggle(button, document.documentElement.dataset.theme || getSystemTheme());
+}
+
+setDocumentTheme(getStoredTheme() || getSystemTheme());
+
 async function loadSiteConfig() {
   try {
     const response = await fetch(`${appConfig.apiBaseUrl}/api/public/settings`, {
@@ -197,7 +289,25 @@ function setupPurchaseModal() {
 
 document.addEventListener("DOMContentLoaded", async () => {
   await loadSiteConfig();
+  createThemeToggle();
+  applyTheme(document.documentElement.dataset.theme || getStoredTheme() || getSystemTheme());
   createWhatsAppButton();
   setupPurchaseModal();
   createSiteFooter();
+
+  const systemTheme = window.matchMedia ? window.matchMedia(THEME_MEDIA_QUERY) : null;
+
+  if (systemTheme) {
+    const handleThemeChange = (event) => {
+      if (!getStoredTheme()) {
+        applyTheme(event.matches ? "dark" : "light");
+      }
+    };
+
+    if (typeof systemTheme.addEventListener === "function") {
+      systemTheme.addEventListener("change", handleThemeChange);
+    } else if (typeof systemTheme.addListener === "function") {
+      systemTheme.addListener(handleThemeChange);
+    }
+  }
 });
