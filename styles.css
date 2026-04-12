@@ -219,6 +219,31 @@ html[data-theme="dark"] .theme-toggle {
   background: rgba(47, 128, 255, 0.08);
 }
 
+.btn-cta {
+  padding: 16px 28px;
+  font-weight: 700;
+  box-shadow: 0 18px 30px rgba(123, 97, 255, 0.24);
+}
+
+.btn-label {
+  white-space: nowrap;
+}
+
+.btn-icon {
+  width: 26px;
+  height: 26px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  font-weight: 800;
+  line-height: 1;
+}
+
+html[data-theme="dark"] .btn-icon {
+  background: rgba(255, 255, 255, 0.14);
+}
+
 .theme-toggle {
   width: 52px;
   height: 52px;
@@ -314,11 +339,11 @@ html[data-theme="dark"] .nav-links a:hover {
 main section,
 .page-hero,
 .page-section {
-  padding: 42px 0;
+  padding: 56px 0;
 }
 
 .hero {
-  padding: 56px 0 34px;
+  padding: 68px 0 42px;
 }
 
 .hero-grid,
@@ -347,7 +372,8 @@ main section,
 .faq-card,
 .footer-card,
 .page-card,
-.schema-card {
+.schema-card,
+.use-case-card {
   position: relative;
   border-radius: var(--radius-lg);
   background: rgba(255, 255, 255, 0.88);
@@ -367,6 +393,7 @@ html[data-theme="dark"] .footer-card,
 html[data-theme="dark"] .page-card,
 html[data-theme="dark"] .schema-card,
 html[data-theme="dark"] .teaser-card,
+html[data-theme="dark"] .use-case-card,
 html[data-theme="dark"] .notice-strip,
 html[data-theme="dark"] .login-card,
 html[data-theme="dark"] .compare-panel,
@@ -388,6 +415,41 @@ html[data-theme="dark"] .purchase-modal__card {
   text-align: center;
 }
 
+.hero-proof {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.hero-proof span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  color: #30456f;
+  background: rgba(47, 128, 255, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(47, 128, 255, 0.08);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.hero-proof span::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--hero-gradient);
+}
+
+html[data-theme="dark"] .hero-proof span {
+  color: #e5ecff;
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
 .hero-panel,
 .activation-card,
 .form-card,
@@ -396,7 +458,8 @@ html[data-theme="dark"] .purchase-modal__card {
 .faq-card,
 .footer-card,
 .page-card,
-.schema-card {
+.schema-card,
+.use-case-card {
   padding: 24px;
 }
 
@@ -415,6 +478,35 @@ html[data-theme="dark"] .purchase-modal__card {
   background: rgba(47, 128, 255, 0.08);
 }
 
+.trust-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 16px;
+  border-radius: 999px;
+  color: #2f416c;
+  background: rgba(47, 128, 255, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(47, 128, 255, 0.09);
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.55;
+}
+
+.trust-pill::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: var(--hero-gradient);
+  box-shadow: 0 0 0 5px rgba(123, 97, 255, 0.08);
+}
+
+.trust-pill--header {
+  max-width: 320px;
+  font-size: 0.84rem;
+}
+
 html[data-theme="dark"] .eyebrow,
 html[data-theme="dark"] .section-kicker,
 html[data-theme="dark"] .badge,
@@ -422,6 +514,12 @@ html[data-theme="dark"] .mock-badge,
 html[data-theme="dark"] .pill-soft {
   background: rgba(47, 128, 255, 0.14);
   color: #dce6ff;
+}
+
+html[data-theme="dark"] .trust-pill {
+  color: #e8efff;
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
 .hero-title,
@@ -592,6 +690,7 @@ html[data-theme="dark"] .purchase-modal__action {
 .packages-grid,
 .proof-grid,
 .why-grid,
+.use-cases-grid,
 .faq-grid,
 .schema-grid,
 .page-grid {
@@ -603,6 +702,7 @@ html[data-theme="dark"] .purchase-modal__action {
 .benefits-grid,
 .packages-grid,
 .why-grid,
+.use-cases-grid,
 .schema-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -616,7 +716,7 @@ html[data-theme="dark"] .purchase-modal__action {
 
 .section-title {
   max-width: 680px;
-  margin-bottom: 24px;
+  margin-bottom: 30px;
 }
 
 .section-title h2 {
@@ -1084,6 +1184,46 @@ html[data-theme="dark"] .toolbar-form input::placeholder {
   box-shadow: var(--shadow-md);
 }
 
+.use-case-card {
+  overflow: hidden;
+}
+
+.use-case-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: var(--hero-gradient);
+}
+
+.use-case-card strong {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 1.1rem;
+}
+
+.use-case-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.85;
+}
+
+.section-soft {
+  position: relative;
+}
+
+.section-soft::before {
+  content: "";
+  position: absolute;
+  inset: 18px 0;
+  z-index: -1;
+  background: linear-gradient(180deg, rgba(47, 128, 255, 0.05), rgba(123, 97, 255, 0.04));
+}
+
+html[data-theme="dark"] .section-soft::before {
+  background: linear-gradient(180deg, rgba(47, 128, 255, 0.09), rgba(123, 97, 255, 0.08));
+}
+
 .notice-strip {
   display: flex;
   align-items: center;
@@ -1347,6 +1487,7 @@ li + li {
   .benefits-grid,
   .packages-grid,
   .why-grid,
+  .use-cases-grid,
   .compact-grid,
   .trust-grid,
   .login-grid,
@@ -1938,6 +2079,7 @@ li + li {
   .form-card,
   .plan-card,
   .mock-card,
+  .use-case-card,
   .page-card,
   .faq-card details,
   .purchase-modal__card,
@@ -1971,6 +2113,12 @@ li + li {
   .page-card__top .btn,
   .notice-strip .hero-actions .btn {
     width: 100%;
+  }
+
+  .trust-pill--header {
+    max-width: none;
+    justify-content: center;
+    text-align: center;
   }
 
   .theme-toggle {
