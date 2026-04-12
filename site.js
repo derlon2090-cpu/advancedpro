@@ -80,9 +80,23 @@ function applyTheme(theme, persist = false) {
 }
 
 function createThemeToggle() {
-  const headerActions = document.querySelector(".header-actions");
+  if (document.querySelector("[data-theme-toggle]")) {
+    return;
+  }
 
-  if (!headerActions || headerActions.querySelector("[data-theme-toggle]")) {
+  let toggleHost = document.querySelector(".header-actions");
+
+  if (!toggleHost) {
+    const adminToolbar = document.querySelector(".admin-toolbar");
+
+    if (adminToolbar) {
+      toggleHost = document.createElement("div");
+      toggleHost.className = "header-actions header-actions--theme";
+      adminToolbar.appendChild(toggleHost);
+    }
+  }
+
+  if (!toggleHost) {
     return;
   }
 
@@ -95,7 +109,7 @@ function createThemeToggle() {
     applyTheme(nextTheme, true);
   });
 
-  headerActions.prepend(button);
+  toggleHost.prepend(button);
   renderThemeToggle(button, document.documentElement.dataset.theme || getSystemTheme());
 }
 
@@ -288,12 +302,19 @@ function setupPurchaseModal() {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
+  const isAdminExperience =
+    document.body.dataset.requiresAdmin === "true" ||
+    document.body.dataset.page?.startsWith("admin");
+
   await loadSiteConfig();
   createThemeToggle();
   applyTheme(document.documentElement.dataset.theme || getStoredTheme() || getSystemTheme());
-  createWhatsAppButton();
-  setupPurchaseModal();
-  createSiteFooter();
+
+  if (!isAdminExperience) {
+    createWhatsAppButton();
+    setupPurchaseModal();
+    createSiteFooter();
+  }
 
   const systemTheme = window.matchMedia ? window.matchMedia(THEME_MEDIA_QUERY) : null;
 

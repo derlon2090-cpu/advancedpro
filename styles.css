@@ -220,34 +220,74 @@ html[data-theme="dark"] .theme-toggle {
 }
 
 .theme-toggle {
-  width: 48px;
-  height: 48px;
+  width: 52px;
+  height: 52px;
   flex: 0 0 auto;
   display: inline-grid;
   place-items: center;
-  border: 1px solid rgba(47, 128, 255, 0.12);
+  border: 1px solid rgba(71, 97, 164, 0.16);
   border-radius: 999px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 249, 255, 0.94));
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(243, 247, 255, 0.92));
   color: #15203a;
   cursor: pointer;
   box-shadow:
-    0 16px 28px rgba(76, 92, 147, 0.14),
-    inset 0 1px 0 rgba(255, 255, 255, 0.96);
-  transition: transform 0.22s ease, box-shadow 0.22s ease, background 0.22s ease;
+    0 18px 32px rgba(76, 92, 147, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98);
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease,
+    background 0.22s ease,
+    border-color 0.22s ease;
 }
 
 .theme-toggle:hover {
-  transform: translateY(-2px) rotate(4deg);
+  transform: translateY(-2px) scale(1.03);
+  box-shadow:
+    0 22px 36px rgba(76, 92, 147, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98);
+}
+
+.theme-toggle:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.theme-toggle:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 4px rgba(123, 97, 255, 0.14),
+    0 18px 32px rgba(76, 92, 147, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98);
 }
 
 .theme-toggle svg {
   width: 24px;
   height: 24px;
+  transition: transform 0.22s ease;
+}
+
+.theme-toggle:hover svg {
+  transform: scale(1.05);
 }
 
 html[data-theme="dark"] .theme-toggle {
   color: #f2f6ff;
+  border-color: rgba(255, 255, 255, 0.09);
+  background:
+    linear-gradient(180deg, rgba(23, 29, 49, 0.96), rgba(13, 18, 34, 0.92));
+  box-shadow:
+    0 20px 34px rgba(0, 0, 0, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.header-actions--theme {
+  margin-inline-start: auto;
+  justify-content: flex-end;
+}
+
+.admin-toolbar .header-actions--theme {
+  flex: 0 0 auto;
+  width: auto;
 }
 
 html[data-theme="dark"] .btn-secondary {
@@ -1935,6 +1975,12 @@ li + li {
 
   .theme-toggle {
     align-self: center;
+  }
+
+  .admin-toolbar .header-actions--theme {
+    width: 100%;
+    justify-content: center;
+    margin-inline-start: 0;
   }
 
   .hero-copy,
