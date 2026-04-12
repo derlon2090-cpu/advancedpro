@@ -112,6 +112,44 @@ function createPurchaseModal() {
   return modal;
 }
 
+function createSiteFooter() {
+  if (document.querySelector("[data-site-footer]") || document.body.dataset.skipSiteFooter === "true") {
+    return;
+  }
+
+  const footer = document.createElement("footer");
+  footer.className = "site-footer";
+  footer.innerHTML = `
+    <div class="container">
+      <div class="footer-card" data-site-footer>
+        <h3>Advanced Pro Nano</h3>
+        <p>
+          منصة ذكية لإنشاء الصور والمقاطع عبر الباقات والأكواد، مع تحكم واضح في الرصيد والصلاحية
+          وسهولة في الاستخدام.
+        </p>
+        <div class="footer-links">
+          <a href="/">الرئيسية</a>
+          <a href="/pricing">الباقات</a>
+          <a href="/how-it-works">كيف تعمل</a>
+          <a href="/activate">التفعيل</a>
+          <a href="/legal">قوانين المنصة</a>
+          <a href="/terms">الشروط والأحكام</a>
+          <a href="/privacy">سياسة الخصوصية</a>
+          <a href="/refund-policy">سياسة الاسترجاع والاستبدال</a>
+        </div>
+        <div class="footer-meta">
+          <span>Advanced Pro Nano</span>
+          <span>AI Media Platform</span>
+          <span><a href="${siteConfig.storeUrl}" target="_blank" rel="noreferrer">المتجر</a></span>
+          <span><a href="${buildWhatsAppLink()}" target="_blank" rel="noreferrer">الدعم</a></span>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(footer);
+}
+
 function setupPurchaseModal() {
   const triggers = document.querySelectorAll("[data-purchase-plan]");
 
@@ -161,4 +199,5 @@ document.addEventListener("DOMContentLoaded", async () => {
   await loadSiteConfig();
   createWhatsAppButton();
   setupPurchaseModal();
+  createSiteFooter();
 });
