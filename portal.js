@@ -220,6 +220,26 @@ function setMessage(target, message, type = "info") {
   }
 }
 
+function showToast(message, type = "success") {
+  if (!message) {
+    return;
+  }
+
+  const toast = document.createElement("div");
+  toast.className = `toast toast-${type}`;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+
+  window.setTimeout(() => {
+    toast.classList.add("is-visible");
+  }, 50);
+
+  window.setTimeout(() => {
+    toast.classList.remove("is-visible");
+    window.setTimeout(() => toast.remove(), 300);
+  }, 2800);
+}
+
 function setButtonBusy(button, busy, busyText = "جاري التنفيذ...") {
   if (!button) {
     return;
@@ -515,7 +535,10 @@ async function initRegisterPage() {
       });
       setMessage(message, payload.message, "success");
       setStoredToken(payload.token);
-      window.location.href = payload.redirectTo || "/dashboard";
+      showToast(payload.message || "تم إنشاء الحساب بنجاح 🎉");
+      window.setTimeout(() => {
+        window.location.href = payload.redirectTo || "/dashboard";
+      }, 1200);
     } catch (error) {
       setMessage(message, error.message, "error");
     } finally {
