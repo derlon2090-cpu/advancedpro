@@ -803,14 +803,17 @@ async function initAdminOverview() {
   try {
     const payload = await requestJson("/api/admin/summary", { method: "GET" });
     const summary = payload.summary;
+    const dailyAverage = summary.requestsLast7Days
+      ? Math.ceil(summary.requestsLast7Days / 7)
+      : 0;
 
     if (target) {
       target.innerHTML = `
-        <article class="info-card"><span>إجمالي المستخدمين</span><strong>${summary.totalUsers}</strong></article>
-        <article class="info-card"><span>حسابات الأدمن</span><strong>${summary.totalAdmins}</strong></article>
-        <article class="info-card"><span>الاشتراكات النشطة</span><strong>${summary.activeSubscriptions}</strong></article>
+        <article class="info-card"><span>عدد المستخدمين</span><strong>${summary.totalUsers}</strong></article>
+        <article class="info-card"><span>عدد المشتركين</span><strong>${summary.activeSubscriptions}</strong></article>
+        <article class="info-card"><span>الإيرادات</span><strong>—</strong></article>
+        <article class="info-card"><span>متوسط الطلبات اليومية</span><strong>${dailyAverage}</strong></article>
         <article class="info-card"><span>الأكواد النشطة</span><strong>${summary.activeCodes}</strong></article>
-        <article class="info-card"><span>طلبات 7 أيام</span><strong>${summary.requestsLast7Days}</strong></article>
       `;
     }
   } catch (error) {

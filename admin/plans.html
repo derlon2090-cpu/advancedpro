@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>إدارة الباقات | Advanced Pro Nano</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body data-page="admin-plans" data-requires-admin="true" data-skip-site-footer="true">
+    <main class="admin-shell">
+      <aside class="admin-sidebar">
+        <a class="brand brand--column" href="/admin">
+          <span class="brand-mark">AP</span>
+          <span class="brand-copy">
+            <strong>Advanced Pro Nano</strong>
+            <span>Admin Panel</span>
+          </span>
+        </a>
+
+        <nav class="admin-nav">
+          <a href="/admin">الرئيسية</a>
+          <a href="/admin/users">المستخدمون</a>
+          <a class="is-active" href="/admin/plans">الباقات</a>
+          <a href="/admin/codes">الأكواد</a>
+          <a href="/admin/activity">النشاط</a>
+          <a href="/admin/reports">التقارير</a>
+          <a href="/admin/settings">الإعدادات</a>
+        </nav>
+
+        <div class="admin-sidebar__footer">
+          <a class="btn btn-secondary btn-block" href="/dashboard">لوحة المستخدم</a>
+          <button class="btn btn-primary btn-block" type="button" data-logout>تسجيل الخروج</button>
+        </div>
+      </aside>
+
+      <section class="admin-main">
+        <div class="admin-toolbar">
+          <div>
+            <span class="section-kicker">Plans</span>
+            <h1>إدارة الباقات</h1>
+          </div>
+        </div>
+
+        <div class="packages-grid">
+          <article class="plan-card">
+            <div class="package-meta">
+              <h3>Starter</h3>
+              <span class="pill pill-soft">بداية سريعة</span>
+            </div>
+            <ul class="package-list">
+              <li><span>السعر</span><strong>—</strong></li>
+              <li><span>الصور</span><strong>50</strong></li>
+              <li><span>المقاطع</span><strong>10</strong></li>
+              <li><span>الصلاحية</span><strong>15 يوم</strong></li>
+            </ul>
+            <button class="btn btn-secondary" type="button">تعديل الباقة</button>
+          </article>
+
+          <article class="plan-card featured">
+            <div class="package-meta">
+              <h3>Creator</h3>
+              <span class="pill pill-dark">الأكثر شيوعًا</span>
+            </div>
+            <ul class="package-list">
+              <li><span>السعر</span><strong>—</strong></li>
+              <li><span>الصور</span><strong>150</strong></li>
+              <li><span>المقاطع</span><strong>40</strong></li>
+              <li><span>الصلاحية</span><strong>30 يوم</strong></li>
+            </ul>
+            <button class="btn btn-primary" type="button">تعديل الباقة</button>
+          </article>
+
+          <article class="plan-card">
+            <div class="package-meta">
+              <h3>Pro</h3>
+              <span class="pill pill-soft">للاستخدام المكثف</span>
+            </div>
+            <ul class="package-list">
+              <li><span>السعر</span><strong>—</strong></li>
+              <li><span>الصور</span><strong>500</strong></li>
+              <li><span>المقاطع</span><strong>120</strong></li>
+              <li><span>الصلاحية</span><strong>30 يوم</strong></li>
+            </ul>
+            <button class="btn btn-secondary" type="button">تعديل الباقة</button>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <script src="/site.js"></script>
+    <script src="/portal.js"></script>
+  </body>
+</html>

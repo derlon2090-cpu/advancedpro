@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>إدارة المستخدمين | Advanced Pro Nano</title>
+    <title>سجل النشاط | Advanced Pro Nano</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -12,7 +12,7 @@
     />
     <link rel="stylesheet" href="/styles.css" />
   </head>
-  <body data-page="admin-users" data-requires-admin="true" data-skip-site-footer="true">
+  <body data-page="admin-activity" data-requires-admin="true" data-skip-site-footer="true">
     <main class="admin-shell">
       <aside class="admin-sidebar">
         <a class="brand brand--column" href="/admin">
@@ -25,10 +25,10 @@
 
         <nav class="admin-nav">
           <a href="/admin">الرئيسية</a>
-          <a class="is-active" href="/admin/users">المستخدمون</a>
+          <a href="/admin/users">المستخدمون</a>
           <a href="/admin/plans">الباقات</a>
           <a href="/admin/codes">الأكواد</a>
-          <a href="/admin/activity">النشاط</a>
+          <a class="is-active" href="/admin/activity">النشاط</a>
           <a href="/admin/reports">التقارير</a>
           <a href="/admin/settings">الإعدادات</a>
         </nav>
@@ -42,18 +42,17 @@
       <section class="admin-main">
         <div class="admin-toolbar">
           <div>
-            <span class="section-kicker">Users</span>
-            <h1>إدارة المستخدمين</h1>
+            <span class="section-kicker">Activity</span>
+            <h1>سجل النشاط</h1>
           </div>
         </div>
 
         <article class="page-card">
-          <form id="adminUsersSearch" class="toolbar-form">
-            <input name="search" type="search" placeholder="ابحث بالاسم أو الإيميل" />
-            <button class="btn btn-secondary" type="submit">بحث</button>
+          <form class="toolbar-form">
+            <input type="search" placeholder="ابحث باسم المستخدم أو البريد" />
+            <button class="btn btn-secondary" type="button">بحث</button>
           </form>
-          <div class="status-message" hidden data-admin-users-message></div>
-          <div data-admin-users></div>
+          <div class="empty-state">سجل النشاط سيتم عرضه هنا عند بدء الاستخدام.</div>
         </article>
       </section>
     </main>
