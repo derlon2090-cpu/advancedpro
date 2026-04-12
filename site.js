@@ -148,8 +148,11 @@ function buildWhatsAppLink(plan) {
 }
 
 function createWhatsAppButton() {
-  if (document.querySelector(".whatsapp-float")) {
-    return;
+  const existingButton = document.querySelector(".whatsapp-float");
+
+  if (existingButton) {
+    existingButton.href = buildWhatsAppLink();
+    return existingButton;
   }
 
   const button = document.createElement("a");
@@ -169,6 +172,7 @@ function createWhatsAppButton() {
   `;
 
   document.body.appendChild(button);
+  return button;
 }
 
 function createPurchaseModal() {
@@ -306,12 +310,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.body.dataset.requiresAdmin === "true" ||
     document.body.dataset.page?.startsWith("admin");
 
+  createWhatsAppButton();
   await loadSiteConfig();
   createThemeToggle();
   applyTheme(document.documentElement.dataset.theme || getStoredTheme() || getSystemTheme());
+  createWhatsAppButton();
 
   if (!isAdminExperience) {
-    createWhatsAppButton();
     setupPurchaseModal();
     createSiteFooter();
   }
