@@ -123,6 +123,7 @@ html[data-theme="dark"] .site-header {
   justify-content: space-between;
   min-height: 84px;
   position: relative;
+  padding-left: 84px;
 }
 
 .header-theme {
@@ -1626,6 +1627,7 @@ li + li {
 
   .header-inner {
     gap: 18px;
+    padding-left: 0;
   }
 
   .nav-links {
