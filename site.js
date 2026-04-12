@@ -150,7 +150,7 @@ function createScrollTopButton() {
     window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
 
   const toggleVisibility = () => {
-    const threshold = Math.max(200, window.innerHeight * 0.4);
+    const threshold = Math.max(120, window.innerHeight * 0.25);
     const shouldShow = getScrollTop() > threshold;
     button.classList.toggle("is-visible", shouldShow);
   };
@@ -374,8 +374,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const path = window.location.pathname;
   const pageId = document.body.dataset.page || "";
+  const hasHero = !!document.querySelector(".hero");
   const isHome =
     pageId === "home" ||
+    hasHero ||
     path === "/" ||
     path === "/index" ||
     path.endsWith("/index") ||
