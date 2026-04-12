@@ -226,7 +226,7 @@ html[data-theme="dark"] .theme-toggle {
 }
 
 .btn-cta {
-  padding: 16px 28px;
+  padding: 18px 32px;
   font-weight: 700;
   box-shadow: 0 18px 30px rgba(123, 97, 255, 0.24);
 }
@@ -345,11 +345,11 @@ html[data-theme="dark"] .nav-links a:hover {
 main section,
 .page-hero,
 .page-section {
-  padding: 56px 0;
+  padding: 64px 0;
 }
 
 .hero {
-  padding: 68px 0 42px;
+  padding: 74px 0 48px;
 }
 
 .hero-grid,
