@@ -122,6 +122,17 @@ html[data-theme="dark"] .site-header {
 .header-inner {
   justify-content: space-between;
   min-height: 84px;
+  position: relative;
+}
+
+.header-theme {
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .brand-mark {
@@ -1596,6 +1607,11 @@ li + li {
   .nav-links {
     justify-content: center;
   }
+
+  .header-theme {
+    position: static;
+    transform: none;
+  }
 }
 
 @media (max-width: 760px) {
@@ -1611,6 +1627,11 @@ li + li {
   .footer-meta {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .header-theme {
+    order: -1;
+    align-self: center;
   }
 
   .notice-strip {
