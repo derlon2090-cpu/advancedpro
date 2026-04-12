@@ -1117,6 +1117,14 @@ li + li {
   .page-grid {
     grid-template-columns: 1fr;
   }
+
+  .header-inner {
+    gap: 18px;
+  }
+
+  .nav-links {
+    justify-content: center;
+  }
 }
 
 @media (max-width: 760px) {
@@ -1316,24 +1324,45 @@ li + li {
 }
 
 .status-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
   padding: 14px 16px;
   border-radius: 16px;
   line-height: 1.75;
+  border: 1px solid transparent;
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.status-message::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  flex: 0 0 auto;
+  margin-top: 0.55em;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.82;
 }
 
 .status-message.is-info {
   background: rgba(47, 128, 255, 0.08);
   color: #314d7d;
+  border-color: rgba(47, 128, 255, 0.14);
 }
 
 .status-message.is-success {
   background: rgba(37, 211, 102, 0.12);
   color: #13603b;
+  border-color: rgba(37, 211, 102, 0.16);
 }
 
 .status-message.is-error {
   background: rgba(232, 90, 174, 0.12);
   color: #8f205c;
+  border-color: rgba(232, 90, 174, 0.18);
+  box-shadow: 0 14px 24px rgba(232, 90, 174, 0.08);
 }
 
 .auth-side,
@@ -1357,6 +1386,30 @@ li + li {
   border-radius: 18px;
   background: rgba(248, 250, 255, 0.96);
   box-shadow: inset 0 0 0 1px rgba(47, 128, 255, 0.08);
+}
+
+.empty-state {
+  display: grid;
+  gap: 8px;
+  word-break: break-word;
+}
+
+.empty-state strong {
+  font-size: 1.02rem;
+}
+
+.empty-state p,
+.empty-state small {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.8;
+}
+
+.empty-state.is-error {
+  background: linear-gradient(180deg, rgba(255, 247, 251, 0.95), rgba(255, 255, 255, 0.92));
+  box-shadow:
+    inset 0 0 0 1px rgba(232, 90, 174, 0.16),
+    0 18px 30px rgba(232, 90, 174, 0.08);
 }
 
 .toggle-field {
@@ -1594,13 +1647,92 @@ li + li {
   .page-card__top,
   .admin-toolbar,
   .toolbar-form,
-  .usage-item {
+  .usage-item,
+  .mock-top,
+  .mock-row,
+  .package-meta,
+  .package-list li,
+  .timeline-item,
+  .brief-line,
+  .compare-row,
+  .list-checks div {
     flex-direction: column;
     align-items: stretch;
   }
 
+  .hero-panel,
+  .activation-card,
+  .form-card,
+  .plan-card,
+  .mock-card,
+  .page-card,
+  .faq-card details,
+  .purchase-modal__card,
+  .footer-card {
+    padding: 20px;
+  }
+
+  .nav-links {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .nav-links a {
+    text-align: center;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.76);
+    box-shadow: inset 0 0 0 1px rgba(47, 128, 255, 0.08);
+  }
+
+  .brand {
+    justify-content: center;
+  }
+
+  .brand-copy {
+    text-align: center;
+  }
+
+  .header-actions .btn,
+  .hero-actions .btn,
+  .page-card__top .btn,
+  .notice-strip .hero-actions .btn {
+    width: 100%;
+  }
+
+  .hero-copy,
+  .hero-panel {
+    text-align: center;
+  }
+
+  .hero-subtitle,
+  .page-hero p,
+  .section-title p {
+    max-width: none;
+  }
+
+  .brand-showcase {
+    justify-content: center;
+    text-align: center;
+  }
+
+  .hero-logo {
+    width: 74px;
+    height: 74px;
+  }
+
+  .storyboard-mini__item,
+  .brief-line {
+    text-align: right;
+  }
+
   .info-stack {
     grid-template-columns: 1fr;
+  }
+
+  .usage-item__meta {
+    min-width: 0;
+    text-align: right;
   }
 
   .data-table {

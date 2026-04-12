@@ -9,6 +9,8 @@ const appConfig = {
     window.AdvancedProConfig?.apiBaseUrl || "https://advancedpro.onrender.com",
 };
 
+const REQUEST_TIMEOUT_MS = 16000;
+
 const state = {
   currentUser: undefined,
   siteSettings: { ...defaultSiteSettings },
@@ -23,6 +25,71 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
+}
+
+function isValidEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
+}
+
+function getPasswordValidationError(password) {
+  const normalized = String(password || "");
+
+  if (normalized.length < 8) {
+    return "كلمة المرور يجب أن تكون 8 أحرف على الأقل.";
+  }
+
+  if (!/[A-Z]/.test(normalized)) {
+    return "أضف حرفًا كبيرًا واحدًا على الأقل داخل كلمة المرور.";
+  }
+
+  if (!/\d/.test(normalized)) {
+    return "أضف رقمًا واحدًا على الأقل داخل كلمة المرور.";
+  }
+
+  return "";
+}
+
+function getHttpErrorMessage(status) {
+  switch (status) {
+    case 400:
+      return "تحقق من البيانات المدخلة ثم أعد المحاولة.";
+    case 401:
+      return "انتهت الجلسة أو بيانات الدخول غير صحيحة. سجل الدخول مرة أخرى.";
+    case 403:
+      return "ليس لديك صلاحية لتنفيذ هذا الإجراء.";
+    case 404:
+      return "تعذر العثور على الطلب المطلوب.";
+    case 409:
+      return "هذه البيانات مستخدمة بالفعل أو يوجد تعارض في الطلب.";
+    case 422:
+      return "بعض البيانات غير مكتملة أو غير صحيحة.";
+    case 429:
+      return "تم تجاوز عدد المحاولات المسموح. انتظر قليلًا ثم أعد المحاولة.";
+    default:
+      return "حدث خطأ غير متوقع. حاول مرة أخرى بعد قليل.";
+  }
+}
+
+function getNetworkErrorMessage(error) {
+  if (error?.name === "AbortError") {
+    return "انتهت مهلة الاتصال بالخدمة. حاول مرة أخرى بعد قليل.";
+  }
+
+  return "تعذر الوصول إلى الخادم الآن. تأكد من اتصال الإنترنت، وقد تحتاج خدمة Render إلى ثوانٍ للاستيقاظ ثم إعادة المحاولة.";
+}
+
+function renderLoadError(target, title, error, hint) {
+  if (!target) {
+    return;
+  }
+
+  target.innerHTML = `
+    <div class="empty-state is-error">
+      <strong>${escapeHtml(title)}</strong>
+      <p>${escapeHtml(error?.message || "تعذر تحميل البيانات الآن.")}</p>
+      <small>${escapeHtml(hint || "حاول تحديث الصفحة أو انتظر قليلًا ثم أعد المحاولة.")}</small>
+    </div>
+  `;
 }
 
 function formatDate(value, withTime = false) {
@@ -62,14 +129,30 @@ async function requestJson(url, options = {}) {
   const resolvedUrl = url.startsWith("http") ? url : `${appConfig.apiBaseUrl}${url}`;
   const isCrossOrigin =
     resolvedUrl.startsWith("http") && !resolvedUrl.startsWith(window.location.origin);
-  const response = await fetch(resolvedUrl, {
-    credentials: isCrossOrigin ? "include" : "same-origin",
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
-  });
+  const controller = options.signal ? null : new AbortController();
+  const timeoutId = controller
+    ? window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+    : null;
+
+  let response;
+
+  try {
+    response = await fetch(resolvedUrl, {
+      credentials: isCrossOrigin ? "include" : "same-origin",
+      ...options,
+      signal: options.signal || controller?.signal,
+      headers: {
+        "Content-Type": "application/json",
+        ...(options.headers || {}),
+      },
+    });
+  } catch (error) {
+    throw new Error(getNetworkErrorMessage(error));
+  } finally {
+    if (timeoutId) {
+      window.clearTimeout(timeoutId);
+    }
+  }
 
   let payload = {};
 
@@ -78,6 +161,9 @@ async function requestJson(url, options = {}) {
   } catch (error) {
     payload = {};
   }
+
+  !response.ok &&
+    (payload.message = payload.message || payload.error || getHttpErrorMessage(response.status));
 
   if (!response.ok) {
     throw new Error(payload.message || "حدث خطأ غير متوقع.");
@@ -101,6 +187,14 @@ function setMessage(target, message, type = "info") {
   target.hidden = false;
   target.textContent = message;
   target.className = `status-message is-${type}`;
+  target.setAttribute("role", type === "error" ? "alert" : "status");
+  target.setAttribute("aria-live", type === "error" ? "assertive" : "polite");
+
+  if (type === "error") {
+    window.requestAnimationFrame(() => {
+      target.scrollIntoView({ block: "center", behavior: "smooth" });
+    });
+  }
 }
 
 function setButtonBusy(button, busy, busyText = "جاري التنفيذ...") {
@@ -289,7 +383,7 @@ function renderUsageList(target, logs) {
           (log) => `
             <article class="usage-item">
               <div>
-                <strong>${escapeHtml(log.type === "image" ? "صورة" : "مقطع")}</strong>
+                <strong>${escapeHtml(log.type === "image" ? "صورة" : "مشروع فيديو")}</strong>
                 <p>${escapeHtml(log.promptText || "بدون وصف محفوظ")}</p>
               </div>
               <div class="usage-item__meta">
@@ -317,11 +411,20 @@ async function initLoginPage() {
     const button = form.querySelector('button[type="submit"]');
 
     try {
+      const values = formToObject(form);
+
+      if (!isValidEmail(values.email)) {
+        throw new Error("أدخل بريدًا إلكترونيًا صحيحًا.");
+      }
+
+      if (!String(values.password || "").trim()) {
+        throw new Error("أدخل كلمة المرور للمتابعة.");
+      }
       setButtonBusy(button, true, "جاري تسجيل الدخول...");
       setMessage(message, "");
       const payload = await requestJson("/api/auth/login", {
         method: "POST",
-        body: JSON.stringify(formToObject(form)),
+        body: JSON.stringify(values),
       });
       setMessage(message, payload.message, "success");
       window.location.href = payload.redirectTo || "/dashboard";
@@ -346,11 +449,29 @@ async function initRegisterPage() {
     const button = form.querySelector('button[type="submit"]');
 
     try {
+      const values = formToObject(form);
+      const passwordError = getPasswordValidationError(values.password);
+
+      if (!String(values.fullName || "").trim() || String(values.fullName || "").trim().length < 2) {
+        throw new Error("أدخل اسمًا واضحًا لا يقل عن حرفين.");
+      }
+
+      if (!isValidEmail(values.email)) {
+        throw new Error("أدخل بريدًا إلكترونيًا صحيحًا.");
+      }
+
+      if (passwordError) {
+        throw new Error(passwordError);
+      }
+
+      if (values.password !== values.confirmPassword) {
+        throw new Error("تأكيد كلمة المرور غير مطابق.");
+      }
       setButtonBusy(button, true, "جاري إنشاء الحساب...");
       setMessage(message, "");
       const payload = await requestJson("/api/auth/register", {
         method: "POST",
-        body: JSON.stringify(formToObject(form)),
+        body: JSON.stringify(values),
       });
       setMessage(message, payload.message, "success");
       window.location.href = payload.redirectTo || "/dashboard";
@@ -375,11 +496,16 @@ async function initForgotPasswordPage() {
     const button = form.querySelector('button[type="submit"]');
 
     try {
+      const values = formToObject(form);
+
+      if (!isValidEmail(values.email)) {
+        throw new Error("أدخل بريدًا إلكترونيًا صحيحًا لإرسال رابط الاستعادة.");
+      }
       setButtonBusy(button, true, "جاري الإرسال...");
       setMessage(message, "");
       const payload = await requestJson("/api/auth/forgot-password", {
         method: "POST",
-        body: JSON.stringify(formToObject(form)),
+        body: JSON.stringify(values),
       });
       setMessage(message, payload.message, "success");
       form.reset();
@@ -412,10 +538,15 @@ async function initActivatePage(user) {
       setButtonBusy(button, true, "جاري التفعيل...");
       setMessage(message, "");
       const codeField = form.elements.namedItem("code");
+      const code = String(codeField ? codeField.value : "").trim();
+
+      if (!code) {
+        throw new Error("أدخل كود التفعيل أولًا.");
+      }
       const payload = await requestJson("/api/activate", {
         method: "POST",
         body: JSON.stringify({
-          code: codeField ? codeField.value : "",
+          code,
         }),
       });
       setMessage(message, payload.message, "success");
@@ -457,12 +588,12 @@ async function initDashboardPage() {
           <small>استهلاكك الإجمالي: ${escapeHtml(dashboard.usageTotals.imagesUsed)}</small>
         </article>
         <article class="info-card">
-          <span>المقاطع المتبقية</span>
+          <span>مشاريع الفيديو المتبقية</span>
           <strong>${escapeHtml(subscription?.videoBalance ?? 0)}</strong>
           <small>استهلاكك الإجمالي: ${escapeHtml(dashboard.usageTotals.videosUsed)}</small>
         </article>
         <article class="info-card">
-          <span>أقصى مدة للفيديو</span>
+          <span>أقصى مدة المشروع</span>
           <strong>${escapeHtml(subscription?.videoMaxDurationSeconds ?? 0)} ثانية</strong>
           <small>الانتهاء: ${formatDate(subscription?.endAt)}</small>
         </article>
@@ -471,9 +602,13 @@ async function initDashboardPage() {
 
     renderUsageList(usageTarget, dashboard.recentUsage || []);
   } catch (error) {
-    if (summaryTarget) {
-      summaryTarget.innerHTML = `<div class="empty-state">${escapeHtml(error.message)}</div>`;
-    }
+    renderLoadError(summaryTarget, "تعذر تحميل لوحة التحكم.", error);
+    renderLoadError(
+      usageTarget,
+      "تعذر تحميل سجل الاستخدام.",
+      error,
+      "تأكد من جاهزية الباكند ثم أعد تحديث الصفحة."
+    );
   }
 }
 
@@ -517,8 +652,8 @@ async function initProfilePage() {
           <div><span>تاريخ البداية</span><strong>${formatDate(subscription?.startAt)}</strong></div>
           <div><span>تاريخ النهاية</span><strong>${formatDate(subscription?.endAt)}</strong></div>
           <div><span>الصور المتبقية</span><strong>${escapeHtml(subscription?.imageBalance ?? 0)}</strong></div>
-          <div><span>المقاطع المتبقية</span><strong>${escapeHtml(subscription?.videoBalance ?? 0)}</strong></div>
-          <div><span>أقصى مدة للفيديو</span><strong>${escapeHtml(subscription?.videoMaxDurationSeconds ?? 0)} ثانية</strong></div>
+          <div><span>مشاريع الفيديو المتبقية</span><strong>${escapeHtml(subscription?.videoBalance ?? 0)}</strong></div>
+          <div><span>أقصى مدة المشروع</span><strong>${escapeHtml(subscription?.videoMaxDurationSeconds ?? 0)} ثانية</strong></div>
           <div><span>التجديد</span><strong>${subscription?.renewalEnabled ? "مفعل" : "غير مفعل"}</strong></div>
         </div>
       `;
@@ -526,9 +661,9 @@ async function initProfilePage() {
 
     renderUsageList(usageTarget, profile.recentUsage || []);
   } catch (error) {
-    if (accountTarget) {
-      accountTarget.innerHTML = `<div class="empty-state">${escapeHtml(error.message)}</div>`;
-    }
+    renderLoadError(accountTarget, "تعذر تحميل الملف الشخصي.", error);
+    renderLoadError(subscriptionTarget, "تعذر تحميل بيانات الاشتراك.", error);
+    renderLoadError(usageTarget, "تعذر تحميل سجل الاستخدام.", error);
   }
 
   if (profileForm) {
@@ -537,11 +672,16 @@ async function initProfilePage() {
       const button = profileForm.querySelector('button[type="submit"]');
 
       try {
+        const values = formToObject(profileForm);
+
+        if (!String(values.fullName || "").trim() || String(values.fullName || "").trim().length < 2) {
+          throw new Error("أدخل اسمًا واضحًا لا يقل عن حرفين.");
+        }
         setButtonBusy(button, true, "جاري الحفظ...");
         setMessage(profileMessage, "");
         const payload = await requestJson("/api/profile", {
           method: "PATCH",
-          body: JSON.stringify(formToObject(profileForm)),
+          body: JSON.stringify(values),
         });
         setMessage(profileMessage, payload.message, "success");
       } catch (error) {
@@ -558,11 +698,25 @@ async function initProfilePage() {
       const button = passwordForm.querySelector('button[type="submit"]');
 
       try {
+        const values = formToObject(passwordForm);
+        const passwordError = getPasswordValidationError(values.newPassword);
+
+        if (!String(values.currentPassword || "").trim()) {
+          throw new Error("أدخل كلمة المرور الحالية أولًا.");
+        }
+
+        if (passwordError) {
+          throw new Error(passwordError);
+        }
+
+        if (values.newPassword !== values.confirmPassword) {
+          throw new Error("تأكيد كلمة المرور غير مطابق.");
+        }
         setButtonBusy(button, true, "جاري التحديث...");
         setMessage(passwordMessage, "");
         const payload = await requestJson("/api/profile/password", {
           method: "POST",
-          body: JSON.stringify(formToObject(passwordForm)),
+          body: JSON.stringify(values),
         });
         setMessage(passwordMessage, payload.message, "success");
         passwordForm.reset();
@@ -596,9 +750,7 @@ async function initAdminOverview() {
       `;
     }
   } catch (error) {
-    if (target) {
-      target.innerHTML = `<div class="empty-state">${escapeHtml(error.message)}</div>`;
-    }
+    renderLoadError(target, "تعذر تحميل ملخص لوحة الأدمن.", error);
   }
 }
 
@@ -717,7 +869,7 @@ function renderCodesTable(target, codes) {
                 <tr>
                   <td><strong>${escapeHtml(code.code)}</strong></td>
                   <td>${escapeHtml(code.planName)}</td>
-                  <td>${code.imageQuota} صورة / ${code.videoQuota} مقطع</td>
+                  <td>${code.imageQuota} صورة / ${code.videoQuota} مشروع فيديو</td>
                   <td>${escapeHtml(code.assignedEmail || "عام")}</td>
                   <td>${code.isActive ? "نشط" : "معطل"} - ${code.redeemedCount}/${code.maxRedemptions}</td>
                   <td><button class="btn btn-secondary btn-sm" type="button" data-code-edit="${code.id}">تعديل</button></td>
