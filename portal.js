@@ -427,7 +427,18 @@ async function initLoginPage() {
         body: JSON.stringify(values),
       });
       setMessage(message, payload.message, "success");
-      window.location.href = payload.redirectTo || "/dashboard";
+      let redirect = payload.redirectTo || "/dashboard";
+
+      try {
+        const me = await requestJson("/api/me", { method: "GET" });
+        if (me?.user?.role === "admin") {
+          redirect = "/admin";
+        }
+      } catch (error) {
+        // Keep default redirect when session isn't ready yet.
+      }
+
+      window.location.href = redirect;
     } catch (error) {
       setMessage(message, error.message, "error");
     } finally {
