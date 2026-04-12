@@ -227,6 +227,8 @@ function createSiteFooter() {
     return;
   }
 
+  const currentYear = new Date().getFullYear();
+
   const footer = document.createElement("footer");
   footer.className = "site-footer";
   footer.innerHTML = `
@@ -246,6 +248,9 @@ function createSiteFooter() {
           <a href="/terms">الشروط والأحكام</a>
           <a href="/privacy">سياسة الخصوصية</a>
           <a href="/refund-policy">سياسة الاسترجاع والاستبدال</a>
+          <a href="/about">من نحن</a>
+          <a href="/contact">تواصل معنا</a>
+          <a href="/login">تسجيل الدخول</a>
         </div>
         <div class="footer-meta">
           <span>Advanced Pro Nano</span>
@@ -253,6 +258,7 @@ function createSiteFooter() {
           <span><a href="${siteConfig.storeUrl}" target="_blank" rel="noreferrer">المتجر</a></span>
           <span><a href="${buildWhatsAppLink()}" target="_blank" rel="noreferrer">الدعم</a></span>
         </div>
+        <div class="footer-copy">جميع الحقوق محفوظة © Advanced Pro Nano ${currentYear}</div>
       </div>
     </div>
   `;

@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap");
+
 :root {
   --blue: #2f80ff;
   --purple: #7b61ff;
@@ -35,7 +37,7 @@ html {
 
 body {
   margin: 0;
-  font-family: "IBM Plex Sans Arabic", "Segoe UI", sans-serif;
+  font-family: "Tajawal", "IBM Plex Sans Arabic", "Segoe UI", sans-serif;
   color: var(--ink);
   background:
     radial-gradient(circle at top right, rgba(123, 97, 255, 0.11), transparent 28%),
@@ -217,6 +219,10 @@ html[data-theme="dark"] .theme-toggle {
 .btn-ghost {
   color: #30426d;
   background: rgba(47, 128, 255, 0.08);
+}
+
+.btn-ghost:hover {
+  background: rgba(47, 128, 255, 0.14);
 }
 
 .btn-cta {
@@ -559,6 +565,7 @@ html[data-theme="dark"] .trust-pill {
 .hero-actions {
   margin-top: 26px;
   justify-content: center;
+  flex-wrap: wrap;
 }
 
 .metrics-strip {
@@ -1121,6 +1128,13 @@ html[data-theme="dark"] .toolbar-form input::placeholder {
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid var(--line);
+}
+
+.footer-copy {
+  margin-top: 18px;
+  color: var(--muted);
+  font-size: 0.94rem;
+  line-height: 1.8;
 }
 
 .page-hero {
