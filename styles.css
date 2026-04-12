@@ -394,9 +394,9 @@ html[data-theme="dark"] .btn-icon {
   left: 24px;
   bottom: 28px;
   border: 0;
-  background: #1fb157;
+  background: var(--hero-gradient);
   color: #ffffff;
-  box-shadow: 0 16px 28px rgba(31, 177, 87, 0.26);
+  box-shadow: 0 16px 28px rgba(123, 97, 255, 0.28);
   opacity: 0;
   pointer-events: none;
   z-index: 1100;
@@ -408,7 +408,7 @@ html[data-theme="dark"] .btn-icon {
 }
 
 .scroll-top-btn:hover {
-  box-shadow: 0 22px 36px rgba(31, 177, 87, 0.3);
+  box-shadow: 0 22px 36px rgba(123, 97, 255, 0.34);
 }
 
 html[data-theme="dark"] .theme-toggle {
