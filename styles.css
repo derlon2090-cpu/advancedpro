@@ -201,7 +201,7 @@ main section,
 .hero-grid,
 .page-hero-grid {
   grid-template-columns: minmax(0, 1.06fr) minmax(320px, 0.94fr);
-  align-items: center;
+  align-items: stretch;
 }
 
 .hero-copy,
@@ -223,8 +223,14 @@ main section,
 }
 
 .hero-copy {
-  padding: 6px 0;
-  max-width: 700px;
+  padding: 34px 32px;
+  max-width: none;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
 }
 
 .hero-panel,
@@ -262,6 +268,7 @@ main section,
   letter-spacing: -0.03em;
   max-width: 8.6em;
   text-wrap: balance;
+  margin-inline: auto;
 }
 
 .hero-title span,
@@ -284,10 +291,12 @@ main section,
   line-height: 1.95;
   font-size: 1.08rem;
   text-wrap: balance;
+  margin-inline: auto;
 }
 
 .hero-actions {
   margin-top: 26px;
+  justify-content: center;
 }
 
 .metrics-strip {
