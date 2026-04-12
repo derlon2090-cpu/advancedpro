@@ -5,6 +5,7 @@
   "scripts": {
     "build": "npm --prefix backend install",
     "render:build": "npm run build",
+    "postinstall": "npm --prefix backend install",
     "start": "npm --prefix backend start"
   }
 }
