@@ -124,11 +124,11 @@ function createThemeToggle() {
 }
 
 function createScrollTopButton() {
-  if (document.querySelector("[data-scroll-top]")) {
-    return;
-  }
+  const existingButton = document.querySelector("[data-scroll-top]");
 
-  const button = document.createElement("button");
+  const button = existingButton || document.createElement("button");
+
+  if (!existingButton) {
   button.type = "button";
   button.className = "scroll-top-btn";
   button.setAttribute("data-scroll-top", "");
@@ -141,10 +141,14 @@ function createScrollTopButton() {
       />
     </svg>
   `;
+  }
 
-  button.addEventListener("click", () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  });
+  if (button.dataset.bound !== "true") {
+    button.dataset.bound = "true";
+    button.addEventListener("click", () => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  }
 
   const getScrollTop = () =>
     window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
@@ -160,7 +164,9 @@ function createScrollTopButton() {
   document.addEventListener("scroll", toggleVisibility, { passive: true });
   window.setTimeout(toggleVisibility, 300);
 
-  document.body.appendChild(button);
+  if (!existingButton) {
+    document.body.appendChild(button);
+  }
 }
 
 setDocumentTheme(getStoredTheme() || getSystemTheme());
@@ -382,7 +388,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     path === "/index" ||
     path.endsWith("/index") ||
     path.endsWith("/index.html");
-  if (isHome) {
+  if (isHome || document.querySelector("[data-scroll-top]")) {
     createScrollTopButton();
   }
 
