@@ -284,6 +284,22 @@ html[data-theme="dark"] .nav-links a:hover {
   background: rgba(47, 128, 255, 0.14);
 }
 
+.btn-outline {
+  color: #4b5878;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px rgba(52, 64, 95, 0.2);
+}
+
+.btn-outline:hover {
+  background: rgba(52, 64, 95, 0.06);
+}
+
+.btn-danger {
+  color: #fff;
+  background: linear-gradient(135deg, #ef4444, #f97316);
+  box-shadow: 0 16px 26px rgba(239, 68, 68, 0.2);
+}
+
 .btn-cta {
   padding: 18px 32px;
   font-weight: 700;
@@ -2251,6 +2267,43 @@ li + li {
 .status-pill--pending {
   background: rgba(123, 97, 255, 0.16);
   color: #4c36b4;
+}
+
+.status-pill--available {
+  background: rgba(59, 130, 246, 0.15);
+  color: #2563eb;
+}
+
+.status-pill--in-use {
+  background: rgba(234, 179, 8, 0.18);
+  color: #a16207;
+}
+
+.status-pill--used {
+  background: rgba(239, 68, 68, 0.16);
+  color: #b91c1c;
+}
+
+.status-pill--expired {
+  background: rgba(148, 163, 184, 0.2);
+  color: #475569;
+}
+
+.status-pill--disabled {
+  background: rgba(148, 163, 184, 0.2);
+  color: #64748b;
+}
+
+.table-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.helper-text {
+  margin-top: 6px;
+  font-size: 0.78rem;
+  color: var(--muted);
 }
 
 .data-table select {

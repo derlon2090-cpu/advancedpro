@@ -108,9 +108,57 @@ router.get(
     const codes = await prisma.code.findMany({
       where,
       orderBy: { createdAt: "desc" },
+      include: {
+        subscriptions: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          include: { user: true },
+        },
+      },
     });
 
-    return res.json({ codes });
+    const now = new Date();
+    const mapped = codes.map((code) => {
+      const subscription = code.subscriptions?.[0];
+      const remaining =
+        subscription ? Number(subscription.imageBalance || 0) + Number(subscription.videoBalance || 0) : 0;
+      const expired =
+        subscription && (new Date(subscription.endAt) < now || subscription.status !== "active");
+
+      let statusKey = "available";
+      let statusLabel = "متاح";
+
+      if (!code.isActive) {
+        statusKey = "disabled";
+        statusLabel = "معطل";
+      } else if (subscription) {
+        if (expired) {
+          statusKey = "expired";
+          statusLabel = "منتهي";
+        } else if (remaining <= 0) {
+          statusKey = "used";
+          statusLabel = "تم الاستخدام";
+        } else {
+          statusKey = "in-use";
+          statusLabel = "قيد الاستخدام";
+        }
+      } else if (code.redeemedCount >= code.maxRedemptions) {
+        statusKey = "used";
+        statusLabel = "تم الاستخدام";
+      }
+
+      return {
+        ...code,
+        statusKey,
+        statusLabel,
+        activatedAt: subscription?.startAt || null,
+        activatedBy: subscription?.user?.email || null,
+        remainingImages: subscription?.imageBalance ?? null,
+        remainingVideos: subscription?.videoBalance ?? null,
+      };
+    });
+
+    return res.json({ codes: mapped });
   })
 );
 
@@ -169,6 +217,21 @@ router.patch(
     });
 
     return res.json({ message: "تم تحديث الكود." });
+  })
+);
+
+router.delete(
+  "/codes/:id",
+  asyncHandler(async (req, res) => {
+    const id = Number(req.params.id);
+    try {
+      await prisma.code.delete({ where: { id } });
+      return res.json({ message: "تم حذف الكود." });
+    } catch (error) {
+      return res.status(409).json({
+        message: "لا يمكن حذف الكود بعد التفعيل. يمكنك تعطيله بدلاً من ذلك.",
+      });
+    }
   })
 );
 

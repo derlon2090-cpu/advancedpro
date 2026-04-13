@@ -1130,7 +1130,9 @@ function renderCodesTable(target, codes) {
             <th>الصلاحية</th>
             <th>الإيميل المخصص</th>
             <th>الحالة</th>
-            <th>التحكم</th>
+            <th>المستخدم</th>
+            <th>التفعيل</th>
+            <th>الإجراء</th>
           </tr>
         </thead>
         <tbody>
@@ -1145,8 +1147,26 @@ function renderCodesTable(target, codes) {
                   <td>${code.videoMaxDurationSeconds} ثانية</td>
                   <td>${code.validityDays} يوم</td>
                   <td>${escapeHtml(code.assignedEmail || "عام")}</td>
-                  <td>${code.isActive ? "نشط" : "معطل"} - ${code.redeemedCount}/${code.maxRedemptions}</td>
-                  <td><button class="btn btn-secondary btn-sm" type="button" data-code-edit="${code.id}">تعديل</button></td>
+                  <td>
+                    <span class="status-pill status-pill--${escapeHtml(
+                      code.statusKey || (code.isActive ? "available" : "disabled")
+                    )}">
+                      ${escapeHtml(code.statusLabel || (code.isActive ? "متاح" : "معطل"))}
+                    </span>
+                    <div class="helper-text">${code.redeemedCount}/${code.maxRedemptions}</div>
+                  </td>
+                  <td>${escapeHtml(code.activatedBy || "—")}</td>
+                  <td>${code.activatedAt ? formatDate(code.activatedAt, true) : "—"}</td>
+                  <td>
+                    <div class="table-actions">
+                      <button class="btn btn-secondary btn-sm" type="button" data-code-edit="${code.id}">تعديل</button>
+                      <button class="btn btn-ghost btn-sm" type="button" data-code-copy="${code.id}">نسخ</button>
+                      <button class="btn btn-outline btn-sm" type="button" data-code-toggle="${code.id}">
+                        ${code.isActive ? "تعطيل" : "تفعيل"}
+                      </button>
+                      <button class="btn btn-danger btn-sm" type="button" data-code-delete="${code.id}">حذف</button>
+                    </div>
+                  </td>
                 </tr>
               `
             )
@@ -1230,6 +1250,86 @@ async function initAdminCodesPage() {
     const button = event.target.closest("[data-code-edit]");
 
     if (!button) {
+      const copyButton = event.target.closest("[data-code-copy]");
+      if (copyButton) {
+        const record = state.codeRecords.find(
+          (item) => item.id === Number(copyButton.dataset.codeCopy)
+        );
+        if (record?.code) {
+          navigator.clipboard?.writeText(record.code);
+          setMessage(message, "تم نسخ الكود.", "success");
+        }
+        return;
+      }
+
+      const toggleButton = event.target.closest("[data-code-toggle]");
+      if (toggleButton) {
+        const record = state.codeRecords.find(
+          (item) => item.id === Number(toggleButton.dataset.codeToggle)
+        );
+        if (!record) {
+          return;
+        }
+        try {
+          setButtonBusy(toggleButton, true, "جارٍ...");
+          await requestJson("/api/admin/codes", {
+            method: "PATCH",
+            body: JSON.stringify({
+              id: record.id,
+              code: record.code,
+              planName: record.planName,
+              imageQuota: record.imageQuota,
+              videoQuota: record.videoQuota,
+              videoMaxDurationSeconds: record.videoMaxDurationSeconds,
+              validityDays: record.validityDays,
+              renewalEnabled: record.renewalEnabled,
+              renewalEveryDays: record.renewalEveryDays,
+              renewalMode: record.renewalMode,
+              renewalImageQuota: record.renewalImageQuota,
+              renewalVideoQuota: record.renewalVideoQuota,
+              maxRedemptions: record.maxRedemptions,
+              assignedEmail: record.assignedEmail,
+              isActive: !record.isActive,
+            }),
+          });
+          setMessage(message, "تم تحديث حالة الكود.", "success");
+          const searchField = searchForm?.elements.namedItem("search");
+          await loadCodes(searchField ? searchField.value : "");
+        } catch (error) {
+          setMessage(message, error.message, "error");
+        } finally {
+          setButtonBusy(toggleButton, false);
+        }
+        return;
+      }
+
+      const deleteButton = event.target.closest("[data-code-delete]");
+      if (deleteButton) {
+        const record = state.codeRecords.find(
+          (item) => item.id === Number(deleteButton.dataset.codeDelete)
+        );
+        if (!record) {
+          return;
+        }
+        if (!window.confirm("هل تريد حذف هذا الكود نهائيًا؟")) {
+          return;
+        }
+        try {
+          setButtonBusy(deleteButton, true, "جارٍ...");
+          await requestJson(`/api/admin/codes/${record.id}`, {
+            method: "DELETE",
+          });
+          setMessage(message, "تم حذف الكود.", "success");
+          const searchField = searchForm?.elements.namedItem("search");
+          await loadCodes(searchField ? searchField.value : "");
+        } catch (error) {
+          setMessage(message, error.message, "error");
+        } finally {
+          setButtonBusy(deleteButton, false);
+        }
+        return;
+      }
+
       return;
     }
 
