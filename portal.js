@@ -583,6 +583,20 @@ function renderUsageList(target, logs) {
         .join("")}
     </div>
   `;
+
+  target.querySelectorAll(".table-actions a").forEach((link) => {
+    const wrapper = link.parentElement;
+    const id = wrapper?.querySelector("[data-work-download]")?.dataset.workDownload || "";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = link.className;
+    button.textContent = link.textContent;
+    if (id) {
+      button.dataset.workDownload = id;
+      button.dataset.downloadMode = "open";
+    }
+    link.replaceWith(button);
+  });
 }
 
 function getFilenameFromDisposition(value) {
@@ -748,7 +762,7 @@ async function initForgotPasswordPage() {
         window.location.href = payload.redirectTo || "/reset-password.html";
       }, 900);
     } catch (error) {
-      setMessage(message, error.message, "error");
+      setMessage(message, "الكود الخاص بك خاطئ أو لا يعمل", "error");
     } finally {
       setButtonBusy(button, false);
     }
@@ -1165,7 +1179,7 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
         await loadDashboard();
         showToast(payload.message || "تم تفعيل الكود بنجاح");
       } catch (error) {
-        setMessage(activationMessage, error.message, "error");
+        setMessage(activationMessage, "الكود الخاص بك خاطئ أو لا يعمل", "error");
       } finally {
         setButtonBusy(button, false);
       }
@@ -1193,8 +1207,17 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
         setMessage(unlockMessage, payload.message, "success");
         unlockForm.reset();
         await loadDashboard();
+        if (cachedSubscription) {
+          setMessage(
+            createMessage,
+            `تم التفعيل بنجاح. رصيدك الحالي: ${cachedSubscription.imageBalance ?? 0} صورة / ${
+              cachedSubscription.videoBalance ?? 0
+            } فيديو`,
+            "success"
+          );
+        }
       } catch (error) {
-        setMessage(unlockMessage, error.message, "error");
+        setMessage(unlockMessage, "الكود الخاص بك خاطئ أو لا يعمل", "error");
       } finally {
         setButtonBusy(button, false);
       }
@@ -1230,6 +1253,7 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
 
       if (downloadButton) {
         const id = Number(downloadButton.dataset.workDownload);
+        const mode = downloadButton.dataset.downloadMode || "file";
         const record = currentWorks.find((item) => item.id === id);
         if (!record || !record.resultUrl) {
           setMessage(createMessage, "لا يوجد ملف جاهز للتحميل.", "error");
@@ -1258,16 +1282,27 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
           const filename =
             getFilenameFromDisposition(disposition) ||
             `advancedpro-${record.type}-${id}`;
+          const blobUrl = window.URL.createObjectURL(blob);
 
-          const link = document.createElement("a");
-          link.href = window.URL.createObjectURL(blob);
-          link.download = filename;
-          document.body.appendChild(link);
-          link.click();
-          link.remove();
-          window.setTimeout(() => {
-            window.URL.revokeObjectURL(link.href);
-          }, 1000);
+          if (mode === "open") {
+            const preview = window.open(blobUrl, "_blank", "noopener,noreferrer");
+            if (!preview) {
+              throw new Error("تعذر فتح المعاينة. فعّل النوافذ المنبثقة ثم أعد المحاولة.");
+            }
+            window.setTimeout(() => {
+              window.URL.revokeObjectURL(blobUrl);
+            }, 2000);
+          } else {
+            const link = document.createElement("a");
+            link.href = blobUrl;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.setTimeout(() => {
+              window.URL.revokeObjectURL(blobUrl);
+            }, 1000);
+          }
         } catch (error) {
           setMessage(createMessage, error.message, "error");
         } finally {

@@ -160,7 +160,7 @@ function createScrollTopButton() {
     window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
 
   const toggleVisibility = () => {
-    const threshold = Math.max(80, window.innerHeight * 0.2);
+    const threshold = Math.max(120, window.innerHeight * 0.12);
     const shouldShow = getScrollTop() > threshold;
     button.classList.toggle("is-visible", shouldShow);
   };
@@ -384,7 +384,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   applyTheme(document.documentElement.dataset.theme || getStoredTheme() || getSystemTheme());
   createWhatsAppButton();
 
-  if (!isAdminExperience) {
+  const isHome = document.body.dataset.page === "home";
+
+  if (!isAdminExperience && isHome) {
     createScrollTopButton();
   }
 
