@@ -457,6 +457,8 @@ async function performLogout() {
   }
 }
 
+window.performLogout = performLogout;
+
 function setupLogoutButtons() {
   if (document.body.dataset.logoutBound === "true") {
     return;

@@ -175,6 +175,54 @@ function createScrollTopButton() {
   }
 }
 
+function setupLogoutFallback() {
+  if (document.body.dataset.logoutFallbackBound === "true") {
+    return;
+  }
+
+  document.body.dataset.logoutFallbackBound = "true";
+
+  document.addEventListener("click", (event) => {
+    if (event.defaultPrevented) {
+      return;
+    }
+
+    const trigger = event.target.closest("[data-logout]");
+    if (!trigger) {
+      return;
+    }
+
+    event.preventDefault();
+
+    if (typeof window.performLogout === "function") {
+      window.performLogout();
+      return;
+    }
+
+    try {
+      window.localStorage.setItem("advancedpro_force_logout", "1");
+      window.localStorage.removeItem("advancedpro_token");
+      window.sessionStorage.removeItem("advancedpro_token");
+    } catch (error) {
+      // ignore
+    }
+
+    try {
+      document.cookie = "advancedpro_token=; Path=/; Max-Age=0; SameSite=Lax";
+      document.cookie = "advancedpro_token=; Path=/; Max-Age=0; SameSite=None; Secure";
+      document.cookie = "token=; Path=/; Max-Age=0; SameSite=Lax";
+      document.cookie = "token=; Path=/; Max-Age=0; SameSite=None; Secure";
+    } catch (error) {
+      // ignore
+    }
+
+    const isAdmin =
+      document.body.dataset.requiresAdmin === "true" ||
+      String(document.body.dataset.page || "").startsWith("admin");
+    window.location.href = isAdmin ? "/login" : "/";
+  });
+}
+
 setDocumentTheme(getStoredTheme() || getSystemTheme());
 
 async function loadSiteConfig() {
@@ -378,6 +426,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.body.dataset.requiresAdmin === "true" ||
     document.body.dataset.page?.startsWith("admin");
 
+  setupLogoutFallback();
   createWhatsAppButton();
   await loadSiteConfig();
   createThemeToggle();
