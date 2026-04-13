@@ -19,6 +19,14 @@ async function getActiveSubscription(userId) {
     httpError("لا توجد باقة مفعلة.");
   }
 
+  if (subscription.endAt && new Date(subscription.endAt) < new Date()) {
+    await prisma.subscription.update({
+      where: { id: subscription.id },
+      data: { status: "expired" },
+    });
+    httpError("انتهت صلاحية اشتراكك.");
+  }
+
   return subscription;
 }
 
@@ -45,17 +53,33 @@ export async function handleImageRequest({ userId, prompt }) {
     httpError(isTrial ? "انتهت تجربتك المجانية، اشترك للاستمرار" : "رصيد الصور غير كافٍ.");
   }
 
-  const result = await generateImage({ prompt });
-
   const generation = await prisma.generation.create({
     data: {
       userId,
       type: "image",
       prompt,
-      resultUrl: result.resultUrl,
-      status: "completed",
+      status: "processing",
     },
   });
+
+  let result;
+
+  try {
+    result = await generateImage({ prompt });
+    await prisma.generation.update({
+      where: { id: generation.id },
+      data: {
+        status: "completed",
+        resultUrl: result.resultUrl,
+      },
+    });
+  } catch (error) {
+    await prisma.generation.update({
+      where: { id: generation.id },
+      data: { status: "failed" },
+    });
+    throw error;
+  }
 
   await prisma.usageLog.create({
     data: {
@@ -64,7 +88,7 @@ export async function handleImageRequest({ userId, prompt }) {
       type: "image",
       amountUsed: 1,
       promptText: prompt,
-      outputUrl: result.resultUrl,
+      outputUrl: result?.resultUrl || null,
     },
   });
 
@@ -80,7 +104,7 @@ export async function handleImageRequest({ userId, prompt }) {
 
   return {
     generationId: generation.id,
-    resultUrl: result.resultUrl,
+    resultUrl: result?.resultUrl || null,
   };
 }
 
@@ -102,16 +126,32 @@ export async function handleVideoRequest({ userId, prompt, durationSeconds }) {
     httpError("مدة الفيديو المطلوبة أعلى من المسموح في باقتك.");
   }
 
-  await generateVideo({ prompt });
-
   const generation = await prisma.generation.create({
     data: {
       userId,
       type: "video",
       prompt,
-      status: "queued",
+      status: "processing",
     },
   });
+
+  let result = null;
+
+  try {
+    result = await generateVideo({ prompt });
+    if (result?.resultUrl) {
+      await prisma.generation.update({
+        where: { id: generation.id },
+        data: { status: "completed", resultUrl: result.resultUrl },
+      });
+    }
+  } catch (error) {
+    await prisma.generation.update({
+      where: { id: generation.id },
+      data: { status: "failed" },
+    });
+    throw error;
+  }
 
   await prisma.usageLog.create({
     data: {
@@ -135,6 +175,6 @@ export async function handleVideoRequest({ userId, prompt, durationSeconds }) {
 
   return {
     generationId: generation.id,
-    status: generation.status,
+    status: result?.resultUrl ? "completed" : generation.status,
   };
 }

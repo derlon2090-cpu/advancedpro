@@ -15,6 +15,7 @@ router.get(
       subscription,
       usageTotals,
       recentUsage,
+      recentGenerations,
       totalWorks,
       totalImages,
       totalVideos,
@@ -31,6 +32,11 @@ router.get(
         _sum: { amountUsed: true },
       }),
       prisma.usageLog.findMany({
+        where: { userId: req.user.id },
+        orderBy: { createdAt: "desc" },
+        take: 6,
+      }),
+      prisma.generation.findMany({
         where: { userId: req.user.id },
         orderBy: { createdAt: "desc" },
         take: 6,
@@ -76,6 +82,7 @@ router.get(
           newWorks,
         },
         recentUsage,
+        recentWorks: recentGenerations,
       },
     });
   })

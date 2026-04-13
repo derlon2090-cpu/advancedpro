@@ -2193,6 +2193,22 @@ li + li {
   text-align: left;
 }
 
+.usage-filters {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.usage-filters .btn.is-active {
+  background: var(--hero-gradient);
+  color: #fff;
+}
+
+.usage-item.is-hidden {
+  display: none;
+}
+
 .admin-shell {
   min-height: 100vh;
   display: grid;

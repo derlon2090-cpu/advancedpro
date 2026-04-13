@@ -513,6 +513,17 @@ async function enforceRoute() {
   return user;
 }
 
+function getWorkStatusMeta(status = "", hasResult = false) {
+  const normalized = String(status || "");
+  if (normalized === "completed" || (hasResult && !normalized)) {
+    return { label: "مكتمل", className: "status-pill--active" };
+  }
+  if (normalized === "failed") {
+    return { label: "فشل", className: "status-pill--suspended" };
+  }
+  return { label: "قيد المعالجة", className: "status-pill--pending" };
+}
+
 function renderUsageList(target, logs) {
   if (!target) {
     return;
@@ -529,17 +540,33 @@ function renderUsageList(target, logs) {
         .map(
           (log) => {
             const typeLabel = log.type === "image" ? "صورة" : "مشروع فيديو";
-            const statusLabel = log.outputUrl ? "مكتمل" : "قيد المعالجة";
-            const statusClass = log.outputUrl ? "status-pill--active" : "status-pill--pending";
+            const statusMeta = getWorkStatusMeta(log.status, Boolean(log.resultUrl || log.outputUrl));
+            const statusLabel = statusMeta.label;
+            const statusClass = statusMeta.className;
+            const promptText = log.prompt || log.promptText || "بدون وصف محفوظ";
+            const createdAt = log.createdAt || log.created_at;
+            const resultUrl = log.resultUrl || log.outputUrl;
 
             return `
-            <article class="usage-item">
+            <article class="usage-item" data-work-type="${log.type}" data-work-status="${log.status || ""}">
               <div>
                 <strong>${escapeHtml(typeLabel)}</strong>
-                <p>${escapeHtml(log.promptText || "بدون وصف محفوظ")}</p>
+                <p>${escapeHtml(promptText)}</p>
+                ${
+                  resultUrl
+                    ? `<a class="btn btn-ghost btn-sm" href="${escapeHtml(
+                        resultUrl
+                      )}" target="_blank" rel="noopener">عرض النتيجة</a>`
+                    : ""
+                }
+                ${
+                  log.status === "failed"
+                    ? `<button class="btn btn-outline btn-sm" type="button" data-work-retry="${log.id}">إعادة المحاولة</button>`
+                    : ""
+                }
               </div>
               <div class="usage-item__meta">
-                <span>${formatDate(log.createdAt, true)}</span>
+                <span>${formatDate(createdAt, true)}</span>
                 <span class="status-pill ${statusClass}">${statusLabel}</span>
               </div>
             </article>
@@ -832,9 +859,11 @@ async function initDashboardPage() {
   const videoForm = document.querySelector("#videoCreateForm");
   const tabButtons = document.querySelectorAll("[data-create-tab]");
   const panels = document.querySelectorAll("[data-create-panel]");
+  const filterBar = document.querySelector("[data-work-filters]");
 
   let activeTab = "image";
   let cachedSubscription = null;
+  let currentWorks = [];
 
   const setPanelState = (panel, enabled) => {
     if (!panel) {
@@ -947,14 +976,18 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
     if (subscriptionTarget) {
       if (subscription) {
         const endDate = subscription.endAt ? new Date(subscription.endAt) : null;
+        const startDate = subscription.startAt ? new Date(subscription.startAt) : null;
         const daysLeft = endDate
           ? Math.max(Math.ceil((endDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)), 0)
           : null;
         const daysLabel = daysLeft !== null ? `${daysLeft} يوم` : "غير محدد";
+        const codeLabel = subscription.code ? `الكود: ${subscription.code}` : "بدون كود";
 
-        subscriptionTarget.textContent = `باقتك الحالية: ${subscription.packageName} — المتبقي: ${
+        subscriptionTarget.textContent = `باقتك الحالية: ${subscription.packageName} — ${codeLabel} — المتبقي: ${
           subscription.imageBalance ?? 0
-        } صورة / ${subscription.videoBalance ?? 0} فيديو — ينتهي الاشتراك بعد: ${daysLabel}`;
+        } صورة / ${subscription.videoBalance ?? 0} فيديو — يبدأ: ${formatDate(
+          startDate
+        )} — ينتهي بعد: ${daysLabel}`;
       } else {
         subscriptionTarget.textContent = "لا توجد باقة مفعلة حتى الآن. فعّل كودك للبدء.";
       }
@@ -1011,7 +1044,9 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
         : `<div class="empty-state">لا توجد باقة مفعلة حاليًا.</div>`;
     }
 
-    renderUsageList(usageTarget, dashboard.recentUsage || []);
+    const recentWorks = dashboard.recentWorks || dashboard.recentUsage || [];
+    currentWorks = recentWorks;
+    renderUsageList(usageTarget, recentWorks);
 
     cachedSubscription = subscription;
     const now = new Date();
@@ -1068,6 +1103,75 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
         setMessage(activationMessage, error.message, "error");
       } finally {
         setButtonBusy(button, false);
+      }
+    });
+  }
+
+  if (filterBar) {
+    filterBar.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-work-filter]");
+      if (!button) {
+        return;
+      }
+      const filter = button.dataset.workFilter || "all";
+      filterBar.querySelectorAll("button").forEach((btn) => {
+        btn.classList.toggle("is-active", btn === button);
+      });
+
+      const items = usageTarget?.querySelectorAll(".usage-item");
+      items?.forEach((item) => {
+        const type = item.dataset.workType;
+        item.classList.toggle(
+          "is-hidden",
+          filter !== "all" && type && type !== filter
+        );
+      });
+    });
+  }
+
+  if (usageTarget) {
+    usageTarget.addEventListener("click", async (event) => {
+      const retryButton = event.target.closest("[data-work-retry]");
+      if (!retryButton) {
+        return;
+      }
+
+      const id = Number(retryButton.dataset.workRetry);
+      const record = currentWorks.find((item) => item.id === id);
+      if (!record) {
+        return;
+      }
+
+      try {
+        setButtonBusy(retryButton, true, "جارٍ الإعادة...");
+        setMessage(createMessage, "");
+
+        const promptText = record.prompt || record.promptText || "";
+        if (!promptText) {
+          throw new Error("لا يوجد وصف محفوظ لإعادة المحاولة.");
+        }
+
+        if (record.type === "image") {
+          await requestJson("/api/ai/image", {
+            method: "POST",
+            body: JSON.stringify({ prompt: promptText }),
+          });
+        } else {
+          await requestJson("/api/ai/video", {
+            method: "POST",
+            body: JSON.stringify({
+              prompt: promptText,
+              durationSeconds: cachedSubscription?.videoMaxDurationSeconds || 60,
+            }),
+          });
+        }
+
+        showToast("تمت إعادة الإرسال بنجاح.");
+        await loadDashboard();
+      } catch (error) {
+        setMessage(createMessage, error.message, "error");
+      } finally {
+        setButtonBusy(retryButton, false);
       }
     });
   }
@@ -1482,6 +1586,7 @@ function renderCodesTable(target, codes) {
             <th>الحالة</th>
             <th>المستخدم</th>
             <th>التفعيل</th>
+            <th>الانتهاء</th>
             <th>الإجراء</th>
           </tr>
         </thead>
@@ -1507,6 +1612,7 @@ function renderCodesTable(target, codes) {
                   </td>
                   <td>${escapeHtml(code.activatedBy || "—")}</td>
                   <td>${code.activatedAt ? formatDate(code.activatedAt, true) : "—"}</td>
+                  <td>${code.expiresAt ? formatDate(code.expiresAt, true) : "—"}</td>
                   <td>
                     <div class="table-actions">
                       <button class="btn btn-secondary btn-sm" type="button" data-code-edit="${code.id}">تعديل</button>
@@ -1632,11 +1738,15 @@ async function initAdminCodesPage() {
   const target = document.querySelector("[data-admin-codes]");
   const message = document.querySelector("[data-admin-codes-message]");
 
-  const loadCodes = async (search = "") => {
+  const loadCodes = async (search = "", statusFilter = "all") => {
     const payload = await requestJson(`/api/admin/codes?search=${encodeURIComponent(search)}`, {
       method: "GET",
     });
-    state.codeRecords = payload.codes || [];
+    let records = payload.codes || [];
+    if (statusFilter && statusFilter !== "all") {
+      records = records.filter((code) => code.statusKey === statusFilter);
+    }
+    state.codeRecords = records;
     renderCodesTable(target, state.codeRecords);
   };
 
@@ -1657,7 +1767,11 @@ async function initAdminCodesPage() {
       setMessage(message, values.id ? "تم تحديث الكود." : "تم إنشاء الكود.", "success");
       fillCodeForm(form, null);
       const searchField = searchForm?.elements.namedItem("search");
-      await loadCodes(searchField ? searchField.value : "");
+      const statusField = searchForm?.elements.namedItem("status");
+      await loadCodes(
+        searchField ? searchField.value : "",
+        statusField ? statusField.value : "all"
+      );
     } catch (error) {
       setMessage(message, error.message, "error");
     } finally {
@@ -1668,7 +1782,11 @@ async function initAdminCodesPage() {
   searchForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
     const searchField = searchForm.elements.namedItem("search");
-    await loadCodes(searchField ? searchField.value : "");
+    const statusField = searchForm.elements.namedItem("status");
+    await loadCodes(
+      searchField ? searchField.value : "",
+      statusField ? statusField.value : "all"
+    );
   });
 
   document.querySelector("[data-code-reset]")?.addEventListener("click", () => {
@@ -1724,7 +1842,11 @@ async function initAdminCodesPage() {
           });
           setMessage(message, "تم تحديث حالة الكود.", "success");
           const searchField = searchForm?.elements.namedItem("search");
-          await loadCodes(searchField ? searchField.value : "");
+          const statusField = searchForm?.elements.namedItem("status");
+          await loadCodes(
+            searchField ? searchField.value : "",
+            statusField ? statusField.value : "all"
+          );
         } catch (error) {
           setMessage(message, error.message, "error");
         } finally {
@@ -1751,7 +1873,11 @@ async function initAdminCodesPage() {
           });
           setMessage(message, "تم حذف الكود.", "success");
           const searchField = searchForm?.elements.namedItem("search");
-          await loadCodes(searchField ? searchField.value : "");
+          const statusField = searchForm?.elements.namedItem("status");
+          await loadCodes(
+            searchField ? searchField.value : "",
+            statusField ? statusField.value : "all"
+          );
         } catch (error) {
           setMessage(message, error.message, "error");
         } finally {

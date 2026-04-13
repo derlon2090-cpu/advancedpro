@@ -245,6 +245,7 @@ router.get(
         statusKey,
         statusLabel,
         activatedAt: subscription?.startAt || null,
+        expiresAt: subscription?.endAt || null,
         activatedBy: subscription?.user?.email || null,
         remainingImages: subscription?.imageBalance ?? null,
         remainingVideos: subscription?.videoBalance ?? null,
