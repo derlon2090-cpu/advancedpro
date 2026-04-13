@@ -411,20 +411,39 @@ function setupPasswordToggles() {
   });
 }
 
-function setupLogoutButtons() {
-  document.querySelectorAll("[data-logout]").forEach((button) => {
-    button.addEventListener("click", async (event) => {
-      event.preventDefault();
-
-      try {
-        await requestJson("/api/auth/logout", {
-          method: "POST",
-        });
-      } finally {
-        setStoredToken(null);
-        window.location.href = "/login";
-      }
+async function performLogout() {
+  try {
+    await requestJson("/api/auth/logout", {
+      method: "POST",
     });
+  } catch (error) {
+    // ignore
+  } finally {
+    setStoredToken(null);
+    try {
+      document.cookie = "token=; Path=/; Max-Age=0; SameSite=None; Secure";
+      document.cookie = "token=; Path=/; Max-Age=0; SameSite=Lax";
+    } catch (error) {
+      // ignore
+    }
+    window.location.href = "/login";
+  }
+}
+
+function setupLogoutButtons() {
+  if (document.body.dataset.logoutBound === "true") {
+    return;
+  }
+
+  document.body.dataset.logoutBound = "true";
+
+  document.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-logout]");
+    if (!button) {
+      return;
+    }
+    event.preventDefault();
+    performLogout();
   });
 }
 
