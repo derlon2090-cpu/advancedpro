@@ -22,10 +22,31 @@ const AUTH_TOKEN_KEY = "advancedpro_token";
 
 function getStoredToken() {
   try {
-    return window.localStorage.getItem(AUTH_TOKEN_KEY);
+    const token = window.localStorage.getItem(AUTH_TOKEN_KEY);
+    if (token) {
+      return token;
+    }
   } catch (error) {
-    return null;
+    // Ignore storage failures.
   }
+
+  try {
+    const token = window.sessionStorage.getItem(AUTH_TOKEN_KEY);
+    if (token) {
+      return token;
+    }
+  } catch (error) {
+    // Ignore storage failures.
+  }
+
+  const cookieMatch = document.cookie.match(
+    new RegExp(`(?:^|; )${AUTH_TOKEN_KEY}=([^;]*)`)
+  );
+  if (cookieMatch) {
+    return decodeURIComponent(cookieMatch[1]);
+  }
+
+  return null;
 }
 
 function setStoredToken(token) {
@@ -37,6 +58,28 @@ function setStoredToken(token) {
     }
   } catch (error) {
     // Ignore storage failures (private mode, blocked storage).
+  }
+
+  try {
+    if (token) {
+      window.sessionStorage.setItem(AUTH_TOKEN_KEY, token);
+    } else {
+      window.sessionStorage.removeItem(AUTH_TOKEN_KEY);
+    }
+  } catch (error) {
+    // Ignore storage failures.
+  }
+
+  try {
+    if (token) {
+      document.cookie = `${AUTH_TOKEN_KEY}=${encodeURIComponent(
+        token
+      )}; Path=/; Max-Age=604800; SameSite=Lax`;
+    } else {
+      document.cookie = `${AUTH_TOKEN_KEY}=; Path=/; Max-Age=0; SameSite=Lax`;
+    }
+  } catch (error) {
+    // Ignore cookie failures.
   }
 }
 
@@ -499,6 +542,7 @@ async function initLoginPage() {
       }, 800);
     } catch (error) {
       setMessage(message, error.message, "error");
+      showToast(error.message, "error");
     } finally {
       setButtonBusy(button, false);
     }
@@ -550,6 +594,7 @@ async function initRegisterPage() {
       }, 1200);
     } catch (error) {
       setMessage(message, error.message, "error");
+      showToast(error.message, "error");
     } finally {
       setButtonBusy(button, false);
     }
