@@ -184,6 +184,48 @@ router.patch(
   })
 );
 
+function mapCodeRecord(code) {
+  const now = new Date();
+  const subscription = code.subscriptions?.[0];
+  const remaining = subscription
+    ? Number(subscription.imageBalance || 0) + Number(subscription.videoBalance || 0)
+    : 0;
+  const expired = subscription && (new Date(subscription.endAt) < now || subscription.status !== "active");
+
+  let statusKey = "available";
+  let statusLabel = "متاح";
+
+  if (!code.isActive) {
+    statusKey = "disabled";
+    statusLabel = "معطل";
+  } else if (subscription) {
+    if (expired) {
+      statusKey = "expired";
+      statusLabel = "منتهي";
+    } else if (remaining <= 0) {
+      statusKey = "used";
+      statusLabel = "تم الاستخدام";
+    } else {
+      statusKey = "in-use";
+      statusLabel = "قيد الاستخدام";
+    }
+  } else if (code.redeemedCount >= code.maxRedemptions) {
+    statusKey = "used";
+    statusLabel = "تم الاستخدام";
+  }
+
+  return {
+    ...code,
+    statusKey,
+    statusLabel,
+    activatedAt: subscription?.startAt || null,
+    expiresAt: subscription?.endAt || null,
+    activatedBy: subscription?.user?.email || null,
+    remainingImages: subscription?.imageBalance ?? null,
+    remainingVideos: subscription?.videoBalance ?? null,
+  };
+}
+
 router.get(
   "/codes",
   asyncHandler(async (req, res) => {
@@ -210,49 +252,7 @@ router.get(
       },
     });
 
-    const now = new Date();
-    const mapped = codes.map((code) => {
-      const subscription = code.subscriptions?.[0];
-      const remaining =
-        subscription ? Number(subscription.imageBalance || 0) + Number(subscription.videoBalance || 0) : 0;
-      const expired =
-        subscription && (new Date(subscription.endAt) < now || subscription.status !== "active");
-
-      let statusKey = "available";
-      let statusLabel = "متاح";
-
-      if (!code.isActive) {
-        statusKey = "disabled";
-        statusLabel = "معطل";
-      } else if (subscription) {
-        if (expired) {
-          statusKey = "expired";
-          statusLabel = "منتهي";
-        } else if (remaining <= 0) {
-          statusKey = "used";
-          statusLabel = "تم الاستخدام";
-        } else {
-          statusKey = "in-use";
-          statusLabel = "قيد الاستخدام";
-        }
-      } else if (code.redeemedCount >= code.maxRedemptions) {
-        statusKey = "used";
-        statusLabel = "تم الاستخدام";
-      }
-
-      return {
-        ...code,
-        statusKey,
-        statusLabel,
-        activatedAt: subscription?.startAt || null,
-        expiresAt: subscription?.endAt || null,
-        activatedBy: subscription?.user?.email || null,
-        remainingImages: subscription?.imageBalance ?? null,
-        remainingVideos: subscription?.videoBalance ?? null,
-      };
-    });
-
-    return res.json({ codes: mapped });
+    return res.json({ codes: codes.map(mapCodeRecord) });
   })
 );
 
@@ -260,8 +260,7 @@ router.post(
   "/codes",
   asyncHandler(async (req, res) => {
     const payload = req.body;
-
-    await prisma.code.create({
+    const created = await prisma.code.create({
       data: {
         code: payload.code,
         planName: payload.planName,
@@ -279,8 +278,18 @@ router.post(
         assignedEmail: payload.assignedEmail || null,
       },
     });
+    const fullRecord = await prisma.code.findUnique({
+      where: { id: created.id },
+      include: {
+        subscriptions: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          include: { user: true },
+        },
+      },
+    });
 
-    return res.json({ message: "تم إنشاء الكود." });
+    return res.json({ message: "تم إنشاء الكود.", code: mapCodeRecord(fullRecord || created) });
   })
 );
 

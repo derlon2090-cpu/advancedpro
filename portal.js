@@ -1941,7 +1941,7 @@ async function initAdminCodesPage() {
 
     try {
       setButtonBusy(button, true, values.id ? "جاري التحديث..." : "جاري الإنشاء...");
-      await requestJson("/api/admin/codes", {
+      const payload = await requestJson("/api/admin/codes", {
         method: values.id ? "PATCH" : "POST",
         body: JSON.stringify(values),
       });
@@ -1949,10 +1949,24 @@ async function initAdminCodesPage() {
       fillCodeForm(form, null);
       const searchField = searchForm?.elements.namedItem("search");
       const statusField = searchForm?.elements.namedItem("status");
-      await loadCodes(
-        searchField ? searchField.value : "",
-        statusField ? statusField.value : "all"
-      );
+      if (!values.id && searchField && statusField) {
+        searchField.value = "";
+        statusField.value = "all";
+      }
+
+      try {
+        await loadCodes(
+          searchField ? searchField.value : "",
+          statusField ? statusField.value : "all"
+        );
+      } catch (loadError) {
+        if (payload?.code && target) {
+          state.codeRecords = [payload.code, ...state.codeRecords];
+          renderCodesTable(target, state.codeRecords);
+        } else {
+          throw loadError;
+        }
+      }
     } catch (error) {
       setMessage(message, error.message, "error");
     } finally {
