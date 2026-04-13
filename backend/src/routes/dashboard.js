@@ -9,22 +9,37 @@ router.get(
   "/",
   requireAuth,
   asyncHandler(async (req, res) => {
-    const subscription = await prisma.subscription.findFirst({
-      where: { userId: req.user.id },
-      orderBy: { createdAt: "desc" },
-    });
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-    const usageTotals = await prisma.usageLog.groupBy({
-      by: ["type"],
-      where: { userId: req.user.id },
-      _sum: { amountUsed: true },
-    });
-
-    const recentUsage = await prisma.usageLog.findMany({
-      where: { userId: req.user.id },
-      orderBy: { createdAt: "desc" },
-      take: 6,
-    });
+    const [
+      subscription,
+      usageTotals,
+      recentUsage,
+      totalWorks,
+      totalImages,
+      totalVideos,
+      newWorks,
+    ] = await Promise.all([
+      prisma.subscription.findFirst({
+        where: { userId: req.user.id },
+        orderBy: { createdAt: "desc" },
+        include: { code: true },
+      }),
+      prisma.usageLog.groupBy({
+        by: ["type"],
+        where: { userId: req.user.id },
+        _sum: { amountUsed: true },
+      }),
+      prisma.usageLog.findMany({
+        where: { userId: req.user.id },
+        orderBy: { createdAt: "desc" },
+        take: 6,
+      }),
+      prisma.usageLog.count({ where: { userId: req.user.id } }),
+      prisma.usageLog.count({ where: { userId: req.user.id, type: "image" } }),
+      prisma.usageLog.count({ where: { userId: req.user.id, type: "video" } }),
+      prisma.usageLog.count({ where: { userId: req.user.id, createdAt: { gte: weekAgo } } }),
+    ]);
 
     const totals = usageTotals.reduce(
       (acc, item) => {
@@ -45,7 +60,8 @@ router.get(
         subscription: subscription
           ? {
               packageName: subscription.packageName,
-              code: subscription.codeId ? String(subscription.codeId) : null,
+              code: subscription.code?.code || null,
+              status: subscription.status,
               imageBalance: subscription.imageBalance,
               videoBalance: subscription.videoBalance,
               videoMaxDurationSeconds: subscription.videoMaxDurationSeconds,
@@ -53,6 +69,12 @@ router.get(
             }
           : null,
         usageTotals: totals,
+        stats: {
+          totalWorks,
+          totalImages,
+          totalVideos,
+          newWorks,
+        },
         recentUsage,
       },
     });
