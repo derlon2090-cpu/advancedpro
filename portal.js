@@ -554,9 +554,16 @@ function renderUsageList(target, logs) {
                 <p>${escapeHtml(promptText)}</p>
                 ${
                   resultUrl
-                    ? `<a class="btn btn-ghost btn-sm" href="${escapeHtml(
-                        resultUrl
-                      )}" target="_blank" rel="noopener">عرض النتيجة</a>`
+                    ? `
+                      <div class="table-actions">
+                        <a class="btn btn-ghost btn-sm" href="${escapeHtml(
+                          resultUrl
+                        )}" target="_blank" rel="noopener">عرض النتيجة</a>
+                        <a class="btn btn-outline btn-sm" href="${escapeHtml(
+                          resultUrl
+                        )}" download>تحميل مباشر</a>
+                      </div>
+                    `
                     : ""
                 }
                 ${
