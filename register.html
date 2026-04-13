@@ -116,5 +116,65 @@
 
     <script src="/site.js"></script>
     <script src="/portal.js"></script>
+    <script>
+      window.addEventListener("DOMContentLoaded", () => {
+        if (window.__portalLoaded) {
+          return;
+        }
+
+        const form = document.getElementById("registerForm");
+        const message = document.querySelector("[data-form-message]");
+
+        if (!form) {
+          return;
+        }
+
+        form.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          const fullName = form.fullName?.value?.trim();
+          const email = form.email?.value?.trim();
+          const password = form.password?.value || "";
+          const confirmPassword = form.confirmPassword?.value || "";
+
+          if (!fullName || !email || !password || !confirmPassword) {
+            if (message) {
+              message.hidden = false;
+              message.className = "status-message is-error";
+              message.textContent = "أكمل البيانات المطلوبة";
+            }
+            return;
+          }
+
+          if (password !== confirmPassword) {
+            if (message) {
+              message.hidden = false;
+              message.className = "status-message is-error";
+              message.textContent = "تأكيد كلمة المرور غير مطابق";
+            }
+            return;
+          }
+
+          try {
+            const response = await fetch("https://advancedpro.onrender.com/api/auth/register", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ fullName, email, password }),
+            });
+            const payload = await response.json();
+            if (!response.ok) {
+              throw new Error(payload.message || "تعذر إنشاء الحساب");
+            }
+            localStorage.setItem("advancedpro_token", payload.token);
+            window.location.href = payload.redirectTo || "/student.html";
+          } catch (error) {
+            if (message) {
+              message.hidden = false;
+              message.className = "status-message is-error";
+              message.textContent = error.message || "تعذر إنشاء الحساب";
+            }
+          }
+        });
+      });
+    </script>
   </body>
 </html>

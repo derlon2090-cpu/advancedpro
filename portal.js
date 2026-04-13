@@ -1,3 +1,5 @@
+window.__portalLoaded = true;
+
 const defaultSiteSettings = {
   storeUrl: "https://advproai.com",
   supportWhatsapp: "966556915980",
