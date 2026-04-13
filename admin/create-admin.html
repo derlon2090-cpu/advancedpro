@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>إدارة الاشتراكات | Advanced Pro Nano</title>
+    <title>إنشاء أدمن جديد | Advanced Pro Nano</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -12,7 +12,7 @@
     />
     <link rel="stylesheet" href="/styles.css" />
   </head>
-  <body data-page="admin-subscriptions" data-requires-admin="true" data-skip-site-footer="true">
+  <body data-page="admin-create" data-requires-admin="true" data-skip-site-footer="true">
     <main class="admin-shell">
       <aside class="admin-sidebar">
         <a class="brand brand--column" href="/admin">
@@ -26,7 +26,7 @@
         <nav class="admin-nav">
           <a href="/admin">الرئيسية</a>
           <a href="/admin/users">المستخدمون</a>
-          <a href="/admin/create-admin">إنشاء أدمن</a>
+          <a class="is-active" href="/admin/create-admin">إنشاء أدمن</a>
           <a href="/admin/plans">الباقات</a>
           <a href="/admin/codes">الأكواد</a>
           <a href="/admin/activity">النشاط</a>
@@ -43,48 +43,55 @@
       <section class="admin-main">
         <div class="admin-toolbar">
           <div>
-            <span class="section-kicker">Subscriptions</span>
-            <h1>متابعة الاشتراكات</h1>
+            <span class="section-kicker">Admin</span>
+            <h1>إنشاء حساب أدمن جديد</h1>
           </div>
         </div>
 
         <article class="page-card">
-          <form id="adminSubscriptionForm" class="split-form split-form--compact">
-            <input name="id" type="hidden" />
+          <form id="adminCreateForm" class="split-form">
             <div class="field">
-              <label>الحالة</label>
-              <select name="status">
-                <option value="active">active</option>
-                <option value="expired">expired</option>
-                <option value="cancelled">cancelled</option>
-              </select>
+              <label>الاسم الكامل</label>
+              <input name="fullName" type="text" placeholder="Admin" />
             </div>
             <div class="field">
-              <label>رصيد الصور</label>
-              <input name="imageBalance" type="number" min="0" value="0" />
+              <label>البريد الإلكتروني</label>
+              <input name="email" type="email" placeholder="admin@example.com" required />
             </div>
-            <div class="field">
-              <label>رصيد المقاطع</label>
-              <input name="videoBalance" type="number" min="0" value="0" />
+
+            <label class="toggle-field">
+              <input name="autoPassword" type="checkbox" checked />
+              <span>توليد كلمة مرور قوية تلقائيًا</span>
+            </label>
+
+            <div class="field password-field" hidden>
+              <label>كلمة المرور</label>
+              <div class="password-input">
+                <input name="password" type="password" placeholder="********" minlength="8" />
+                <button class="password-toggle" type="button" data-password-toggle></button>
+              </div>
             </div>
-            <div class="field">
-              <label>تاريخ النهاية</label>
-              <input name="endAt" type="datetime-local" />
+
+            <div class="field password-field" hidden>
+              <label>تأكيد كلمة المرور</label>
+              <div class="password-input">
+                <input
+                  name="confirmPassword"
+                  type="password"
+                  placeholder="********"
+                  minlength="8"
+                />
+                <button class="password-toggle" type="button" data-password-toggle></button>
+              </div>
             </div>
+
             <div class="inline-actions">
-              <button class="btn btn-primary" type="submit">حفظ الاشتراك</button>
+              <button class="btn btn-primary" type="submit">إنشاء الأدمن</button>
+              <button class="btn btn-secondary" type="button" data-admin-reset>تفريغ النموذج</button>
             </div>
           </form>
 
-          <div class="status-message" hidden data-admin-subscriptions-message></div>
-        </article>
-
-        <article class="page-card">
-          <form id="adminSubscriptionsSearch" class="toolbar-form">
-            <input name="search" type="search" placeholder="ابحث بالمستخدم أو الباقة أو الكود" />
-            <button class="btn btn-secondary" type="submit">بحث</button>
-          </form>
-          <div data-admin-subscriptions></div>
+          <div class="status-message" hidden data-admin-create-message></div>
         </article>
       </section>
     </main>

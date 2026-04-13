@@ -1253,6 +1253,86 @@ function renderCodesTable(target, codes) {
   `;
 }
 
+async function initAdminCreatePage() {
+  const form = document.querySelector("#adminCreateForm");
+  const message = document.querySelector("[data-admin-create-message]");
+  const resetButton = document.querySelector("[data-admin-reset]");
+  const autoToggle = form?.elements.namedItem("autoPassword");
+  const passwordFields = document.querySelectorAll(".password-field");
+
+  const togglePasswordFields = () => {
+    const useAuto = autoToggle?.checked !== false;
+    passwordFields.forEach((field) => {
+      field.hidden = useAuto;
+    });
+  };
+
+  if (autoToggle) {
+    autoToggle.addEventListener("change", togglePasswordFields);
+    togglePasswordFields();
+  }
+
+  resetButton?.addEventListener("click", () => {
+    form?.reset();
+    togglePasswordFields();
+    setMessage(message, "");
+  });
+
+  if (!form) {
+    return;
+  }
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const button = form.querySelector('button[type="submit"]');
+
+    try {
+      const values = formToObject(form);
+      if (!isValidEmail(values.email)) {
+        throw new Error("أدخل بريدًا إلكترونيًا صحيحًا.");
+      }
+
+      if (!autoToggle?.checked) {
+        const passwordError = getPasswordValidationError(values.password);
+        if (passwordError) {
+          throw new Error(passwordError);
+        }
+        if (values.password !== values.confirmPassword) {
+          throw new Error("تأكيد كلمة المرور غير مطابق.");
+        }
+      }
+
+      setButtonBusy(button, true, "جارٍ الإنشاء...");
+      setMessage(message, "");
+
+      const payload = await requestJson("/api/admin/admins", {
+        method: "POST",
+        body: JSON.stringify({
+          fullName: values.fullName,
+          email: values.email,
+          password: autoToggle?.checked ? undefined : values.password,
+        }),
+      });
+
+      const passwordNote = payload.credentials?.password
+        ? `كلمة المرور: ${payload.credentials.password}`
+        : "تم استخدام كلمة المرور التي أدخلتها.";
+
+      setMessage(
+        message,
+        `تم إنشاء الأدمن بنجاح. البريد: ${payload.user?.email}. ${passwordNote}`,
+        "success"
+      );
+      form.reset();
+      togglePasswordFields();
+    } catch (error) {
+      setMessage(message, error.message, "error");
+    } finally {
+      setButtonBusy(button, false);
+    }
+  });
+}
+
 function fillCodeForm(form, record) {
   form.elements.namedItem("id").value = record?.id || "";
   form.elements.namedItem("code").value = record?.code || "";
@@ -1592,6 +1672,8 @@ async function initPage(user) {
       return initAdminUsersPage();
     case "admin-codes":
       return initAdminCodesPage();
+    case "admin-create":
+      return initAdminCreatePage();
     case "admin-subscriptions":
       return initAdminSubscriptionsPage();
     case "admin-settings":

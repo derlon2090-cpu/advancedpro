@@ -1,4 +1,6 @@
 import { Router } from "express";
+import bcrypt from "bcryptjs";
+import { z } from "zod";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { prisma } from "../lib/prisma.js";
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
@@ -7,6 +9,48 @@ import { setSetting, getSetting, getPublicSettings } from "../services/settings.
 const router = Router();
 
 router.use(requireAuth, requireAdmin);
+
+const createAdminSchema = z.object({
+  fullName: z.string().min(2).optional(),
+  email: z.string().email(),
+  password: z.string().min(8).optional(),
+});
+
+function generateStrongPassword(length = 16) {
+  const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  const lower = "abcdefghijkmnopqrstuvwxyz";
+  const numbers = "23456789";
+  const symbols = "!@#$%^&*_-+=?";
+  const all = `${upper}${lower}${numbers}${symbols}`;
+
+  let password = "";
+  password += upper[Math.floor(Math.random() * upper.length)];
+  password += lower[Math.floor(Math.random() * lower.length)];
+  password += numbers[Math.floor(Math.random() * numbers.length)];
+  password += symbols[Math.floor(Math.random() * symbols.length)];
+
+  for (let i = password.length; i < length; i += 1) {
+    password += all[Math.floor(Math.random() * all.length)];
+  }
+
+  return password
+    .split("")
+    .sort(() => Math.random() - 0.5)
+    .join("");
+}
+
+function validatePasswordRules(password) {
+  if (password.length < 8) {
+    return "كلمة المرور يجب أن تكون 8 أحرف على الأقل.";
+  }
+  if (!/[A-Z]/.test(password)) {
+    return "أضف حرفًا كبيرًا واحدًا على الأقل داخل كلمة المرور.";
+  }
+  if (!/\d/.test(password)) {
+    return "أضف رقمًا واحدًا على الأقل داخل كلمة المرور.";
+  }
+  return "";
+}
 
 router.get(
   "/summary",
@@ -29,6 +73,55 @@ router.get(
         activeSubscriptions,
         activeCodes,
         requestsLast7Days,
+      },
+    });
+  })
+);
+
+router.post(
+  "/admins",
+  asyncHandler(async (req, res) => {
+    const values = createAdminSchema.parse(req.body || {});
+    const existing = await prisma.user.findUnique({ where: { email: values.email } });
+
+    if (existing) {
+      return res.status(409).json({ message: "هذا البريد مسجل بالفعل." });
+    }
+
+    let generatedPassword = null;
+    let finalPassword = values.password;
+    if (!finalPassword) {
+      generatedPassword = generateStrongPassword();
+      finalPassword = generatedPassword;
+    } else {
+      const passwordError = validatePasswordRules(finalPassword);
+      if (passwordError) {
+        return res.status(400).json({ message: passwordError });
+      }
+    }
+
+    const passwordHash = await bcrypt.hash(finalPassword, 10);
+    const user = await prisma.user.create({
+      data: {
+        fullName: values.fullName || "Admin",
+        email: values.email,
+        passwordHash,
+        role: "admin",
+        status: "active",
+      },
+    });
+
+    return res.json({
+      message: "تم إنشاء الأدمن بنجاح.",
+      user: {
+        id: user.id,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role,
+      },
+      credentials: {
+        email: user.email,
+        password: generatedPassword,
       },
     });
   })
