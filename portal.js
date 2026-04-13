@@ -344,8 +344,8 @@ function applyPublicSettings() {
   });
 }
 
-async function getCurrentUser() {
-  if (state.currentUser !== undefined) {
+async function getCurrentUser(force = false) {
+  if (!force && state.currentUser !== undefined) {
     return state.currentUser;
   }
 
@@ -431,7 +431,7 @@ async function enforceRoute() {
   const needsAuth = document.body.dataset.requiresAuth === "true";
   const needsAdmin = document.body.dataset.requiresAdmin === "true";
   const guestOnly = document.body.dataset.guestOnly === "true";
-  const user = await getCurrentUser();
+  let user = await getCurrentUser();
 
   updateSessionUi(user);
 
@@ -441,8 +441,20 @@ async function enforceRoute() {
   }
 
   if (needsAuth && !user) {
-    window.location.href = page === "activate" ? "/login?next=/activate" : "/login";
-    return null;
+    if (getStoredToken()) {
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        await new Promise((resolve) => window.setTimeout(resolve, 600 + attempt * 400));
+        user = await getCurrentUser(true);
+        if (user) {
+          break;
+        }
+      }
+    }
+
+    if (!user) {
+      window.location.href = page === "activate" ? "/login?next=/activate" : "/login";
+      return null;
+    }
   }
 
   if (needsAdmin && (!user || user.role !== "admin")) {
