@@ -107,6 +107,12 @@ function createThemeToggle() {
   }
 
   if (!toggleHost) {
+    toggleHost = document.createElement("div");
+    toggleHost.className = "floating-theme-toggle";
+    document.body.appendChild(toggleHost);
+  }
+
+  if (!toggleHost) {
     return;
   }
 
@@ -129,18 +135,18 @@ function createScrollTopButton() {
   const button = existingButton || document.createElement("button");
 
   if (!existingButton) {
-  button.type = "button";
-  button.className = "scroll-top-btn";
-  button.setAttribute("data-scroll-top", "");
-  button.setAttribute("aria-label", "العودة للأعلى");
-  button.innerHTML = `
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path
-        fill="currentColor"
-        d="M12 20a1 1 0 0 1-1-1V8.4l-3.7 3.7a1 1 0 1 1-1.4-1.4l5.4-5.4a1 1 0 0 1 1.4 0l5.4 5.4a1 1 0 1 1-1.4 1.4L13 8.4V19a1 1 0 0 1-1 1"
-      />
-    </svg>
-  `;
+    button.type = "button";
+    button.className = "scroll-top-btn";
+    button.setAttribute("data-scroll-top", "");
+    button.setAttribute("aria-label", "العودة للأعلى");
+    button.innerHTML = `
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          fill="currentColor"
+          d="M12 20a1 1 0 0 1-1-1V8.4l-3.7 3.7a1 1 0 1 1-1.4-1.4l5.4-5.4a1 1 0 0 1 1.4 0l5.4 5.4a1 1 0 1 1-1.4 1.4L13 8.4V19a1 1 0 0 1-1 1"
+        />
+      </svg>
+    `;
   }
 
   if (button.dataset.bound !== "true") {
@@ -154,7 +160,7 @@ function createScrollTopButton() {
     window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
 
   const toggleVisibility = () => {
-    const threshold = Math.max(120, window.innerHeight * 0.25);
+    const threshold = Math.max(80, window.innerHeight * 0.2);
     const shouldShow = getScrollTop() > threshold;
     button.classList.toggle("is-visible", shouldShow);
   };
@@ -378,17 +384,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   applyTheme(document.documentElement.dataset.theme || getStoredTheme() || getSystemTheme());
   createWhatsAppButton();
 
-  const path = window.location.pathname;
-  const pageId = document.body.dataset.page || "";
-  const hasHero = !!document.querySelector(".hero");
-  const isHome =
-    pageId === "home" ||
-    hasHero ||
-    path === "/" ||
-    path === "/index" ||
-    path.endsWith("/index") ||
-    path.endsWith("/index.html");
-  if (isHome || document.querySelector("[data-scroll-top]")) {
+  if (!isAdminExperience) {
     createScrollTopButton();
   }
 

@@ -137,6 +137,15 @@ html[data-theme="dark"] .site-header {
   z-index: 5;
 }
 
+.floating-theme-toggle {
+  position: fixed;
+  left: 18px;
+  top: 18px;
+  z-index: 1200;
+  display: inline-flex;
+  align-items: center;
+}
+
 .brand-mark {
   width: 52px;
   height: 52px;
