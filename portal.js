@@ -640,9 +640,85 @@ async function initForgotPasswordPage() {
         body: JSON.stringify(values),
       });
       setMessage(message, payload.message, "success");
-      form.reset();
+      if (payload.email) {
+        try {
+          window.sessionStorage.setItem("advancedpro_reset_email", payload.email);
+        } catch (error) {
+          // ignore
+        }
+      }
+      window.setTimeout(() => {
+        window.location.href = payload.redirectTo || "/reset-password.html";
+      }, 900);
     } catch (error) {
       setMessage(message, error.message, "error");
+    } finally {
+      setButtonBusy(button, false);
+    }
+  });
+}
+
+async function initResetPasswordPage() {
+  const form = document.querySelector("#resetPasswordForm");
+  const message = document.querySelector("[data-form-message]");
+
+  if (!form) {
+    return;
+  }
+
+  try {
+    const savedEmail = window.sessionStorage.getItem("advancedpro_reset_email");
+    if (savedEmail && form.email) {
+      form.email.value = savedEmail;
+    }
+  } catch (error) {
+    // ignore
+  }
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const button = form.querySelector('button[type="submit"]');
+
+    try {
+      const values = formToObject(form);
+
+      if (!isValidEmail(values.email)) {
+        throw new Error("أدخل بريدًا إلكترونيًا صحيحًا.");
+      }
+
+      const passwordError = getPasswordValidationError(values.password);
+      if (passwordError) {
+        throw new Error(passwordError);
+      }
+
+      if (values.password !== values.confirmPassword) {
+        throw new Error("تأكيد كلمة المرور غير مطابق.");
+      }
+
+      if (!values.code || String(values.code).length < 6) {
+        throw new Error("أدخل رمز التحقق المرسل إلى بريدك.");
+      }
+
+      setButtonBusy(button, true, "جارٍ التحديث...");
+      setMessage(message, "");
+
+      const payload = await requestJson("/api/auth/reset-password", {
+        method: "POST",
+        body: JSON.stringify({
+          email: values.email,
+          code: values.code,
+          password: values.password,
+        }),
+      });
+
+      setMessage(message, payload.message, "success");
+      showToast(payload.message || "تم تغيير كلمة المرور بنجاح.");
+      window.setTimeout(() => {
+        window.location.href = payload.redirectTo || "/login";
+      }, 1200);
+    } catch (error) {
+      setMessage(message, error.message, "error");
+      showToast(error.message, "error");
     } finally {
       setButtonBusy(button, false);
     }
@@ -1500,6 +1576,8 @@ async function initPage(user) {
       return initRegisterPage();
     case "forgot-password":
       return initForgotPasswordPage();
+    case "reset-password":
+      return initResetPasswordPage();
     case "activate":
       return initActivatePage(user);
     case "dashboard":
