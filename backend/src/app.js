@@ -70,6 +70,17 @@ app.use((err, req, res, _next) => {
   let statusCode = err?.statusCode || 500;
   let message = err?.message || "حدث خطأ غير متوقع.";
 
+  if (err?.code === "P2021") {
+    statusCode = 500;
+    message =
+      "جداول قاعدة البيانات غير موجودة. شغّل prisma db push في Render لإنشائها.";
+  }
+
+  if (err?.code === "P1000" || err?.code === "P1001") {
+    statusCode = 500;
+    message = "تعذر الاتصال بقاعدة البيانات. تحقق من DATABASE_URL.";
+  }
+
   if (err?.code === "LIMIT_FILE_SIZE") {
     statusCode = 413;
     message = "حجم الملف أكبر من المسموح.";
