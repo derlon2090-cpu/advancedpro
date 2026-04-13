@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>إعداد حساب الأدمن | Advanced Pro Nano</title>
+    <meta
+      name="description"
+      content="إنشاء حساب الأدمن الأول لمنصة Advanced Pro Nano بخطوة واحدة."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body data-page="admin-setup">
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="brand" href="/">
+          <span class="brand-mark">AP</span>
+          <span class="brand-copy">
+            <strong>Advanced Pro Nano</strong>
+            <span>AI Media Platform</span>
+          </span>
+        </a>
+        <nav class="nav-links">
+          <a href="/">الرئيسية</a>
+          <a href="/login">تسجيل الدخول</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <section class="page-hero">
+        <div class="container auth-grid">
+          <article class="page-card auth-card">
+            <span class="section-kicker">Admin Setup</span>
+            <h1>إنشاء حساب الأدمن الأول</h1>
+            <p>
+              هذه الصفحة تعمل مرة واحدة فقط. بعد إنشاء حساب الأدمن سيتم إغلاقها
+              تلقائيًا.
+            </p>
+
+            <form id="adminSetupForm" class="stack-form" method="post">
+              <div class="field">
+                <label for="adminName">الاسم الكامل</label>
+                <input id="adminName" name="fullName" type="text" placeholder="Admin" />
+              </div>
+
+              <div class="field">
+                <label for="adminEmail">البريد الإلكتروني</label>
+                <input
+                  id="adminEmail"
+                  name="email"
+                  type="email"
+                  placeholder="admin@example.com"
+                  required
+                />
+              </div>
+
+              <div class="field checkbox-field">
+                <label>
+                  <input id="autoPassword" type="checkbox" checked />
+                  توليد كلمة مرور قوية تلقائيًا
+                </label>
+              </div>
+
+              <div class="field password-field" hidden>
+                <label for="adminPassword">كلمة المرور</label>
+                <div class="password-input">
+                  <input
+                    id="adminPassword"
+                    name="password"
+                    type="password"
+                    placeholder="********"
+                    minlength="8"
+                  />
+                  <button class="password-toggle" type="button" data-password-toggle></button>
+                </div>
+              </div>
+
+              <div class="field password-field" hidden>
+                <label for="adminPasswordConfirm">تأكيد كلمة المرور</label>
+                <div class="password-input">
+                  <input
+                    id="adminPasswordConfirm"
+                    name="passwordConfirm"
+                    type="password"
+                    placeholder="********"
+                    minlength="8"
+                  />
+                  <button class="password-toggle" type="button" data-password-toggle></button>
+                </div>
+              </div>
+
+              <div class="status-message" hidden data-form-message></div>
+              <button class="btn btn-primary btn-block" type="submit">إنشاء الأدمن</button>
+            </form>
+          </article>
+
+          <article class="page-card auth-side">
+            <span class="section-kicker">مهم</span>
+            <h2>احتفظ ببيانات الدخول</h2>
+            <p>
+              سيتم عرض بيانات الأدمن مرة واحدة فقط بعد الإنشاء. احفظها في مكان
+              آمن لأن الصفحة ستغلق تلقائيًا بعد إنشاء أول حساب أدمن.
+            </p>
+            <div class="status-message" hidden data-admin-credentials></div>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <script src="/site.js"></script>
+    <script src="/portal.js"></script>
+    <script>
+      const apiBaseUrl =
+        window.AdvancedProConfig?.apiBaseUrl || "https://advancedpro.onrender.com";
+
+      const form = document.getElementById("adminSetupForm");
+      const message = document.querySelector("[data-form-message]");
+      const credsBox = document.querySelector("[data-admin-credentials]");
+      const autoPassword = document.getElementById("autoPassword");
+      const passwordFields = document.querySelectorAll(".password-field");
+
+      const togglePasswordFields = () => {
+        const useAuto = autoPassword.checked;
+        passwordFields.forEach((field) => {
+          field.hidden = useAuto;
+        });
+      };
+
+      if (autoPassword) {
+        autoPassword.addEventListener("change", togglePasswordFields);
+        togglePasswordFields();
+      }
+
+      const showMessage = (text, type = "success") => {
+        if (!message) return;
+        message.hidden = false;
+        message.className = `status-message ${type === "error" ? "is-error" : "is-success"}`;
+        message.textContent = text;
+      };
+
+      const showCredentials = (payload) => {
+        if (!credsBox) return;
+        const password = payload?.credentials?.password;
+        const email = payload?.credentials?.email;
+        const lines = [];
+        lines.push("تم إنشاء حساب الأدمن بنجاح.");
+        lines.push(`البريد: ${email}`);
+        if (password) {
+          lines.push(`كلمة المرور: ${password}`);
+        } else {
+          lines.push("تم استخدام كلمة المرور التي أدخلتها.");
+        }
+        credsBox.hidden = false;
+        credsBox.className = "status-message is-success";
+        credsBox.textContent = lines.join(" | ");
+      };
+
+      if (form) {
+        form.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          if (!form.email.value.trim()) {
+            showMessage("أدخل البريد الإلكتروني أولًا.", "error");
+            return;
+          }
+
+          if (!autoPassword.checked) {
+            if (!form.password.value || form.password.value.length < 8) {
+              showMessage("كلمة المرور يجب أن تكون 8 أحرف على الأقل.", "error");
+              return;
+            }
+            if (form.password.value !== form.passwordConfirm.value) {
+              showMessage("تأكيد كلمة المرور غير متطابق.", "error");
+              return;
+            }
+          }
+
+          showMessage("جاري إنشاء الأدمن...", "success");
+
+          try {
+            const response = await fetch(`${apiBaseUrl}/api/bootstrap/admin`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                fullName: form.fullName.value.trim() || undefined,
+                email: form.email.value.trim(),
+                password: autoPassword.checked ? undefined : form.password.value,
+              }),
+            });
+
+            const payload = await response.json();
+
+            if (!response.ok) {
+              showMessage(payload.message || "تعذر إنشاء الأدمن.", "error");
+              return;
+            }
+
+            if (payload.token) {
+              try {
+                localStorage.setItem("advancedpro_token", payload.token);
+              } catch (error) {
+                // ignore
+              }
+            }
+
+            showCredentials(payload);
+            showMessage("تم إنشاء الأدمن، سيتم تحويلك للوحة التحكم خلال لحظات.");
+            setTimeout(() => {
+              window.location.href = payload.redirectTo || "/admin";
+            }, 1500);
+          } catch (error) {
+            showMessage("تعذر الاتصال بالخادم الآن.", "error");
+          }
+        });
+      }
+    </script>
+  </body>
+</html>
