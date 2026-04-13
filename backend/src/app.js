@@ -17,6 +17,7 @@ import { apiLimiter } from "./middleware/rateLimit.js";
 import { logError } from "./utils/logger.js";
 
 const app = express();
+app.set("trust proxy", 1);
 
 const originEnv = process.env.FRONTEND_ORIGIN || "*";
 const allowedOrigins = originEnv.split(",").map((value) => value.trim());

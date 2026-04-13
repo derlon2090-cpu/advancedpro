@@ -4,14 +4,37 @@ import { logError, logInfo } from "./utils/logger.js";
 
 const PORT = process.env.PORT || 3000;
 
-async function start() {
-  await prisma.$connect();
-  app.listen(PORT, () => {
-    logInfo(`Backend running on ${PORT}`);
-  });
+async function connectWithRetry(maxAttempts = 6, baseDelay = 1500) {
+  let attempt = 0;
+  let delay = baseDelay;
+
+  while (attempt < maxAttempts) {
+    attempt += 1;
+    try {
+      await prisma.$connect();
+      logInfo("Database connected");
+      return;
+    } catch (error) {
+      logError("Database connection failed", {
+        attempt,
+        error: error?.message,
+      });
+
+      if (attempt >= maxAttempts) {
+        logError("Database connection retries exhausted", {
+          attempts: attempt,
+        });
+        return;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      delay = Math.min(delay * 2, 12000);
+    }
+  }
 }
 
-start().catch((error) => {
-  logError("Failed to start server", { error: error?.message });
-  process.exit(1);
+app.listen(PORT, () => {
+  logInfo(`Backend running on ${PORT}`);
 });
+
+void connectWithRetry();
