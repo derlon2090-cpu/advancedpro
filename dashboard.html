@@ -64,14 +64,101 @@
               <p>أنشئ محتواك مباشرة بدون تعقيد.</p>
             </div>
             <div class="action-grid">
-              <a class="action-tile" href="/dashboard-preview">إنشاء صورة</a>
-              <a class="action-tile" href="/dashboard-preview">إنشاء فيديو</a>
-              <a class="action-tile" href="/dashboard-preview">رفع صورة للتعديل</a>
+              <a class="action-tile" href="#create-work">إنشاء صورة</a>
+              <a class="action-tile" href="#create-work">إنشاء فيديو</a>
+              <a class="action-tile" href="#create-work">رفع صورة للتعديل</a>
               <a class="action-tile" href="#recent-projects">مشاريعي الأخيرة</a>
             </div>
           </article>
 
           <div class="info-grid" data-dashboard-summary></div>
+
+          <article class="page-card create-card" id="create-work">
+            <div class="page-card__top">
+              <h2>إنشاء عمل جديد</h2>
+              <p>اختر النوع وأدخل الوصف ثم ابدأ الإنشاء مباشرة.</p>
+            </div>
+            <div class="status-message" hidden data-create-gate></div>
+            <div class="create-tabs">
+              <button class="btn btn-ghost is-active" type="button" data-create-tab="image">
+                صورة
+              </button>
+              <button class="btn btn-ghost" type="button" data-create-tab="video">
+                فيديو
+              </button>
+            </div>
+
+            <div class="create-panel is-active" data-create-panel="image">
+              <form id="imageCreateForm" class="stack-form">
+                <div class="field">
+                  <label for="imagePrompt">وصف الصورة</label>
+                  <textarea
+                    id="imagePrompt"
+                    name="prompt"
+                    rows="4"
+                    placeholder="اكتب وصفًا واضحًا للصورة المطلوبة"
+                    required
+                  ></textarea>
+                </div>
+                <button class="btn btn-primary" type="submit">ابدأ إنشاء الصورة</button>
+              </form>
+            </div>
+
+            <div class="create-panel" data-create-panel="video">
+              <form id="videoCreateForm" class="stack-form">
+                <div class="field">
+                  <label for="videoTitle">عنوان الفيديو</label>
+                  <input id="videoTitle" name="title" type="text" placeholder="عنوان المشروع" />
+                </div>
+                <div class="field">
+                  <label for="videoSummary">وصف عام للفيديو</label>
+                  <textarea
+                    id="videoSummary"
+                    name="summary"
+                    rows="3"
+                    placeholder="اكتب وصفًا عامًا للفيديو المطلوب"
+                    required
+                  ></textarea>
+                </div>
+                <div class="field">
+                  <label for="videoDuration">مدة الفيديو</label>
+                  <select id="videoDuration" name="durationSeconds">
+                    <option value="10">10 ثوانٍ</option>
+                    <option value="20">20 ثانية</option>
+                    <option value="60" selected>60 ثانية (6 مشاهد)</option>
+                  </select>
+                </div>
+                <div class="scenes-grid" data-video-scenes>
+                  <div class="field">
+                    <label>المشهد 1</label>
+                    <textarea name="scene1" rows="2" placeholder="وصف المشهد الأول"></textarea>
+                  </div>
+                  <div class="field">
+                    <label>المشهد 2</label>
+                    <textarea name="scene2" rows="2" placeholder="وصف المشهد الثاني"></textarea>
+                  </div>
+                  <div class="field">
+                    <label>المشهد 3</label>
+                    <textarea name="scene3" rows="2" placeholder="وصف المشهد الثالث"></textarea>
+                  </div>
+                  <div class="field">
+                    <label>المشهد 4</label>
+                    <textarea name="scene4" rows="2" placeholder="وصف المشهد الرابع"></textarea>
+                  </div>
+                  <div class="field">
+                    <label>المشهد 5</label>
+                    <textarea name="scene5" rows="2" placeholder="وصف المشهد الخامس"></textarea>
+                  </div>
+                  <div class="field">
+                    <label>المشهد 6</label>
+                    <textarea name="scene6" rows="2" placeholder="وصف المشهد السادس"></textarea>
+                  </div>
+                </div>
+                <button class="btn btn-primary" type="submit">ابدأ إنشاء الفيديو</button>
+              </form>
+            </div>
+            <div class="status-message" hidden data-create-message></div>
+          </article>
 
           <div class="page-grid">
             <article class="page-card" id="recent-projects">

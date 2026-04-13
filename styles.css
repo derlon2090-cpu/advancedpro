@@ -1808,6 +1808,47 @@ li + li {
   box-shadow: 0 16px 30px rgba(47, 128, 255, 0.18);
 }
 
+.create-card {
+  margin-bottom: 8px;
+}
+
+.create-tabs {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.create-tabs .btn {
+  min-width: 120px;
+}
+
+.create-tabs .btn.is-active {
+  background: var(--hero-gradient);
+  color: #fff;
+  box-shadow: 0 16px 28px rgba(123, 97, 255, 0.22);
+}
+
+.create-panel {
+  display: none;
+  margin-top: 18px;
+}
+
+.create-panel.is-active {
+  display: block;
+}
+
+.scenes-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.create-disabled {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
 .inline-form {
   display: flex;
   gap: 12px;

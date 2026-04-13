@@ -826,6 +826,109 @@ async function initDashboardPage() {
   const planTarget = document.querySelector("[data-dashboard-plan]");
   const activationForm = document.querySelector("#dashboardActivationForm");
   const activationMessage = document.querySelector("[data-dashboard-activate-message]");
+  const createMessage = document.querySelector("[data-create-message]");
+  const createGate = document.querySelector("[data-create-gate]");
+  const imageForm = document.querySelector("#imageCreateForm");
+  const videoForm = document.querySelector("#videoCreateForm");
+  const tabButtons = document.querySelectorAll("[data-create-tab]");
+  const panels = document.querySelectorAll("[data-create-panel]");
+
+  let activeTab = "image";
+  let cachedSubscription = null;
+
+  const setPanelState = (panel, enabled) => {
+    if (!panel) {
+      return;
+    }
+    panel.classList.toggle("create-disabled", !enabled);
+    panel.querySelectorAll("input, textarea, select, button").forEach((input) => {
+      input.disabled = !enabled;
+    });
+  };
+
+  const updateGateMessage = () => {
+    if (!createGate && !createMessage) {
+      return;
+    }
+
+    const subscription = cachedSubscription;
+    const now = new Date();
+    const expired =
+      subscription?.endAt && new Date(subscription.endAt).getTime() < now.getTime();
+    const isActive = subscription && subscription.status === "active" && !expired;
+    const imageAllowed = isActive && Number(subscription.imageBalance || 0) > 0;
+    const videoAllowed = isActive && Number(subscription.videoBalance || 0) > 0;
+
+    let gateText = "";
+    if (!isActive) {
+      gateText = "فعّل كودك أولًا للبدء في إنشاء الأعمال.";
+    } else if (activeTab === "image" && !imageAllowed) {
+      gateText = "رصيد الصور انتهى، فعّل كودًا جديدًا أو حدّث باقتك.";
+    } else if (activeTab === "video" && !videoAllowed) {
+      gateText = "رصيد الفيديو انتهى، فعّل كودًا جديدًا أو حدّث باقتك.";
+    }
+
+    if (createGate) {
+      if (gateText) {
+        createGate.hidden = false;
+        createGate.className = "status-message is-error";
+        createGate.textContent = gateText;
+      } else {
+        createGate.hidden = true;
+        createGate.textContent = "";
+      }
+    }
+
+    if (createMessage && gateText) {
+      setMessage(createMessage, gateText, "error");
+    }
+  };
+
+  const setupTabs = () => {
+    if (!tabButtons.length) {
+      return;
+    }
+
+    tabButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const tab = button.dataset.createTab;
+        if (!tab) {
+          return;
+        }
+        activeTab = tab;
+        tabButtons.forEach((btn) => btn.classList.toggle("is-active", btn === button));
+        panels.forEach((panel) => {
+          panel.classList.toggle("is-active", panel.dataset.createPanel === tab);
+        });
+        updateGateMessage();
+      });
+    });
+  };
+
+  const buildVideoPrompt = (values) => {
+    const title = String(values.title || "").trim();
+    const summary = String(values.summary || "").trim();
+    const duration = Number(values.durationSeconds || 60);
+
+    const scenes = [values.scene1, values.scene2, values.scene3, values.scene4, values.scene5, values.scene6]
+      .map((scene) => String(scene || "").trim())
+      .filter(Boolean);
+
+    const scenesText = scenes
+      .map((scene, index) => `المشهد ${index + 1}: ${scene}`)
+      .join("\n");
+
+    return {
+      duration,
+      prompt: `
+عنوان: ${title || "فيديو جديد"}
+وصف عام: ${summary}
+المدة: ${duration} ثانية
+${scenesText ? `المشاهد:\n${scenesText}` : ""}
+      `.trim(),
+      scenes,
+    };
+  };
 
   const loadDashboard = async () => {
     const payload = await requestJson("/api/dashboard", { method: "GET" });
@@ -858,23 +961,30 @@ async function initDashboardPage() {
     }
 
     if (summaryTarget) {
+      const stats = dashboard.stats || {
+        totalWorks:
+          Number(dashboard.usageTotals.imagesUsed || 0) +
+          Number(dashboard.usageTotals.videosUsed || 0),
+        totalImages: Number(dashboard.usageTotals.imagesUsed || 0),
+        totalVideos: Number(dashboard.usageTotals.videosUsed || 0),
+        newWorks: 0,
+      };
+
       summaryTarget.innerHTML = `
         <article class="info-card">
-          <span>الرصيد الحالي</span>
-          <strong>${escapeHtml(subscription?.imageBalance ?? 0)} صورة / ${
-        subscription?.videoBalance ?? 0
-      } فيديو</strong>
-          <small>آخر تحديث فوري داخل حسابك</small>
+          <span>إجمالي الأعمال</span>
+          <strong>${escapeHtml(stats.totalWorks ?? 0)}</strong>
+          <small>الأعمال الجديدة هذا الأسبوع: ${escapeHtml(stats.newWorks ?? 0)}</small>
         </article>
         <article class="info-card">
-          <span>الصور المتبقية</span>
-          <strong>${escapeHtml(subscription?.imageBalance ?? 0)}</strong>
-          <small>استهلاكك الإجمالي: ${escapeHtml(dashboard.usageTotals.imagesUsed)}</small>
+          <span>الصور المنشأة</span>
+          <strong>${escapeHtml(stats.totalImages ?? 0)}</strong>
+          <small>المتبقي الآن: ${escapeHtml(subscription?.imageBalance ?? 0)}</small>
         </article>
         <article class="info-card">
-          <span>الفيديوهات المتبقية</span>
-          <strong>${escapeHtml(subscription?.videoBalance ?? 0)}</strong>
-          <small>استهلاكك الإجمالي: ${escapeHtml(dashboard.usageTotals.videosUsed)}</small>
+          <span>الفيديوهات المنشأة</span>
+          <strong>${escapeHtml(stats.totalVideos ?? 0)}</strong>
+          <small>المتبقي الآن: ${escapeHtml(subscription?.videoBalance ?? 0)}</small>
         </article>
         <article class="info-card">
           <span>انتهاء الباقة</span>
@@ -902,6 +1012,21 @@ async function initDashboardPage() {
     }
 
     renderUsageList(usageTarget, dashboard.recentUsage || []);
+
+    cachedSubscription = subscription;
+    const now = new Date();
+    const expired =
+      subscription?.endAt && new Date(subscription.endAt).getTime() < now.getTime();
+    const isActive = subscription && subscription.status === "active" && !expired;
+    const imageAllowed = isActive && Number(subscription?.imageBalance || 0) > 0;
+    const videoAllowed = isActive && Number(subscription?.videoBalance || 0) > 0;
+
+    const imagePanel = document.querySelector('[data-create-panel="image"]');
+    const videoPanel = document.querySelector('[data-create-panel="video"]');
+
+    setPanelState(imagePanel, imageAllowed);
+    setPanelState(videoPanel, videoAllowed);
+    updateGateMessage();
   };
 
   try {
@@ -938,8 +1063,109 @@ async function initDashboardPage() {
         setMessage(activationMessage, payload.message, "success");
         activationForm.reset();
         await loadDashboard();
+        showToast(payload.message || "تم تفعيل الكود بنجاح");
       } catch (error) {
         setMessage(activationMessage, error.message, "error");
+      } finally {
+        setButtonBusy(button, false);
+      }
+    });
+  }
+
+  setupTabs();
+
+  if (imageForm) {
+    imageForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const button = imageForm.querySelector('button[type="submit"]');
+
+      try {
+        if (!cachedSubscription) {
+          throw new Error("فعّل كودك أولًا للبدء في الإنشاء.");
+        }
+
+        const values = formToObject(imageForm);
+        const prompt = String(values.prompt || "").trim();
+        if (!prompt) {
+          throw new Error("أدخل وصفًا واضحًا للصورة قبل الإرسال.");
+        }
+
+        setButtonBusy(button, true, "جارٍ الإنشاء...");
+        setMessage(createMessage, "");
+
+        const payload = await requestJson("/api/ai/image", {
+          method: "POST",
+          body: JSON.stringify({ prompt }),
+        });
+
+        setMessage(createMessage, payload.message || "تم إنشاء الصورة.", "success");
+        showToast(payload.message || "تم إنشاء الصورة.");
+        imageForm.reset();
+        await loadDashboard();
+      } catch (error) {
+        setMessage(createMessage, error.message, "error");
+      } finally {
+        setButtonBusy(button, false);
+      }
+    });
+  }
+
+  if (videoForm) {
+    const durationField = videoForm.elements.namedItem("durationSeconds");
+    const scenesWrapper = document.querySelector("[data-video-scenes]");
+    const toggleScenes = () => {
+      if (!scenesWrapper) {
+        return;
+      }
+      const duration = Number(durationField?.value || 60);
+      scenesWrapper.style.display = duration === 60 ? "grid" : "none";
+    };
+
+    if (durationField) {
+      durationField.addEventListener("change", toggleScenes);
+      toggleScenes();
+    }
+
+    videoForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const button = videoForm.querySelector('button[type="submit"]');
+
+      try {
+        if (!cachedSubscription) {
+          throw new Error("فعّل كودك أولًا للبدء في الإنشاء.");
+        }
+
+        const values = formToObject(videoForm);
+        const summary = String(values.summary || "").trim();
+        if (!summary) {
+          throw new Error("أدخل وصفًا عامًا للفيديو قبل الإرسال.");
+        }
+
+        const { prompt, duration, scenes } = buildVideoPrompt(values);
+        if (Number(duration) === 60 && scenes.length < 6) {
+          throw new Error("الرجاء تعبئة جميع المشاهد الستة للفيديو 60 ثانية.");
+        }
+
+        setButtonBusy(button, true, "جارٍ الإنشاء...");
+        setMessage(createMessage, "");
+
+        const payload = await requestJson("/api/ai/video", {
+          method: "POST",
+          body: JSON.stringify({
+            prompt,
+            durationSeconds: duration,
+          }),
+        });
+
+        setMessage(
+          createMessage,
+          payload.message || "تم إرسال الفيديو للمعالجة.",
+          "success"
+        );
+        showToast(payload.message || "جاري تجهيز الفيديو.");
+        await loadDashboard();
+      } catch (error) {
+        setMessage(createMessage, error.message, "error");
       } finally {
         setButtonBusy(button, false);
       }
