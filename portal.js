@@ -331,8 +331,8 @@ function updateSessionUi(user) {
       return;
     }
 
-    element.textContent = user.role === "admin" ? "لوحة الأدمن" : "لوحة التحكم";
-    element.setAttribute("href", user.role === "admin" ? "/admin" : "/dashboard");
+    element.textContent = user.role === "admin" ? "لوحة الأدمن" : "لوحة المستخدم";
+    element.setAttribute("href", user.role === "admin" ? "/admin" : "/student.html");
   });
 }
 
@@ -393,7 +393,7 @@ async function enforceRoute() {
   updateSessionUi(user);
 
   if (guestOnly && user) {
-    window.location.href = user.role === "admin" ? "/admin" : "/dashboard";
+    window.location.href = user.role === "admin" ? "/admin" : "/student.html";
     return null;
   }
 
@@ -403,7 +403,7 @@ async function enforceRoute() {
   }
 
   if (needsAdmin && (!user || user.role !== "admin")) {
-    window.location.href = user ? "/dashboard" : "/login";
+    window.location.href = user ? "/student.html" : "/login";
     return null;
   }
 
@@ -478,7 +478,7 @@ async function initLoginPage() {
       });
       setMessage(message, payload.message, "success");
       setStoredToken(payload.token);
-      let redirect = payload.redirectTo || "/dashboard";
+      let redirect = payload.redirectTo || "/student.html";
 
       if (payload?.user?.role === "admin") {
         redirect = "/admin";
@@ -493,7 +493,10 @@ async function initLoginPage() {
         // Keep default redirect when session isn't ready yet.
       }
 
-      window.location.href = redirect;
+      showToast(payload.message || "تم تسجيل الدخول بنجاح 🎉");
+      window.setTimeout(() => {
+        window.location.href = redirect;
+      }, 800);
     } catch (error) {
       setMessage(message, error.message, "error");
     } finally {
@@ -543,7 +546,7 @@ async function initRegisterPage() {
       setStoredToken(payload.token);
       showToast(payload.message || "تم إنشاء الحساب بنجاح 🎉");
       window.setTimeout(() => {
-        window.location.href = payload.redirectTo || "/dashboard";
+        window.location.href = payload.redirectTo || "/student.html";
       }, 1200);
     } catch (error) {
       setMessage(message, error.message, "error");
@@ -621,7 +624,7 @@ async function initActivatePage(user) {
       });
       setMessage(message, payload.message, "success");
       window.setTimeout(() => {
-        window.location.href = "/dashboard";
+        window.location.href = "/student.html";
       }, 800);
     } catch (error) {
       setMessage(message, error.message, "error");
@@ -1341,6 +1344,8 @@ async function initPage(user) {
     case "activate":
       return initActivatePage(user);
     case "dashboard":
+      return initDashboardPage();
+    case "student":
       return initDashboardPage();
     case "profile":
       return initProfilePage();

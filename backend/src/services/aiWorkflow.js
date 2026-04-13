@@ -1,6 +1,8 @@
 import { prisma } from "../lib/prisma.js";
 import { generateImage, generateText, generateVideo } from "./aiProvider.js";
 
+const TRIAL_PACKAGE_NAME = "تجربة مجانية";
+
 function httpError(message, statusCode = 400) {
   const error = new Error(message);
   error.statusCode = statusCode;
@@ -37,9 +39,10 @@ export async function handleImageRequest({ userId, prompt }) {
   }
 
   const subscription = await getActiveSubscription(userId);
+  const isTrial = subscription.packageName === TRIAL_PACKAGE_NAME;
 
   if (subscription.imageBalance < 1) {
-    httpError("رصيد الصور غير كافٍ.");
+    httpError(isTrial ? "انتهت تجربتك المجانية، اشترك للاستمرار" : "رصيد الصور غير كافٍ.");
   }
 
   const result = await generateImage({ prompt });
@@ -67,7 +70,12 @@ export async function handleImageRequest({ userId, prompt }) {
 
   await prisma.subscription.update({
     where: { id: subscription.id },
-    data: { imageBalance: { decrement: 1 } },
+    data: isTrial
+      ? {
+          imageBalance: { decrement: 1 },
+          videoBalance: 0,
+        }
+      : { imageBalance: { decrement: 1 } },
   });
 
   return {
@@ -82,9 +90,10 @@ export async function handleVideoRequest({ userId, prompt, durationSeconds }) {
   }
 
   const subscription = await getActiveSubscription(userId);
+  const isTrial = subscription.packageName === TRIAL_PACKAGE_NAME;
 
   if (subscription.videoBalance < 1) {
-    httpError("رصيد مشاريع الفيديو غير كافٍ.");
+    httpError(isTrial ? "انتهت تجربتك المجانية، اشترك للاستمرار" : "رصيد مشاريع الفيديو غير كافٍ.");
   }
 
   const duration = Number(durationSeconds || subscription.videoMaxDurationSeconds || 60);
@@ -116,7 +125,12 @@ export async function handleVideoRequest({ userId, prompt, durationSeconds }) {
 
   await prisma.subscription.update({
     where: { id: subscription.id },
-    data: { videoBalance: { decrement: 1 } },
+    data: isTrial
+      ? {
+          videoBalance: { decrement: 1 },
+          imageBalance: 0,
+        }
+      : { videoBalance: { decrement: 1 } },
   });
 
   return {

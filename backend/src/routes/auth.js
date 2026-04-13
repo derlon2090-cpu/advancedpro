@@ -5,6 +5,10 @@ import { prisma } from "../lib/prisma.js";
 import { signToken } from "../utils/jwt.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { requireAuth } from "../middleware/auth.js";
+import { activateCodeForUser } from "../services/codeActivation.js";
+
+const TRIAL_PACKAGE_NAME = "تجربة مجانية";
+const TRIAL_DAYS = Number(process.env.TRIAL_DAYS || 7);
 
 const router = Router();
 
@@ -26,7 +30,9 @@ router.post(
     const existing = await prisma.user.findUnique({ where: { email: values.email } });
 
     if (existing) {
-      return res.status(400).json({ message: "البريد الإلكتروني مستخدم بالفعل." });
+      return res.status(400).json({
+        message: "هذا البريد مسجل مسبقًا، يرجى تسجيل الدخول بدلًا من إنشاء حساب جديد",
+      });
     }
 
     const passwordHash = await bcrypt.hash(values.password, 10);
@@ -38,6 +44,25 @@ router.post(
       },
     });
 
+    const trialStart = new Date();
+    const trialEnd = new Date(trialStart);
+    trialEnd.setDate(trialEnd.getDate() + TRIAL_DAYS);
+
+    await prisma.subscription.create({
+      data: {
+        userId: user.id,
+        packageName: TRIAL_PACKAGE_NAME,
+        imageBalance: 1,
+        videoBalance: 1,
+        videoMaxDurationSeconds: 60,
+        startAt: trialStart,
+        endAt: trialEnd,
+        status: "active",
+      },
+    });
+
+    await activateCodeForUser({ userId: user.id, email: user.email, silent: true });
+
     const token = signToken({ id: user.id, email: user.email });
     const cookieSecure = process.env.COOKIE_SECURE === "true";
     res.cookie("token", token, {
@@ -48,7 +73,7 @@ router.post(
     });
 
     return res.json({
-      message: "تم إنشاء الحساب بنجاح.",
+      message: "تم إنشاء الحساب بنجاح 🎉",
       token,
       user: {
         id: user.id,
@@ -56,7 +81,7 @@ router.post(
         email: user.email,
         role: user.role,
       },
-      redirectTo: user.role === "admin" ? "/admin" : "/dashboard",
+      redirectTo: user.role === "admin" ? "/admin" : "/student.html",
     });
   })
 );
@@ -68,17 +93,19 @@ router.post(
     const user = await prisma.user.findUnique({ where: { email: values.email } });
 
     if (!user) {
-      return res.status(400).json({ message: "بيانات الدخول غير صحيحة." });
+      return res.status(400).json({ message: "البريد أو كلمة المرور غير صحيحة" });
     }
 
     const isValid = await bcrypt.compare(values.password, user.passwordHash);
     if (!isValid) {
-      return res.status(400).json({ message: "بيانات الدخول غير صحيحة." });
+      return res.status(400).json({ message: "البريد أو كلمة المرور غير صحيحة" });
     }
 
     if (user.status !== "active") {
       return res.status(403).json({ message: "الحساب غير نشط." });
     }
+
+    await activateCodeForUser({ userId: user.id, email: user.email, silent: true });
 
     const token = signToken({ id: user.id, email: user.email });
     const cookieSecure = process.env.COOKIE_SECURE === "true";
@@ -90,7 +117,7 @@ router.post(
     });
 
     return res.json({
-      message: "تم تسجيل الدخول بنجاح.",
+      message: "تم تسجيل الدخول بنجاح 🎉",
       token,
       user: {
         id: user.id,
@@ -98,7 +125,7 @@ router.post(
         email: user.email,
         role: user.role,
       },
-      redirectTo: user.role === "admin" ? "/admin" : "/dashboard",
+      redirectTo: user.role === "admin" ? "/admin" : "/student.html",
     });
   })
 );

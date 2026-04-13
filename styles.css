@@ -2427,4 +2427,18 @@ li + li {
   .admin-sidebar {
     padding: 20px 16px;
   }
+
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .dashboard-cta,
+  .dashboard-cta .btn {
+    width: 100%;
+  }
+
+  .action-grid {
+    grid-template-columns: 1fr;
+  }
 }
