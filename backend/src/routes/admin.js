@@ -260,24 +260,44 @@ router.post(
   "/codes",
   asyncHandler(async (req, res) => {
     const payload = req.body;
-    const created = await prisma.code.create({
-      data: {
-        code: payload.code,
-        planName: payload.planName,
-        imageQuota: Number(payload.imageQuota || 0),
-        videoQuota: Number(payload.videoQuota || 0),
-        videoMaxDurationSeconds: Number(payload.videoMaxDurationSeconds || 60),
-        validityDays: Number(payload.validityDays || 30),
-        renewalEnabled: Boolean(payload.renewalEnabled),
-        renewalEveryDays: payload.renewalEveryDays ? Number(payload.renewalEveryDays) : null,
-        renewalMode: payload.renewalMode || "topup",
-        renewalImageQuota: Number(payload.renewalImageQuota || 0),
-        renewalVideoQuota: Number(payload.renewalVideoQuota || 0),
-        maxRedemptions: Number(payload.maxRedemptions || 1),
-        isActive: Boolean(payload.isActive),
-        assignedEmail: payload.assignedEmail || null,
-      },
-    });
+    const code = String(payload.code || "").trim();
+    const planName = String(payload.planName || "").trim();
+
+    if (!code || !planName) {
+      return res.status(400).json({ message: "الرجاء إدخال الكود واسم الباقة." });
+    }
+
+    const existing = await prisma.code.findUnique({ where: { code } });
+    if (existing) {
+      return res.status(409).json({ message: "هذا الكود موجود مسبقًا." });
+    }
+
+    let created;
+    try {
+      created = await prisma.code.create({
+        data: {
+          code,
+          planName,
+          imageQuota: Number(payload.imageQuota || 0),
+          videoQuota: Number(payload.videoQuota || 0),
+          videoMaxDurationSeconds: Number(payload.videoMaxDurationSeconds || 60),
+          validityDays: Number(payload.validityDays || 30),
+          renewalEnabled: Boolean(payload.renewalEnabled),
+          renewalEveryDays: payload.renewalEveryDays ? Number(payload.renewalEveryDays) : null,
+          renewalMode: payload.renewalMode || "topup",
+          renewalImageQuota: Number(payload.renewalImageQuota || 0),
+          renewalVideoQuota: Number(payload.renewalVideoQuota || 0),
+          maxRedemptions: Number(payload.maxRedemptions || 1),
+          isActive: Boolean(payload.isActive),
+          assignedEmail: payload.assignedEmail || null,
+        },
+      });
+    } catch (error) {
+      if (error?.code === "P2002") {
+        return res.status(409).json({ message: "هذا الكود موجود مسبقًا." });
+      }
+      return res.status(500).json({ message: "تعذر حفظ الكود. حاول مرة أخرى." });
+    }
     const fullRecord = await prisma.code.findUnique({
       where: { id: created.id },
       include: {
