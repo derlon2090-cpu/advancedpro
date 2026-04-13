@@ -11,6 +11,7 @@ import generateRoutes from "./routes/generate.js";
 import aiRoutes from "./routes/ai.js";
 import adminRoutes from "./routes/admin.js";
 import bootstrapRoutes from "./routes/bootstrap.js";
+import downloadRoutes from "./routes/download.js";
 import { requireAuth } from "./middleware/auth.js";
 import { apiLimiter } from "./middleware/rateLimit.js";
 import { logError } from "./utils/logger.js";
@@ -62,6 +63,7 @@ app.use("/api/generate", generateRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/bootstrap", bootstrapRoutes);
+app.use("/api/download", downloadRoutes);
 
 app.use((err, req, res, _next) => {
   let statusCode = err?.statusCode || 500;

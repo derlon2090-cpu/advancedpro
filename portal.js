@@ -559,9 +559,9 @@ function renderUsageList(target, logs) {
                         <a class="btn btn-ghost btn-sm" href="${escapeHtml(
                           resultUrl
                         )}" target="_blank" rel="noopener">عرض النتيجة</a>
-                        <a class="btn btn-outline btn-sm" href="${escapeHtml(
-                          resultUrl
-                        )}" download>تحميل مباشر</a>
+                        <button class="btn btn-outline btn-sm" type="button" data-work-download="${log.id}">
+                          تحميل عبر السيرفر
+                        </button>
                       </div>
                     `
                     : ""
@@ -583,6 +583,21 @@ function renderUsageList(target, logs) {
         .join("")}
     </div>
   `;
+}
+
+function getFilenameFromDisposition(value) {
+  if (!value) {
+    return "";
+  }
+
+  const match =
+    /filename\*=UTF-8''([^;]+)|filename=\"?([^\";]+)\"?/i.exec(value);
+  const filename = match ? match[1] || match[2] : "";
+  try {
+    return decodeURIComponent(filename);
+  } catch (error) {
+    return filename;
+  }
 }
 
 async function initLoginPage() {
@@ -1211,6 +1226,56 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
   if (usageTarget) {
     usageTarget.addEventListener("click", async (event) => {
       const retryButton = event.target.closest("[data-work-retry]");
+      const downloadButton = event.target.closest("[data-work-download]");
+
+      if (downloadButton) {
+        const id = Number(downloadButton.dataset.workDownload);
+        const record = currentWorks.find((item) => item.id === id);
+        if (!record || !record.resultUrl) {
+          setMessage(createMessage, "لا يوجد ملف جاهز للتحميل.", "error");
+          return;
+        }
+
+        try {
+          setButtonBusy(downloadButton, true, "جارٍ التحميل...");
+          setMessage(createMessage, "");
+
+          const token = getStoredToken();
+          const response = await fetch(`${appConfig.apiBaseUrl}/api/download/${id}`, {
+            method: "GET",
+            headers: {
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+          });
+
+          if (!response.ok) {
+            const payload = await response.json().catch(() => ({}));
+            throw new Error(payload.message || "تعذر تنزيل الملف.");
+          }
+
+          const blob = await response.blob();
+          const disposition = response.headers.get("content-disposition");
+          const filename =
+            getFilenameFromDisposition(disposition) ||
+            `advancedpro-${record.type}-${id}`;
+
+          const link = document.createElement("a");
+          link.href = window.URL.createObjectURL(blob);
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          window.setTimeout(() => {
+            window.URL.revokeObjectURL(link.href);
+          }, 1000);
+        } catch (error) {
+          setMessage(createMessage, error.message, "error");
+        } finally {
+          setButtonBusy(downloadButton, false);
+        }
+
+        return;
+      }
       if (!retryButton) {
         return;
       }
