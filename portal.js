@@ -21,6 +21,27 @@ const state = {
 };
 
 const AUTH_TOKEN_KEY = "advancedpro_token";
+const LOGOUT_FLAG_KEY = "advancedpro_force_logout";
+
+function isForcedLogout() {
+  try {
+    return window.localStorage.getItem(LOGOUT_FLAG_KEY) === "1";
+  } catch (error) {
+    return false;
+  }
+}
+
+function setForcedLogout(value) {
+  try {
+    if (value) {
+      window.localStorage.setItem(LOGOUT_FLAG_KEY, "1");
+    } else {
+      window.localStorage.removeItem(LOGOUT_FLAG_KEY);
+    }
+  } catch (error) {
+    // ignore
+  }
+}
 
 function getStoredToken() {
   try {
@@ -351,6 +372,11 @@ async function getCurrentUser(force = false) {
     return state.currentUser;
   }
 
+  if (isForcedLogout()) {
+    state.currentUser = null;
+    return state.currentUser;
+  }
+
   try {
     const payload = await requestJson("/api/me", {
       method: "GET",
@@ -419,6 +445,7 @@ async function performLogout() {
   } catch (error) {
     // ignore
   } finally {
+    setForcedLogout(true);
     setStoredToken(null);
     try {
       document.cookie = "token=; Path=/; Max-Age=0; SameSite=None; Secure";
@@ -426,7 +453,7 @@ async function performLogout() {
     } catch (error) {
       // ignore
     }
-    window.location.href = "/login";
+    window.location.href = "/";
   }
 }
 
@@ -554,6 +581,7 @@ async function initLoginPage() {
       });
       setMessage(message, payload.message, "success");
       setStoredToken(payload.token);
+      setForcedLogout(false);
       let redirect = payload.redirectTo || "/student.html";
 
       if (payload?.user?.role === "admin") {
@@ -621,6 +649,7 @@ async function initRegisterPage() {
       });
       setMessage(message, payload.message, "success");
       setStoredToken(payload.token);
+      setForcedLogout(false);
       showToast(payload.message || "تم إنشاء الحساب بنجاح 🎉");
       window.setTimeout(() => {
         window.location.href = payload.redirectTo || "/student.html";

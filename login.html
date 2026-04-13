@@ -139,6 +139,7 @@
               throw new Error(payload.message || "تعذر تسجيل الدخول");
             }
             localStorage.setItem("advancedpro_token", payload.token);
+            localStorage.removeItem("advancedpro_force_logout");
             window.location.href = payload.redirectTo || "/student.html";
           } catch (error) {
             if (message) {

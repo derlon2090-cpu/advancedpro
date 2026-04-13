@@ -165,6 +165,7 @@
               throw new Error(payload.message || "تعذر إنشاء الحساب");
             }
             localStorage.setItem("advancedpro_token", payload.token);
+            localStorage.removeItem("advancedpro_force_logout");
             window.location.href = payload.redirectTo || "/student.html";
           } catch (error) {
             if (message) {
