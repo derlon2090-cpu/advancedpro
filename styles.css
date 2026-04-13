@@ -1810,6 +1810,7 @@ li + li {
 
 .create-card {
   margin-bottom: 8px;
+  position: relative;
 }
 
 .create-tabs {
@@ -1836,6 +1837,35 @@ li + li {
 
 .create-panel.is-active {
   display: block;
+}
+
+.create-lock {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(6px);
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 2;
+}
+
+.create-lock__card {
+  text-align: center;
+  display: grid;
+  gap: 12px;
+  width: min(420px, 100%);
+}
+
+.create-lock__card h3 {
+  margin: 0;
+}
+
+.create-lock__card p {
+  margin: 0;
+  color: var(--muted);
 }
 
 .scenes-grid {

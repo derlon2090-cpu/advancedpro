@@ -867,6 +867,9 @@ async function initDashboardPage() {
   const tabButtons = document.querySelectorAll("[data-create-tab]");
   const panels = document.querySelectorAll("[data-create-panel]");
   const filterBar = document.querySelector("[data-work-filters]");
+  const createLock = document.querySelector("[data-create-lock]");
+  const unlockForm = document.querySelector("#createUnlockForm");
+  const unlockMessage = document.querySelector("[data-create-unlock-message]");
 
   let activeTab = "image";
   let cachedSubscription = null;
@@ -922,6 +925,10 @@ async function initDashboardPage() {
     if (createMessage && gateText) {
       setMessage(createMessage, gateText, "error");
     }
+
+    if (createLock) {
+      createLock.hidden = Boolean(isActive);
+    }
   };
 
   const setupTabs = () => {
@@ -930,7 +937,8 @@ async function initDashboardPage() {
     }
 
     tabButtons.forEach((button) => {
-      button.addEventListener("click", () => {
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
         const tab = button.dataset.createTab;
         if (!tab) {
           return;
@@ -1005,7 +1013,8 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
     const subscription = dashboard.subscription;
 
     if (welcomeTarget) {
-      welcomeTarget.textContent = dashboard.user.fullName;
+      const name = dashboard.user.fullName || "بك";
+      welcomeTarget.textContent = `${name} 👋`;
     }
 
     if (avatarTarget) {
@@ -1142,6 +1151,35 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
         showToast(payload.message || "تم تفعيل الكود بنجاح");
       } catch (error) {
         setMessage(activationMessage, error.message, "error");
+      } finally {
+        setButtonBusy(button, false);
+      }
+    });
+  }
+
+  if (unlockForm) {
+    unlockForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const button = unlockForm.querySelector('button[type="submit"]');
+
+      try {
+        const values = formToObject(unlockForm);
+        const code = String(values.code || "").trim();
+        if (!code) {
+          throw new Error("أدخل كود التفعيل أولًا.");
+        }
+
+        setButtonBusy(button, true, "جارٍ التفعيل...");
+        setMessage(unlockMessage, "");
+        const payload = await requestJson("/api/activate", {
+          method: "POST",
+          body: JSON.stringify({ code }),
+        });
+        setMessage(unlockMessage, payload.message, "success");
+        unlockForm.reset();
+        await loadDashboard();
+      } catch (error) {
+        setMessage(unlockMessage, error.message, "error");
       } finally {
         setButtonBusy(button, false);
       }

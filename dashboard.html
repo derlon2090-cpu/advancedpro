@@ -78,6 +78,17 @@
               <h2>إنشاء عمل جديد</h2>
               <p>اختر النوع وأدخل الوصف ثم ابدأ الإنشاء مباشرة.</p>
             </div>
+            <div class="create-lock" data-create-lock hidden>
+              <div class="create-lock__card">
+                <h3>الشات مقفل</h3>
+                <p>أدخل كود التفعيل لفتح الإنشاء ومعرفة رصيدك.</p>
+                <form id="createUnlockForm" class="inline-form">
+                  <input name="code" type="text" placeholder="أدخل كود التفعيل" required />
+                  <button class="btn btn-primary" type="submit">تفعيل الكود</button>
+                </form>
+                <div class="status-message" hidden data-create-unlock-message></div>
+              </div>
+            </div>
             <div class="status-message" hidden data-create-gate></div>
             <div class="create-tabs">
               <button class="btn btn-ghost is-active" type="button" data-create-tab="image">
