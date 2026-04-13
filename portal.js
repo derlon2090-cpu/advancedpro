@@ -864,6 +864,10 @@ async function initDashboardPage() {
   let activeTab = "image";
   let cachedSubscription = null;
   let currentWorks = [];
+  let pollTimer = null;
+  let pollAttempts = 0;
+  const MAX_POLL_ATTEMPTS = 15;
+  const POLL_INTERVAL_MS = 8000;
 
   const setPanelState = (panel, enabled) => {
     if (!panel) {
@@ -957,6 +961,35 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
       `.trim(),
       scenes,
     };
+  };
+
+  const scheduleWorkPolling = () => {
+    const hasPending = currentWorks.some(
+      (work) => !work.resultUrl && work.status !== "completed" && work.status !== "failed"
+    );
+
+    if (!hasPending) {
+      pollAttempts = 0;
+      if (pollTimer) {
+        window.clearTimeout(pollTimer);
+        pollTimer = null;
+      }
+      return;
+    }
+
+    if (pollTimer || pollAttempts >= MAX_POLL_ATTEMPTS) {
+      return;
+    }
+
+    pollAttempts += 1;
+    pollTimer = window.setTimeout(async () => {
+      pollTimer = null;
+      try {
+        await loadDashboard();
+      } catch (error) {
+        // ignore polling errors
+      }
+    }, POLL_INTERVAL_MS);
   };
 
   const loadDashboard = async () => {
@@ -1062,6 +1095,7 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
     setPanelState(imagePanel, imageAllowed);
     setPanelState(videoPanel, videoAllowed);
     updateGateMessage();
+    scheduleWorkPolling();
   };
 
   try {
