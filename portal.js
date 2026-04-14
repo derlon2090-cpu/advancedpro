@@ -255,6 +255,16 @@ async function requestJson(url, options = {}) {
     (payload.message = payload.message || payload.error || getHttpErrorMessage(response.status));
 
   if (!response.ok) {
+    if (payload.requestId) {
+      console.error("API request failed", {
+        url: resolvedUrl,
+        status: response.status,
+        requestId: payload.requestId,
+        code: payload.code || null,
+        message: payload.message,
+      });
+      payload.message = `${payload.message || getHttpErrorMessage(response.status)} (رقم الطلب: ${payload.requestId})`;
+    }
     throw new Error(payload.message || "حدث خطأ غير متوقع.");
   }
 

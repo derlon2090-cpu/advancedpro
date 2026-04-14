@@ -4,6 +4,14 @@ import { logError, logInfo } from "./utils/logger.js";
 
 const PORT = process.env.PORT || 3000;
 
+process.on("unhandledRejection", (reason) => {
+  logError(reason, { scope: "unhandledRejection" });
+});
+
+process.on("uncaughtException", (error) => {
+  logError(error, { scope: "uncaughtException" });
+});
+
 async function connectWithRetry(maxAttempts = 6, baseDelay = 1500) {
   let attempt = 0;
   let delay = baseDelay;

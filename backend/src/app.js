@@ -1,5 +1,6 @@
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import { randomUUID } from "crypto";
 import express from "express";
 import morgan from "morgan";
 import authRoutes from "./routes/auth.js";
@@ -19,6 +20,32 @@ import { logError } from "./utils/logger.js";
 
 const app = express();
 app.set("trust proxy", 1);
+
+function sanitizePayload(payload) {
+  if (!payload || typeof payload !== "object") {
+    return payload;
+  }
+
+  if (Array.isArray(payload)) {
+    return payload.map((item) => sanitizePayload(item));
+  }
+
+  return Object.fromEntries(
+    Object.entries(payload).map(([key, value]) => {
+      const normalizedKey = key.toLowerCase();
+      if (
+        normalizedKey.includes("password") ||
+        normalizedKey.includes("token") ||
+        normalizedKey.includes("secret") ||
+        normalizedKey.includes("cookie")
+      ) {
+        return [key, "[redacted]"];
+      }
+
+      return [key, sanitizePayload(value)];
+    })
+  );
+}
 
 const originEnv = process.env.FRONTEND_ORIGIN || "*";
 const allowedOrigins = originEnv.split(",").map((value) => value.trim());
@@ -40,6 +67,11 @@ app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 app.use(cookieParser());
 app.use(morgan("dev"));
+app.use((req, res, next) => {
+  req.requestId = randomUUID();
+  res.setHeader("X-Request-Id", req.requestId);
+  next();
+});
 
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok" });
@@ -50,6 +82,7 @@ app.get("/api/health/db", async (_req, res) => {
     await prisma.$queryRaw`SELECT 1`;
     res.json({ status: "ok" });
   } catch (error) {
+    logError(error, { scope: "health-db" });
     res.status(500).json({
       status: "error",
       message: error?.message || "Database connection failed",
@@ -81,6 +114,8 @@ app.use("/api/bootstrap", bootstrapRoutes);
 app.use("/api/download", downloadRoutes);
 
 app.use((err, req, res, _next) => {
+  const errorCode = err?.code || null;
+  const requestId = req.requestId || randomUUID();
   let statusCode = err?.statusCode || 500;
   let message = err?.message || "حدث خطأ غير متوقع.";
 
@@ -99,8 +134,16 @@ app.use((err, req, res, _next) => {
     statusCode = 413;
     message = "حجم الملف أكبر من المسموح.";
   }
-  logError(err, { path: req.path, method: req.method, userId: req.user?.id });
-  res.status(statusCode).json({ message });
+  logError(err, {
+    requestId,
+    path: req.originalUrl || req.path,
+    method: req.method,
+    userId: req.user?.id,
+    code: errorCode,
+    query: sanitizePayload(req.query),
+    body: sanitizePayload(req.body),
+  });
+  res.status(statusCode).json({ message, code: errorCode, requestId });
 });
 
 export default app;
