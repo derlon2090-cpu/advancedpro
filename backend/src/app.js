@@ -13,6 +13,7 @@ import adminRoutes from "./routes/admin.js";
 import bootstrapRoutes from "./routes/bootstrap.js";
 import downloadRoutes from "./routes/download.js";
 import { requireAuth } from "./middleware/auth.js";
+import { prisma } from "./lib/prisma.js";
 import { apiLimiter } from "./middleware/rateLimit.js";
 import { logError } from "./utils/logger.js";
 
@@ -42,6 +43,19 @@ app.use(morgan("dev"));
 
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok" });
+});
+
+app.get("/api/health/db", async (_req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ status: "ok" });
+  } catch (error) {
+    res.status(500).json({
+      status: "error",
+      message: error?.message || "Database connection failed",
+      code: error?.code,
+    });
+  }
 });
 
 app.use("/api", apiLimiter);
