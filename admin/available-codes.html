@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>إدارة المستخدمين | Advanced Pro Nano</title>
+    <title>الأكواد المتاحة | Advanced Pro Nano</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -12,7 +12,11 @@
     />
     <link rel="stylesheet" href="/styles.css" />
   </head>
-  <body data-page="admin-users" data-requires-admin="true" data-skip-site-footer="true">
+  <body
+    data-page="admin-available-codes"
+    data-requires-admin="true"
+    data-skip-site-footer="true"
+  >
     <main class="admin-shell">
       <aside class="admin-sidebar">
         <a class="brand brand--column" href="/admin">
@@ -25,37 +29,57 @@
 
         <nav class="admin-nav">
           <a href="/admin">الرئيسية</a>
-          <a class="is-active" href="/admin/users">المستخدمون</a>
+          <a href="/admin/users">المستخدمون</a>
           <a href="/admin/create-admin">إنشاء أدمن</a>
           <a href="/admin/plans">الباقات</a>
           <a href="/admin/codes">الأكواد</a>
-          <a href="/admin/available-codes">الأكواد المتاحة</a>
+          <a class="is-active" href="/admin/available-codes">الأكواد المتاحة</a>
           <a href="/admin/activity">النشاط</a>
           <a href="/admin/reports">التقارير</a>
           <a href="/admin/settings">الإعدادات</a>
         </nav>
 
         <div class="admin-sidebar__footer">
-          <a class="btn btn-secondary btn-block" href="/student.html">لوحة المستخدم</a>
-          <button class="btn btn-primary btn-block" type="button" data-logout>تسجيل الخروج</button>
+          <a class="btn btn-secondary btn-block" href="/student.html"
+            >لوحة المستخدم</a
+          >
+          <button class="btn btn-primary btn-block" type="button" data-logout>
+            تسجيل الخروج
+          </button>
         </div>
       </aside>
 
       <section class="admin-main">
         <div class="admin-toolbar">
           <div>
-            <span class="section-kicker">Users</span>
-            <h1>إدارة المستخدمين</h1>
+            <span class="section-kicker">Codes</span>
+            <h1>الأكواد المتاحة</h1>
+            <p class="meta-line">
+              تعرض هذه الصفحة الأكواد المتاحة للاستخدام مع إمكانية البحث
+              والتصفية.
+            </p>
           </div>
         </div>
 
         <article class="page-card">
-          <form id="adminUsersSearch" class="toolbar-form">
-            <input name="search" type="search" placeholder="ابحث بالاسم أو الإيميل" />
+          <form id="adminAvailableCodesSearch" class="toolbar-form">
+            <input
+              name="search"
+              type="search"
+              placeholder="ابحث بالكود أو الإيميل أو اسم الباقة"
+            />
+            <select name="status">
+              <option value="available" selected>متاح</option>
+              <option value="all">كل الحالات</option>
+              <option value="in-use">قيد الاستخدام</option>
+              <option value="used">تم الاستخدام</option>
+              <option value="expired">منتهي</option>
+              <option value="disabled">معطل</option>
+            </select>
             <button class="btn btn-secondary" type="submit">بحث</button>
           </form>
-          <div class="status-message" hidden data-admin-users-message></div>
-          <div data-admin-users></div>
+          <div class="status-message" hidden data-admin-available-codes-message></div>
+          <div data-admin-available-codes></div>
         </article>
       </section>
     </main>

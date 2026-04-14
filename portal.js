@@ -1913,6 +1913,47 @@ function fillCodeForm(form, record) {
   form.elements.namedItem("assignedEmail").value = record?.assignedEmail || "";
 }
 
+async function initAdminAvailableCodesPage() {
+  const searchForm = document.querySelector("#adminAvailableCodesSearch");
+  const target = document.querySelector("[data-admin-available-codes]");
+  const message = document.querySelector("[data-admin-available-codes-message]");
+
+  if (!target) {
+    return;
+  }
+
+  const loadCodes = async (search = "", statusFilter = "available") => {
+    const payload = await requestJson(`/api/admin/codes?search=${encodeURIComponent(search)}`, {
+      method: "GET",
+    });
+    let records = payload.codes || [];
+    if (statusFilter && statusFilter !== "all") {
+      records = records.filter((code) => code.statusKey === statusFilter);
+    }
+    renderCodesTable(target, records);
+  };
+
+  try {
+    await loadCodes("", "available");
+  } catch (error) {
+    setMessage(message, error.message, "error");
+  }
+
+  searchForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const searchField = searchForm.elements.namedItem("search");
+    const statusField = searchForm.elements.namedItem("status");
+    try {
+      await loadCodes(
+        searchField ? searchField.value : "",
+        statusField ? statusField.value : "available"
+      );
+    } catch (error) {
+      setMessage(message, error.message, "error");
+    }
+  });
+}
+
 async function initAdminCodesPage() {
   const form = document.querySelector("#adminCodeForm");
   const searchForm = document.querySelector("#adminCodesSearch");
@@ -1932,7 +1973,9 @@ async function initAdminCodesPage() {
   };
 
   await loadCodes();
-  fillCodeForm(form, null);
+  if (form) {
+    fillCodeForm(form, null);
+  }
 
   form?.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -1985,7 +2028,9 @@ async function initAdminCodesPage() {
   });
 
   document.querySelector("[data-code-reset]")?.addEventListener("click", () => {
-    fillCodeForm(form, null);
+    if (form) {
+      fillCodeForm(form, null);
+    }
     setMessage(message, "");
   });
 
@@ -2267,6 +2312,8 @@ async function initPage(user) {
       return initAdminUsersPage();
     case "admin-codes":
       return initAdminCodesPage();
+    case "admin-available-codes":
+      return initAdminAvailableCodesPage();
     case "admin-create":
       return initAdminCreatePage();
     case "admin-subscriptions":
