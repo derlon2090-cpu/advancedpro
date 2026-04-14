@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
+    "postinstall": "prisma generate",
     "build": "npm run prisma:generate",
     "render:build": "npm run build",
     "prisma:generate": "prisma generate",
