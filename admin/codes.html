@@ -51,69 +51,18 @@
 
         <article class="page-card">
           <form id="adminCodeForm" class="split-form">
-            <input name="id" type="hidden" />
-
             <div class="field">
               <label>الكود</label>
-              <input name="code" type="text" placeholder="ADV-PRO-123" required />
+              <input name="code" type="text" placeholder="VIP-2026" required />
             </div>
             <div class="field">
-              <label>اسم الباقة</label>
-              <input name="planName" type="text" placeholder="Pro 30" required />
+              <label>رصيد الكود</label>
+              <input name="balance" type="number" min="0" value="0" required />
             </div>
-            <div class="field">
-              <label>رصيد الصور</label>
-              <input name="imageQuota" type="number" min="0" value="0" />
-            </div>
-            <div class="field">
-              <label>رصيد المقاطع</label>
-              <input name="videoQuota" type="number" min="0" value="0" />
-            </div>
-            <div class="field">
-              <label>أقصى مدة للفيديو</label>
-              <input name="videoMaxDurationSeconds" type="number" min="1" value="5" />
-            </div>
-            <div class="field">
-              <label>مدة الصلاحية بالأيام</label>
-              <input name="validityDays" type="number" min="1" value="30" />
-            </div>
-            <div class="field">
-              <label>تجديد كل كم يوم</label>
-              <input name="renewalEveryDays" type="number" min="1" placeholder="اختياري" />
-            </div>
-            <div class="field">
-              <label>وضع التجديد</label>
-              <select name="renewalMode">
-                <option value="topup">topup</option>
-                <option value="reset">reset</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>تجديد الصور</label>
-              <input name="renewalImageQuota" type="number" min="0" value="0" />
-            </div>
-            <div class="field">
-              <label>تجديد المقاطع</label>
-              <input name="renewalVideoQuota" type="number" min="0" value="0" />
-            </div>
-            <div class="field">
-              <label>عدد مرات الاستخدام</label>
-              <input name="maxRedemptions" type="number" min="1" value="1" />
-            </div>
-            <div class="field">
-              <label>الإيميل المخصص</label>
-              <input name="assignedEmail" type="email" placeholder="اختياري" />
-            </div>
-
-            <label class="toggle-field">
-              <input name="renewalEnabled" type="checkbox" />
-              <span>تفعيل التجديد الدوري</span>
-            </label>
             <label class="toggle-field">
               <input name="isActive" type="checkbox" checked />
-              <span>الكود نشط</span>
+              <span>الكود مفعل</span>
             </label>
-
             <div class="inline-actions">
               <button class="btn btn-primary" type="submit">حفظ الكود</button>
               <button class="btn btn-secondary" type="button" data-code-reset>تفريغ النموذج</button>
@@ -125,13 +74,11 @@
 
         <article class="page-card">
           <form id="adminCodesSearch" class="toolbar-form">
-            <input name="search" type="search" placeholder="ابحث بالكود أو الإيميل أو اسم الباقة" />
+            <input name="search" type="search" placeholder="ابحث بالكود" />
             <select name="status">
-              <option value="all">كل الحالات</option>
+              <option value="all" selected>كل الحالات</option>
               <option value="available">متاح</option>
-              <option value="in-use">قيد الاستخدام</option>
-              <option value="used">تم الاستخدام</option>
-              <option value="expired">منتهي</option>
+              <option value="used">مستخدم</option>
               <option value="disabled">معطل</option>
             </select>
             <button class="btn btn-secondary" type="submit">بحث</button>

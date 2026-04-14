@@ -323,6 +323,63 @@ router.post(
   })
 );
 
+router.post(
+  "/codes/create",
+  asyncHandler(async (req, res) => {
+    const code = String(req.body.code || "").trim();
+    const balanceValue = req.body.balance;
+    const balance = Number(balanceValue);
+    const isActive = req.body.isActive !== false;
+
+    if (!code) {
+      return res.status(400).json({ success: false, message: "الرجاء إدخال الكود." });
+    }
+
+    if (Number.isNaN(balance) || balance < 0) {
+      return res.status(400).json({ success: false, message: "رصيد الكود غير صالح." });
+    }
+
+    const existing = await prisma.activationCode.findUnique({ where: { code } });
+    if (existing) {
+      return res.status(409).json({ success: false, message: "هذا الكود موجود مسبقًا." });
+    }
+
+    const newCode = await prisma.activationCode.create({
+      data: {
+        code,
+        balance,
+        isActive,
+        isUsed: false,
+      },
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "تم حفظ الكود بنجاح",
+      code: newCode,
+    });
+  })
+);
+
+router.get(
+  "/codes/list",
+  asyncHandler(async (req, res) => {
+    const search = String(req.query.search || "").trim();
+    const where = search
+      ? {
+          code: { contains: search, mode: "insensitive" },
+        }
+      : {};
+
+    const codes = await prisma.activationCode.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+    });
+
+    return res.json({ success: true, codes });
+  })
+);
+
 router.patch(
   "/codes",
   asyncHandler(async (req, res) => {

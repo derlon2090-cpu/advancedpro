@@ -121,3 +121,14 @@ model SiteSetting {
   key   String @unique
   value String?
 }
+
+model ActivationCode {
+  id        Int      @id @default(autoincrement())
+  code      String   @unique
+  balance   Int      @default(0)
+  isActive  Boolean  @default(true) @map("is_active")
+  isUsed    Boolean  @default(false) @map("is_used")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("activation_codes")
+}

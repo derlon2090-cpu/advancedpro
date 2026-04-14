@@ -1751,6 +1751,16 @@ async function initAdminUsersPage() {
   });
 }
 
+function getActivationCodeStatus(code) {
+  if (!code?.isActive) {
+    return { key: "disabled", label: "معطل" };
+  }
+  if (code?.isUsed) {
+    return { key: "used", label: "مستخدم" };
+  }
+  return { key: "available", label: "متاح" };
+}
+
 function renderCodesTable(target, codes) {
   target.innerHTML = `
     <div class="table-shell">
@@ -1758,55 +1768,36 @@ function renderCodesTable(target, codes) {
         <thead>
           <tr>
             <th>الكود</th>
-            <th>الباقة</th>
-            <th>رصيد الصور</th>
-            <th>رصيد الفيديو</th>
-            <th>مدة الفيديو</th>
-            <th>الصلاحية</th>
-            <th>الإيميل المخصص</th>
+            <th>الرصيد</th>
             <th>الحالة</th>
-            <th>المستخدم</th>
-            <th>التفعيل</th>
-            <th>الانتهاء</th>
+            <th>الاستخدام</th>
+            <th>تاريخ الإنشاء</th>
             <th>الإجراء</th>
           </tr>
         </thead>
         <tbody>
           ${codes
-            .map(
-              (code) => `
+            .map((code) => {
+              const status = getActivationCodeStatus(code);
+              return `
                 <tr>
                   <td><strong>${escapeHtml(code.code)}</strong></td>
-                  <td>${escapeHtml(code.planName)}</td>
-                  <td>${code.imageQuota} صورة</td>
-                  <td>${code.videoQuota} مشروع فيديو</td>
-                  <td>${code.videoMaxDurationSeconds} ثانية</td>
-                  <td>${code.validityDays} يوم</td>
-                  <td>${escapeHtml(code.assignedEmail || "عام")}</td>
+                  <td>${Number(code.balance || 0)}</td>
                   <td>
-                    <span class="status-pill status-pill--${escapeHtml(
-                      code.statusKey || (code.isActive ? "available" : "disabled")
-                    )}">
-                      ${escapeHtml(code.statusLabel || (code.isActive ? "متاح" : "معطل"))}
+                    <span class="status-pill status-pill--${status.key}">
+                      ${status.label}
                     </span>
-                    <div class="helper-text">${code.redeemedCount}/${code.maxRedemptions}</div>
                   </td>
-                  <td>${escapeHtml(code.activatedBy || "—")}</td>
-                  <td>${code.activatedAt ? formatDate(code.activatedAt, true) : "—"}</td>
-                  <td>${code.expiresAt ? formatDate(code.expiresAt, true) : "—"}</td>
+                  <td>${code.isUsed ? "مستخدم" : "غير مستخدم"}</td>
+                  <td>${code.createdAt ? formatDate(code.createdAt, true) : "—"}</td>
                   <td>
                     <div class="table-actions">
-                      <button class="btn btn-secondary btn-sm" type="button" data-code-edit="${code.id}">تعديل</button>
-                      <button class="btn btn-ghost btn-sm" type="button" data-code-copy="${code.id}">نسخ</button>
-                      <button class="btn btn-outline btn-sm" type="button" data-code-toggle="${code.id}">
-                        ${code.isActive ? "تعطيل" : "تفعيل"}
-                      </button>
-                      <button class="btn btn-danger btn-sm" type="button" data-code-delete="${code.id}">حذف</button>
+                      <button class="btn btn-ghost btn-sm" type="button" data-activation-code-copy="${code.id}">نسخ</button>
                     </div>
                   </td>
                 </tr>
-              `
-            )
+              `;
+            })
             .join("")}
         </tbody>
       </table>
@@ -1894,24 +1885,28 @@ async function initAdminCreatePage() {
   });
 }
 
-function fillCodeForm(form, record) {
-  form.elements.namedItem("id").value = record?.id || "";
-  form.elements.namedItem("code").value = record?.code || "";
-  form.elements.namedItem("planName").value = record?.planName || "";
-  form.elements.namedItem("imageQuota").value = record?.imageQuota ?? 0;
-  form.elements.namedItem("videoQuota").value = record?.videoQuota ?? 0;
-  form.elements.namedItem("videoMaxDurationSeconds").value =
-    record?.videoMaxDurationSeconds ?? 5;
-  form.elements.namedItem("validityDays").value = record?.validityDays ?? 30;
-  form.elements.namedItem("renewalEnabled").checked = Boolean(record?.renewalEnabled);
-  form.elements.namedItem("renewalEveryDays").value = record?.renewalEveryDays ?? "";
-  form.elements.namedItem("renewalMode").value = record?.renewalMode || "topup";
-  form.elements.namedItem("renewalImageQuota").value = record?.renewalImageQuota ?? 0;
-  form.elements.namedItem("renewalVideoQuota").value = record?.renewalVideoQuota ?? 0;
-  form.elements.namedItem("maxRedemptions").value = record?.maxRedemptions ?? 1;
-  form.elements.namedItem("isActive").checked = record ? Boolean(record.isActive) : true;
-  form.elements.namedItem("assignedEmail").value = record?.assignedEmail || "";
+function fillActivationCodeForm(form, record) {
+  if (!form) {
+    return;
+  }
+
+  const codeField = form.elements.namedItem("code");
+  if (codeField) {
+    codeField.value = record?.code || "";
+  }
+
+  const balanceField = form.elements.namedItem("balance");
+  if (balanceField) {
+    balanceField.value = record?.balance ?? 0;
+  }
+
+  const isActiveField = form.elements.namedItem("isActive");
+  if (isActiveField) {
+    isActiveField.checked = record ? Boolean(record.isActive) : true;
+  }
 }
+
+const fillCodeForm = fillActivationCodeForm;
 
 async function initAdminAvailableCodesPage() {
   const searchForm = document.querySelector("#adminAvailableCodesSearch");
@@ -1923,13 +1918,15 @@ async function initAdminAvailableCodesPage() {
   }
 
   const loadCodes = async (search = "", statusFilter = "available") => {
-    const payload = await requestJson(`/api/admin/codes?search=${encodeURIComponent(search)}`, {
-      method: "GET",
-    });
+    const payload = await requestJson(
+      `/api/admin/codes/list?search=${encodeURIComponent(search)}`,
+      { method: "GET" }
+    );
     let records = payload.codes || [];
     if (statusFilter && statusFilter !== "all") {
-      records = records.filter((code) => code.statusKey === statusFilter);
+      records = records.filter((code) => getActivationCodeStatus(code).key === statusFilter);
     }
+    state.codeRecords = records;
     renderCodesTable(target, records);
   };
 
@@ -1952,6 +1949,20 @@ async function initAdminAvailableCodesPage() {
       setMessage(message, error.message, "error");
     }
   });
+
+  target?.addEventListener("click", (event) => {
+    const copyButton = event.target.closest("[data-activation-code-copy]");
+    if (!copyButton) {
+      return;
+    }
+    const record = state.codeRecords.find(
+      (item) => item.id === Number(copyButton.dataset.activationCodeCopy)
+    );
+    if (record?.code) {
+      navigator.clipboard?.writeText(record.code);
+      setMessage(message, "تم نسخ الكود.", "success");
+    }
+  });
 }
 
 async function initAdminCodesPage() {
@@ -1961,21 +1972,20 @@ async function initAdminCodesPage() {
   const message = document.querySelector("[data-admin-codes-message]");
 
   const loadCodes = async (search = "", statusFilter = "all") => {
-    const payload = await requestJson(`/api/admin/codes?search=${encodeURIComponent(search)}`, {
-      method: "GET",
-    });
+    const payload = await requestJson(
+      `/api/admin/codes/list?search=${encodeURIComponent(search)}`,
+      { method: "GET" }
+    );
     let records = payload.codes || [];
     if (statusFilter && statusFilter !== "all") {
-      records = records.filter((code) => code.statusKey === statusFilter);
+      records = records.filter((code) => getActivationCodeStatus(code).key === statusFilter);
     }
     state.codeRecords = records;
     renderCodesTable(target, state.codeRecords);
   };
 
   await loadCodes();
-  if (form) {
-    fillCodeForm(form, null);
-  }
+  fillActivationCodeForm(form, null);
 
   form?.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -2134,6 +2144,92 @@ async function initAdminCodesPage() {
     if (record) {
       fillCodeForm(form, record);
       window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  });
+}
+
+async function initAdminCodesPageV2() {
+  const form = document.querySelector("#adminCodeForm");
+  const searchForm = document.querySelector("#adminCodesSearch");
+  const target = document.querySelector("[data-admin-codes]");
+  const message = document.querySelector("[data-admin-codes-message]");
+
+  const loadCodes = async (search = "", statusFilter = "all") => {
+    const payload = await requestJson(
+      `/api/admin/codes/list?search=${encodeURIComponent(search)}`,
+      { method: "GET" }
+    );
+    let records = payload.codes || [];
+    if (statusFilter && statusFilter !== "all") {
+      records = records.filter((code) => getActivationCodeStatus(code).key === statusFilter);
+    }
+    state.codeRecords = records;
+    renderCodesTable(target, state.codeRecords);
+  };
+
+  await loadCodes();
+  fillActivationCodeForm(form, null);
+
+  form?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const button = form.querySelector('button[type="submit"]');
+
+    try {
+      const values = formToObject(form);
+      setButtonBusy(button, true, "جارٍ الحفظ...");
+      const payload = await requestJson("/api/admin/codes/create", {
+        method: "POST",
+        body: JSON.stringify({
+          code: values.code?.trim(),
+          balance: Number(values.balance),
+          isActive: values.isActive !== undefined ? Boolean(values.isActive) : true,
+        }),
+      });
+      setMessage(message, payload.message || "تم حفظ الكود بنجاح.", "success");
+      const searchField = searchForm?.elements.namedItem("search");
+      const statusField = searchForm?.elements.namedItem("status");
+      if (searchField && statusField) {
+        searchField.value = "";
+        statusField.value = "all";
+      }
+      await loadCodes(
+        searchField ? searchField.value : "",
+        statusField ? statusField.value : "all"
+      );
+      fillActivationCodeForm(form, null);
+    } catch (error) {
+      setMessage(message, error.message, "error");
+    } finally {
+      setButtonBusy(button, false);
+    }
+  });
+
+  searchForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const searchField = searchForm.elements.namedItem("search");
+    const statusField = searchForm.elements.namedItem("status");
+    await loadCodes(
+      searchField ? searchField.value : "",
+      statusField ? statusField.value : "all"
+    );
+  });
+
+  document.querySelector("[data-code-reset]")?.addEventListener("click", () => {
+    fillActivationCodeForm(form, null);
+    setMessage(message, "");
+  });
+
+  target?.addEventListener("click", (event) => {
+    const copyButton = event.target.closest("[data-activation-code-copy]");
+    if (!copyButton) {
+      return;
+    }
+    const record = state.codeRecords.find(
+      (item) => item.id === Number(copyButton.dataset.activationCodeCopy)
+    );
+    if (record?.code) {
+      navigator.clipboard?.writeText(record.code);
+      setMessage(message, "تم نسخ الكود.", "success");
     }
   });
 }
@@ -2311,7 +2407,7 @@ async function initPage(user) {
     case "admin-users":
       return initAdminUsersPage();
     case "admin-codes":
-      return initAdminCodesPage();
+      return initAdminCodesPageV2();
     case "admin-available-codes":
       return initAdminAvailableCodesPage();
     case "admin-create":
