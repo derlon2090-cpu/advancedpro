@@ -296,6 +296,16 @@ router.post(
       if (error?.code === "P2002") {
         return res.status(409).json({ message: "هذا الكود موجود مسبقًا." });
       }
+      if (error?.code === "P2021") {
+        return res.status(500).json({
+          message: "جداول قاعدة البيانات غير موجودة. شغّل prisma db push في Render.",
+        });
+      }
+      if (error?.code === "P1000" || error?.code === "P1001") {
+        return res.status(500).json({
+          message: "تعذر الاتصال بقاعدة البيانات. تحقق من DATABASE_URL.",
+        });
+      }
       return res.status(500).json({ message: "تعذر حفظ الكود. حاول مرة أخرى." });
     }
     const fullRecord = await prisma.code.findUnique({
