@@ -16,6 +16,19 @@ const createAdminSchema = z.object({
   password: z.string().min(8).optional(),
 });
 
+async function ensureActivationCodesTable() {
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS activation_codes (
+      id SERIAL PRIMARY KEY,
+      code VARCHAR(255) NOT NULL UNIQUE,
+      balance INTEGER NOT NULL DEFAULT 0,
+      is_active BOOLEAN NOT NULL DEFAULT TRUE,
+      is_used BOOLEAN NOT NULL DEFAULT FALSE,
+      created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+}
+
 function generateStrongPassword(length = 16) {
   const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
   const lower = "abcdefghijkmnopqrstuvwxyz";
@@ -55,12 +68,14 @@ function validatePasswordRules(password) {
 router.get(
   "/summary",
   asyncHandler(async (_req, res) => {
+    await ensureActivationCodesTable();
+
     const [totalUsers, totalAdmins, activeSubscriptions, activeCodes, requestsLast7Days] =
       await Promise.all([
         prisma.user.count(),
         prisma.user.count({ where: { role: "admin" } }),
         prisma.subscription.count({ where: { status: "active" } }),
-        prisma.code.count({ where: { isActive: true } }),
+        prisma.activationCode.count({ where: { isActive: true } }),
         prisma.usageLog.count({
           where: { createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } },
         }),
@@ -326,6 +341,8 @@ router.post(
 router.post(
   "/codes/create",
   asyncHandler(async (req, res) => {
+    await ensureActivationCodesTable();
+
     const code = String(req.body.code || "").trim();
     const balanceValue = req.body.balance;
     const balance = Number(balanceValue);
@@ -364,6 +381,8 @@ router.post(
 router.get(
   "/codes/list",
   asyncHandler(async (req, res) => {
+    await ensureActivationCodesTable();
+
     const search = String(req.query.search || "").trim();
     const where = search
       ? {

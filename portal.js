@@ -1950,7 +1950,7 @@ async function initAdminAvailableCodesPage() {
     }
   });
 
-  target?.addEventListener("click", (event) => {
+  target?.addEventListener("click", async (event) => {
     const copyButton = event.target.closest("[data-activation-code-copy]");
     if (!copyButton) {
       return;
@@ -2044,7 +2044,7 @@ async function initAdminCodesPage() {
     setMessage(message, "");
   });
 
-  target?.addEventListener("click", (event) => {
+  target?.addEventListener("click", async (event) => {
     const button = event.target.closest("[data-code-edit]");
 
     if (!button) {
