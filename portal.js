@@ -2188,14 +2188,25 @@ async function initAdminCodesPageV2() {
       setMessage(message, payload.message || "تم حفظ الكود بنجاح.", "success");
       const searchField = searchForm?.elements.namedItem("search");
       const statusField = searchForm?.elements.namedItem("status");
+      if (payload.code) {
+        state.codeRecords = [
+          payload.code,
+          ...state.codeRecords.filter((item) => item.id !== payload.code.id),
+        ];
+        renderCodesTable(target, state.codeRecords);
+      }
       if (searchField && statusField) {
         searchField.value = "";
         statusField.value = "all";
       }
-      await loadCodes(
-        searchField ? searchField.value : "",
-        statusField ? statusField.value : "all"
-      );
+      try {
+        await loadCodes(
+          searchField ? searchField.value : "",
+          statusField ? statusField.value : "all"
+        );
+      } catch (loadError) {
+        console.error("Reload codes after create failed:", loadError);
+      }
       fillActivationCodeForm(form, null);
     } catch (error) {
       setMessage(message, error.message, "error");
