@@ -2154,6 +2154,10 @@ async function initAdminCodesPageV2() {
   const target = document.querySelector("[data-admin-codes]");
   const message = document.querySelector("[data-admin-codes-message]");
 
+  if (!form || !target) {
+    return;
+  }
+
   const loadCodes = async (search = "", statusFilter = "all") => {
     const payload = await requestJson(
       `/api/admin/codes/list?search=${encodeURIComponent(search)}`,
@@ -2167,7 +2171,6 @@ async function initAdminCodesPageV2() {
     renderCodesTable(target, state.codeRecords);
   };
 
-  await loadCodes();
   fillActivationCodeForm(form, null);
 
   form?.addEventListener("submit", async (event) => {
@@ -2219,10 +2222,15 @@ async function initAdminCodesPageV2() {
     event.preventDefault();
     const searchField = searchForm.elements.namedItem("search");
     const statusField = searchForm.elements.namedItem("status");
-    await loadCodes(
-      searchField ? searchField.value : "",
-      statusField ? statusField.value : "all"
-    );
+    try {
+      await loadCodes(
+        searchField ? searchField.value : "",
+        statusField ? statusField.value : "all"
+      );
+      setMessage(message, "");
+    } catch (error) {
+      setMessage(message, error.message, "error");
+    }
   });
 
   document.querySelector("[data-code-reset]")?.addEventListener("click", () => {
@@ -2243,6 +2251,17 @@ async function initAdminCodesPageV2() {
       setMessage(message, "تم نسخ الكود.", "success");
     }
   });
+
+  try {
+    await loadCodes();
+    setMessage(message, "");
+  } catch (error) {
+    setMessage(
+      message,
+      error.message || "تعذر تحميل قائمة الأكواد، لكن يمكنك محاولة حفظ كود جديد.",
+      "error"
+    );
+  }
 }
 
 function renderSubscriptionsTable(target, subscriptions) {
