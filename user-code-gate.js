@@ -9,6 +9,14 @@
   const ACTIVE_PAGES = new Set(["student", "dashboard"]);
   let activationFlashTimer = null;
 
+  function notifyPortalState(state) {
+    document.dispatchEvent(
+      new CustomEvent("advancedpro:access-code-state", {
+        detail: { state: state || null },
+      })
+    );
+  }
+
   function getStoredToken() {
     try {
       const local = window.localStorage.getItem(AUTH_TOKEN_KEY);
@@ -544,6 +552,7 @@
 
       if (state) {
         persistCodeInfo(state);
+        notifyPortalState(state);
         renderStatusCard(dashboardStatus, state);
         renderStatusCard(unlockStatus, state);
         syncSubscriptionUi(state);
@@ -551,12 +560,14 @@
       } else {
         const fallbackState = preserveStoredState && stored ? normalizeCodeInfo(stored) : null;
         if (fallbackState) {
+          notifyPortalState(fallbackState);
           renderStatusCard(dashboardStatus, fallbackState);
           renderStatusCard(unlockStatus, fallbackState);
           syncSubscriptionUi(fallbackState);
           toggleChat(fallbackState.approved, fallbackState);
         } else {
           persistCodeInfo(null);
+          notifyPortalState(null);
           renderStatusCard(dashboardStatus, null);
           renderStatusCard(unlockStatus, null);
           syncSubscriptionUi(null);
@@ -570,6 +581,7 @@
       const fallback = readStoredCodeInfo();
       if (fallback) {
         const state = normalizeCodeInfo(fallback);
+        notifyPortalState(state);
         renderStatusCard(document.querySelector("[data-dashboard-code-status]"), state);
         renderStatusCard(document.querySelector("[data-create-unlock-status]"), state);
         syncSubscriptionUi(state);
@@ -609,6 +621,7 @@
       state.chatStatus = "مفتوح";
 
       persistCodeInfo(state);
+      notifyPortalState(state);
       renderStatusCard(dashboardStatus, state);
       renderStatusCard(unlockStatus, state);
       syncSubscriptionUi(state);
@@ -634,6 +647,7 @@
       const failure = classifyFailure(error.message);
       hideActivationFlash();
       persistCodeInfo(null);
+      notifyPortalState(null);
       renderStatusCard(document.querySelector("[data-dashboard-code-status]"), {
         ...failure,
         approved: false,
@@ -682,12 +696,14 @@
     const stored = readStoredCodeInfo();
     if (stored) {
       const state = normalizeCodeInfo(stored);
+      notifyPortalState(state);
       renderStatusCard(document.querySelector("[data-dashboard-code-status]"), state);
       renderStatusCard(document.querySelector("[data-create-unlock-status]"), state);
       syncSubscriptionUi(state);
       toggleChat(state.approved, state);
     } else {
       hideActivationFlash();
+      notifyPortalState(null);
       renderStatusCard(document.querySelector("[data-dashboard-code-status]"), null);
       renderStatusCard(document.querySelector("[data-create-unlock-status]"), null);
       toggleChat(false, {

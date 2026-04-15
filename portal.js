@@ -1050,6 +1050,9 @@ async function initDashboardPage() {
       .split(/\s+/)
       .filter(Boolean).length;
 
+  const resolveCurrentSubscription = () =>
+    cachedSubscription || buildSubscriptionFromAccessCode(readAccessCodeSnapshot());
+
   const triggerCreateCounterRefresh = () => {
     [
       imageForm?.elements?.namedItem("prompt"),
@@ -1076,7 +1079,7 @@ async function initDashboardPage() {
       return;
     }
 
-    const subscription = cachedSubscription;
+    const subscription = resolveCurrentSubscription();
     const now = new Date();
     const expired =
       subscription?.endAt && new Date(subscription.endAt).getTime() < now.getTime();
@@ -1552,6 +1555,24 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
     scheduleWorkPolling();
   };
 
+  const syncCreateExperienceFromState = () => {
+    const subscription = resolveCurrentSubscription();
+    const now = new Date();
+    const expired =
+      subscription?.endAt && new Date(subscription.endAt).getTime() < now.getTime();
+    const isActive = subscription && subscription.status === "active" && !expired;
+    const imageAllowed = isActive && Number(subscription?.imageBalance || 0) > 0;
+    const videoAllowed = isActive && Number(subscription?.videoBalance || 0) > 0;
+    const imagePanel = document.querySelector('[data-create-panel="image"]');
+    const videoPanel = document.querySelector('[data-create-panel="video"]');
+
+    setPanelState(imagePanel, imageAllowed);
+    setPanelState(videoPanel, videoAllowed);
+    updateCreateModeNote();
+    updateGateMessage();
+    triggerCreateCounterRefresh();
+  };
+
   const handleCodeActivationSubmit = async ({
     event,
     form,
@@ -1649,6 +1670,12 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
 
   renderAccessCodeStatus(codeStatusTarget, readAccessCodeSnapshot(), cachedSubscription);
   renderAccessCodeStatus(unlockStatusTarget, readAccessCodeSnapshot(), cachedSubscription);
+
+  document.addEventListener("advancedpro:access-code-state", (event) => {
+    const accessCode = event.detail?.state || null;
+    cachedSubscription = buildSubscriptionFromAccessCode(accessCode);
+    syncCreateExperienceFromState();
+  });
 
   try {
     await loadDashboard();
@@ -1875,6 +1902,10 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
 
       try {
         if (!cachedSubscription) {
+          cachedSubscription = resolveCurrentSubscription();
+        }
+
+        if (!cachedSubscription) {
           throw new Error("فعّل كودك أولًا للبدء في الإنشاء.");
         }
 
@@ -1997,6 +2028,10 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
       let processingTimer = null;
 
       try {
+        if (!cachedSubscription) {
+          cachedSubscription = resolveCurrentSubscription();
+        }
+
         if (!cachedSubscription) {
           throw new Error("فعّل كودك أولًا للبدء في الإنشاء.");
         }
