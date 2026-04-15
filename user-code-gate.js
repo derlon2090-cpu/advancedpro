@@ -1,10 +1,13 @@
 (() => {
+  window.__advancedProUserCodeGate = true;
+
   const API_BASE_URL =
     window.AdvancedProConfig?.apiBaseUrl || "https://advancedpro.onrender.com";
   const AUTH_TOKEN_KEY = "advancedpro_token";
   const ACCESS_CODE_STORAGE_KEY = "advancedpro_access_code";
   const PAGE = document.body?.dataset?.page || "";
   const ACTIVE_PAGES = new Set(["student", "dashboard"]);
+  let activationFlashTimer = null;
 
   function getStoredToken() {
     try {
@@ -252,62 +255,212 @@
       return;
     }
 
-    const approvedClass = state.approved ? "status-pill status-pill--active" : "status-pill status-pill--expired";
+    const approvedClass = state.approved
+      ? "status-pill status-pill--active"
+      : "status-pill status-pill--expired";
     const approvedLabel = state.approved ? "تمت الموافقة" : state.decision || "مرفوض";
     const statusLabel = state.statusLabel || state.title || "غير معروف";
+    const summaryText = state.approved
+      ? `الرصيد الحالي: ${state.imageAvailable ?? 0} صورة / ${state.videoAvailable ?? 0} فيديو`
+      : state.message || "الكود غير متاح الآن";
 
     target.innerHTML = `
-      <div class="info-stack">
-        <div>
-          <span>الموافقة</span>
-          <strong><span class="${approvedClass}">${escapeHtml(approvedLabel)}</span></strong>
+      <div class="code-status-card code-status-card--compact">
+        <div class="code-status-banner">
+          <div class="code-status-banner__top">
+            <strong>${escapeHtml(state.packageName || state.code || "الباقة الحالية")}</strong>
+            <span class="${approvedClass}">${escapeHtml(approvedLabel)}</span>
+          </div>
+          <p>${escapeHtml(summaryText)}</p>
         </div>
-        <div>
-          <span>حالة الكود</span>
-          <strong>${escapeHtml(statusLabel)}</strong>
-        </div>
-        <div>
-          <span>الباقة / الكود</span>
-          <strong>${escapeHtml(state.packageName || state.code || "غير متوفر")}</strong>
-        </div>
-        <div>
-          <span>الرصيد الحالي</span>
-          <strong>${escapeHtml(state.imageAvailable ?? 0)} صورة / ${escapeHtml(state.videoAvailable ?? 0)} فيديو</strong>
-        </div>
-        <div>
-          <span>المستخدم من الرصيد</span>
-          <strong>${escapeHtml(state.imageUsed ?? 0)} صورة / ${escapeHtml(state.videoUsed ?? 0)} فيديو</strong>
-        </div>
-        <div>
-          <span>هل الكود متجدد</span>
-          <strong>${state.isRenewable ? "نعم" : "لا"}${state.renewalLabel ? ` - ${escapeHtml(state.renewalLabel)}` : ""}</strong>
-        </div>
-        <div>
-          <span>تاريخ الانتهاء</span>
-          <strong>${formatDate(state.endAt)}</strong>
-        </div>
-        <div>
-          <span>المتبقي للانتهاء</span>
-          <strong>${formatRemainingDuration(state.endAt)}</strong>
-        </div>
-        <div>
-          <span>نوع الوصول</span>
-          <strong>${escapeHtml(state.accessTypeLabel || "عام")}</strong>
-        </div>
-        <div>
-          <span>البريد المرتبط</span>
-          <strong>${escapeHtml(state.email || "غير مرتبط")}</strong>
-        </div>
-        <div>
-          <span>حالة الشات</span>
-          <strong>${escapeHtml(state.chatStatus || (state.approved ? "مفتوح" : "مغلق"))}</strong>
-        </div>
-        <div>
-          <span>النتيجة</span>
-          <strong>${escapeHtml(state.message || (state.approved ? "الكود متاح للمتابعة" : "الكود غير متاح"))}</strong>
+        <div class="code-status-grid">
+          <div class="code-status-item">
+            <span>حالة الكود</span>
+            <strong>${escapeHtml(statusLabel)}</strong>
+          </div>
+          <div class="code-status-item">
+            <span>الرصيد</span>
+            <strong>${escapeHtml(state.imageAvailable ?? 0)} صورة / ${escapeHtml(state.videoAvailable ?? 0)} فيديو</strong>
+          </div>
+          <div class="code-status-item">
+            <span>الاستخدام</span>
+            <strong>${escapeHtml(state.imageUsed ?? 0)} صورة / ${escapeHtml(state.videoUsed ?? 0)} فيديو</strong>
+          </div>
+          <div class="code-status-item">
+            <span>الانتهاء</span>
+            <strong>${formatDate(state.endAt)}</strong>
+          </div>
+          <div class="code-status-item">
+            <span>التجديد</span>
+            <strong>${state.isRenewable ? "متجدد" : "غير متجدد"}${state.renewalLabel ? ` - ${escapeHtml(state.renewalLabel)}` : ""}</strong>
+          </div>
+          <div class="code-status-item">
+            <span>المتبقي</span>
+            <strong>${formatRemainingDuration(state.endAt)}</strong>
+          </div>
+          <div class="code-status-item">
+            <span>نوع الوصول</span>
+            <strong>${escapeHtml(state.accessTypeLabel || "عام")}</strong>
+          </div>
+          <div class="code-status-item">
+            <span>حالة الشات</span>
+            <strong>${escapeHtml(state.chatStatus || (state.approved ? "مفتوح" : "مغلق"))}</strong>
+          </div>
         </div>
       </div>
     `;
+  }
+
+  function countWords(value) {
+    return String(value || "")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean).length;
+  }
+
+  function updateWordCounters() {
+    const imagePrompt = document.querySelector("#imagePrompt");
+    const videoSummary = document.querySelector("#videoSummary");
+    const imageCounter = document.querySelector("[data-image-word-count]");
+    const videoCounter = document.querySelector("[data-video-word-count]");
+
+    if (imageCounter) {
+      imageCounter.textContent = `عدد الكلمات: ${countWords(imagePrompt?.value)}`;
+    }
+
+    if (videoCounter) {
+      videoCounter.textContent = `عدد الكلمات: ${countWords(videoSummary?.value)}`;
+    }
+  }
+
+  function bindWordCounters() {
+    const imagePrompt = document.querySelector("#imagePrompt");
+    const videoSummary = document.querySelector("#videoSummary");
+
+    imagePrompt?.addEventListener("input", updateWordCounters);
+    videoSummary?.addEventListener("input", updateWordCounters);
+    updateWordCounters();
+  }
+
+  function updateBalanceHints(state) {
+    const imageBalance = document.querySelector("[data-image-balance]");
+    const videoBalance = document.querySelector("[data-video-balance]");
+    const balanceStrip = document.querySelector("[data-create-balance]");
+
+    const imageText = state
+      ? `الرصيد المتاح: ${state.imageAvailable ?? 0} صورة`
+      : "الرصيد المتاح: 0 صورة";
+    const videoText = state
+      ? `الرصيد المتاح: ${state.videoAvailable ?? 0} فيديو`
+      : "الرصيد المتاح: 0 فيديو";
+
+    if (imageBalance) {
+      imageBalance.textContent = imageText;
+    }
+
+    if (videoBalance) {
+      videoBalance.textContent = videoText;
+    }
+
+    if (balanceStrip) {
+      balanceStrip.innerHTML = `
+        <div class="balance-pill">
+          <span>رصيد الصور</span>
+          <strong>${escapeHtml(state?.imageAvailable ?? 0)} صورة</strong>
+        </div>
+        <div class="balance-pill">
+          <span>رصيد الفيديو</span>
+          <strong>${escapeHtml(state?.videoAvailable ?? 0)} فيديو</strong>
+        </div>
+      `;
+    }
+  }
+
+  function applyCreateTabAccess(state) {
+    const tabButtons = Array.from(document.querySelectorAll("[data-create-tab]"));
+    const panels = Array.from(document.querySelectorAll("[data-create-panel]"));
+    if (!tabButtons.length || !panels.length) {
+      return;
+    }
+
+    const allowedByType = {
+      image: Boolean(state && Number(state.imageAvailable || 0) > 0),
+      video: Boolean(state && Number(state.videoAvailable || 0) > 0),
+    };
+
+    tabButtons.forEach((button) => {
+      const type = button.dataset.createTab;
+      const allowed = Boolean(type && allowedByType[type]);
+      button.disabled = !allowed;
+      button.classList.toggle("is-disabled", !allowed);
+      button.setAttribute("aria-disabled", String(!allowed));
+    });
+
+    const preferredTab = allowedByType.image
+      ? "image"
+      : allowedByType.video
+        ? "video"
+        : null;
+
+    if (!preferredTab) {
+      panels.forEach((panel) => panel.classList.remove("is-active"));
+      return;
+    }
+
+    const activeButton =
+      tabButtons.find(
+        (button) => button.dataset.createTab === preferredTab || button.classList.contains("is-active")
+      ) || tabButtons.find((button) => button.dataset.createTab === preferredTab);
+    const activeType =
+      activeButton && !activeButton.disabled ? activeButton.dataset.createTab : preferredTab;
+
+    tabButtons.forEach((button) => {
+      button.classList.toggle("is-active", button.dataset.createTab === activeType);
+    });
+
+    panels.forEach((panel) => {
+      panel.classList.toggle("is-active", panel.dataset.createPanel === activeType);
+    });
+  }
+
+  function hideActivationFlash() {
+    const flash = document.querySelector("[data-code-activation-flash]");
+    if (activationFlashTimer) {
+      window.clearTimeout(activationFlashTimer);
+      activationFlashTimer = null;
+    }
+    if (flash) {
+      flash.hidden = true;
+      flash.innerHTML = "";
+    }
+  }
+
+  function showActivationFlash(state) {
+    const flash = document.querySelector("[data-code-activation-flash]");
+    const createLock = document.querySelector("[data-create-lock]");
+
+    if (!flash || !createLock || !state) {
+      return;
+    }
+
+    hideActivationFlash();
+
+    flash.hidden = false;
+    flash.innerHTML = `
+      <strong>تم التحقق من الكود بنجاح</strong>
+      <p>${escapeHtml(state.packageName || state.code || "الكود الحالي")} • ${escapeHtml(state.imageAvailable)} صورة / ${escapeHtml(state.videoAvailable)} فيديو</p>
+      <small>الحالة: ${escapeHtml(state.statusLabel || "صالح")} • المتبقي: ${escapeHtml(formatRemainingDuration(state.endAt))}</small>
+    `;
+
+    createLock.hidden = false;
+
+    activationFlashTimer = window.setTimeout(() => {
+      hideActivationFlash();
+      toggleChat(true, state);
+      hydrateFromDashboard({ preserveStoredState: true }).catch(() => {
+        // ignore
+      });
+    }, 5000);
   }
 
   function syncSubscriptionUi(state) {
@@ -337,10 +490,18 @@
       createLock.hidden = Boolean(enabled);
     }
 
+    applyCreateTabAccess(enabled ? state : null);
+
     panels.forEach((panel) => {
-      panel.classList.toggle("create-disabled", !enabled);
+      const panelType = panel.dataset.createPanel;
+      const panelAllowed =
+        enabled &&
+        ((panelType === "image" && Number(state?.imageAvailable || 0) > 0) ||
+          (panelType === "video" && Number(state?.videoAvailable || 0) > 0));
+
+      panel.classList.toggle("create-disabled", !panelAllowed);
       panel.querySelectorAll("input, textarea, select, button").forEach((input) => {
-        input.disabled = !enabled;
+        input.disabled = !panelAllowed;
       });
     });
 
@@ -361,13 +522,18 @@
         `تم التحقق من الكود بنجاح. رصيدك: ${state.imageAvailable} صورة / ${state.videoAvailable} فيديو`,
         "success"
       );
+    } else if (createMessage && !enabled) {
+      setMessage(createMessage, "", "info");
     }
+
+    updateBalanceHints(state);
   }
 
-  async function hydrateFromDashboard() {
+  async function hydrateFromDashboard({ preserveStoredState = true } = {}) {
     try {
       const payload = await requestJson("/api/dashboard", { method: "GET" });
       const state = deriveFromDashboard(payload);
+      const stored = readStoredCodeInfo();
       const dashboardStatus = document.querySelector("[data-dashboard-code-status]");
       const unlockStatus = document.querySelector("[data-create-unlock-status]");
 
@@ -378,14 +544,22 @@
         syncSubscriptionUi(state);
         toggleChat(state.approved, state);
       } else {
-        persistCodeInfo(null);
-        renderStatusCard(dashboardStatus, null);
-        renderStatusCard(unlockStatus, null);
-        syncSubscriptionUi(null);
-        toggleChat(false, {
-          approved: false,
-          message: "لم يتم تفعيل أي كود بعد.",
-        });
+        const fallbackState = preserveStoredState && stored ? normalizeCodeInfo(stored) : null;
+        if (fallbackState) {
+          renderStatusCard(dashboardStatus, fallbackState);
+          renderStatusCard(unlockStatus, fallbackState);
+          syncSubscriptionUi(fallbackState);
+          toggleChat(fallbackState.approved, fallbackState);
+        } else {
+          persistCodeInfo(null);
+          renderStatusCard(dashboardStatus, null);
+          renderStatusCard(unlockStatus, null);
+          syncSubscriptionUi(null);
+          toggleChat(false, {
+            approved: false,
+            message: "لم يتم تفعيل أي كود بعد.",
+          });
+        }
       }
     } catch (error) {
       const fallback = readStoredCodeInfo();
@@ -427,26 +601,27 @@
       state.approved = true;
       state.message = payload.message || "تم التحقق من الكود بنجاح";
       state.decision = "تمت الموافقة";
+      state.chatStatus = "سيتم الفتح بعد 5 ثوانٍ";
 
       persistCodeInfo(state);
       renderStatusCard(dashboardStatus, state);
       renderStatusCard(unlockStatus, state);
       syncSubscriptionUi(state);
-      toggleChat(true, state);
+      toggleChat(false, {
+        ...state,
+        approved: false,
+        message: "جارٍ تجهيز الشات وفتح الأدوات...",
+      });
+      showActivationFlash(state);
       setMessage(
         messageTarget,
         `تم الإدخال بنجاح - الكود متاح للمتابعة حتى ${formatDate(state.endAt)}`,
         "success"
       );
       form.reset();
-
-      window.setTimeout(() => {
-        hydrateFromDashboard().catch(() => {
-          // ignore
-        });
-      }, 250);
     } catch (error) {
       const failure = classifyFailure(error.message);
+      hideActivationFlash();
       persistCodeInfo(null);
       renderStatusCard(document.querySelector("[data-dashboard-code-status]"), {
         ...failure,
@@ -501,6 +676,7 @@
       syncSubscriptionUi(state);
       toggleChat(state.approved, state);
     } else {
+      hideActivationFlash();
       renderStatusCard(document.querySelector("[data-dashboard-code-status]"), null);
       renderStatusCard(document.querySelector("[data-create-unlock-status]"), null);
       toggleChat(false, {
@@ -509,6 +685,7 @@
       });
     }
 
+    bindWordCounters();
     hydrateFromDashboard().catch(() => {
       // ignore initial load failures
     });

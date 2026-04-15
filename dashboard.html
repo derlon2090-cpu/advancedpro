@@ -87,6 +87,7 @@
                   <button class="btn btn-primary" type="submit">تفعيل الكود</button>
                 </form>
                 <div class="status-message" hidden data-create-unlock-message></div>
+                <div class="code-activation-flash" hidden data-code-activation-flash role="status" aria-live="polite"></div>
                 <div data-create-unlock-status></div>
               </div>
             </div>
@@ -99,6 +100,7 @@
                 فيديو
               </button>
             </div>
+            <div class="create-balance-strip" data-create-balance></div>
 
             <div class="create-panel is-active" data-create-panel="image">
               <form id="imageCreateForm" class="stack-form">
@@ -111,6 +113,10 @@
                     placeholder="اكتب وصفًا واضحًا للصورة المطلوبة"
                     required
                   ></textarea>
+                  <div class="field-meta">
+                    <small class="field-hint" data-image-word-count>عدد الكلمات: 0</small>
+                    <small class="field-hint" data-image-balance>الرصيد المتاح: 0 صورة</small>
+                  </div>
                 </div>
                 <button class="btn btn-primary" type="submit">ابدأ إنشاء الصورة</button>
               </form>
@@ -131,6 +137,10 @@
                     placeholder="اكتب وصفًا عامًا للفيديو المطلوب"
                     required
                   ></textarea>
+                  <div class="field-meta">
+                    <small class="field-hint" data-video-word-count>عدد الكلمات: 0</small>
+                    <small class="field-hint" data-video-balance>الرصيد المتاح: 0 فيديو</small>
+                  </div>
                 </div>
                 <div class="field">
                   <label for="videoDuration">مدة الفيديو</label>
@@ -216,8 +226,11 @@
       </section>
     </main>
 
+    <script>
+      window.__advancedProDedicatedCodeGate = true;
+    </script>
     <script src="/site.js?v=20260415-activate-fix"></script>
-    <script src="/portal.js?v=20260415-activate-fix"></script>
-    <script src="/user-code-gate.js?v=20260415-chat-gate-1"></script>
+    <script src="/portal.js?v=20260415-chat-gate-2"></script>
+    <script src="/user-code-gate.js?v=20260415-chat-gate-2"></script>
   </body>
 </html>

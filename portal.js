@@ -1009,6 +1009,7 @@ async function initActivatePage(user) {
 }
 
 async function initDashboardPage() {
+  const dedicatedCodeGate = Boolean(window.__advancedProDedicatedCodeGate);
   const summaryTarget = document.querySelector("[data-dashboard-summary]");
   const usageTarget = document.querySelector("[data-dashboard-usage]");
   const welcomeTarget = document.querySelector("[data-dashboard-name]");
@@ -1370,7 +1371,7 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
     }
   };
 
-  if (activationForm && activationForm.dataset.bound !== "true") {
+  if (!dedicatedCodeGate && activationForm && activationForm.dataset.bound !== "true") {
     activationForm.dataset.bound = "true";
     activationForm.addEventListener("submit", async (event) => {
       await handleCodeActivationSubmit({
@@ -1381,7 +1382,7 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
     });
   }
 
-  if (unlockForm && unlockForm.dataset.bound !== "true") {
+  if (!dedicatedCodeGate && unlockForm && unlockForm.dataset.bound !== "true") {
     unlockForm.dataset.bound = "true";
     unlockForm.addEventListener("submit", async (event) => {
       await handleCodeActivationSubmit({
@@ -1408,7 +1409,7 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
     );
   }
 
-  if (activationForm && activationForm.dataset.bound !== "true") {
+  if (!dedicatedCodeGate && activationForm && activationForm.dataset.bound !== "true") {
     activationForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       const button = activationForm.querySelector('button[type="submit"]');
@@ -1439,7 +1440,7 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
     });
   }
 
-  if (unlockForm && unlockForm.dataset.bound !== "true") {
+  if (!dedicatedCodeGate && unlockForm && unlockForm.dataset.bound !== "true") {
     unlockForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       const button = unlockForm.querySelector('button[type="submit"]');
