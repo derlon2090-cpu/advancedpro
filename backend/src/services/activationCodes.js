@@ -605,7 +605,7 @@ export async function activateAdminCodeForUser({ userId, email, codeValue }) {
   const serializedBefore = serializeActivationCode(current);
 
   if (serializedBefore.statusKey === "expired") {
-    httpError("الكود الخاص بك غير صحيح أو غير فعال");
+    httpError("انتهت صلاحية هذا الكود.");
   }
 
   if (current.email && current.email !== String(email || "").trim().toLowerCase()) {

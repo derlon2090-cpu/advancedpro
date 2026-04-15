@@ -198,6 +198,30 @@ function formatDate(value, withTime = false) {
   }).format(date);
 }
 
+function formatRemainingDuration(value) {
+  if (!value) {
+    return "غير محدد";
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "غير محدد";
+  }
+
+  const diff = date.getTime() - Date.now();
+  if (diff <= 0) {
+    return "منتهي";
+  }
+
+  const totalHours = Math.ceil(diff / (1000 * 60 * 60));
+  if (totalHours < 24) {
+    return `${totalHours} ساعة`;
+  }
+
+  const totalDays = Math.ceil(totalHours / 24);
+  return `${totalDays} يوم`;
+}
+
 function getEyeIcon(isVisible) {
   if (isVisible) {
     return `
@@ -411,13 +435,14 @@ function renderAccessCodeStatus(target, accessCode, subscription) {
 
   target.innerHTML = `
     <div class="info-stack">
+      <div><span>الباقة / الكود</span><strong>${escapeHtml(currentSubscription.packageName || currentCode.ownerName || currentCode.code)}</strong></div>
       <div><span>حالة الكود</span><strong>${escapeHtml(currentCode.statusLabel || "صالح")}</strong></div>
-      <div><span>عدد الصور المتاحة</span><strong>${escapeHtml(currentCode.imageAvailable ?? currentSubscription.imageBalance ?? 0)} صورة</strong></div>
-      <div><span>عدد الفيديوهات المتاحة</span><strong>${escapeHtml(currentCode.videoAvailable ?? currentSubscription.videoBalance ?? 0)} فيديو</strong></div>
+      <div><span>الرصيد الحالي</span><strong>${escapeHtml(currentCode.imageAvailable ?? currentSubscription.imageBalance ?? 0)} صورة / ${escapeHtml(currentCode.videoAvailable ?? currentSubscription.videoBalance ?? 0)} فيديو</strong></div>
       <div><span>عدد الصور المستخدمة</span><strong>${escapeHtml(currentCode.imageUsed ?? currentSubscription.imageUsed ?? 0)}</strong></div>
       <div><span>عدد الفيديوهات المستخدمة</span><strong>${escapeHtml(currentCode.videoUsed ?? currentSubscription.videoUsed ?? 0)}</strong></div>
       <div><span>هل الكود متجدد</span><strong>${currentSubscription.isRenewable ? "نعم" : "لا"}${currentSubscription.renewalLabel ? ` - ${escapeHtml(currentSubscription.renewalLabel)}` : ""}</strong></div>
       <div><span>تاريخ الانتهاء</span><strong>${formatDate(currentSubscription.endAt)}</strong></div>
+      <div><span>المتبقي للانتهاء</span><strong>${formatRemainingDuration(currentSubscription.endAt)}</strong></div>
       <div><span>البريد المرتبط</span><strong>${escapeHtml(currentSubscription.email || "غير مرتبط")}</strong></div>
       <div><span>حالة الشات</span><strong>${escapeHtml(currentCode.chatStatus || "مفتوح")}</strong></div>
     </div>
@@ -1003,6 +1028,7 @@ async function initDashboardPage() {
   const createLock = document.querySelector("[data-create-lock]");
   const unlockForm = document.querySelector("#createUnlockForm");
   const unlockMessage = document.querySelector("[data-create-unlock-message]");
+  const unlockStatusTarget = document.querySelector("[data-create-unlock-status]");
 
   let activeTab = "image";
   let cachedSubscription = null;
@@ -1249,6 +1275,7 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
     }
 
     renderAccessCodeStatus(codeStatusTarget, accessCode, subscription);
+    renderAccessCodeStatus(unlockStatusTarget, accessCode, subscription);
 
     const recentWorks = dashboard.recentWorks || dashboard.recentUsage || [];
     currentWorks = recentWorks;
@@ -1303,9 +1330,11 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
         persistAccessCodeSnapshot(activatedCode);
         cachedSubscription = buildSubscriptionFromAccessCode(activatedCode);
         renderAccessCodeStatus(codeStatusTarget, activatedCode, cachedSubscription);
+        renderAccessCodeStatus(unlockStatusTarget, activatedCode, cachedSubscription);
       }
 
-      setMessage(messageTarget, payload.message, "success");
+      const statusLabel = activatedCode?.statusLabel || "صالح";
+      setMessage(messageTarget, `تم الإدخال بنجاح - الحالة: ${statusLabel}`, "success");
       form.reset();
 
       try {
@@ -1365,6 +1394,7 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
   }
 
   renderAccessCodeStatus(codeStatusTarget, readAccessCodeSnapshot(), cachedSubscription);
+  renderAccessCodeStatus(unlockStatusTarget, readAccessCodeSnapshot(), cachedSubscription);
 
   try {
     await loadDashboard();
