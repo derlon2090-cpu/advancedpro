@@ -1143,12 +1143,14 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
   const loadDashboard = async () => {
     const payload = await requestJson("/api/dashboard", { method: "GET" });
     const dashboard = payload.dashboard;
-    const subscription = dashboard.subscription;
-    const accessCode = dashboard.accessCode;
+    const storedAccessCode = readAccessCodeSnapshot();
+    const accessCode = dashboard.accessCode || storedAccessCode || null;
+    const subscription =
+      dashboard.subscription || buildSubscriptionFromAccessCode(accessCode);
 
-    if (accessCode) {
-      persistAccessCodeSnapshot(accessCode);
-    } else {
+    if (dashboard.accessCode) {
+      persistAccessCodeSnapshot(dashboard.accessCode);
+    } else if (!subscription) {
       persistAccessCodeSnapshot(null);
     }
 
