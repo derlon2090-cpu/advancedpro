@@ -1010,6 +1010,7 @@ async function initActivatePage(user) {
 
 async function initDashboardPage() {
   const dedicatedCodeGate = Boolean(window.__advancedProDedicatedCodeGate);
+  const dedicatedCreateChat = Boolean(window.__advancedProDedicatedCreateChat);
   const summaryTarget = document.querySelector("[data-dashboard-summary]");
   const usageTarget = document.querySelector("[data-dashboard-usage]");
   const welcomeTarget = document.querySelector("[data-dashboard-name]");
@@ -1548,10 +1549,12 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
     const imagePanel = document.querySelector('[data-create-panel="image"]');
     const videoPanel = document.querySelector('[data-create-panel="video"]');
 
-    setPanelState(imagePanel, imageAllowed);
-    setPanelState(videoPanel, videoAllowed);
-    updateCreateModeNote();
-    updateGateMessage();
+    if (!dedicatedCreateChat) {
+      setPanelState(imagePanel, imageAllowed);
+      setPanelState(videoPanel, videoAllowed);
+      updateCreateModeNote();
+      updateGateMessage();
+    }
     scheduleWorkPolling();
   };
 
@@ -1566,11 +1569,13 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
     const imagePanel = document.querySelector('[data-create-panel="image"]');
     const videoPanel = document.querySelector('[data-create-panel="video"]');
 
-    setPanelState(imagePanel, imageAllowed);
-    setPanelState(videoPanel, videoAllowed);
-    updateCreateModeNote();
-    updateGateMessage();
-    triggerCreateCounterRefresh();
+    if (!dedicatedCreateChat) {
+      setPanelState(imagePanel, imageAllowed);
+      setPanelState(videoPanel, videoAllowed);
+      updateCreateModeNote();
+      updateGateMessage();
+      triggerCreateCounterRefresh();
+    }
   };
 
   const handleCodeActivationSubmit = async ({
@@ -1674,7 +1679,15 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
   document.addEventListener("advancedpro:access-code-state", (event) => {
     const accessCode = event.detail?.state || null;
     cachedSubscription = buildSubscriptionFromAccessCode(accessCode);
-    syncCreateExperienceFromState();
+    if (!dedicatedCreateChat) {
+      syncCreateExperienceFromState();
+    }
+  });
+
+  document.addEventListener("advancedpro:request-dashboard-refresh", () => {
+    loadDashboard().catch(() => {
+      // ignore ad-hoc refresh failures
+    });
   });
 
   try {
@@ -1889,11 +1902,13 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
     });
   }
 
-  setupTabs();
-  ensureCreateChatIntro();
-  updateCreateModeNote();
+  if (!dedicatedCreateChat) {
+    setupTabs();
+    ensureCreateChatIntro();
+    updateCreateModeNote();
+  }
 
-  if (imageForm) {
+  if (!dedicatedCreateChat && imageForm) {
     imageForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       const button = imageForm.querySelector('button[type="submit"]');
@@ -2002,7 +2017,7 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
     });
   }
 
-  if (videoForm) {
+  if (!dedicatedCreateChat && videoForm) {
     const durationField = videoForm.elements.namedItem("durationSeconds");
     const scenesWrapper =
       document.querySelector("[data-video-scenes-wrap]") ||
