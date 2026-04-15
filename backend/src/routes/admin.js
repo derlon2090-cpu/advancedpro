@@ -6,6 +6,13 @@ import { prisma } from "../lib/prisma.js";
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
 import { setSetting, getSetting, getPublicSettings } from "../services/settings.js";
 import { withDbRetry } from "../utils/dbRetry.js";
+import {
+  createActivationCode,
+  deleteActivationCode,
+  ensureActivationCodesTable,
+  listActivationCodes,
+  updateActivationCode,
+} from "../services/activationCodes.js";
 
 const router = Router();
 
@@ -16,21 +23,6 @@ const createAdminSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8).optional(),
 });
-
-async function ensureActivationCodesTable() {
-  await withDbRetry(() =>
-    prisma.$executeRawUnsafe(`
-      CREATE TABLE IF NOT EXISTS activation_codes (
-        id SERIAL PRIMARY KEY,
-        code VARCHAR(255) NOT NULL UNIQUE,
-        balance INTEGER NOT NULL DEFAULT 0,
-        is_active BOOLEAN NOT NULL DEFAULT TRUE,
-        is_used BOOLEAN NOT NULL DEFAULT FALSE,
-        created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-      )
-    `)
-  );
-}
 
 function generateStrongPassword(length = 16) {
   const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
@@ -71,7 +63,6 @@ function validatePasswordRules(password) {
 router.get(
   "/summary",
   asyncHandler(async (_req, res) => {
-    await ensureActivationCodesTable();
 
     const [totalUsers, totalAdmins, activeSubscriptions, activeCodes, requestsLast7Days] =
       await Promise.all([
@@ -344,14 +335,10 @@ router.post(
 router.post(
   "/codes/create",
   asyncHandler(async (req, res) => {
-    await ensureActivationCodesTable();
 
-    const code = String(req.body.code || "").trim();
-    const balanceValue = req.body.balance;
-    const balance = Number(balanceValue);
-    const isActive = req.body.isActive !== false;
+    const createdCode = await createActivationCode(req.body || {});
+    /*
 
-    if (!code) {
       return res.status(400).json({ success: false, message: "الرجاء إدخال الكود." });
     }
 
@@ -377,10 +364,11 @@ router.post(
       })
     );
 
+    */
     return res.status(201).json({
       success: true,
       message: "تم حفظ الكود بنجاح",
-      code: newCode,
+      code: createdCode,
     });
   })
 );
@@ -388,23 +376,38 @@ router.post(
 router.get(
   "/codes/list",
   asyncHandler(async (req, res) => {
-    await ensureActivationCodesTable();
-
-    const search = String(req.query.search || "").trim();
-    const where = search
-      ? {
-          code: { contains: search, mode: "insensitive" },
-        }
-      : {};
-
-    const codes = await withDbRetry(() =>
-      prisma.activationCode.findMany({
-        where,
-        orderBy: { createdAt: "desc" },
-      })
-    );
+    const codes = await listActivationCodes({
+      search: String(req.query.search || ""),
+    });
 
     return res.json({ success: true, codes });
+  })
+);
+
+router.put(
+  "/codes/:id",
+  asyncHandler(async (req, res) => {
+    const id = Number(req.params.id);
+    const code = await updateActivationCode(id, req.body || {});
+
+    return res.json({
+      success: true,
+      message: "تم تحديث الكود بنجاح.",
+      code,
+    });
+  })
+);
+
+router.delete(
+  "/codes/:id",
+  asyncHandler(async (req, res) => {
+    const id = Number(req.params.id);
+    await deleteActivationCode(id);
+
+    return res.json({
+      success: true,
+      message: "تم حذف الكود بنجاح.",
+    });
   })
 );
 

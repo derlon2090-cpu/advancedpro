@@ -874,7 +874,7 @@ async function initActivatePage(user) {
       if (!code) {
         throw new Error("أدخل كود التفعيل أولًا.");
       }
-      const payload = await requestJson("/api/activate", {
+      const payload = await requestJson("/api/user/code/activate", {
         method: "POST",
         body: JSON.stringify({
           code,
@@ -1052,6 +1052,7 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
     const payload = await requestJson("/api/dashboard", { method: "GET" });
     const dashboard = payload.dashboard;
     const subscription = dashboard.subscription;
+    const accessCode = dashboard.accessCode;
 
     if (welcomeTarget) {
       const name = dashboard.user.fullName || "بك";
@@ -1101,12 +1102,12 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
         </article>
         <article class="info-card">
           <span>الصور المنشأة</span>
-          <strong>${escapeHtml(stats.totalImages ?? 0)}</strong>
+          <strong>${escapeHtml(subscription?.imageBalance ?? 0)}</strong>
           <small>المتبقي الآن: ${escapeHtml(subscription?.imageBalance ?? 0)}</small>
         </article>
         <article class="info-card">
           <span>الفيديوهات المنشأة</span>
-          <strong>${escapeHtml(stats.totalVideos ?? 0)}</strong>
+          <strong>${escapeHtml(subscription?.videoBalance ?? 0)}</strong>
           <small>المتبقي الآن: ${escapeHtml(subscription?.videoBalance ?? 0)}</small>
         </article>
         <article class="info-card">
@@ -1132,6 +1133,19 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
           </div>
         `
         : `<div class="empty-state">لا توجد باقة مفعلة حاليًا.</div>`;
+    }
+
+    if (planTarget && subscription) {
+      const extraStack = document.createElement("div");
+      extraStack.className = "info-stack";
+      extraStack.innerHTML = `
+        <div><span>حالة الكود</span><strong>${escapeHtml(accessCode?.statusLabel || subscription.status || "نشط")}</strong></div>
+        <div><span>الاستخدام الحالي</span><strong>${escapeHtml(subscription.imageUsed ?? 0)} صورة / ${escapeHtml(subscription.videoUsed ?? 0)} فيديو</strong></div>
+        <div><span>هل الكود متجدد</span><strong>${subscription.isRenewable ? "نعم" : "لا"}${subscription.renewalLabel ? ` - ${escapeHtml(subscription.renewalLabel)}` : ""}</strong></div>
+        <div><span>البريد المرتبط</span><strong>${escapeHtml(subscription.email || "غير مرتبط")}</strong></div>
+        <div><span>نوع الوصول</span><strong>${escapeHtml(subscription.accessTypeLabel || "عام")}</strong></div>
+      `;
+      planTarget.appendChild(extraStack);
     }
 
     const recentWorks = dashboard.recentWorks || dashboard.recentUsage || [];
@@ -1182,7 +1196,7 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
 
         setButtonBusy(button, true, "جاري التفعيل...");
         setMessage(activationMessage, "");
-        const payload = await requestJson("/api/activate", {
+        const payload = await requestJson("/api/user/code/activate", {
           method: "POST",
           body: JSON.stringify({ code }),
         });
@@ -1191,7 +1205,7 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
         await loadDashboard();
         showToast(payload.message || "تم تفعيل الكود بنجاح");
       } catch (error) {
-        setMessage(activationMessage, "الكود الخاص بك خاطئ أو لا يعمل", "error");
+        setMessage(activationMessage, error.message, "error");
       } finally {
         setButtonBusy(button, false);
       }
@@ -1212,7 +1226,7 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
 
         setButtonBusy(button, true, "جارٍ التفعيل...");
         setMessage(unlockMessage, "");
-        const payload = await requestJson("/api/activate", {
+        const payload = await requestJson("/api/user/code/activate", {
           method: "POST",
           body: JSON.stringify({ code }),
         });
@@ -1229,7 +1243,7 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
           );
         }
       } catch (error) {
-        setMessage(unlockMessage, "الكود الخاص بك خاطئ أو لا يعمل", "error");
+        setMessage(unlockMessage, error.message, "error");
       } finally {
         setButtonBusy(button, false);
       }
@@ -2447,9 +2461,9 @@ async function initPage(user) {
     case "admin-users":
       return initAdminUsersPage();
     case "admin-codes":
-      return initAdminCodesPageV2();
+      return null;
     case "admin-available-codes":
-      return initAdminAvailableCodesPage();
+      return null;
     case "admin-create":
       return initAdminCreatePage();
     case "admin-subscriptions":

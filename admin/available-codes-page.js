@@ -5,19 +5,15 @@
 
   function getStoredToken() {
     try {
-      const local = window.localStorage.getItem(AUTH_TOKEN_KEY);
-      if (local) {
-        return local;
-      }
+      const token = window.localStorage.getItem(AUTH_TOKEN_KEY);
+      if (token) return token;
     } catch (error) {
       // ignore
     }
 
     try {
-      const session = window.sessionStorage.getItem(AUTH_TOKEN_KEY);
-      if (session) {
-        return session;
-      }
+      const token = window.sessionStorage.getItem(AUTH_TOKEN_KEY);
+      if (token) return token;
     } catch (error) {
       // ignore
     }
@@ -57,9 +53,7 @@
   }
 
   function setMessage(target, message, type = "info") {
-    if (!target) {
-      return;
-    }
+    if (!target) return;
 
     if (!message) {
       target.hidden = true;
@@ -83,46 +77,33 @@
   }
 
   function formatDate(value) {
-    if (!value) {
-      return "غير متوفر";
-    }
+    if (!value) return "غير محدد";
     const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) {
-      return "غير متوفر";
-    }
+    if (Number.isNaN(parsed.getTime())) return "غير محدد";
     return new Intl.DateTimeFormat("ar-SA", {
       dateStyle: "medium",
       timeStyle: "short",
     }).format(parsed);
   }
 
-  function getStatusMeta(code) {
-    if (!code.isActive) {
-      return { key: "disabled", label: "معطل", className: "status-pill--suspended" };
+  function statusMeta(code) {
+    if (code.statusKey === "inactive") {
+      return { label: "غير مفعل", className: "status-pill--suspended" };
     }
-    if (code.isUsed) {
-      return { key: "used", label: "مستخدم", className: "status-pill--pending" };
+    if (code.statusKey === "expired") {
+      return { label: "منتهي", className: "status-pill--pending" };
     }
-    return { key: "available", label: "متاح", className: "status-pill--active" };
+    if (code.statusKey === "in-use") {
+      return { label: "قيد الاستخدام", className: "status-pill--active" };
+    }
+    if (code.statusKey === "used") {
+      return { label: "تم الاستخدام", className: "status-pill--pending" };
+    }
+    return { label: "متاح", className: "status-pill--active" };
   }
 
-  function filterCodes(codes, search = "", status = "available") {
-    const normalizedSearch = String(search || "").trim().toLowerCase();
-
-    return codes.filter((code) => {
-      const statusKey = getStatusMeta(code).key;
-      const matchesStatus = status === "all" ? true : statusKey === status;
-      const matchesSearch = normalizedSearch
-        ? String(code.code || "").toLowerCase().includes(normalizedSearch)
-        : true;
-      return matchesStatus && matchesSearch;
-    });
-  }
-
-  function renderCodesTable(target, codes) {
-    if (!target) {
-      return;
-    }
+  function renderTable(target, codes) {
+    if (!target) return;
 
     if (!codes.length) {
       target.innerHTML = '<div class="empty-state">لا توجد أكواد مطابقة حاليًا.</div>';
@@ -135,24 +116,44 @@
           <thead>
             <tr>
               <th>الكود</th>
-              <th>الرصيد</th>
+              <th>البريد المرتبط</th>
+              <th>الرصيد الحالي</th>
+              <th>التجديد</th>
               <th>الحالة</th>
-              <th>الاستخدام</th>
-              <th>تاريخ الإنشاء</th>
-              <th>الإجراء</th>
+              <th>الإنشاء / الانتهاء</th>
+              <th>إجراء</th>
             </tr>
           </thead>
           <tbody>
             ${codes
               .map((code) => {
-                const status = getStatusMeta(code);
+                const status = statusMeta(code);
                 return `
                   <tr>
-                    <td><strong>${escapeHtml(code.code)}</strong></td>
-                    <td>${escapeHtml(code.balance)}</td>
-                    <td><span class="status-pill ${status.className}">${status.label}</span></td>
-                    <td>${code.isUsed ? "تم استخدامه" : "جاهز"}</td>
-                    <td>${escapeHtml(formatDate(code.createdAt))}</td>
+                    <td>
+                      <strong>${escapeHtml(code.code)}</strong>
+                      <small>${escapeHtml(code.ownerName || "بدون اسم")}</small>
+                    </td>
+                    <td>
+                      <strong>${escapeHtml(code.email || "عام")}</strong>
+                      <small>${escapeHtml(code.accessTypeLabel || "عام")}</small>
+                    </td>
+                    <td>
+                      <strong>${code.imageAvailable ?? 0} صورة / ${code.videoAvailable ?? 0} فيديو</strong>
+                      <small>المستخدم: ${code.imageUsed ?? 0} / ${code.videoUsed ?? 0}</small>
+                    </td>
+                    <td>
+                      <strong>${code.isRenewable ? "نعم" : "لا"}</strong>
+                      <small>${escapeHtml(code.renewalLabel || "غير متجدد")}</small>
+                    </td>
+                    <td>
+                      <span class="status-pill ${status.className}">${status.label}</span>
+                      <small>${code.isUsed ? "تم ربطه بمستخدم" : "جاهز للتفعيل"}</small>
+                    </td>
+                    <td>
+                      <strong>${escapeHtml(formatDate(code.createdAt))}</strong>
+                      <small>${escapeHtml(formatDate(code.expiresAt))}</small>
+                    </td>
                     <td>
                       <button
                         type="button"
@@ -173,46 +174,46 @@
   }
 
   function attachAvailableCodesPage() {
-    if (document.body?.dataset.page !== "admin-available-codes") {
-      return;
-    }
+    if (document.body?.dataset.page !== "admin-available-codes") return;
 
     const searchForm = document.querySelector("#adminAvailableCodesSearch");
     const target = document.querySelector("[data-admin-available-codes]");
     const message = document.querySelector("[data-admin-available-codes-message]");
 
-    if (!target || target.dataset.directHandlerBound === "true") {
-      return;
-    }
+    if (!target || target.dataset.bound === "true") return;
+    target.dataset.bound = "true";
 
-    target.dataset.directHandlerBound = "true";
     let allCodes = [];
 
     const loadCodes = async () => {
-      const payload = await requestJson("/api/admin/codes/list");
-      allCodes = Array.isArray(payload.codes) ? payload.codes : [];
       const search = searchForm?.elements.namedItem("search")?.value || "";
-      const status = searchForm?.elements.namedItem("status")?.value || "available";
-      renderCodesTable(target, filterCodes(allCodes, search, status));
+      const status = searchForm?.elements.namedItem("status")?.value || "all";
+      const payload = await requestJson(
+        `/api/admin/codes/list?search=${encodeURIComponent(search)}`
+      );
+      allCodes = Array.isArray(payload.codes) ? payload.codes : [];
+      const filtered =
+        status === "all"
+          ? allCodes
+          : allCodes.filter((item) => (item.statusKey || "available") === status);
+      renderTable(target, filtered);
     };
 
-    searchForm?.addEventListener("submit", (event) => {
+    searchForm?.addEventListener("submit", async (event) => {
       event.preventDefault();
-      event.stopImmediatePropagation();
-      const search = searchForm.elements.namedItem("search")?.value || "";
-      const status = searchForm.elements.namedItem("status")?.value || "available";
-      renderCodesTable(target, filterCodes(allCodes, search, status));
+      try {
+        await loadCodes();
+      } catch (error) {
+        setMessage(message, error.message, "error");
+      }
     });
 
     target.addEventListener("click", async (event) => {
       const copyButton = event.target.closest("[data-direct-code-copy]");
-      if (!copyButton) {
-        return;
-      }
+      if (!copyButton) return;
+
       const codeValue = copyButton.dataset.directCodeCopy;
-      if (!codeValue) {
-        return;
-      }
+      if (!codeValue) return;
 
       try {
         await navigator.clipboard.writeText(codeValue);

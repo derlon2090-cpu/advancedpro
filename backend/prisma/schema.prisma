@@ -123,12 +123,27 @@ model SiteSetting {
 }
 
 model ActivationCode {
-  id        Int      @id @default(autoincrement())
-  code      String   @unique
-  balance   Int      @default(0)
-  isActive  Boolean  @default(true) @map("is_active")
-  isUsed    Boolean  @default(false) @map("is_used")
-  createdAt DateTime @default(now()) @map("created_at")
+  id                Int       @id @default(autoincrement())
+  code              String    @unique
+  balance           Int       @default(0)
+  email             String?
+  ownerName         String?   @map("owner_name")
+  imageLimit        Int       @default(0) @map("image_limit")
+  videoLimit        Int       @default(0) @map("video_limit")
+  imageUsed         Int       @default(0) @map("image_used")
+  videoUsed         Int       @default(0) @map("video_used")
+  isActive          Boolean   @default(true) @map("is_active")
+  isUsed            Boolean   @default(false) @map("is_used")
+  isRenewable       Boolean   @default(false) @map("is_renewable")
+  renewalType       String?   @map("renewal_type")
+  expiresAt         DateTime? @map("expires_at")
+  notes             String?
+  activatedByUserId Int?      @map("activated_by_user_id")
+  activatedAt       DateTime? @map("activated_at")
+  lastRenewedAt     DateTime? @map("last_renewed_at")
+  subscriptionId    Int?      @map("subscription_id")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
 
   @@map("activation_codes")
 }

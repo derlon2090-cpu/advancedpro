@@ -12,11 +12,7 @@
     />
     <link rel="stylesheet" href="/styles.css" />
   </head>
-  <body
-    data-page="admin-available-codes"
-    data-requires-admin="true"
-    data-skip-site-footer="true"
-  >
+  <body data-page="admin-available-codes" data-requires-admin="true" data-skip-site-footer="true">
     <main class="admin-shell">
       <aside class="admin-sidebar">
         <a class="brand brand--column" href="/admin">
@@ -40,12 +36,8 @@
         </nav>
 
         <div class="admin-sidebar__footer">
-          <a class="btn btn-secondary btn-block" href="/student.html"
-            >لوحة المستخدم</a
-          >
-          <button class="btn btn-primary btn-block" type="button" data-logout>
-            تسجيل الخروج
-          </button>
+          <a class="btn btn-secondary btn-block" href="/student.html">لوحة المستخدم</a>
+          <button class="btn btn-primary btn-block" type="button" data-logout>تسجيل الخروج</button>
         </div>
       </aside>
 
@@ -55,24 +47,21 @@
             <span class="section-kicker">Codes</span>
             <h1>الأكواد المتاحة</h1>
             <p class="meta-line">
-              تعرض هذه الصفحة الأكواد المتاحة للاستخدام مع إمكانية البحث
-              والتصفية.
+              استعرض كل الأكواد مباشرة مع الرصيد المتبقي، حالة التجديد، البريد المرتبط، وتاريخ الانتهاء.
             </p>
           </div>
         </div>
 
         <article class="page-card">
           <form id="adminAvailableCodesSearch" class="toolbar-form">
-            <input
-              name="search"
-              type="search"
-              placeholder="ابحث بالكود"
-            />
+            <input name="search" type="search" placeholder="ابحث بالكود أو البريد أو الاسم" />
             <select name="status">
-              <option value="available" selected>متاح</option>
-              <option value="all">كل الحالات</option>
+              <option value="all" selected>كل الحالات</option>
+              <option value="available">متاح</option>
+              <option value="in-use">قيد الاستخدام</option>
               <option value="used">تم الاستخدام</option>
-              <option value="disabled">معطل</option>
+              <option value="expired">منتهي</option>
+              <option value="inactive">غير مفعل</option>
             </select>
             <button class="btn btn-secondary" type="submit">بحث</button>
           </form>
@@ -82,8 +71,8 @@
       </section>
     </main>
 
-    <script src="/site.js?v=20260414-3"></script>
-    <script src="/portal.js?v=20260414-3"></script>
-    <script src="/admin/available-codes-page.js?v=20260414-3"></script>
+    <script src="/site.js?v=20260415-1"></script>
+    <script src="/portal.js?v=20260415-1"></script>
+    <script src="/admin/available-codes-page.js?v=20260415-1"></script>
   </body>
 </html>

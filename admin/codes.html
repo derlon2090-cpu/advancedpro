@@ -45,24 +45,83 @@
         <div class="admin-toolbar">
           <div>
             <span class="section-kicker">Codes</span>
-            <h1>إنشاء وتعديل الأكواد</h1>
+            <h1>إنشاء وإدارة الأكواد</h1>
+            <p class="meta-line">
+              أنشئ كودًا كاملاً بحدود الصور والفيديو والتجديد والبريد المرتبط، ثم عدله أو عطله أو احذفه لاحقًا.
+            </p>
           </div>
         </div>
 
         <article class="page-card">
-          <form id="adminCodeForm" class="split-form">
-            <div class="field">
-              <label>الكود</label>
-              <input name="code" type="text" placeholder="VIP-2026" required />
+          <form id="adminCodeForm" class="stack-form">
+            <input name="id" type="hidden" />
+
+            <div class="split-form">
+              <div class="field">
+                <label>الكود</label>
+                <input name="code" type="text" placeholder="VIP-2026" required />
+              </div>
+              <div class="field">
+                <label>اسم صاحب الكود</label>
+                <input name="ownerName" type="text" placeholder="مثال: اشتراك متجر نانو" />
+              </div>
+              <div class="field">
+                <label>عدد الصور</label>
+                <input name="imageLimit" type="number" min="0" value="0" required />
+              </div>
+              <div class="field">
+                <label>عدد الفيديوهات</label>
+                <input name="videoLimit" type="number" min="0" value="0" required />
+              </div>
+              <div class="field">
+                <label>نوع الاستخدام</label>
+                <select name="accessType">
+                  <option value="public" selected>عام</option>
+                  <option value="private">مخصص لبريد واحد</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>البريد الإلكتروني المرتبط</label>
+                <input name="email" type="email" placeholder="user@example.com" />
+              </div>
+              <div class="field">
+                <label>يتجدد؟</label>
+                <select name="isRenewable">
+                  <option value="false" selected>لا</option>
+                  <option value="true">نعم</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>نوع التجديد</label>
+                <select name="renewalType">
+                  <option value="">بدون تجديد</option>
+                  <option value="daily">يومي</option>
+                  <option value="weekly">أسبوعي</option>
+                  <option value="monthly">شهري</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>تاريخ انتهاء الكود</label>
+                <input name="expiresAt" type="datetime-local" />
+              </div>
+              <div class="field">
+                <label>حالة الكود</label>
+                <select name="isActive">
+                  <option value="true" selected>مفعل</option>
+                  <option value="false">غير مفعل</option>
+                </select>
+              </div>
             </div>
+
             <div class="field">
-              <label>رصيد الكود</label>
-              <input name="balance" type="number" min="0" value="0" required />
+              <label>ملاحظات داخلية</label>
+              <textarea
+                name="notes"
+                rows="3"
+                placeholder="هذه الملاحظات للأدمن فقط ولن تظهر للمستخدم"
+              ></textarea>
             </div>
-            <label class="toggle-field">
-              <input name="isActive" type="checkbox" checked />
-              <span>الكود مفعل</span>
-            </label>
+
             <div class="inline-actions">
               <button class="btn btn-primary" type="submit">حفظ الكود</button>
               <button class="btn btn-secondary" type="button" data-code-reset>تفريغ النموذج</button>
@@ -74,12 +133,14 @@
 
         <article class="page-card">
           <form id="adminCodesSearch" class="toolbar-form">
-            <input name="search" type="search" placeholder="ابحث بالكود" />
+            <input name="search" type="search" placeholder="ابحث بالكود أو البريد أو الاسم" />
             <select name="status">
               <option value="all" selected>كل الحالات</option>
               <option value="available">متاح</option>
-              <option value="used">مستخدم</option>
-              <option value="disabled">معطل</option>
+              <option value="in-use">قيد الاستخدام</option>
+              <option value="used">تم الاستخدام</option>
+              <option value="expired">منتهي</option>
+              <option value="inactive">غير مفعل</option>
             </select>
             <button class="btn btn-secondary" type="submit">بحث</button>
           </form>
@@ -88,8 +149,8 @@
       </section>
     </main>
 
-    <script src="/site.js?v=20260414-3"></script>
-    <script src="/portal.js?v=20260414-3"></script>
-    <script src="/admin/codes-page.js?v=20260414-3"></script>
+    <script src="/site.js?v=20260415-1"></script>
+    <script src="/portal.js?v=20260415-1"></script>
+    <script src="/admin/codes-page.js?v=20260415-1"></script>
   </body>
 </html>

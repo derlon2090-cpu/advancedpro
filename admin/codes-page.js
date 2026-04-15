@@ -6,20 +6,16 @@
   function getStoredToken() {
     try {
       const local = window.localStorage.getItem(AUTH_TOKEN_KEY);
-      if (local) {
-        return local;
-      }
+      if (local) return local;
     } catch (error) {
-      // ignore storage failures
+      // ignore
     }
 
     try {
       const session = window.sessionStorage.getItem(AUTH_TOKEN_KEY);
-      if (session) {
-        return session;
-      }
+      if (session) return session;
     } catch (error) {
-      // ignore storage failures
+      // ignore
     }
 
     const cookieMatch = document.cookie.match(
@@ -48,7 +44,7 @@
     }
 
     if (!response.ok) {
-      const message = payload.message || payload.error || "تعذر إتمام الطلب.";
+      const message = payload.message || payload.error || "تعذر تنفيذ الطلب.";
       throw new Error(
         payload.requestId ? `${message} (رقم الطلب: ${payload.requestId})` : message
       );
@@ -58,9 +54,7 @@
   }
 
   function setMessage(target, message, type = "info") {
-    if (!target) {
-      return;
-    }
+    if (!target) return;
 
     if (!message) {
       target.hidden = true;
@@ -75,14 +69,10 @@
   }
 
   function setButtonBusy(button, busy, label = "جارٍ الحفظ...") {
-    if (!button) {
-      return;
-    }
-
+    if (!button) return;
     if (!button.dataset.originalLabel) {
       button.dataset.originalLabel = button.textContent.trim();
     }
-
     button.disabled = busy;
     button.textContent = busy ? label : button.dataset.originalLabel;
   }
@@ -96,42 +86,96 @@
       .replaceAll("'", "&#39;");
   }
 
-  function getStatusMeta(code) {
-    if (!code) {
-      return { key: "unknown", label: "غير معروف", className: "status-pill--pending" };
-    }
-    if (!code.isActive) {
-      return { key: "disabled", label: "معطل", className: "status-pill--suspended" };
-    }
-    if (code.isUsed) {
-      return { key: "used", label: "مستخدم", className: "status-pill--pending" };
-    }
-    return { key: "available", label: "متاح", className: "status-pill--active" };
-  }
-
   function formatDate(value) {
-    if (!value) {
-      return "غير متوفر";
-    }
-
+    if (!value) return "غير محدد";
     const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) {
-      return "غير متوفر";
-    }
-
+    if (Number.isNaN(parsed.getTime())) return "غير محدد";
     return new Intl.DateTimeFormat("ar-SA", {
       dateStyle: "medium",
       timeStyle: "short",
     }).format(parsed);
   }
 
-  function renderCodesTable(target, codes) {
-    if (!target) {
-      return;
+  function formatDateTimeInput(value) {
+    if (!value) return "";
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return "";
+    const offset = parsed.getTimezoneOffset();
+    const local = new Date(parsed.getTime() - offset * 60000);
+    return local.toISOString().slice(0, 16);
+  }
+
+  function statusMeta(code) {
+    const key = code.statusKey || "available";
+    if (key === "inactive") {
+      return { label: "غير مفعل", className: "status-pill--suspended" };
+    }
+    if (key === "expired") {
+      return { label: "منتهي", className: "status-pill--pending" };
+    }
+    if (key === "in-use") {
+      return { label: "قيد الاستخدام", className: "status-pill--active" };
+    }
+    if (key === "used") {
+      return { label: "تم الاستخدام", className: "status-pill--pending" };
+    }
+    return { label: "متاح", className: "status-pill--active" };
+  }
+
+  function fillForm(form, record) {
+    form.elements.namedItem("id").value = record?.id || "";
+    form.elements.namedItem("code").value = record?.code || "";
+    form.elements.namedItem("ownerName").value = record?.ownerName || "";
+    form.elements.namedItem("imageLimit").value = record?.imageLimit ?? 0;
+    form.elements.namedItem("videoLimit").value = record?.videoLimit ?? 0;
+    form.elements.namedItem("accessType").value = record?.accessType || "public";
+    form.elements.namedItem("email").value = record?.email || "";
+    form.elements.namedItem("isRenewable").value = record?.isRenewable ? "true" : "false";
+    form.elements.namedItem("renewalType").value = record?.renewalType || "";
+    form.elements.namedItem("expiresAt").value = formatDateTimeInput(record?.expiresAt);
+    form.elements.namedItem("isActive").value = record?.isActive === false ? "false" : "true";
+    form.elements.namedItem("notes").value = record?.notes || "";
+    syncFormState(form);
+  }
+
+  function syncFormState(form) {
+    const accessType = form.elements.namedItem("accessType").value;
+    const emailField = form.elements.namedItem("email");
+    emailField.disabled = accessType === "public";
+    if (accessType === "public") {
+      emailField.value = "";
     }
 
-    if (!codes.length) {
-      target.innerHTML = '<div class="empty-state">لا توجد أكواد محفوظة حتى الآن.</div>';
+    const isRenewable = form.elements.namedItem("isRenewable").value === "true";
+    const renewalTypeField = form.elements.namedItem("renewalType");
+    renewalTypeField.disabled = !isRenewable;
+    if (!isRenewable) {
+      renewalTypeField.value = "";
+    }
+  }
+
+  function formToPayload(form) {
+    const id = Number(form.elements.namedItem("id").value || 0);
+    return {
+      id: id || null,
+      code: String(form.elements.namedItem("code").value || "").trim(),
+      ownerName: String(form.elements.namedItem("ownerName").value || "").trim(),
+      imageLimit: Number(form.elements.namedItem("imageLimit").value || 0),
+      videoLimit: Number(form.elements.namedItem("videoLimit").value || 0),
+      accessType: form.elements.namedItem("accessType").value || "public",
+      email: String(form.elements.namedItem("email").value || "").trim(),
+      isRenewable: form.elements.namedItem("isRenewable").value === "true",
+      renewalType: form.elements.namedItem("renewalType").value || "",
+      expiresAt: form.elements.namedItem("expiresAt").value || null,
+      isActive: form.elements.namedItem("isActive").value !== "false",
+      notes: String(form.elements.namedItem("notes").value || "").trim(),
+    };
+  }
+
+  function renderTable(target, records) {
+    if (!target) return;
+    if (!records.length) {
+      target.innerHTML = '<div class="empty-state">لا توجد أكواد مطابقة حاليًا.</div>';
       return;
     }
 
@@ -141,32 +185,53 @@
           <thead>
             <tr>
               <th>الكود</th>
+              <th>الربط</th>
               <th>الرصيد</th>
+              <th>التجديد</th>
               <th>الحالة</th>
-              <th>الاستخدام</th>
-              <th>تاريخ الإنشاء</th>
+              <th>الإنشاء / الانتهاء</th>
               <th>الإجراء</th>
             </tr>
           </thead>
           <tbody>
-            ${codes
-              .map((code) => {
-                const status = getStatusMeta(code);
+            ${records
+              .map((record) => {
+                const status = statusMeta(record);
                 return `
                   <tr>
-                    <td><strong>${escapeHtml(code.code)}</strong></td>
-                    <td>${escapeHtml(code.balance)}</td>
-                    <td><span class="status-pill ${status.className}">${status.label}</span></td>
-                    <td>${code.isUsed ? "تم استخدامه" : "جاهز"}</td>
-                    <td>${escapeHtml(formatDate(code.createdAt))}</td>
                     <td>
-                      <button
-                        type="button"
-                        class="btn btn-secondary btn-inline"
-                        data-direct-code-copy="${escapeHtml(code.code)}"
-                      >
-                        نسخ
-                      </button>
+                      <strong>${escapeHtml(record.code)}</strong>
+                      <small>${escapeHtml(record.ownerName || "بدون اسم")}</small>
+                    </td>
+                    <td>
+                      <strong>${escapeHtml(record.accessTypeLabel || "عام")}</strong>
+                      <small>${escapeHtml(record.email || "غير مرتبط ببريد")}</small>
+                    </td>
+                    <td>
+                      <strong>${record.imageAvailable ?? 0} صورة / ${record.videoAvailable ?? 0} فيديو</strong>
+                      <small>المستخدم: ${record.imageUsed ?? 0} / ${record.videoUsed ?? 0}</small>
+                    </td>
+                    <td>
+                      <strong>${record.isRenewable ? "نعم" : "لا"}</strong>
+                      <small>${escapeHtml(record.renewalLabel || "غير متجدد")}</small>
+                    </td>
+                    <td>
+                      <span class="status-pill ${status.className}">${status.label}</span>
+                      <small>${record.isUsed ? "تم ربطه بمستخدم" : "لم يستخدم بعد"}</small>
+                    </td>
+                    <td>
+                      <strong>${escapeHtml(formatDate(record.createdAt))}</strong>
+                      <small>${escapeHtml(formatDate(record.expiresAt))}</small>
+                    </td>
+                    <td>
+                      <div class="table-actions">
+                        <button class="btn btn-ghost btn-sm" type="button" data-code-copy="${record.id}">نسخ</button>
+                        <button class="btn btn-secondary btn-sm" type="button" data-code-edit="${record.id}">تعديل</button>
+                        <button class="btn btn-outline btn-sm" type="button" data-code-toggle="${record.id}">
+                          ${record.isActive ? "تعطيل" : "تفعيل"}
+                        </button>
+                        <button class="btn btn-danger btn-sm" type="button" data-code-delete="${record.id}">حذف</button>
+                      </div>
                     </td>
                   </tr>
                 `;
@@ -178,144 +243,160 @@
     `;
   }
 
-  function formToValues(form) {
-    const formData = new FormData(form);
-    return {
-      code: String(formData.get("code") || "").trim(),
-      balance: Number(formData.get("balance") || 0),
-      isActive: form.querySelector('[name="isActive"]')?.checked ?? true,
-    };
-  }
-
-  function filterCodes(codes, search = "", status = "all") {
-    const normalizedSearch = String(search || "").trim().toLowerCase();
-
-    return codes.filter((code) => {
-      const statusKey = getStatusMeta(code).key;
-      const matchesStatus = status === "all" ? true : statusKey === status;
-      const matchesSearch = normalizedSearch
-        ? String(code.code || "").toLowerCase().includes(normalizedSearch)
-        : true;
-      return matchesStatus && matchesSearch;
-    });
-  }
-
-  function attachAdminCodesPage() {
-    if (document.body?.dataset.page !== "admin-codes") {
-      return;
-    }
+  function attachPage() {
+    if (document.body?.dataset.page !== "admin-codes") return;
 
     const form = document.querySelector("#adminCodeForm");
     const searchForm = document.querySelector("#adminCodesSearch");
     const target = document.querySelector("[data-admin-codes]");
     const message = document.querySelector("[data-admin-codes-message]");
 
-    if (!form || !target || form.dataset.directHandlerBound === "true") {
-      return;
-    }
+    if (!form || !target || form.dataset.bound === "true") return;
+    form.dataset.bound = "true";
 
-    form.dataset.directHandlerBound = "true";
-    let allCodes = [];
+    let records = [];
 
     const loadCodes = async () => {
-      const payload = await requestJson("/api/admin/codes/list", { method: "GET" });
-      allCodes = Array.isArray(payload.codes) ? payload.codes : [];
-
       const search = searchForm?.elements.namedItem("search")?.value || "";
       const status = searchForm?.elements.namedItem("status")?.value || "all";
-      renderCodesTable(target, filterCodes(allCodes, search, status));
+      const payload = await requestJson(
+        `/api/admin/codes/list?search=${encodeURIComponent(search)}`,
+        { method: "GET" }
+      );
+      records = Array.isArray(payload.codes) ? payload.codes : [];
+      const filtered =
+        status === "all"
+          ? records
+          : records.filter((record) => (record.statusKey || "available") === status);
+      renderTable(target, filtered);
     };
 
-    form.addEventListener(
-      "submit",
-      async (event) => {
-        event.preventDefault();
-        event.stopImmediatePropagation();
+    form.addEventListener("change", () => syncFormState(form));
 
-        const submitButton = form.querySelector('button[type="submit"]');
-        const values = formToValues(form);
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      event.stopImmediatePropagation();
 
-        if (!values.code) {
-          setMessage(message, "الرجاء إدخال الكود.", "error");
-          return;
+      const submitButton = form.querySelector('button[type="submit"]');
+      const payload = formToPayload(form);
+      const isEditing = Boolean(payload.id);
+
+      try {
+        setButtonBusy(submitButton, true, isEditing ? "جارٍ التحديث..." : "جارٍ الحفظ...");
+        const response = await requestJson(
+          isEditing ? `/api/admin/codes/${payload.id}` : "/api/admin/codes/create",
+          {
+            method: isEditing ? "PUT" : "POST",
+            body: JSON.stringify(payload),
+          }
+        );
+
+        setMessage(message, response.message || "تم حفظ الكود بنجاح.", "success");
+        fillForm(form, null);
+        if (searchForm) {
+          searchForm.reset();
         }
+        await loadCodes();
+      } catch (error) {
+        setMessage(message, error.message, "error");
+      } finally {
+        setButtonBusy(submitButton, false);
+      }
+    });
 
-        if (Number.isNaN(values.balance) || values.balance < 0) {
-          setMessage(message, "رصيد الكود غير صالح.", "error");
-          return;
+    searchForm?.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      try {
+        await loadCodes();
+      } catch (error) {
+        setMessage(message, error.message, "error");
+      }
+    });
+
+    document.querySelector("[data-code-reset]")?.addEventListener("click", () => {
+      fillForm(form, null);
+      setMessage(message, "");
+    });
+
+    target.addEventListener("click", async (event) => {
+      const copyButton = event.target.closest("[data-code-copy]");
+      if (copyButton) {
+        const record = records.find((item) => item.id === Number(copyButton.dataset.codeCopy));
+        if (record?.code) {
+          await navigator.clipboard.writeText(record.code);
+          setMessage(message, "تم نسخ الكود.", "success");
         }
+        return;
+      }
+
+      const editButton = event.target.closest("[data-code-edit]");
+      if (editButton) {
+        const record = records.find((item) => item.id === Number(editButton.dataset.codeEdit));
+        if (record) {
+          fillForm(form, record);
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+        return;
+      }
+
+      const toggleButton = event.target.closest("[data-code-toggle]");
+      if (toggleButton) {
+        const record = records.find((item) => item.id === Number(toggleButton.dataset.codeToggle));
+        if (!record) return;
 
         try {
-          setButtonBusy(submitButton, true, "جارٍ الحفظ...");
-          const payload = await requestJson("/api/admin/codes/create", {
-            method: "POST",
-            body: JSON.stringify(values),
+          setButtonBusy(toggleButton, true, "جارٍ...");
+          const payload = {
+            ...record,
+            accessType: record.accessType || (record.email ? "private" : "public"),
+            isActive: !record.isActive,
+          };
+          await requestJson(`/api/admin/codes/${record.id}`, {
+            method: "PUT",
+            body: JSON.stringify(payload),
           });
-
-          setMessage(message, payload.message || "تم حفظ الكود بنجاح.", "success");
-          form.reset();
-          const checkbox = form.querySelector('[name="isActive"]');
-          if (checkbox) {
-            checkbox.checked = true;
-          }
+          setMessage(message, "تم تحديث حالة الكود.", "success");
           await loadCodes();
         } catch (error) {
           setMessage(message, error.message, "error");
         } finally {
-          setButtonBusy(submitButton, false);
+          setButtonBusy(toggleButton, false);
         }
-      },
-      true
-    );
-
-    searchForm?.addEventListener("submit", (event) => {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      const search = searchForm.elements.namedItem("search")?.value || "";
-      const status = searchForm.elements.namedItem("status")?.value || "all";
-      renderCodesTable(target, filterCodes(allCodes, search, status));
-    });
-
-    document.querySelector("[data-code-reset]")?.addEventListener("click", () => {
-      form.reset();
-      const checkbox = form.querySelector('[name="isActive"]');
-      if (checkbox) {
-        checkbox.checked = true;
-      }
-      setMessage(message, "", "info");
-    });
-
-    target.addEventListener("click", async (event) => {
-      const copyButton = event.target.closest("[data-direct-code-copy]");
-      if (!copyButton) {
         return;
       }
 
-      const codeValue = copyButton.dataset.directCodeCopy;
-      if (!codeValue) {
-        return;
-      }
+      const deleteButton = event.target.closest("[data-code-delete]");
+      if (deleteButton) {
+        const record = records.find((item) => item.id === Number(deleteButton.dataset.codeDelete));
+        if (!record) return;
+        if (!window.confirm(`هل تريد حذف الكود ${record.code} نهائيًا؟`)) {
+          return;
+        }
 
-      try {
-        await navigator.clipboard.writeText(codeValue);
-        setMessage(message, "تم نسخ الكود.", "success");
-      } catch (error) {
-        setMessage(message, "تعذر نسخ الكود.", "error");
+        try {
+          setButtonBusy(deleteButton, true, "جارٍ...");
+          await requestJson(`/api/admin/codes/${record.id}`, {
+            method: "DELETE",
+          });
+          setMessage(message, "تم حذف الكود.", "success");
+          await loadCodes();
+        } catch (error) {
+          setMessage(message, error.message, "error");
+        } finally {
+          setButtonBusy(deleteButton, false);
+        }
       }
     });
 
+    fillForm(form, null);
     loadCodes().catch((error) => {
-      setMessage(
-        message,
-        error.message || "تعذر تحميل قائمة الأكواد، لكن يمكنك محاولة حفظ كود جديد.",
-        "error"
-      );
+      setMessage(message, error.message, "error");
     });
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", attachAdminCodesPage);
+    document.addEventListener("DOMContentLoaded", attachPage);
   } else {
-    attachAdminCodesPage();
+    attachPage();
   }
 })();
