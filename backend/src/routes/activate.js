@@ -39,8 +39,10 @@ async function handleActivation(req, res) {
 
   if (accessCode) {
     return res.json({
+      success: true,
       message: buildActivationSuccessMessage(accessCode),
       accessCode,
+      codeInfo: accessCode,
       subscriptionId: accessCode.subscriptionId || null,
     });
   }
@@ -52,7 +54,9 @@ async function handleActivation(req, res) {
   });
 
   return res.json({
+    success: true,
     message: "تم تفعيل الكود بنجاح.",
+    codeInfo: null,
     subscriptionId: subscription.id,
   });
 }

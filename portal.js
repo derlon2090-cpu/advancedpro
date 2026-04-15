@@ -22,6 +22,7 @@ const state = {
 
 const AUTH_TOKEN_KEY = "advancedpro_token";
 const LOGOUT_FLAG_KEY = "advancedpro_force_logout";
+const ACCESS_CODE_STORAGE_KEY = "advancedpro_access_code";
 
 function isForcedLogout() {
   try {
@@ -339,6 +340,90 @@ function formToObject(form) {
   return data;
 }
 
+function persistAccessCodeSnapshot(accessCode) {
+  try {
+    if (accessCode) {
+      window.localStorage.setItem(
+        ACCESS_CODE_STORAGE_KEY,
+        JSON.stringify(accessCode)
+      );
+    } else {
+      window.localStorage.removeItem(ACCESS_CODE_STORAGE_KEY);
+    }
+  } catch (error) {
+    // Ignore storage failures.
+  }
+}
+
+function readAccessCodeSnapshot() {
+  try {
+    const raw = window.localStorage.getItem(ACCESS_CODE_STORAGE_KEY);
+    if (!raw) {
+      return null;
+    }
+    return JSON.parse(raw);
+  } catch (error) {
+    return null;
+  }
+}
+
+function buildSubscriptionFromAccessCode(accessCode) {
+  if (!accessCode) {
+    return null;
+  }
+
+  return {
+    packageName: accessCode.ownerName || `كود ${accessCode.code}`,
+    code: accessCode.code,
+    status: accessCode.statusKey === "expired" ? "expired" : "active",
+    imageBalance: Number(accessCode.imageAvailable ?? 0),
+    videoBalance: Number(accessCode.videoAvailable ?? 0),
+    videoMaxDurationSeconds: 60,
+    startAt: accessCode.activatedAt || accessCode.createdAt || null,
+    endAt: accessCode.expiresAt || null,
+    imageLimit: Number(accessCode.imageLimit ?? 0),
+    videoLimit: Number(accessCode.videoLimit ?? 0),
+    imageUsed: Number(accessCode.imageUsed ?? 0),
+    videoUsed: Number(accessCode.videoUsed ?? 0),
+    isRenewable: Boolean(accessCode.isRenewable),
+    renewalType: accessCode.renewalType || null,
+    renewalLabel: accessCode.renewalLabel || "",
+    email: accessCode.email || null,
+    ownerName: accessCode.ownerName || null,
+    accessTypeLabel: accessCode.accessTypeLabel || "عام",
+  };
+}
+
+function renderAccessCodeStatus(target, accessCode, subscription) {
+  if (!target) {
+    return;
+  }
+
+  const currentCode = accessCode || readAccessCodeSnapshot();
+  const currentSubscription =
+    subscription || buildSubscriptionFromAccessCode(currentCode);
+
+  if (!currentCode || !currentSubscription) {
+    target.innerHTML =
+      '<div class="empty-state">لم يتم تفعيل كود بعد. فعّل الكود لفتح الشات ومعرفة الرصيد.</div>';
+    return;
+  }
+
+  target.innerHTML = `
+    <div class="info-stack">
+      <div><span>حالة الكود</span><strong>${escapeHtml(currentCode.statusLabel || "صالح")}</strong></div>
+      <div><span>عدد الصور المتاحة</span><strong>${escapeHtml(currentCode.imageAvailable ?? currentSubscription.imageBalance ?? 0)} صورة</strong></div>
+      <div><span>عدد الفيديوهات المتاحة</span><strong>${escapeHtml(currentCode.videoAvailable ?? currentSubscription.videoBalance ?? 0)} فيديو</strong></div>
+      <div><span>عدد الصور المستخدمة</span><strong>${escapeHtml(currentCode.imageUsed ?? currentSubscription.imageUsed ?? 0)}</strong></div>
+      <div><span>عدد الفيديوهات المستخدمة</span><strong>${escapeHtml(currentCode.videoUsed ?? currentSubscription.videoUsed ?? 0)}</strong></div>
+      <div><span>هل الكود متجدد</span><strong>${currentSubscription.isRenewable ? "نعم" : "لا"}${currentSubscription.renewalLabel ? ` - ${escapeHtml(currentSubscription.renewalLabel)}` : ""}</strong></div>
+      <div><span>تاريخ الانتهاء</span><strong>${formatDate(currentSubscription.endAt)}</strong></div>
+      <div><span>البريد المرتبط</span><strong>${escapeHtml(currentSubscription.email || "غير مرتبط")}</strong></div>
+      <div><span>حالة الشات</span><strong>${escapeHtml(currentCode.chatStatus || "مفتوح")}</strong></div>
+    </div>
+  `;
+}
+
 async function loadPublicSettings() {
   try {
     const payload = await requestJson("/api/public/settings", {
@@ -457,6 +542,7 @@ async function performLogout() {
   } finally {
     setForcedLogout(true);
     setStoredToken(null);
+    persistAccessCodeSnapshot(null);
     try {
       document.cookie = "token=; Path=/; Max-Age=0; SameSite=None; Secure";
       document.cookie = "token=; Path=/; Max-Age=0; SameSite=Lax";
@@ -636,6 +722,7 @@ async function initLoginPage() {
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
+    event.stopImmediatePropagation();
     const button = form.querySelector('button[type="submit"]');
 
     try {
@@ -695,6 +782,7 @@ async function initRegisterPage() {
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
+    event.stopImmediatePropagation();
     const button = form.querySelector('button[type="submit"]');
 
     try {
@@ -880,6 +968,9 @@ async function initActivatePage(user) {
           code,
         }),
       });
+      if (payload.accessCode || payload.codeInfo) {
+        persistAccessCodeSnapshot(payload.accessCode || payload.codeInfo);
+      }
       setMessage(message, payload.message, "success");
       window.setTimeout(() => {
         window.location.href = "/student.html";
@@ -898,6 +989,7 @@ async function initDashboardPage() {
   const welcomeTarget = document.querySelector("[data-dashboard-name]");
   const avatarTarget = document.querySelector("[data-dashboard-avatar]");
   const subscriptionTarget = document.querySelector("[data-dashboard-subscription]");
+  const codeStatusTarget = document.querySelector("[data-dashboard-code-status]");
   const planTarget = document.querySelector("[data-dashboard-plan]");
   const activationForm = document.querySelector("#dashboardActivationForm");
   const activationMessage = document.querySelector("[data-dashboard-activate-message]");
@@ -1054,6 +1146,12 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
     const subscription = dashboard.subscription;
     const accessCode = dashboard.accessCode;
 
+    if (accessCode) {
+      persistAccessCodeSnapshot(accessCode);
+    } else {
+      persistAccessCodeSnapshot(null);
+    }
+
     if (welcomeTarget) {
       const name = dashboard.user.fullName || "بك";
       welcomeTarget.textContent = `${name} 👋`;
@@ -1148,6 +1246,8 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
       planTarget.appendChild(extraStack);
     }
 
+    renderAccessCodeStatus(codeStatusTarget, accessCode, subscription);
+
     const recentWorks = dashboard.recentWorks || dashboard.recentUsage || [];
     currentWorks = recentWorks;
     renderUsageList(usageTarget, recentWorks);
@@ -1169,6 +1269,101 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
     scheduleWorkPolling();
   };
 
+  const handleCodeActivationSubmit = async ({
+    event,
+    form,
+    messageTarget,
+    successTarget = null,
+  }) => {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+
+    const button = form.querySelector('button[type="submit"]');
+
+    try {
+      const values = formToObject(form);
+      const code = String(values.code || "").trim();
+
+      if (!code) {
+        throw new Error("أدخل كود التفعيل أولًا.");
+      }
+
+      setButtonBusy(button, true, "جاري التفعيل...");
+      setMessage(messageTarget, "");
+
+      const payload = await requestJson("/api/user/code/activate", {
+        method: "POST",
+        body: JSON.stringify({ code }),
+      });
+
+      const activatedCode = payload.accessCode || payload.codeInfo || null;
+      if (activatedCode) {
+        persistAccessCodeSnapshot(activatedCode);
+        cachedSubscription = buildSubscriptionFromAccessCode(activatedCode);
+        renderAccessCodeStatus(codeStatusTarget, activatedCode, cachedSubscription);
+      }
+
+      setMessage(messageTarget, payload.message, "success");
+      form.reset();
+
+      try {
+        await loadDashboard();
+      } catch (dashboardError) {
+        if (cachedSubscription) {
+          const imagePanel = document.querySelector('[data-create-panel="image"]');
+          const videoPanel = document.querySelector('[data-create-panel="video"]');
+          setPanelState(imagePanel, Number(cachedSubscription.imageBalance || 0) > 0);
+          setPanelState(videoPanel, Number(cachedSubscription.videoBalance || 0) > 0);
+          updateGateMessage();
+        }
+      }
+
+      if (successTarget && cachedSubscription) {
+        setMessage(
+          successTarget,
+          `تم التحقق من الكود بنجاح. رصيدك: ${cachedSubscription.imageBalance ?? 0} صورة / ${
+            cachedSubscription.videoBalance ?? 0
+          } فيديو`,
+          "success"
+        );
+      }
+
+      showToast(payload.message || "تم تفعيل الكود بنجاح");
+    } catch (error) {
+      setMessage(messageTarget, error.message, "error");
+      if (successTarget) {
+        setMessage(successTarget, "", "info");
+      }
+    } finally {
+      setButtonBusy(button, false);
+    }
+  };
+
+  if (activationForm && activationForm.dataset.bound !== "true") {
+    activationForm.dataset.bound = "true";
+    activationForm.addEventListener("submit", async (event) => {
+      await handleCodeActivationSubmit({
+        event,
+        form: activationForm,
+        messageTarget: activationMessage,
+      });
+    });
+  }
+
+  if (unlockForm && unlockForm.dataset.bound !== "true") {
+    unlockForm.dataset.bound = "true";
+    unlockForm.addEventListener("submit", async (event) => {
+      await handleCodeActivationSubmit({
+        event,
+        form: unlockForm,
+        messageTarget: unlockMessage,
+        successTarget: createMessage,
+      });
+    });
+  }
+
+  renderAccessCodeStatus(codeStatusTarget, readAccessCodeSnapshot(), cachedSubscription);
+
   try {
     await loadDashboard();
   } catch (error) {
@@ -1181,7 +1376,7 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
     );
   }
 
-  if (activationForm) {
+  if (activationForm && activationForm.dataset.bound !== "true") {
     activationForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       const button = activationForm.querySelector('button[type="submit"]');
@@ -1212,7 +1407,7 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
     });
   }
 
-  if (unlockForm) {
+  if (unlockForm && unlockForm.dataset.bound !== "true") {
     unlockForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       const button = unlockForm.querySelector('button[type="submit"]');
