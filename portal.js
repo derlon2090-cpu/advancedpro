@@ -1021,6 +1021,8 @@ async function initDashboardPage() {
   const activationMessage = document.querySelector("[data-dashboard-activate-message]");
   const createMessage = document.querySelector("[data-create-message]");
   const createGate = document.querySelector("[data-create-gate]");
+  const createChatStream = document.querySelector("[data-create-chat-stream]");
+  const createModeNote = document.querySelector("[data-create-mode-note]");
   const imageForm = document.querySelector("#imageCreateForm");
   const videoForm = document.querySelector("#videoCreateForm");
   const tabButtons = document.querySelectorAll("[data-create-tab]");
@@ -1036,8 +1038,28 @@ async function initDashboardPage() {
   let currentWorks = [];
   let pollTimer = null;
   let pollAttempts = 0;
+  let createChatBooted = false;
   const MAX_POLL_ATTEMPTS = 15;
   const POLL_INTERVAL_MS = 8000;
+  const CREATE_VIDEO_POLL_ATTEMPTS = 12;
+  const CREATE_VIDEO_POLL_INTERVAL_MS = 6000;
+
+  const countCreateWords = (value) =>
+    String(value || "")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean).length;
+
+  const triggerCreateCounterRefresh = () => {
+    [
+      imageForm?.elements?.namedItem("prompt"),
+      videoForm?.elements?.namedItem("title"),
+      videoForm?.elements?.namedItem("summary"),
+      ...Array.from(document.querySelectorAll("[data-video-scenes] textarea")),
+    ]
+      .filter(Boolean)
+      .forEach((field) => field.dispatchEvent(new Event("input", { bubbles: true })));
+  };
 
   const setPanelState = (panel, enabled) => {
     if (!panel) {
@@ -1108,8 +1130,236 @@ async function initDashboardPage() {
         panels.forEach((panel) => {
           panel.classList.toggle("is-active", panel.dataset.createPanel === tab);
         });
+        updateCreateModeNote();
         updateGateMessage();
       });
+    });
+  };
+
+  const ensureCreateChatIntro = () => {
+    if (!createChatStream || createChatBooted) {
+      return;
+    }
+
+    createChatBooted = true;
+    appendCreateChatBubble({
+      role: "assistant",
+      state: "info",
+      label: "المساعد الذكي",
+      title: "جاهز للإنشاء",
+      body:
+        "بدّل بسهولة بين صورة ومقطع. في وضع الصورة يكفي وصف واحد فقط، وفي وضع المقطع سنجهز لك المدة والسيناريوهات داخل نفس الواجهة.",
+      meta: ["كل شيء يتم هنا بدون تحديث الصفحة"],
+    });
+  };
+
+  const updateCreateModeNote = () => {
+    if (!createModeNote) {
+      return;
+    }
+
+    const durationField = videoForm?.elements?.namedItem("durationSeconds");
+    const duration = Number(durationField?.value || 60);
+
+    if (activeTab === "video") {
+      createModeNote.innerHTML =
+        duration === 60
+          ? "وضع <strong>المقطع</strong> مفعّل. اكتب وصفًا عامًا ثم أكمل <strong>6 سيناريوهات</strong>، كل سيناريو يمثل 10 ثوانٍ."
+          : "وضع <strong>المقطع</strong> مفعّل. اختر المدة ثم اكتب وصفًا عامًا واضحًا وبعدها ابدأ الإنشاء مباشرة.";
+      return;
+    }
+
+    createModeNote.innerHTML =
+      "وضع <strong>الصورة</strong> مفعّل. اكتب وصفًا واضحًا ومباشرًا ثم اضغط <strong>بدء الإنشاء</strong>.";
+  };
+
+  const scrollCreateChatToBottom = () => {
+    if (!createChatStream) {
+      return;
+    }
+
+    createChatStream.scrollTo({
+      top: createChatStream.scrollHeight,
+      behavior: "smooth",
+    });
+  };
+
+  const renderCreateChatBubble = (
+    bubble,
+    {
+      role = "assistant",
+      state = "info",
+      label = role === "assistant" ? "المساعد الذكي" : "طلبك",
+      title = "",
+      body = "",
+      meta = [],
+      mediaUrl = "",
+      mediaType = "",
+      actions = [],
+      loading = false,
+    } = {}
+  ) => {
+    if (!bubble) {
+      return;
+    }
+
+    const safeMeta = Array.isArray(meta) ? meta.filter(Boolean) : [meta].filter(Boolean);
+    const safeActions = Array.isArray(actions) ? actions.filter(Boolean) : [];
+
+    const mediaMarkup = mediaUrl
+      ? mediaType === "video"
+        ? `
+          <div class="create-chat-bubble__media">
+            <video controls preload="metadata" src="${escapeHtml(mediaUrl)}"></video>
+          </div>
+        `
+        : `
+          <div class="create-chat-bubble__media">
+            <img src="${escapeHtml(mediaUrl)}" alt="${escapeHtml(title || "النتيجة")}" loading="lazy" />
+          </div>
+        `
+      : "";
+
+    const metaMarkup = safeMeta.length
+      ? `<div class="create-chat-bubble__meta">${safeMeta
+          .map((item) => `<span>${escapeHtml(item)}</span>`)
+          .join("")}</div>`
+      : "";
+
+    const actionsMarkup = safeActions.length
+      ? `<div class="create-chat-bubble__actions">${safeActions
+          .map(
+            (action) =>
+              `<a class="create-chat-link" href="${escapeHtml(action.href || "#")}" ${
+                action.external ? 'target="_blank" rel="noopener noreferrer"' : ""
+              }>${escapeHtml(action.label || "فتح")}</a>`
+          )
+          .join("")}</div>`
+      : "";
+
+    const loaderMarkup = loading
+      ? `
+        <div class="chat-loader" aria-hidden="true">
+          <span class="chat-loader__dot"></span>
+          <span class="chat-loader__dot"></span>
+          <span class="chat-loader__dot"></span>
+        </div>
+      `
+      : "";
+
+    const stateLabels = {
+      info: "معلومة",
+      pending: "بانتظار الإعداد",
+      processing: "جارٍ المعالجة",
+      success: "تم الإنشاء",
+      error: "فشل الإنشاء",
+    };
+
+    bubble.className = `create-chat-bubble create-chat-bubble--${role} create-chat-bubble--${state}`;
+    bubble.innerHTML = `
+      <div class="create-chat-bubble__top">
+        <span class="create-chat-bubble__label">${escapeHtml(label)}</span>
+        <span class="create-chat-bubble__state">${escapeHtml(stateLabels[state] || stateLabels.info)}</span>
+      </div>
+      ${title ? `<h3 class="create-chat-bubble__title">${escapeHtml(title)}</h3>` : ""}
+      ${body ? `<p class="create-chat-bubble__body">${escapeHtml(body)}</p>` : ""}
+      ${loaderMarkup}
+      ${metaMarkup}
+      ${mediaMarkup}
+      ${actionsMarkup}
+    `;
+  };
+
+  const appendCreateChatBubble = (config = {}) => {
+    if (!createChatStream) {
+      return null;
+    }
+
+    ensureCreateChatIntro();
+    const bubble = document.createElement("article");
+    renderCreateChatBubble(bubble, config);
+    createChatStream.appendChild(bubble);
+    scrollCreateChatToBottom();
+    return bubble;
+  };
+
+  const updateCreateChatBubble = (bubble, config = {}) => {
+    renderCreateChatBubble(bubble, config);
+    scrollCreateChatToBottom();
+  };
+
+  const pollVideoGeneration = async ({ generationId, bubble, promptSummary = "" }) => {
+    if (!generationId || !bubble) {
+      return;
+    }
+
+    for (let attempt = 1; attempt <= CREATE_VIDEO_POLL_ATTEMPTS; attempt += 1) {
+      await new Promise((resolve) => window.setTimeout(resolve, CREATE_VIDEO_POLL_INTERVAL_MS));
+
+      try {
+        const payload = await requestJson(`/api/ai/video/${generationId}`, {
+          method: "GET",
+        });
+
+        if (payload.resultUrl) {
+          await loadDashboard();
+          updateCreateChatBubble(bubble, {
+            role: "assistant",
+            state: "success",
+            label: "المساعد الذكي",
+            title: "تم إنشاء المقطع",
+            body: "المقطع أصبح جاهزًا الآن، وتم تحديث الرصيد وسجل أعمالك مباشرة.",
+            meta: [
+              promptSummary ? `الوصف: ${promptSummary}` : "",
+              `المعرف: #${generationId}`,
+              `الرصيد الحالي: ${cachedSubscription?.imageBalance ?? 0} صورة / ${
+                cachedSubscription?.videoBalance ?? 0
+              } مقطع`,
+            ],
+            mediaUrl: payload.resultUrl,
+            mediaType: "video",
+            actions: [
+              {
+                label: "فتح النتيجة",
+                href: payload.resultUrl,
+                external: true,
+              },
+            ],
+          });
+          return;
+        }
+
+        updateCreateChatBubble(bubble, {
+          role: "assistant",
+          state: "processing",
+          label: "المساعد الذكي",
+          title: "جارٍ معالجة المقطع",
+          body: "نرتب المشاهد ونحسن الإخراج لك الآن. انتظر قليلًا حتى يكتمل الطلب.",
+          meta: [`محاولة التحديث ${attempt} من ${CREATE_VIDEO_POLL_ATTEMPTS}`],
+          loading: true,
+        });
+      } catch (error) {
+        if (attempt === CREATE_VIDEO_POLL_ATTEMPTS) {
+          updateCreateChatBubble(bubble, {
+            role: "assistant",
+            state: "error",
+            label: "المساعد الذكي",
+            title: "تعذر تحديث حالة المقطع",
+            body: error.message || "لم نتمكن من متابعة حالة المقطع الآن.",
+          });
+          return;
+        }
+      }
+    }
+
+    updateCreateChatBubble(bubble, {
+      role: "assistant",
+      state: "processing",
+      label: "المساعد الذكي",
+      title: "المقطع ما زال تحت المعالجة",
+      body: "استلمنا الطلب بالكامل، لكن تجهيز المقطع يحتاج وقتًا أطول قليلًا. ستجده أيضًا في سجل أعمالك عند اكتماله.",
+      meta: [`المعرف: #${generationId}`],
+      loading: true,
     });
   };
 
@@ -1117,10 +1367,12 @@ async function initDashboardPage() {
     const title = String(values.title || "").trim();
     const summary = String(values.summary || "").trim();
     const duration = Number(values.durationSeconds || 60);
-
-    const scenes = [values.scene1, values.scene2, values.scene3, values.scene4, values.scene5, values.scene6]
-      .map((scene) => String(scene || "").trim())
-      .filter(Boolean);
+    const scenes =
+      duration === 60
+        ? [values.scene1, values.scene2, values.scene3, values.scene4, values.scene5, values.scene6]
+            .map((scene) => String(scene || "").trim())
+            .filter(Boolean)
+        : [];
 
     const scenesText = scenes
       .map((scene, index) => `المشهد ${index + 1}: ${scene}`)
@@ -1295,6 +1547,7 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
 
     setPanelState(imagePanel, imageAllowed);
     setPanelState(videoPanel, videoAllowed);
+    updateCreateModeNote();
     updateGateMessage();
     scheduleWorkPolling();
   };
@@ -1610,11 +1863,15 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
   }
 
   setupTabs();
+  ensureCreateChatIntro();
+  updateCreateModeNote();
 
   if (imageForm) {
     imageForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       const button = imageForm.querySelector('button[type="submit"]');
+      let progressBubble = null;
+      let processingTimer = null;
 
       try {
         if (!cachedSubscription) {
@@ -1627,19 +1884,86 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
           throw new Error("أدخل وصفًا واضحًا للصورة قبل الإرسال.");
         }
 
+        appendCreateChatBubble({
+          role: "user",
+          state: "info",
+          label: "أنت",
+          title: "طلب صورة",
+          body: prompt,
+          meta: [`${countCreateWords(prompt)} كلمة`],
+        });
+
         setButtonBusy(button, true, "جارٍ الإنشاء...");
         setMessage(createMessage, "");
+        progressBubble = appendCreateChatBubble({
+          role: "assistant",
+          state: "pending",
+          label: "المساعد الذكي",
+          title: "بانتظار الإعداد",
+          body: "انتظر 10 ثوانٍ لنجهز لك أفضل نتيجة ✨",
+          loading: true,
+        });
+        processingTimer = window.setTimeout(() => {
+          updateCreateChatBubble(progressBubble, {
+            role: "assistant",
+            state: "processing",
+            label: "المساعد الذكي",
+            title: "جارٍ معالجة الصورة",
+            body: "جارٍ إعداد طلبك وتحسين النتيجة لك، انتظر قليلًا...",
+            loading: true,
+          });
+        }, 700);
 
         const payload = await requestJson("/api/ai/image", {
           method: "POST",
           body: JSON.stringify({ prompt }),
         });
 
+        if (processingTimer) {
+          window.clearTimeout(processingTimer);
+        }
         setMessage(createMessage, payload.message || "تم إنشاء الصورة.", "success");
         showToast(payload.message || "تم إنشاء الصورة.");
         imageForm.reset();
+        triggerCreateCounterRefresh();
         await loadDashboard();
+        updateCreateChatBubble(progressBubble, {
+          role: "assistant",
+          state: "success",
+          label: "المساعد الذكي",
+          title: "تم إنشاء الصورة",
+          body: "الصورة أصبحت جاهزة، وتم تحديث الرصيد وسجل أعمالك مباشرة.",
+          meta: [
+            payload.generationId ? `المعرف: #${payload.generationId}` : "",
+            `الرصيد الحالي: ${cachedSubscription?.imageBalance ?? 0} صورة / ${
+              cachedSubscription?.videoBalance ?? 0
+            } مقطع`,
+          ],
+          mediaUrl: payload.resultUrl || "",
+          mediaType: "image",
+          actions: payload.resultUrl
+            ? [
+                {
+                  label: "فتح الصورة",
+                  href: payload.resultUrl,
+                  external: true,
+                },
+              ]
+            : [],
+        });
       } catch (error) {
+        if (processingTimer) {
+          window.clearTimeout(processingTimer);
+        }
+        if (progressBubble) {
+          updateCreateChatBubble(progressBubble, {
+            role: "assistant",
+            state: "error",
+            label: "المساعد الذكي",
+            title: "فشل إنشاء الصورة",
+            body: error.message,
+          });
+        }
         setMessage(createMessage, error.message, "error");
       } finally {
         setButtonBusy(button, false);
@@ -1649,13 +1973,16 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
 
   if (videoForm) {
     const durationField = videoForm.elements.namedItem("durationSeconds");
-    const scenesWrapper = document.querySelector("[data-video-scenes]");
+    const scenesWrapper =
+      document.querySelector("[data-video-scenes-wrap]") ||
+      document.querySelector("[data-video-scenes]");
     const toggleScenes = () => {
       if (!scenesWrapper) {
         return;
       }
       const duration = Number(durationField?.value || 60);
       scenesWrapper.style.display = duration === 60 ? "grid" : "none";
+      updateCreateModeNote();
     };
 
     if (durationField) {
@@ -1666,6 +1993,8 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
     videoForm.addEventListener("submit", async (event) => {
       event.preventDefault();
       const button = videoForm.querySelector('button[type="submit"]');
+      let progressBubble = null;
+      let processingTimer = null;
 
       try {
         if (!cachedSubscription) {
@@ -1683,8 +2012,39 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
           throw new Error("الرجاء تعبئة جميع المشاهد الستة للفيديو 60 ثانية.");
         }
 
+        appendCreateChatBubble({
+          role: "user",
+          state: "info",
+          label: "أنت",
+          title: "طلب مقطع",
+          body: summary,
+          meta: [
+            `المدة: ${duration} ثانية`,
+            `${countCreateWords(`${values.title || ""} ${summary} ${scenes.join(" ")}`)} كلمة`,
+            Number(duration) === 60 ? `${scenes.length} / 6 سيناريوهات` : "مقطع قصير",
+          ],
+        });
+
         setButtonBusy(button, true, "جارٍ الإنشاء...");
         setMessage(createMessage, "");
+        progressBubble = appendCreateChatBubble({
+          role: "assistant",
+          state: "pending",
+          label: "المساعد الذكي",
+          title: "بانتظار الإعداد",
+          body: "استلمنا تفاصيل المقطع. نرتب السيناريو والمشاهد لك الآن...",
+          loading: true,
+        });
+        processingTimer = window.setTimeout(() => {
+          updateCreateChatBubble(progressBubble, {
+            role: "assistant",
+            state: "processing",
+            label: "المساعد الذكي",
+            title: "جارٍ معالجة المقطع",
+            body: "المقطع يحتاج وقتًا أطول قليلًا. نراجع المشاهد ونبدأ الإخراج الآن...",
+            loading: true,
+          });
+        }, 700);
 
         const payload = await requestJson("/api/ai/video", {
           method: "POST",
@@ -1694,14 +2054,57 @@ ${scenesText ? `المشاهد:\n${scenesText}` : ""}
           }),
         });
 
+        if (processingTimer) {
+          window.clearTimeout(processingTimer);
+        }
         setMessage(
           createMessage,
-          payload.message || "تم إرسال الفيديو للمعالجة.",
+          payload.message || "تم إرسال المقطع للمعالجة.",
           "success"
         );
-        showToast(payload.message || "جاري تجهيز الفيديو.");
+        showToast(payload.message || "جاري تجهيز المقطع.");
+        videoForm.reset();
+        triggerCreateCounterRefresh();
         await loadDashboard();
+        updateCreateChatBubble(progressBubble, {
+          role: "assistant",
+          state: payload.status === "completed" ? "success" : "processing",
+          label: "المساعد الذكي",
+          title: payload.status === "completed" ? "تم إنشاء المقطع" : "جارٍ معالجة المقطع",
+          body:
+            payload.status === "completed"
+              ? "المقطع أصبح جاهزًا وتم تحديث الرصيد وسجل أعمالك."
+              : "تم استلام طلبك بنجاح. المقطع الآن قيد المعالجة، وسأتابع حالته لك هنا.",
+          meta: [
+            payload.generationId ? `المعرف: #${payload.generationId}` : "",
+            `الرصيد الحالي: ${cachedSubscription?.imageBalance ?? 0} صورة / ${
+              cachedSubscription?.videoBalance ?? 0
+            } مقطع`,
+          ],
+          loading: payload.status !== "completed",
+        });
+        if (payload.generationId && payload.status !== "completed") {
+          pollVideoGeneration({
+            generationId: payload.generationId,
+            bubble: progressBubble,
+            promptSummary: summary,
+          }).catch(() => {
+            // ignore polling errors here
+          });
+        }
       } catch (error) {
+        if (processingTimer) {
+          window.clearTimeout(processingTimer);
+        }
+        if (progressBubble) {
+          updateCreateChatBubble(progressBubble, {
+            role: "assistant",
+            state: "error",
+            label: "المساعد الذكي",
+            title: "فشل إنشاء المقطع",
+            body: error.message,
+          });
+        }
         setMessage(createMessage, error.message, "error");
       } finally {
         setButtonBusy(button, false);

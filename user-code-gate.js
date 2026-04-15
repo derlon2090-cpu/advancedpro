@@ -320,25 +320,37 @@
 
   function updateWordCounters() {
     const imagePrompt = document.querySelector("#imagePrompt");
+    const videoTitle = document.querySelector("#videoTitle");
     const videoSummary = document.querySelector("#videoSummary");
+    const videoScenes = Array.from(
+      document.querySelectorAll("[data-video-scenes] textarea")
+    );
     const imageCounter = document.querySelector("[data-image-word-count]");
     const videoCounter = document.querySelector("[data-video-word-count]");
+    const totalVideoWords =
+      countWords(videoTitle?.value) +
+      countWords(videoSummary?.value) +
+      videoScenes.reduce((total, scene) => total + countWords(scene?.value), 0);
 
     if (imageCounter) {
       imageCounter.textContent = `عدد الكلمات: ${countWords(imagePrompt?.value)}`;
     }
 
     if (videoCounter) {
-      videoCounter.textContent = `عدد الكلمات: ${countWords(videoSummary?.value)}`;
+      videoCounter.textContent = `عدد الكلمات: ${totalVideoWords}`;
     }
   }
 
   function bindWordCounters() {
     const imagePrompt = document.querySelector("#imagePrompt");
+    const videoTitle = document.querySelector("#videoTitle");
     const videoSummary = document.querySelector("#videoSummary");
+    const videoScenes = document.querySelectorAll("[data-video-scenes] textarea");
 
     imagePrompt?.addEventListener("input", updateWordCounters);
+    videoTitle?.addEventListener("input", updateWordCounters);
     videoSummary?.addEventListener("input", updateWordCounters);
+    videoScenes.forEach((scene) => scene.addEventListener("input", updateWordCounters));
     updateWordCounters();
   }
 
@@ -513,12 +525,8 @@
       }
     }
 
-    if (createMessage && enabled && state) {
-      setMessage(
-        createMessage,
-        `تم التحقق من الكود بنجاح. رصيدك: ${state.imageAvailable} صورة / ${state.videoAvailable} فيديو`,
-        "success"
-      );
+    if (createMessage && enabled) {
+      setMessage(createMessage, "", "info");
     } else if (createMessage && !enabled) {
       setMessage(createMessage, "", "info");
     }
