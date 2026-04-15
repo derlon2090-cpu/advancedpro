@@ -5,6 +5,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { prisma } from "../lib/prisma.js";
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
 import { setSetting, getSetting, getPublicSettings } from "../services/settings.js";
+import { withDbRetry } from "../utils/dbRetry.js";
 
 const router = Router();
 
@@ -17,16 +18,18 @@ const createAdminSchema = z.object({
 });
 
 async function ensureActivationCodesTable() {
-  await prisma.$executeRawUnsafe(`
-    CREATE TABLE IF NOT EXISTS activation_codes (
-      id SERIAL PRIMARY KEY,
-      code VARCHAR(255) NOT NULL UNIQUE,
-      balance INTEGER NOT NULL DEFAULT 0,
-      is_active BOOLEAN NOT NULL DEFAULT TRUE,
-      is_used BOOLEAN NOT NULL DEFAULT FALSE,
-      created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
+  await withDbRetry(() =>
+    prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS activation_codes (
+        id SERIAL PRIMARY KEY,
+        code VARCHAR(255) NOT NULL UNIQUE,
+        balance INTEGER NOT NULL DEFAULT 0,
+        is_active BOOLEAN NOT NULL DEFAULT TRUE,
+        is_used BOOLEAN NOT NULL DEFAULT FALSE,
+        created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    `)
+  );
 }
 
 function generateStrongPassword(length = 16) {
@@ -356,19 +359,23 @@ router.post(
       return res.status(400).json({ success: false, message: "رصيد الكود غير صالح." });
     }
 
-    const existing = await prisma.activationCode.findUnique({ where: { code } });
+    const existing = await withDbRetry(() =>
+      prisma.activationCode.findUnique({ where: { code } })
+    );
     if (existing) {
       return res.status(409).json({ success: false, message: "هذا الكود موجود مسبقًا." });
     }
 
-    const newCode = await prisma.activationCode.create({
-      data: {
-        code,
-        balance,
-        isActive,
-        isUsed: false,
-      },
-    });
+    const newCode = await withDbRetry(() =>
+      prisma.activationCode.create({
+        data: {
+          code,
+          balance,
+          isActive,
+          isUsed: false,
+        },
+      })
+    );
 
     return res.status(201).json({
       success: true,
@@ -390,10 +397,12 @@ router.get(
         }
       : {};
 
-    const codes = await prisma.activationCode.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-    });
+    const codes = await withDbRetry(() =>
+      prisma.activationCode.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+      })
+    );
 
     return res.json({ success: true, codes });
   })

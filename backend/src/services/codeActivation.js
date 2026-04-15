@@ -1,4 +1,5 @@
 import { prisma } from "../lib/prisma.js";
+import { withDbRetry } from "../utils/dbRetry.js";
 
 function httpError(message) {
   const error = new Error(message);
@@ -7,16 +8,18 @@ function httpError(message) {
 }
 
 async function ensureActivationCodesTable() {
-  await prisma.$executeRawUnsafe(`
-    CREATE TABLE IF NOT EXISTS activation_codes (
-      id SERIAL PRIMARY KEY,
-      code VARCHAR(255) NOT NULL UNIQUE,
-      balance INTEGER NOT NULL DEFAULT 0,
-      is_active BOOLEAN NOT NULL DEFAULT TRUE,
-      is_used BOOLEAN NOT NULL DEFAULT FALSE,
-      created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
+  await withDbRetry(() =>
+    prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS activation_codes (
+        id SERIAL PRIMARY KEY,
+        code VARCHAR(255) NOT NULL UNIQUE,
+        balance INTEGER NOT NULL DEFAULT 0,
+        is_active BOOLEAN NOT NULL DEFAULT TRUE,
+        is_used BOOLEAN NOT NULL DEFAULT FALSE,
+        created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    `)
+  );
 }
 
 async function createSubscriptionFromLegacyCode({ userId, code }) {
@@ -24,35 +27,41 @@ async function createSubscriptionFromLegacyCode({ userId, code }) {
   const endAt = new Date(startAt);
   endAt.setDate(endAt.getDate() + (code.validityDays || 30));
 
-  const subscription = await prisma.subscription.create({
-    data: {
-      userId,
-      codeId: code.id,
-      packageName: code.planName,
-      imageBalance: code.imageQuota,
-      videoBalance: code.videoQuota,
-      videoMaxDurationSeconds: code.videoMaxDurationSeconds,
-      startAt,
-      endAt,
-      renewalEnabled: code.renewalEnabled,
-      renewalEveryDays: code.renewalEveryDays,
-      renewalMode: code.renewalMode,
-      renewalImageQuota: code.renewalImageQuota,
-      renewalVideoQuota: code.renewalVideoQuota,
-    },
-  });
+  const subscription = await withDbRetry(() =>
+    prisma.subscription.create({
+      data: {
+        userId,
+        codeId: code.id,
+        packageName: code.planName,
+        imageBalance: code.imageQuota,
+        videoBalance: code.videoQuota,
+        videoMaxDurationSeconds: code.videoMaxDurationSeconds,
+        startAt,
+        endAt,
+        renewalEnabled: code.renewalEnabled,
+        renewalEveryDays: code.renewalEveryDays,
+        renewalMode: code.renewalMode,
+        renewalImageQuota: code.renewalImageQuota,
+        renewalVideoQuota: code.renewalVideoQuota,
+      },
+    })
+  );
 
-  await prisma.code.update({
-    where: { id: code.id },
-    data: { redeemedCount: { increment: 1 } },
-  });
+  await withDbRetry(() =>
+    prisma.code.update({
+      where: { id: code.id },
+      data: { redeemedCount: { increment: 1 } },
+    })
+  );
 
-  await prisma.codeRedemption.create({
-    data: {
-      userId,
-      codeId: code.id,
-    },
-  });
+  await withDbRetry(() =>
+    prisma.codeRedemption.create({
+      data: {
+        userId,
+        codeId: code.id,
+      },
+    })
+  );
 
   return subscription;
 }
@@ -67,30 +76,36 @@ async function createSubscriptionFromActivationCode({ userId, activationCode }) 
     httpError("رصيد هذا الكود غير كاف للتفعيل.");
   }
 
-  const subscription = await prisma.subscription.create({
-    data: {
-      userId,
-      packageName: `كود ${activationCode.code}`,
-      imageBalance: balance,
-      videoBalance: balance,
-      videoMaxDurationSeconds: 60,
-      startAt,
-      endAt,
-      status: "active",
-    },
-  });
+  const subscription = await withDbRetry(() =>
+    prisma.subscription.create({
+      data: {
+        userId,
+        packageName: `كود ${activationCode.code}`,
+        imageBalance: balance,
+        videoBalance: balance,
+        videoMaxDurationSeconds: 60,
+        startAt,
+        endAt,
+        status: "active",
+      },
+    })
+  );
 
-  await prisma.activationCode.update({
-    where: { id: activationCode.id },
-    data: { isUsed: true },
-  });
+  await withDbRetry(() =>
+    prisma.activationCode.update({
+      where: { id: activationCode.id },
+      data: { isUsed: true },
+    })
+  );
 
   return subscription;
 }
 
 async function resolveLegacyCode({ email, codeValue, silent }) {
   if (codeValue) {
-    const code = await prisma.code.findUnique({ where: { code: codeValue } });
+  const code = await withDbRetry(() =>
+      prisma.code.findUnique({ where: { code: codeValue } })
+    );
     if (!code) {
       return null;
     }
@@ -112,13 +127,15 @@ async function resolveLegacyCode({ email, codeValue, silent }) {
     return code;
   }
 
-  const code = await prisma.code.findFirst({
-    where: {
-      assignedEmail: email,
-      isActive: true,
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const code = await withDbRetry(() =>
+    prisma.code.findFirst({
+      where: {
+        assignedEmail: email,
+        isActive: true,
+      },
+      orderBy: { createdAt: "desc" },
+    })
+  );
 
   return code || null;
 }
@@ -129,9 +146,11 @@ async function resolveActivationCode({ codeValue, silent }) {
   }
 
   await ensureActivationCodesTable();
-  const activationCode = await prisma.activationCode.findUnique({
-    where: { code: codeValue },
-  });
+  const activationCode = await withDbRetry(() =>
+    prisma.activationCode.findUnique({
+      where: { code: codeValue },
+    })
+  );
 
   if (!activationCode) {
     if (silent) {
@@ -168,9 +187,11 @@ export async function activateCodeForUser({ userId, email, codeValue, silent = f
       httpError("تم استخدام هذا الكود من قبل.");
     }
 
-    const alreadyRedeemed = await prisma.codeRedemption.findFirst({
-      where: { userId, codeId: legacyCode.id },
-    });
+    const alreadyRedeemed = await withDbRetry(() =>
+      prisma.codeRedemption.findFirst({
+        where: { userId, codeId: legacyCode.id },
+      })
+    );
 
     if (alreadyRedeemed) {
       if (silent) {
