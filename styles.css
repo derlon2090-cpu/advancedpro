@@ -1880,6 +1880,10 @@ li + li {
   animation: fadeSlideIn 0.25s ease;
 }
 
+[data-create-activation-banner].code-activation-flash {
+  margin-top: 16px;
+}
+
 .code-activation-flash strong {
   display: block;
   margin-bottom: 8px;

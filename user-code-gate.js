@@ -424,22 +424,25 @@
   }
 
   function hideActivationFlash() {
-    const flash = document.querySelector("[data-code-activation-flash]");
+    const flashes = document.querySelectorAll(
+      "[data-create-activation-banner], [data-code-activation-flash]"
+    );
     if (activationFlashTimer) {
       window.clearTimeout(activationFlashTimer);
       activationFlashTimer = null;
     }
-    if (flash) {
+    flashes.forEach((flash) => {
       flash.hidden = true;
       flash.innerHTML = "";
-    }
+    });
   }
 
   function showActivationFlash(state) {
-    const flash = document.querySelector("[data-code-activation-flash]");
-    const createLock = document.querySelector("[data-create-lock]");
+    const flash =
+      document.querySelector("[data-create-activation-banner]") ||
+      document.querySelector("[data-code-activation-flash]");
 
-    if (!flash || !createLock || !state) {
+    if (!flash || !state) {
       return;
     }
 
@@ -449,17 +452,11 @@
     flash.innerHTML = `
       <strong>تم التحقق من الكود بنجاح</strong>
       <p>${escapeHtml(state.packageName || state.code || "الكود الحالي")} • ${escapeHtml(state.imageAvailable)} صورة / ${escapeHtml(state.videoAvailable)} فيديو</p>
-      <small>الحالة: ${escapeHtml(state.statusLabel || "صالح")} • المتبقي: ${escapeHtml(formatRemainingDuration(state.endAt))}</small>
+      <small>الحالة: ${escapeHtml(state.statusLabel || "صالح")} • المتبقي: ${escapeHtml(formatRemainingDuration(state.endAt))} • الشات متاح الآن</small>
     `;
-
-    createLock.hidden = false;
 
     activationFlashTimer = window.setTimeout(() => {
       hideActivationFlash();
-      toggleChat(true, state);
-      hydrateFromDashboard({ preserveStoredState: true }).catch(() => {
-        // ignore
-      });
     }, 5000);
   }
 
@@ -601,17 +598,13 @@
       state.approved = true;
       state.message = payload.message || "تم التحقق من الكود بنجاح";
       state.decision = "تمت الموافقة";
-      state.chatStatus = "سيتم الفتح بعد 5 ثوانٍ";
+      state.chatStatus = "مفتوح";
 
       persistCodeInfo(state);
       renderStatusCard(dashboardStatus, state);
       renderStatusCard(unlockStatus, state);
       syncSubscriptionUi(state);
-      toggleChat(false, {
-        ...state,
-        approved: false,
-        message: "جارٍ تجهيز الشات وفتح الأدوات...",
-      });
+      toggleChat(true, state);
       showActivationFlash(state);
       setMessage(
         messageTarget,
@@ -619,6 +612,16 @@
         "success"
       );
       form.reset();
+      document.querySelector("#create-work")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+
+      window.setTimeout(() => {
+        hydrateFromDashboard({ preserveStoredState: true }).catch(() => {
+          // ignore
+        });
+      }, 600);
     } catch (error) {
       const failure = classifyFailure(error.message);
       hideActivationFlash();
