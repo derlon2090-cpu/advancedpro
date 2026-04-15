@@ -1,5 +1,6 @@
 import app from "./app.js";
 import { prisma } from "./lib/prisma.js";
+import { getAiKeyStatus } from "./services/aiProvider.js";
 import { logError, logInfo } from "./utils/logger.js";
 
 const PORT = process.env.PORT || 3000;
@@ -43,6 +44,7 @@ async function connectWithRetry(maxAttempts = 6, baseDelay = 1500) {
 
 app.listen(PORT, () => {
   logInfo(`Backend running on ${PORT}`);
+  logInfo("AI key status", getAiKeyStatus());
 });
 
 void connectWithRetry();

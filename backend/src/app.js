@@ -17,6 +17,7 @@ import usageRoutes from "./routes/usage.js";
 import { requireAuth } from "./middleware/auth.js";
 import { prisma } from "./lib/prisma.js";
 import { apiLimiter } from "./middleware/rateLimit.js";
+import { getAiKeyStatus } from "./services/aiProvider.js";
 import { logError } from "./utils/logger.js";
 
 const app = express();
@@ -75,7 +76,10 @@ app.use((req, res, next) => {
 });
 
 app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok" });
+  res.json({
+    status: "ok",
+    aiKeys: getAiKeyStatus(),
+  });
 });
 
 app.get("/api/health/db", async (_req, res) => {
