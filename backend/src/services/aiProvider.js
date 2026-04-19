@@ -27,6 +27,8 @@ const KEY_ALIASES = {
 };
 
 const warnedFeatures = new Set();
+const GEMINI_IMAGE_MODEL =
+  process.env.GEMINI_IMAGE_MODEL || "gemini-3.1-flash-image-preview";
 
 function isPlaceholder(value) {
   const normalized = String(value || "").trim().toLowerCase();
@@ -141,6 +143,43 @@ function buildMockImageDataUrl(prompt) {
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
 
+function extractInlineImagePart(payload) {
+  const candidates = Array.isArray(payload?.candidates) ? payload.candidates : [];
+
+  for (const candidate of candidates) {
+    const parts = Array.isArray(candidate?.content?.parts) ? candidate.content.parts : [];
+    for (const part of parts) {
+      const inlineData = part?.inlineData || part?.inline_data || null;
+      const data = inlineData?.data || null;
+      const mimeType = inlineData?.mimeType || inlineData?.mime_type || "image/png";
+      if (data) {
+        return {
+          data,
+          mimeType,
+        };
+      }
+    }
+  }
+
+  return null;
+}
+
+function extractTextParts(payload) {
+  const candidates = Array.isArray(payload?.candidates) ? payload.candidates : [];
+  const texts = [];
+
+  for (const candidate of candidates) {
+    const parts = Array.isArray(candidate?.content?.parts) ? candidate.content.parts : [];
+    for (const part of parts) {
+      if (part?.text) {
+        texts.push(String(part.text));
+      }
+    }
+  }
+
+  return texts.filter(Boolean);
+}
+
 export async function generateText({ prompt }) {
   getKeyFor("gemini", { required: false });
 
@@ -152,10 +191,68 @@ export async function generateText({ prompt }) {
 export async function generateImage({ prompt }) {
   const resolved = getKeyFor("image", { required: false });
 
+  if (resolved) {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(
+        GEMINI_IMAGE_MODEL
+      )}:generateContent`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": resolved.value,
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: String(prompt || "").trim(),
+                },
+              ],
+            },
+          ],
+        }),
+      }
+    );
+
+    let payload = {};
+    try {
+      payload = await response.json();
+    } catch (error) {
+      payload = {};
+    }
+
+    if (!response.ok) {
+      const error = new Error(
+        payload?.error?.message ||
+          payload?.message ||
+          "فشل الاتصال بخدمة Gemini Image."
+      );
+      error.statusCode = response.status;
+      throw error;
+    }
+
+    const imagePart = extractInlineImagePart(payload);
+    if (!imagePart?.data) {
+      const providerText = extractTextParts(payload).join(" ");
+      throw new Error(
+        providerText || "لم ترجع خدمة Gemini Image صورة فعلية لهذا الطلب."
+      );
+    }
+
+    return {
+      resultUrl: `data:${imagePart.mimeType};base64,${imagePart.data}`,
+      prompt,
+      providerMode: "configured",
+      model: GEMINI_IMAGE_MODEL,
+    };
+  }
+
   return {
-    resultUrl: resolved ? "https://example.com/image-result" : buildMockImageDataUrl(prompt),
+    resultUrl: buildMockImageDataUrl(prompt),
     prompt,
-    providerMode: resolved ? "configured" : "mock",
+    providerMode: "mock",
   };
 }
 
