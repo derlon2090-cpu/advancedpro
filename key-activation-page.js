@@ -47,7 +47,7 @@
     const rawMessage = String(payload?.message || payload?.error || "").trim();
 
     if (status === 401) {
-      return "يرجى تسجيل الدخول أولًا قبل تفعيل المفتاح.";
+      return "تعذر إنشاء جلسة المفتاح. حاول تفعيل المفتاح مرة أخرى.";
     }
 
     if (status === 403) {
@@ -62,13 +62,11 @@
   }
 
   async function activateKey(code) {
-    const token = getStoredToken();
-    const response = await fetch(`${API_BASE_URL}/api/keys/activate`, {
+    const response = await fetch(`${API_BASE_URL}/api/public/keys/activate`, {
       method: "POST",
       credentials: "include",
       headers: {
         "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify({ code }),
     });

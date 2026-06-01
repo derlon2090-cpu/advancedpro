@@ -100,6 +100,7 @@ app.get("/api/health/db", async (_req, res) => {
 });
 
 app.use("/api", apiLimiter);
+app.use("/api/public/keys", keyRoutes);
 app.use("/api/public", publicRoutes);
 app.use("/api/auth", authRoutes);
 app.get("/api/me", requireAuth, (req, res) => {
