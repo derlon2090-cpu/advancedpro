@@ -122,7 +122,7 @@
       setMessage("تم تفعيل المفتاح بنجاح. يتم تحويلك الآن إلى لوحة المستخدم.", "success");
 
       window.setTimeout(() => {
-        window.location.href = payload.redirectTo || "/dashboard.html";
+        window.location.href = payload.redirectTo || "/dashboard";
       }, 900);
     } catch (error) {
       setMessage(error.message, "error");

@@ -3,253 +3,197 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>لوحة التحكم | Advanced Pro Nano</title>
+    <title>لوحة الإنشاء | Advanced Pro</title>
     <meta
       name="description"
-      content="لوحة تحكم المستخدم في Advanced Pro Nano لمتابعة الرصيد والاشتراك وسجل الاستخدام."
+      content="لوحة إنشاء عربية لاختيار صورة أو فيديو وقراءة رصيد المفتاح المفعّل."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/styles.css?v=20260601-dashboard" />
   </head>
-  <body data-page="dashboard" data-requires-auth="true">
-    <header class="site-header">
-      <div class="container header-inner">
-        <a class="brand" href="/">
-          <span class="brand-mark">AP</span>
-          <span class="brand-copy">
-            <strong>Advanced Pro Nano</strong>
-            <span>User Dashboard</span>
+  <body class="creator-dashboard-page" data-page="dashboard">
+    <header class="dashboard-topbar" aria-label="رأس لوحة المستخدم">
+      <div class="dashboard-shell dashboard-topbar__inner">
+        <a class="key-brand" href="/" aria-label="Advanced Pro - الرئيسية">
+          <img class="key-brand__mark" src="/ap-mark.svg" alt="" aria-hidden="true" />
+          <span class="key-brand__copy">
+            <strong>Advanced Pro</strong>
+            <span>المفاتيح الرقمية</span>
           </span>
         </a>
 
-        <nav class="nav-links">
+        <nav class="dashboard-nav" aria-label="روابط اللوحة">
           <a href="/">الرئيسية</a>
-          <a href="/activate">التفعيل</a>
-          <a class="is-active" href="/student.html">لوحة المستخدم</a>
-          <a href="/profile">الملف الشخصي</a>
+          <a href="/activate">تفعيل مفتاح</a>
+          <button type="button" data-dashboard-logout>تسجيل الخروج</button>
         </nav>
-
-        <div class="header-actions">
-          <a class="btn btn-secondary" href="/profile">الملف الشخصي</a>
-          <button class="btn btn-primary" type="button" data-logout>تسجيل الخروج</button>
-        </div>
       </div>
     </header>
 
-    <main>
-      <section class="dashboard-hero">
-        <div class="container">
-          <div class="dashboard-header">
-            <div class="dashboard-welcome">
-              <div class="user-avatar" data-dashboard-avatar>A</div>
-              <div>
-                <span class="section-kicker">لوحة المستخدم</span>
-                <h1>أهلاً، <span class="gradient-text" data-dashboard-name>...</span></h1>
-                <p data-dashboard-subscription>جاري تحميل حالة الاشتراك...</p>
-              </div>
+    <main class="dashboard-main dashboard-shell">
+      <aside class="dashboard-sidebar" aria-label="بيانات المفتاح والرصيد">
+        <section class="dashboard-side-card">
+          <div class="dashboard-card-title">
+            <span>رصيدك الحالي</span>
+            <small data-key-status>جارٍ التحميل...</small>
+          </div>
+
+          <div class="credit-meter">
+            <div class="credit-meter__row">
+              <span>الصور</span>
+              <strong data-images-counter>0 / 0</strong>
             </div>
-            <div class="dashboard-cta">
-              <a class="btn btn-primary" href="/activate">ابدأ الآن</a>
+            <div class="credit-meter__track">
+              <span data-images-progress style="width: 0%"></span>
             </div>
           </div>
 
-          <article class="page-card dashboard-actions">
-            <div class="page-card__top">
-              <h2>ابدأ سريعًا</h2>
-              <p>أنشئ محتواك مباشرة بدون تعقيد.</p>
+          <div class="credit-meter">
+            <div class="credit-meter__row">
+              <span>الفيديوهات</span>
+              <strong data-videos-counter>0 / 0</strong>
             </div>
-            <div class="action-grid">
-              <a class="action-tile" href="#create-work">إنشاء صورة</a>
-              <a class="action-tile" href="#create-work">إنشاء مقطع</a>
-              <a class="action-tile" href="#create-work">رفع صورة للتعديل</a>
-              <a class="action-tile" href="#recent-projects">مشاريعي الأخيرة</a>
+            <div class="credit-meter__track">
+              <span data-videos-progress style="width: 0%"></span>
             </div>
-          </article>
-
-          <div class="info-grid" data-dashboard-summary></div>
-
-          <article class="page-card create-card" id="create-work">
-            <div class="page-card__top">
-              <h2>إنشاء عمل جديد</h2>
-              <p>اختر النوع وأدخل الوصف ثم ابدأ الإنشاء مباشرة.</p>
-            </div>
-            <div class="create-lock" data-create-lock hidden>
-              <div class="create-lock__card">
-                <h3>الشات مقفل</h3>
-                <p>أدخل كود التفعيل لفتح الإنشاء ومعرفة رصيدك.</p>
-                <form id="createUnlockForm" class="inline-form">
-                  <input name="code" type="text" placeholder="أدخل كود التفعيل" required />
-                  <button class="btn btn-primary" type="submit">تفعيل الكود</button>
-                </form>
-                <div class="status-message" hidden data-create-unlock-message></div>
-                <div class="code-activation-flash" hidden data-code-activation-flash role="status" aria-live="polite"></div>
-                <div data-create-unlock-status></div>
-              </div>
-            </div>
-            <div class="status-message" hidden data-create-gate></div>
-            <div class="code-activation-flash" hidden data-create-activation-banner role="status" aria-live="polite"></div>
-            <div class="create-chat-shell">
-              <div class="create-chat-composer">
-                <div class="create-tabs">
-                  <button class="btn btn-ghost is-active" type="button" data-create-tab="image">
-                    صورة
-                  </button>
-                  <button class="btn btn-ghost" type="button" data-create-tab="video">
-                    مقطع
-                  </button>
-                </div>
-                <div class="create-balance-strip" data-create-balance></div>
-                <div class="create-mode-note" data-create-mode-note></div>
-
-                <div class="create-panel is-active" data-create-panel="image">
-                  <form id="imageCreateForm" class="stack-form">
-                    <div class="field">
-                      <label for="imagePrompt">وصف الصورة</label>
-                      <textarea
-                        id="imagePrompt"
-                        name="prompt"
-                        rows="4"
-                        placeholder="اكتب وصفًا واضحًا للصورة المطلوبة"
-                        required
-                      ></textarea>
-                      <div class="field-meta">
-                        <small class="field-hint" data-image-word-count>عدد الكلمات: 0</small>
-                        <small class="field-hint" data-image-balance>الرصيد المتاح: 0 صورة</small>
-                      </div>
-                    </div>
-                    <button class="btn btn-primary btn-block" type="submit">بدء الإنشاء</button>
-                  </form>
-                </div>
-
-                <div class="create-panel" data-create-panel="video">
-                  <form id="videoCreateForm" class="stack-form">
-                    <div class="field">
-                      <label for="videoTitle">عنوان المقطع</label>
-                      <input id="videoTitle" name="title" type="text" placeholder="عنوان المشروع" />
-                    </div>
-                    <div class="field">
-                      <label for="videoDuration">مدة المقطع</label>
-                      <select id="videoDuration" name="durationSeconds">
-                        <option value="10">10 ثوانٍ</option>
-                        <option value="20">20 ثانية</option>
-                        <option value="60" selected>60 ثانية (6 مشاهد)</option>
-                      </select>
-                      <small class="field-hint" data-video-duration-hint>
-                        إذا اخترت 60 ثانية سنقسم المقطع إلى 6 مشاهد، كل مشهد 10 ثوانٍ.
-                      </small>
-                    </div>
-                    <div class="field">
-                      <label for="videoSummary">الوصف العام للمقطع</label>
-                      <textarea
-                        id="videoSummary"
-                        name="summary"
-                        rows="3"
-                        placeholder="اكتب وصفًا عامًا للمقطع المطلوب"
-                        required
-                      ></textarea>
-                      <div class="field-meta">
-                        <small class="field-hint" data-video-word-count>عدد الكلمات: 0</small>
-                        <small class="field-hint" data-video-balance>الرصيد المتاح: 0 مقطع</small>
-                      </div>
-                    </div>
-                    <div class="scenes-wrap" data-video-scenes-wrap>
-                      <div class="scenes-intro">
-                        <strong>السيناريوهات</strong>
-                        <span>قسّم المقطع إلى 6 مشاهد واضحة ليكون الإخراج أدق.</span>
-                      </div>
-                      <div class="scenes-grid" data-video-scenes>
-                        <div class="field">
-                          <label>السيناريو 1</label>
-                          <textarea name="scene1" rows="2" placeholder="وصف المشهد الأول"></textarea>
-                        </div>
-                        <div class="field">
-                          <label>السيناريو 2</label>
-                          <textarea name="scene2" rows="2" placeholder="وصف المشهد الثاني"></textarea>
-                        </div>
-                        <div class="field">
-                          <label>السيناريو 3</label>
-                          <textarea name="scene3" rows="2" placeholder="وصف المشهد الثالث"></textarea>
-                        </div>
-                        <div class="field">
-                          <label>السيناريو 4</label>
-                          <textarea name="scene4" rows="2" placeholder="وصف المشهد الرابع"></textarea>
-                        </div>
-                        <div class="field">
-                          <label>السيناريو 5</label>
-                          <textarea name="scene5" rows="2" placeholder="وصف المشهد الخامس"></textarea>
-                        </div>
-                        <div class="field">
-                          <label>السيناريو 6</label>
-                          <textarea name="scene6" rows="2" placeholder="وصف المشهد السادس"></textarea>
-                        </div>
-                      </div>
-                    </div>
-                    <button class="btn btn-primary btn-block" type="submit">بدء الإنشاء</button>
-                  </form>
-                </div>
-                <div class="status-message" hidden data-create-message></div>
-              </div>
-
-              <div class="create-chat-stream" data-create-chat-stream aria-live="polite"></div>
-            </div>
-          </article>
-
-          <div class="page-grid">
-            <article class="page-card" id="recent-projects">
-              <div class="page-card__top">
-                <h2>آخر أعمالك</h2>
-                <a class="btn btn-ghost" href="/dashboard-preview">عرض الكل</a>
-              </div>
-              <div class="usage-filters" data-work-filters>
-                <button class="btn btn-ghost is-active" type="button" data-work-filter="all">
-                  الكل
-                </button>
-                <button class="btn btn-ghost" type="button" data-work-filter="image">
-                  الصور
-                </button>
-                <button class="btn btn-ghost" type="button" data-work-filter="video">
-                  الفيديو
-                </button>
-              </div>
-              <div data-dashboard-usage></div>
-            </article>
-
-            <article class="page-card">
-              <div class="page-card__top">
-                <h2>تفعيل كود</h2>
-              </div>
-              <form id="dashboardActivationForm" class="inline-form">
-                <input name="code" type="text" placeholder="أدخل كود التفعيل" required />
-                <button class="btn btn-primary" type="submit">تفعيل</button>
-              </form>
-              <div class="status-message" hidden data-dashboard-activate-message></div>
-              <div data-dashboard-code-status></div>
-            </article>
-
-            <article class="page-card">
-              <div class="page-card__top">
-                <h2>الباقة الحالية</h2>
-                <a class="btn btn-ghost" href="/pricing">ترقية الباقة</a>
-              </div>
-              <div data-dashboard-plan></div>
-            </article>
           </div>
-        </div>
+        </section>
+
+        <section class="dashboard-side-card">
+          <div class="dashboard-card-title">
+            <span>تفاصيل مفتاحك</span>
+          </div>
+          <dl class="key-details-list">
+            <div>
+              <dt>المفتاح</dt>
+              <dd data-key-code>APRO-XXXX-XXXX-----</dd>
+            </div>
+            <div>
+              <dt>تاريخ التفعيل</dt>
+              <dd data-key-activated>--</dd>
+            </div>
+            <div>
+              <dt>تاريخ الانتهاء</dt>
+              <dd data-key-expires>--</dd>
+            </div>
+            <div>
+              <dt>اسم الباقة</dt>
+              <dd data-key-plan>--</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="upgrade-card">
+          <span class="upgrade-card__icon" aria-hidden="true">◇</span>
+          <h2>ترقية باقتك</h2>
+          <p>احصل على رصيد أعلى وصلاحية أطول عند الحاجة.</p>
+          <a href="/#pricing-title">عرض الباقات</a>
+        </section>
+      </aside>
+
+      <section class="dashboard-workspace" aria-labelledby="dashboard-title">
+        <section class="dashboard-panel create-selection-panel">
+          <div class="dashboard-heading">
+            <span class="sparkle" aria-hidden="true">✦</span>
+            <h1 id="dashboard-title">ماذا تريد إنشاء اليوم؟</h1>
+            <p>اختر نوع المحتوى أولًا، ثم اكتب وصفك واضبط الخيارات المناسبة.</p>
+          </div>
+
+          <div class="creation-type-grid" role="listbox" aria-label="نوع الإنشاء">
+            <button class="creation-type-card" type="button" data-create-kind="video">
+              <span class="creation-type-card__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="m16 13 5 3V8l-5 3z" /><rect x="3" y="6" width="13" height="12" rx="2" /></svg>
+              </span>
+              <strong>فيديو</strong>
+              <small>مقطع مرئي بالوصف والخيارات</small>
+            </button>
+
+            <button class="creation-type-card" type="button" data-create-kind="image">
+              <span class="creation-type-card__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="m21 15-5-5L5 21" /><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><circle cx="9" cy="9" r="2" /></svg>
+              </span>
+              <strong>صورة</strong>
+              <small>صورة واحدة بوصف واضح</small>
+            </button>
+          </div>
+
+          <form id="dashboardCreateForm" class="dashboard-create-form" hidden>
+            <div class="field">
+              <label for="dashboardPrompt" data-prompt-label>اكتب الوصف</label>
+              <textarea
+                id="dashboardPrompt"
+                name="prompt"
+                rows="6"
+                placeholder="مثال: مشهد إعلاني فاخر لمنتج على خلفية هادئة وإضاءة ناعمة"
+                required
+              ></textarea>
+              <small class="word-counter" data-word-counter>0 كلمة</small>
+            </div>
+
+            <div class="video-options" data-video-options hidden>
+              <span class="option-title">مدة الفيديو</span>
+              <div class="chip-group" data-duration-group>
+                <button type="button" data-duration="5">5 ثواني</button>
+                <button type="button" data-duration="10" class="is-active">10 ثواني</button>
+                <button type="button" data-duration="15">15 ثانية</button>
+                <button type="button" data-duration="20">20 ثانية</button>
+              </div>
+            </div>
+
+            <div>
+              <span class="option-title">الجودة</span>
+              <div class="chip-group" data-quality-group>
+                <button type="button" data-quality="normal">عادية</button>
+                <button type="button" data-quality="high" class="is-active">عالية</button>
+                <button type="button" data-quality="ultra">فائقة</button>
+              </div>
+            </div>
+
+            <div>
+              <label class="option-title" for="styleSelect">النمط</label>
+              <select id="styleSelect" name="style">
+                <option value="">اختر النمط المناسب لمحتواك</option>
+                <option value="realistic">واقعي</option>
+                <option value="cartoon">كرتوني</option>
+                <option value="cinematic">سينمائي</option>
+                <option value="commercial">منتج تجاري</option>
+              </select>
+            </div>
+
+            <p class="dashboard-form-message" data-create-message hidden></p>
+
+            <button class="dashboard-submit" type="submit" data-submit-label>
+              إنشاء المحتوى
+            </button>
+          </form>
+        </section>
+
+        <section class="result-card" data-result-card hidden aria-live="polite">
+          <div class="result-card__header">
+            <strong>تم الإنشاء بنجاح</strong>
+            <a data-download-link href="#" target="_blank" rel="noreferrer">تحميل</a>
+          </div>
+          <div data-result-preview></div>
+        </section>
+
+        <section class="dashboard-panel dashboard-notes">
+          <h2>ملاحظات هامة</h2>
+          <ul>
+            <li>يتم خصم الرصيد فقط بعد نجاح عملية الإنشاء.</li>
+            <li>إذا كان الرصيد غير كافٍ، ستظهر لك رسالة واضحة قبل الإرسال.</li>
+            <li>لا تشارك مفتاحك الرقمي مع أي شخص آخر.</li>
+          </ul>
+        </section>
       </section>
     </main>
 
-    <script>
-      window.__advancedProDedicatedCodeGate = true;
-      window.__advancedProDedicatedCreateChat = true;
-    </script>
-    <script src="/site.js?v=20260415-activate-fix"></script>
-    <script src="/portal.js?v=20260415-chat-ui-2"></script>
-    <script src="/user-code-gate.js?v=20260415-chat-ui-2"></script>
-    <script src="/create-chat-ui.js?v=20260415-chat-ui-2"></script>
+    <footer class="dashboard-footer">جميع الحقوق محفوظة © Advanced Pro 2026</footer>
+
+    <script src="/dashboard-page.js?v=20260601-dashboard"></script>
   </body>
 </html>

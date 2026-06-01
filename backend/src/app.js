@@ -18,6 +18,8 @@ import { requireAuth } from "./middleware/auth.js";
 import { prisma } from "./lib/prisma.js";
 import { apiLimiter } from "./middleware/rateLimit.js";
 import { getAiKeyStatus } from "./services/aiProvider.js";
+import { getUserActivationCode } from "./services/activationCodes.js";
+import { asyncHandler } from "./utils/asyncHandler.js";
 import { logError } from "./utils/logger.js";
 
 const app = express();
@@ -109,6 +111,53 @@ app.get("/api/me", requireAuth, (req, res) => {
     },
   });
 });
+
+function maskAccessCode(code) {
+  const value = String(code || "").trim();
+  if (!value) {
+    return null;
+  }
+
+  const suffix = value.slice(-4);
+  return `APRO-XXXX-XXXX-${suffix}`;
+}
+
+app.get(
+  "/api/me/key",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const accessCode = await getUserActivationCode(req.user.id);
+
+    if (!accessCode) {
+      return res.status(404).json({
+        message: "لا يوجد مفتاح مفعّل لهذا الحساب.",
+      });
+    }
+
+    const imagesLimit = Number(accessCode.imageLimit || 0);
+    const videosLimit = Number(accessCode.videoLimit || 0);
+    const imagesUsed = Number(accessCode.imageUsed || 0);
+    const videosUsed = Number(accessCode.videoUsed || 0);
+    const isExpired =
+      accessCode.expiresAt && new Date(accessCode.expiresAt).getTime() < Date.now();
+    const status =
+      !accessCode.isActive ? "disabled" : isExpired || accessCode.statusKey === "expired" ? "expired" : "active";
+
+    return res.json({
+      planName: accessCode.ownerName || "مفتاح رقمي",
+      codeMasked: maskAccessCode(accessCode.code),
+      imagesLimit,
+      imagesUsed,
+      imagesRemaining: Math.max(imagesLimit - imagesUsed, 0),
+      videosLimit,
+      videosUsed,
+      videosRemaining: Math.max(videosLimit - videosUsed, 0),
+      expiresAt: accessCode.expiresAt || null,
+      activatedAt: accessCode.activatedAt || null,
+      status,
+    });
+  })
+);
 app.use("/api/activate", activateRoutes);
 app.use("/api/user/code", activateRoutes);
 app.use("/api/keys", activateRoutes);
