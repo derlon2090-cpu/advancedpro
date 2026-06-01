@@ -1,6 +1,6 @@
 (function () {
   const API_BASE_URL =
-    window.AdvancedProConfig?.apiBaseUrl || "https://advancedpro.onrender.com";
+    window.AdvancedProConfig?.apiBaseUrl || "";
   const TOKEN_KEY = "advancedpro_token";
   const ACCESS_CODE_KEY = "advancedpro_access_code";
   const form = document.querySelector("#keyActivationForm");

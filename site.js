@@ -6,7 +6,7 @@ const siteConfig = {
 
 const appConfig = {
   apiBaseUrl:
-    window.AdvancedProConfig?.apiBaseUrl || "https://advancedpro.onrender.com",
+    window.AdvancedProConfig?.apiBaseUrl || "",
 };
 
 const THEME_STORAGE_KEY = "advancedpro-theme";

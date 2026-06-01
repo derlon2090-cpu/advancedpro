@@ -1,5 +1,19 @@
 {
   "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://advancedpro.onrender.com/api/:path*"
+    },
+    {
+      "source": "/advanced-pro-control/setup",
+      "destination": "/advanced-pro-control/setup.html"
+    },
+    {
+      "source": "/advanced-pro-control",
+      "destination": "/advanced-pro-control.html"
+    }
+  ],
   "builds": [
     {
       "src": "**/*",

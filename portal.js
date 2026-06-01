@@ -8,7 +8,7 @@ const defaultSiteSettings = {
 
 const appConfig = {
   apiBaseUrl:
-    window.AdvancedProConfig?.apiBaseUrl || "https://advancedpro.onrender.com",
+    window.AdvancedProConfig?.apiBaseUrl || "",
 };
 
 const REQUEST_TIMEOUT_MS = 16000;

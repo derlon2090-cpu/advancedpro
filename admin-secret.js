@@ -1,6 +1,5 @@
 (function () {
-  const API_BASE_URL =
-    window.AdvancedProConfig?.apiBaseUrl || "https://advancedpro.onrender.com";
+  const API_BASE_URL = window.AdvancedProConfig?.apiBaseUrl || "";
 
   const $ = (selector) => document.querySelector(selector);
 
