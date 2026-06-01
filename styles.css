@@ -3040,6 +3040,7 @@ html[data-theme="dark"] .create-chat-bubble__state {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-direction: row-reverse;
   gap: 24px;
 }
 
@@ -3057,18 +3058,11 @@ html[data-theme="dark"] .create-chat-bubble__state {
 }
 
 .key-brand__mark {
-  width: 54px;
-  height: 54px;
-  display: grid;
-  place-items: center;
-  border-radius: 18px;
-  color: #fff;
-  font-size: 34px;
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: -0.08em;
-  background: linear-gradient(135deg, #2f8cff 6%, var(--key-primary) 48%, var(--key-secondary));
-  box-shadow: 0 18px 32px rgba(91, 53, 245, 0.2);
+  width: 58px;
+  height: 58px;
+  display: block;
+  object-fit: contain;
+  filter: drop-shadow(0 14px 20px rgba(91, 53, 245, 0.16));
 }
 
 .key-brand__copy {
@@ -3090,6 +3084,7 @@ html[data-theme="dark"] .create-chat-bubble__state {
 .key-home-link {
   display: inline-flex;
   align-items: center;
+  flex-direction: row-reverse;
   gap: 10px;
   color: #5b5f8d;
   font-weight: 800;
@@ -3519,10 +3514,8 @@ html[data-theme="dark"] .create-chat-bubble__state {
   }
 
   .key-brand__mark {
-    width: 46px;
-    height: 46px;
-    border-radius: 15px;
-    font-size: 29px;
+    width: 48px;
+    height: 48px;
   }
 
   .key-brand__copy strong {
