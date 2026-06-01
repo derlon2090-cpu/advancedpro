@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>دخول الأدمن | Advanced Pro</title>
+    <meta name="robots" content="noindex,nofollow" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css?v=20260601-admin-secret" />
+  </head>
+  <body class="admin-secret-page">
+    <main class="admin-secret-shell">
+      <section class="admin-secret-card" aria-label="تسجيل دخول الأدمن">
+        <a class="key-brand admin-secret-brand" href="/" aria-label="Advanced Pro">
+          <img class="key-brand__mark" src="/ap-mark.svg" alt="" aria-hidden="true" />
+          <span class="key-brand__copy">
+            <strong>Advanced Pro</strong>
+            <span>منطقة إدارة خاصة</span>
+          </span>
+        </a>
+
+        <div class="admin-secret-heading">
+          <h1>دخول الأدمن</h1>
+          <p>هذه الصفحة مخصصة لإدارة المنصة فقط.</p>
+        </div>
+
+        <form id="adminSecretLoginForm" class="admin-secret-form">
+          <label>
+            البريد الإلكتروني
+            <input name="email" type="email" autocomplete="username" required />
+          </label>
+          <label>
+            كلمة المرور
+            <input name="password" type="password" autocomplete="current-password" required />
+          </label>
+          <p class="admin-secret-message" data-admin-secret-message hidden></p>
+          <button type="submit">دخول لوحة الأدمن</button>
+        </form>
+      </section>
+    </main>
+    <script src="/admin-secret.js?v=20260601-admin-secret"></script>
+  </body>
+</html>

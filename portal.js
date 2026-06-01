@@ -510,6 +510,24 @@ async function getCurrentUser(force = false) {
   return state.currentUser;
 }
 
+async function getCurrentAdmin() {
+  try {
+    const payload = await requestJson("/api/admin/session", {
+      method: "GET",
+    });
+    return payload.admin || null;
+  } catch (error) {
+    return null;
+  }
+}
+
+function getAdminLoginPath() {
+  const configured = String(
+    window.AdvancedProConfig?.adminSecretPath || "advanced-pro-control"
+  ).replace(/^\/+|\/+$/g, "");
+  return `/${configured || "advanced-pro-control"}`;
+}
+
 function updateSessionUi(user) {
   document.querySelectorAll("[data-session-name]").forEach((element) => {
     element.textContent = user?.fullName || "ضيف";
@@ -559,6 +577,14 @@ function setupPasswordToggles() {
 
 async function performLogout() {
   try {
+    await requestJson("/api/admin/logout", {
+      method: "POST",
+    });
+  } catch (error) {
+    // ignore
+  }
+
+  try {
     await requestJson("/api/auth/logout", {
       method: "POST",
     });
@@ -571,6 +597,7 @@ async function performLogout() {
     try {
       document.cookie = "token=; Path=/; Max-Age=0; SameSite=None; Secure";
       document.cookie = "token=; Path=/; Max-Age=0; SameSite=Lax";
+      document.cookie = "admin_session=; Path=/; Max-Age=0; SameSite=Lax";
     } catch (error) {
       // ignore
     }
@@ -602,6 +629,21 @@ async function enforceRoute() {
   const needsAuth = document.body.dataset.requiresAuth === "true";
   const needsAdmin = document.body.dataset.requiresAdmin === "true";
   const guestOnly = document.body.dataset.guestOnly === "true";
+
+  if (needsAdmin) {
+    const admin = await getCurrentAdmin();
+    if (!admin) {
+      window.location.href = getAdminLoginPath();
+      return null;
+    }
+    return {
+      id: admin.id,
+      fullName: admin.name,
+      email: admin.email,
+      role: admin.role || "admin",
+    };
+  }
+
   let user = await getCurrentUser();
 
   updateSessionUi(user);
@@ -626,11 +668,6 @@ async function enforceRoute() {
       window.location.href = page === "activate" ? "/login?next=/activate" : "/login";
       return null;
     }
-  }
-
-  if (needsAdmin && (!user || user.role !== "admin")) {
-    window.location.href = user ? "/student.html" : "/login";
-    return null;
   }
 
   return user;

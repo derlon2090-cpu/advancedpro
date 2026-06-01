@@ -3,9 +3,9 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { prisma } from "../lib/prisma.js";
-import { requireAuth, requireAdmin } from "../middleware/auth.js";
 import { setSetting, getSetting, getPublicSettings } from "../services/settings.js";
 import { withDbRetry } from "../utils/dbRetry.js";
+import { signToken, verifyToken } from "../utils/jwt.js";
 import {
   createActivationCode,
   deleteActivationCode,
@@ -16,7 +16,77 @@ import {
 
 const router = Router();
 
-router.use(requireAuth, requireAdmin);
+const ADMIN_SECRET_PATH = (process.env.ADMIN_SECRET_PATH || "advanced-pro-control").replace(/^\/+|\/+$/g, "");
+const ADMIN_LOGIN_PATH = `/${ADMIN_SECRET_PATH}`;
+
+function setAdminSessionCookie(res, admin) {
+  const cookieSecure = process.env.COOKIE_SECURE === "true";
+  const token = signToken({
+    id: admin.id,
+    email: admin.email,
+    role: admin.role,
+    scope: "admin",
+  });
+
+  res.cookie("admin_session", token, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: cookieSecure,
+    path: "/",
+    maxAge: 1000 * 60 * 60 * 24 * 7,
+  });
+
+  return token;
+}
+
+function clearAdminSessionCookie(res) {
+  res.clearCookie("admin_session", { path: "/" });
+}
+
+async function getAdminFromRequest(req) {
+  const token = req.cookies?.admin_session;
+  if (!token) {
+    return null;
+  }
+
+  let payload;
+  try {
+    payload = verifyToken(token);
+  } catch (error) {
+    return null;
+  }
+
+  if (payload?.scope !== "admin") {
+    return null;
+  }
+
+  const admin = await prisma.user.findFirst({
+    where: {
+      id: Number(payload.id),
+      status: "active",
+      role: { in: ["admin", "owner"] },
+    },
+  });
+
+  return admin || null;
+}
+
+async function requireAdminSession(req, res, next) {
+  try {
+    const admin = await getAdminFromRequest(req);
+    if (!admin) {
+      return res.status(401).json({
+        message: "جلسة الأدمن غير صالحة.",
+        redirectTo: ADMIN_LOGIN_PATH,
+      });
+    }
+
+    req.admin = admin;
+    return next();
+  } catch (error) {
+    return next(error);
+  }
+}
 
 const createAdminSchema = z.object({
   fullName: z.string().min(2).optional(),
@@ -59,6 +129,137 @@ function validatePasswordRules(password) {
   }
   return "";
 }
+
+const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+});
+
+const setupSchema = z.object({
+  name: z.string().min(2),
+  email: z.string().email(),
+  password: z.string().min(8),
+  passwordConfirm: z.string().min(8),
+});
+
+async function countAdmins() {
+  return prisma.user.count({
+    where: {
+      role: { in: ["admin", "owner"] },
+    },
+  });
+}
+
+router.get(
+  "/session",
+  asyncHandler(async (req, res) => {
+    const admin = await getAdminFromRequest(req);
+    if (!admin) {
+      return res.status(401).json({
+        message: "جلسة الأدمن غير صالحة.",
+        redirectTo: ADMIN_LOGIN_PATH,
+      });
+    }
+
+    return res.json({
+      admin: {
+        id: admin.id,
+        name: admin.fullName,
+        email: admin.email,
+        role: admin.role,
+      },
+      secretPath: ADMIN_SECRET_PATH,
+    });
+  })
+);
+
+router.post(
+  "/login",
+  asyncHandler(async (req, res) => {
+    const values = loginSchema.parse(req.body || {});
+    const admin = await prisma.user.findFirst({
+      where: {
+        email: values.email.toLowerCase(),
+        role: { in: ["admin", "owner"] },
+        status: "active",
+      },
+    });
+
+    if (!admin) {
+      return res.status(401).json({ message: "البريد أو كلمة المرور غير صحيحة." });
+    }
+
+    const isValid = await bcrypt.compare(values.password, admin.passwordHash);
+    if (!isValid) {
+      return res.status(401).json({ message: "البريد أو كلمة المرور غير صحيحة." });
+    }
+
+    setAdminSessionCookie(res, admin);
+    return res.json({
+      success: true,
+      redirectTo: "/admin/dashboard",
+      admin: {
+        id: admin.id,
+        name: admin.fullName,
+        email: admin.email,
+        role: admin.role,
+      },
+    });
+  })
+);
+
+router.post("/logout", (_req, res) => {
+  clearAdminSessionCookie(res);
+  return res.json({ success: true, redirectTo: ADMIN_LOGIN_PATH });
+});
+
+router.get(
+  "/setup-status",
+  asyncHandler(async (_req, res) => {
+    const adminCount = await countAdmins();
+    return res.json({
+      enabled: adminCount === 0,
+      loginPath: ADMIN_LOGIN_PATH,
+    });
+  })
+);
+
+router.post(
+  "/setup",
+  asyncHandler(async (req, res) => {
+    const values = setupSchema.parse(req.body || {});
+    if (values.password !== values.passwordConfirm) {
+      return res.status(400).json({ message: "تأكيد كلمة المرور غير مطابق." });
+    }
+
+    const adminCount = await countAdmins();
+    if (adminCount > 0) {
+      return res.status(409).json({
+        message: "صفحة الإعداد معطلة لأن حساب الأدمن موجود بالفعل.",
+        redirectTo: ADMIN_LOGIN_PATH,
+      });
+    }
+
+    const passwordHash = await bcrypt.hash(values.password, 10);
+    const admin = await prisma.user.create({
+      data: {
+        fullName: values.name,
+        email: values.email.toLowerCase(),
+        passwordHash,
+        role: "owner",
+        status: "active",
+      },
+    });
+
+    setAdminSessionCookie(res, admin);
+    return res.json({
+      success: true,
+      redirectTo: "/admin/dashboard",
+    });
+  })
+);
+
+router.use(requireAdminSession);
 
 router.get(
   "/summary",

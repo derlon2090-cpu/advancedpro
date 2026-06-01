@@ -4070,3 +4070,131 @@ html[data-theme="dark"] .create-chat-bubble__state {
     padding: 16px;
   }
 }
+
+/* Hidden admin entry */
+.admin-secret-page {
+  --key-primary: #5b35f5;
+  --key-secondary: #b847f5;
+  --key-dark: #0f174a;
+  --key-muted: #667085;
+  --key-border: #e8ecf8;
+  min-height: 100vh;
+  margin: 0;
+  color: var(--key-dark);
+  font-family: "IBM Plex Sans Arabic", system-ui, sans-serif;
+  background:
+    radial-gradient(circle at 20% 10%, rgba(91, 53, 245, 0.12), transparent 26rem),
+    radial-gradient(circle at 84% 32%, rgba(184, 71, 245, 0.1), transparent 28rem),
+    #fbfcff;
+}
+
+.admin-secret-page * {
+  box-sizing: border-box;
+}
+
+.admin-secret-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.admin-secret-card {
+  width: min(480px, 100%);
+  padding: clamp(24px, 5vw, 42px);
+  border: 1px solid var(--key-border);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 28px 80px rgba(15, 23, 74, 0.1);
+}
+
+.admin-secret-brand {
+  margin-bottom: 28px;
+}
+
+.admin-secret-heading {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.admin-secret-heading h1 {
+  margin: 0;
+  font-size: clamp(28px, 5vw, 38px);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.admin-secret-heading p {
+  margin: 0;
+  color: var(--key-muted);
+  font-weight: 700;
+  line-height: 1.8;
+}
+
+.admin-secret-form {
+  display: grid;
+  gap: 16px;
+}
+
+.admin-secret-form label {
+  display: grid;
+  gap: 8px;
+  color: var(--key-dark);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.admin-secret-form input {
+  width: 100%;
+  min-height: 52px;
+  border: 1.5px solid #dfe5f3;
+  border-radius: 15px;
+  padding: 0 14px;
+  color: var(--key-dark);
+  background: #fff;
+  font: 700 15px/1 "IBM Plex Sans Arabic", system-ui, sans-serif;
+  outline: none;
+}
+
+.admin-secret-form input:focus {
+  border-color: rgba(91, 53, 245, 0.64);
+  box-shadow: 0 0 0 4px rgba(91, 53, 245, 0.08);
+}
+
+.admin-secret-form button {
+  min-height: 56px;
+  border: 0;
+  border-radius: 15px;
+  color: #fff;
+  background: linear-gradient(100deg, var(--key-primary), var(--key-secondary));
+  font: 800 16px/1 "IBM Plex Sans Arabic", system-ui, sans-serif;
+  cursor: pointer;
+  box-shadow: 0 18px 38px rgba(91, 53, 245, 0.22);
+}
+
+.admin-secret-form button:disabled {
+  opacity: 0.72;
+  cursor: wait;
+}
+
+.admin-secret-message {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.admin-secret-message[data-type="error"] {
+  color: #b42318;
+  border: 1px solid #ffd5d0;
+  background: #fff1f0;
+}
+
+.admin-secret-message[data-type="success"] {
+  color: #067647;
+  border: 1px solid #abefc6;
+  background: #ecfdf3;
+}

@@ -4,21 +4,28 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
-  const adminEmail = process.env.ADMIN_EMAIL || "admin@advancedpro.local";
-  const adminPassword = process.env.ADMIN_PASSWORD || "Admin1234";
-  const passwordHash = await bcrypt.hash(adminPassword, 10);
+  const ownerEmail = process.env.OWNER_EMAIL || process.env.ADMIN_EMAIL || "";
+  const ownerPassword = process.env.OWNER_PASSWORD || process.env.ADMIN_PASSWORD || "";
+  const ownerName = process.env.OWNER_NAME || "Owner";
+  let adminEmail = ownerEmail || "not-created";
 
-  await prisma.user.upsert({
-    where: { email: adminEmail },
-    update: { role: "admin", status: "active" },
-    create: {
-      fullName: "Admin",
-      email: adminEmail,
-      passwordHash,
-      role: "admin",
-      status: "active",
-    },
+  const adminCount = await prisma.user.count({
+    where: { role: { in: ["owner", "admin"] } },
   });
+
+  if (adminCount === 0 && ownerEmail && ownerPassword) {
+    const passwordHash = await bcrypt.hash(ownerPassword, 10);
+    await prisma.user.create({
+      data: {
+        fullName: ownerName,
+        email: ownerEmail.toLowerCase(),
+        passwordHash,
+        role: "owner",
+        status: "active",
+      },
+    });
+    adminEmail = ownerEmail;
+  }
 
   await prisma.siteSetting.upsert({
     where: { key: "store_url" },

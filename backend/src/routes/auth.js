@@ -129,6 +129,12 @@ router.post(
       return res.status(403).json({ message: "الحساب غير نشط." });
     }
 
+    if (["admin", "owner"].includes(user.role)) {
+      return res.status(403).json({
+        message: "استخدم رابط الأدمن المخصص للدخول.",
+      });
+    }
+
     await activateCodeForUser({ userId: user.id, email: user.email, silent: true });
 
     const token = signToken({ id: user.id, email: user.email });
