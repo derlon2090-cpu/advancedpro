@@ -111,6 +111,7 @@ app.get("/api/me", requireAuth, (req, res) => {
 });
 app.use("/api/activate", activateRoutes);
 app.use("/api/user/code", activateRoutes);
+app.use("/api/keys", activateRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/generate", generateRoutes);

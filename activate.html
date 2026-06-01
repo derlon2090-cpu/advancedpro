@@ -3,102 +3,191 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>تفعيل الكود | Advanced Pro Nano</title>
+    <title>تفعيل المفتاح | Advanced Pro</title>
     <meta
       name="description"
-      content="فعّل اشتراكك في Advanced Pro Nano وابدأ إنشاء مشاريع فيديو حتى 60 ثانية من وصف واحد."
+      content="فعّل مفتاحك الرقمي في Advanced Pro واختر الباقة المناسبة للصور والفيديوهات."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/styles.css" />
   </head>
-  <body data-page="activate" data-requires-auth="true">
-    <header class="site-header">
-      <div class="container header-inner">
-        <a class="brand" href="/">
-          <span class="brand-mark">AP</span>
-          <span class="brand-copy">
-            <strong>Advanced Pro Nano</strong>
-            <span>Code Activation</span>
+  <body class="key-activation-page" data-page="key-activation">
+    <header class="key-header" aria-label="رأس الصفحة">
+      <div class="key-shell key-header__inner">
+        <a class="key-brand" href="/" aria-label="Advanced Pro - الرئيسية">
+          <span class="key-brand__mark" aria-hidden="true">A</span>
+          <span class="key-brand__copy">
+            <strong>Advanced Pro</strong>
+            <span>المفاتيح الرقمية</span>
           </span>
         </a>
 
-        <nav class="nav-links">
-          <a href="/">الرئيسية</a>
-          <a href="/pricing">الباقات</a>
-          <a href="/how-it-works">كيف تعمل</a>
-          <a class="is-active" href="/activate">التفعيل</a>
-          <a href="/legal">القوانين</a>
-          <a data-auth-state href="/student.html">لوحة المستخدم</a>
-        </nav>
-
-        <div class="header-actions">
-          <a class="btn btn-secondary" href="/student.html">لوحة المستخدم</a>
-          <a class="btn btn-primary" href="/profile">الملف الشخصي</a>
-        </div>
+        <a class="key-home-link" href="/">
+          <span>الرئيسية</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m3 11 9-8 9 8" />
+            <path d="M5 10v10h5v-6h4v6h5V10" />
+          </svg>
+        </a>
       </div>
     </header>
 
-    <main>
-      <section class="page-hero">
-        <div class="container auth-grid">
-          <article class="page-card auth-card">
-            <span class="section-kicker">Activation</span>
-            <h1>فعّل اشتراكك الآن</h1>
-            <p>أدخل الكود ليتم ربط الرصيد بحسابك الحالي والبدء مباشرة في إنشاء مشاريع الفيديو والصور.</p>
+    <main class="key-main">
+      <section class="key-hero key-shell" aria-labelledby="activate-title">
+        <div class="key-section-heading">
+          <span class="key-heading-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.2 1.2 0 0 1 1.52 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z" />
+              <path d="m9 12 2 2 4-4" />
+            </svg>
+          </span>
+          <h1 id="activate-title">تفعيل المفتاح</h1>
+          <p>أدخل مفتاحك الرقمي لتفعيل حسابك والوصول إلى جميع الميزات</p>
+        </div>
 
-            <form id="activationForm" class="stack-form">
-              <div class="field">
-                <label for="activateCode">كود التفعيل</label>
-                <input id="activateCode" name="code" type="text" placeholder="ADV-PRO-123" required />
-              </div>
+        <section class="activation-card" aria-label="نموذج تفعيل المفتاح">
+          <form id="keyActivationForm" class="activation-form" novalidate>
+            <label for="keyCode">أدخل مفتاحك الرقمي</label>
+            <input
+              id="keyCode"
+              name="code"
+              type="text"
+              inputmode="latin"
+              autocomplete="one-time-code"
+              placeholder="APRO-XXXX-XXXX-XXXX"
+              aria-describedby="keyActivationMessage"
+              required
+            />
+            <button class="key-gradient-button" type="submit">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m15 7 2-2a3 3 0 1 1 4 4l-2 2" />
+                <path d="m9 13 6-6" />
+                <path d="M7 17h.01" />
+                <path d="M3 21l3.7-3.7" />
+                <path d="M7.5 16.5a3 3 0 1 1 4.24-4.24" />
+              </svg>
+              <span data-activation-label>تفعيل المفتاح</span>
+            </button>
+            <p id="keyActivationMessage" class="activation-message" aria-live="polite" hidden></p>
+          </form>
+        </section>
+      </section>
 
-              <div class="field">
-                <label for="activateEmail">البريد المرتبط بالحساب</label>
-                <input id="activateEmail" type="email" readonly />
-                <small class="field-hint">يتم التفعيل على الحساب الحالي فقط، مع رفض الكود إذا كان مخصصًا لبريد آخر.</small>
-              </div>
+      <section class="pricing-section key-shell" aria-labelledby="pricing-title">
+        <div class="key-section-heading key-section-heading--compact">
+          <span class="sparkle" aria-hidden="true">✦</span>
+          <h2 id="pricing-title">اختر الباقة المناسبة لك</h2>
+          <p>باقات مرنة تناسب احتياجك، كل مفتاح يمنحك رصيدًا محددًا من الصور والفيديوهات</p>
+        </div>
 
-              <div class="status-message" hidden data-form-message></div>
-              <button class="btn btn-primary btn-block" type="submit">تفعيل الكود</button>
-              <div class="form-links">
-                <a href="/pricing">عرض الباقات</a>
-                <a href="/how-it-works">كيف تعمل المنصة</a>
-              </div>
-            </form>
+        <div class="pricing-grid">
+          <article class="plan-card">
+            <span class="plan-badge">أساسية</span>
+            <h3>انطلاقة</h3>
+            <p>لبداية سهلة وفعالة</p>
+            <ul class="plan-features">
+              <li>
+                <span>5 صور</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 15-5-5L5 21" /><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><circle cx="9" cy="9" r="2" /></svg>
+              </li>
+              <li>
+                <span>5 فيديوهات</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 13 5 3V8l-5 3z" /><rect x="3" y="6" width="13" height="12" rx="2" /></svg>
+              </li>
+              <li>
+                <span>صلاحية 30 يومًا</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2v4" /><path d="M16 2v4" /><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M3 10h18" /></svg>
+              </li>
+              <li>
+                <span>جودة عالية</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.2 1.2 0 0 1 1.52 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z" /></svg>
+              </li>
+              <li>
+                <span>دعم فني أساسي</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18v-6a9 9 0 0 1 18 0v6" /><path d="M21 19a2 2 0 0 1-2 2h-1v-7h3z" /><path d="M3 19a2 2 0 0 0 2 2h1v-7H3z" /></svg>
+              </li>
+            </ul>
+            <div class="plan-price"><strong>19</strong><span>ريال</span></div>
+            <a class="plan-button" href="#keyActivationForm">اختر الباقة</a>
           </article>
 
-          <article class="page-card auth-side">
-            <span class="section-kicker">What You Get</span>
-            <h2>بعد نجاح التفعيل</h2>
-            <div class="mini-metrics">
-              <div class="mini-metric">
-                <strong>60s</strong>
-                <span>مدة مشروع فيديو كاملة</span>
-              </div>
-              <div class="mini-metric">
-                <strong>6</strong>
-                <span>مشاهد تلقائية لكل مشروع</span>
-              </div>
-              <div class="mini-metric">
-                <strong>Prompt</strong>
-                <span>وصف واحد كنقطة بداية</span>
-              </div>
-              <div class="mini-metric">
-                <strong>Secure</strong>
-                <span>ربط الكود ببريد محدد لحماية الاشتراك</span>
-              </div>
-            </div>
+          <article class="plan-card plan-card--featured">
+            <span class="plan-ribbon">الأكثر اختيارًا</span>
+            <span class="plan-badge">احترافية</span>
+            <h3>إبداع</h3>
+            <p>لصناع المحتوى والمبدعين</p>
+            <ul class="plan-features">
+              <li>
+                <span>25 صورة</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 15-5-5L5 21" /><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><circle cx="9" cy="9" r="2" /></svg>
+              </li>
+              <li>
+                <span>15 فيديو</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 13 5 3V8l-5 3z" /><rect x="3" y="6" width="13" height="12" rx="2" /></svg>
+              </li>
+              <li>
+                <span>صلاحية 90 يومًا</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2v4" /><path d="M16 2v4" /><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M3 10h18" /></svg>
+              </li>
+              <li>
+                <span>جودة عالية جدًا</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.2 1.2 0 0 1 1.52 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z" /></svg>
+              </li>
+              <li>
+                <span>دعم فني متقدم</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18v-6a9 9 0 0 1 18 0v6" /><path d="M21 19a2 2 0 0 1-2 2h-1v-7h3z" /><path d="M3 19a2 2 0 0 0 2 2h1v-7H3z" /></svg>
+              </li>
+            </ul>
+            <div class="plan-price"><strong>49</strong><span>ريال</span></div>
+            <a class="plan-button plan-button--featured" href="#keyActivationForm">اختر الباقة</a>
           </article>
+
+          <article class="plan-card">
+            <span class="plan-badge">متقدمة</span>
+            <h3>تميّز</h3>
+            <p>للمحترفين بلا حدود</p>
+            <ul class="plan-features">
+              <li>
+                <span>100 صورة</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 15-5-5L5 21" /><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><circle cx="9" cy="9" r="2" /></svg>
+              </li>
+              <li>
+                <span>50 فيديو</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 13 5 3V8l-5 3z" /><rect x="3" y="6" width="13" height="12" rx="2" /></svg>
+              </li>
+              <li>
+                <span>صلاحية 180 يومًا</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2v4" /><path d="M16 2v4" /><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M3 10h18" /></svg>
+              </li>
+              <li>
+                <span>جودة فائقة</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.2 1.2 0 0 1 1.52 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z" /></svg>
+              </li>
+              <li>
+                <span>دعم VIP</span>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18v-6a9 9 0 0 1 18 0v6" /><path d="M21 19a2 2 0 0 1-2 2h-1v-7h3z" /><path d="M3 19a2 2 0 0 0 2 2h1v-7H3z" /></svg>
+              </li>
+            </ul>
+            <div class="plan-price"><strong>89</strong><span>ريال</span></div>
+            <a class="plan-button" href="#keyActivationForm">اختر الباقة</a>
+          </article>
+        </div>
+      </section>
+
+      <section class="notice-box key-shell" aria-label="ملاحظة مهمة">
+        <span class="notice-box__icon" aria-hidden="true">i</span>
+        <div>
+          <h2>ملاحظة مهمة</h2>
+          <p>يتم خصم الرصيد عند كل عملية إنشاء. تأكد من وجود رصيد كافٍ، ولا يمكن استرجاع الرصيد بعد استخدامه.</p>
         </div>
       </section>
     </main>
 
-    <script src="/site.js?v=20260415-activate-fix"></script>
-    <script src="/portal.js?v=20260415-activate-fix"></script>
+    <script src="/key-activation-page.js?v=20260601-key-page"></script>
   </body>
 </html>
