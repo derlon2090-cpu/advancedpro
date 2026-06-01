@@ -127,7 +127,7 @@ function getStatusMeta(code, now = new Date()) {
     return { key: "expired", label: "منتهي" };
   }
 
-  const hasActivation = Boolean(code.activatedByUserId);
+  const hasActivation = Boolean(code.activatedByUserId || code.activatedAt);
   const hasRemaining = code.remainingImages > 0 || code.remainingVideos > 0;
 
   if (hasActivation && hasRemaining) {
@@ -198,7 +198,7 @@ function serializeActivationCode(record) {
     accessTypeLabel: getAccessTypeLabel(record.email),
     statusKey: status.key,
     statusLabel: status.label,
-    chatStatus: Boolean(record.activatedByUserId && record.isActive) ? "مفتوح" : "مغلق",
+    chatStatus: Boolean((record.activatedByUserId || record.activatedAt) && record.isActive) ? "مفتوح" : "مغلق",
   };
 }
 
@@ -264,7 +264,8 @@ async function maybeRenewActivationCode(record) {
     !record ||
     !record.isRenewable ||
     !RENEWAL_TYPES.has(String(record.renewalType || "")) ||
-    !record.activatedByUserId
+    !record.activatedByUserId &&
+    !record.activatedAt
   ) {
     return record;
   }
@@ -311,7 +312,7 @@ async function maybeRenewActivationCode(record) {
   return updated;
 }
 
-async function getActivationCodeById(id) {
+export async function getActivationCodeById(id) {
   await ensureActivationCodesTable();
   const record = await withDbRetry(() =>
     prisma.activationCode.findUnique({ where: { id } })
@@ -574,6 +575,56 @@ export async function getUserActivationCode(userId) {
   return serializeActivationCode(renewed);
 }
 
+export async function activateAdminCodeAsKeySession({ codeValue }) {
+  await ensureActivationCodesTable();
+  const normalizedCode = String(codeValue || "").trim();
+
+  if (!normalizedCode) {
+    httpError("أدخل المفتاح أولًا.");
+  }
+
+  const record = await withDbRetry(() =>
+    prisma.activationCode.findUnique({ where: { code: normalizedCode } })
+  );
+
+  if (!record) {
+    httpError("المفتاح غير صحيح", 404);
+  }
+
+  if (!record.isActive) {
+    httpError("هذا المفتاح غير متاح", 403);
+  }
+
+  let current = await maybeRenewActivationCode(record);
+  const serializedBefore = serializeActivationCode(current);
+
+  if (serializedBefore.statusKey === "expired") {
+    httpError("انتهت صلاحية المفتاح", 410);
+  }
+
+  if (!current.activatedAt) {
+    current = await withDbRetry(() =>
+      prisma.activationCode.update({
+        where: { id: current.id },
+        data: {
+          activatedAt: new Date(),
+          lastRenewedAt: current.isRenewable ? new Date() : null,
+          isUsed: true,
+        },
+      })
+    );
+  } else {
+    current = await withDbRetry(() =>
+      prisma.activationCode.update({
+        where: { id: current.id },
+        data: { isUsed: true },
+      })
+    );
+  }
+
+  return serializeActivationCode(current);
+}
+
 export function buildActivationSuccessMessage(serializedCode) {
   const expiryText = serializedCode?.expiresAt
     ? new Date(serializedCode.expiresAt).toISOString().slice(0, 10)
@@ -695,6 +746,73 @@ export async function consumeActivationCodeUsage({
       })
     );
   }
+
+  return serializeActivationCode(updated);
+}
+
+export async function consumeActivationCodeUsageByKey({
+  keyId,
+  type,
+  promptText = null,
+  outputUrl = null,
+  duration = null,
+  quality = null,
+  style = null,
+}) {
+  await ensureActivationCodesTable();
+  const id = Number(keyId);
+  if (!Number.isFinite(id)) {
+    httpError("جلسة المفتاح غير صالحة.", 401);
+  }
+
+  const current = await getActivationCodeById(id);
+  if (!current) {
+    httpError("جلسة المفتاح غير صالحة.", 401);
+  }
+
+  if (current.statusKey === "expired" || !current.isActive) {
+    httpError("هذا المفتاح غير متاح");
+  }
+
+  const field = type === "video" ? "videoUsed" : "imageUsed";
+  const remaining = type === "video" ? current.videoAvailable : current.imageAvailable;
+  if (remaining < 1) {
+    httpError(type === "video" ? "لا يوجد رصيد فيديو كافٍ" : "لا يوجد رصيد صور كافٍ");
+  }
+
+  const updated = await withDbRetry(() =>
+    prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`
+        CREATE TABLE IF NOT EXISTS projects (
+          id SERIAL PRIMARY KEY,
+          key_id INTEGER NOT NULL,
+          type VARCHAR(32) NOT NULL,
+          prompt TEXT NOT NULL,
+          duration INTEGER,
+          quality VARCHAR(32),
+          style VARCHAR(64),
+          result_url TEXT,
+          status VARCHAR(32) NOT NULL DEFAULT 'completed',
+          created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+      `;
+
+      const next = await tx.activationCode.update({
+        where: { id },
+        data: {
+          [field]: { increment: 1 },
+          isUsed: true,
+        },
+      });
+
+      await tx.$executeRaw`
+        INSERT INTO projects (key_id, type, prompt, duration, quality, style, result_url, status)
+        VALUES (${id}, ${type}, ${promptText || ""}, ${duration}, ${quality}, ${style}, ${outputUrl}, 'completed')
+      `;
+
+      return next;
+    })
+  );
 
   return serializeActivationCode(updated);
 }

@@ -6,6 +6,7 @@ import morgan from "morgan";
 import authRoutes from "./routes/auth.js";
 import publicRoutes from "./routes/public.js";
 import activateRoutes from "./routes/activate.js";
+import keyRoutes from "./routes/keys.js";
 import dashboardRoutes from "./routes/dashboard.js";
 import profileRoutes from "./routes/profile.js";
 import generateRoutes from "./routes/generate.js";
@@ -18,7 +19,7 @@ import { requireAuth } from "./middleware/auth.js";
 import { prisma } from "./lib/prisma.js";
 import { apiLimiter } from "./middleware/rateLimit.js";
 import { getAiKeyStatus } from "./services/aiProvider.js";
-import { getUserActivationCode } from "./services/activationCodes.js";
+import { getActivationCodeById } from "./services/activationCodes.js";
 import { asyncHandler } from "./utils/asyncHandler.js";
 import { logError } from "./utils/logger.js";
 
@@ -124,13 +125,20 @@ function maskAccessCode(code) {
 
 app.get(
   "/api/me/key",
-  requireAuth,
   asyncHandler(async (req, res) => {
-    const accessCode = await getUserActivationCode(req.user.id);
+    const keyId = Number(req.cookies?.key_session);
+
+    if (!Number.isFinite(keyId)) {
+      return res.status(401).json({
+        message: "أدخل مفتاحك أولًا للوصول إلى اللوحة.",
+      });
+    }
+
+    const accessCode = await getActivationCodeById(keyId);
 
     if (!accessCode) {
       return res.status(404).json({
-        message: "لا يوجد مفتاح مفعّل لهذا الحساب.",
+        message: "جلسة المفتاح غير صالحة.",
       });
     }
 
@@ -160,7 +168,7 @@ app.get(
 );
 app.use("/api/activate", activateRoutes);
 app.use("/api/user/code", activateRoutes);
-app.use("/api/keys", activateRoutes);
+app.use("/api/keys", keyRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/generate", generateRoutes);

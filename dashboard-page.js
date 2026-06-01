@@ -210,11 +210,10 @@
 
   async function init() {
     try {
-      const [me] = await Promise.all([requestJson("/api/me"), refreshKey()]);
-      state.user = me.user || null;
+      await refreshKey();
     } catch (error) {
       if (error.status === 401) {
-        window.location.href = "/login?next=/dashboard";
+        window.location.href = "/activate";
         return;
       }
       setMessage(error.message || "تعذر تحميل بيانات لوحة المستخدم.", "error");
