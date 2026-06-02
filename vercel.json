@@ -12,6 +12,10 @@
     {
       "source": "/advanced-pro-control",
       "destination": "/advanced-pro-control.html"
+    },
+    {
+      "source": "/admin/plans/create",
+      "destination": "/admin/plan-create.html"
     }
   ],
   "builds": [

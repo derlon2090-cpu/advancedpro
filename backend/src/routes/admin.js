@@ -95,6 +95,16 @@ const createAdminSchema = z.object({
   password: z.string().min(8).optional(),
 });
 
+const createPlanSchema = z.object({
+  name: z.string().trim().min(2, "أدخل اسم الباقة."),
+  description: z.string().trim().max(220).optional().default(""),
+  imagesLimit: z.coerce.number().int().min(0, "حد الصور غير صالح."),
+  videosLimit: z.coerce.number().int().min(0, "حد الفيديوهات غير صالح."),
+  validityDays: z.coerce.number().int().min(1, "مدة الصلاحية يجب أن تكون يومًا واحدًا على الأقل."),
+  price: z.coerce.number().min(0, "السعر غير صالح."),
+  isActive: z.boolean().optional().default(true),
+});
+
 function generateStrongPassword(length = 16) {
   const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
   const lower = "abcdefghijkmnopqrstuvwxyz";
@@ -348,27 +358,43 @@ function getAdminKeyStatus(code, now = new Date()) {
 const DEFAULT_KEY_PLANS = [
   {
     id: "starter",
-    name: "باقة البداية",
-    imagesLimit: 35,
+    name: "انطلاقة",
+    description: "بداية سهلة للمستخدمين الجدد",
+    imagesLimit: 5,
     videosLimit: 5,
     validityDays: 30,
     price: 59,
+    isActive: true,
   },
   {
     id: "creator",
-    name: "باقة إبداع",
+    name: "إبداع",
+    description: "للمبدعين والمحترفين",
     imagesLimit: 25,
     videosLimit: 15,
     validityDays: 90,
     price: 149,
+    isActive: true,
   },
   {
     id: "pro",
-    name: "باقة تميز",
+    name: "تميز",
+    description: "الأفضل لأصحاب الأعمال",
     imagesLimit: 100,
     videosLimit: 50,
     validityDays: 180,
     price: 299,
+    isActive: true,
+  },
+  {
+    id: "business",
+    name: "احترافية",
+    description: "للاستخدام المكثف والفرق",
+    imagesLimit: 600,
+    videosLimit: 200,
+    validityDays: 365,
+    price: 699,
+    isActive: true,
   },
 ];
 
@@ -396,32 +422,41 @@ function serializeKeyPlan(plan) {
   return {
     id: plan.id,
     name: plan.name,
+    description: plan.description || "باقة مرنة لإدارة رصيد الصور والفيديوهات",
     imagesLimit: Number(plan.imagesLimit ?? plan.imageQuota ?? 0),
     videosLimit: Number(plan.videosLimit ?? plan.videoQuota ?? 0),
     validityDays: Number(plan.validityDays || 30),
     price: Number(plan.price || 0),
     isActive: plan.isActive !== false,
+    createdAt: plan.createdAt || null,
+    updatedAt: plan.updatedAt || null,
   };
+}
+
+async function ensureAdminPlansTable() {
+  try {
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Plan"
+      ADD COLUMN IF NOT EXISTS "description" TEXT
+    `);
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "Plan"
+      ADD COLUMN IF NOT EXISTS "isActive" BOOLEAN NOT NULL DEFAULT true
+    `);
+  } catch (error) {
+    console.error("ADMIN_PLANS_ENSURE_ERROR", error);
+  }
 }
 
 async function getAdminPlans() {
   try {
+    await ensureAdminPlansTable();
     const plans = await prisma.plan.findMany({
       orderBy: { id: "asc" },
     });
 
     if (plans.length) {
-      return plans.map((plan) =>
-        serializeKeyPlan({
-          id: plan.id,
-          name: plan.name,
-          imageQuota: plan.imageQuota,
-          videoQuota: plan.videoQuota,
-          validityDays: plan.validityDays,
-          price: plan.price,
-          isActive: true,
-        })
-      );
+      return plans.map((plan) => serializeKeyPlan(plan));
     }
   } catch (error) {
     console.error("ADMIN_PLANS_FALLBACK_ERROR", error);
@@ -610,6 +645,40 @@ router.get(
   asyncHandler(async (_req, res) => {
     const plans = await getAdminPlans();
     return res.json({ plans });
+  })
+);
+
+router.post(
+  "/plans",
+  asyncHandler(async (req, res) => {
+    await ensureAdminPlansTable();
+    const values = createPlanSchema.parse(req.body || {});
+
+    const existing = await prisma.plan.findFirst({
+      where: { name: { equals: values.name, mode: "insensitive" } },
+    });
+
+    if (existing) {
+      return res.status(409).json({ message: "هذه الباقة موجودة مسبقًا." });
+    }
+
+    const plan = await prisma.plan.create({
+      data: {
+        name: values.name,
+        description: values.description || null,
+        imageQuota: values.imagesLimit,
+        videoQuota: values.videosLimit,
+        videoMaxDurationSeconds: 60,
+        validityDays: values.validityDays,
+        price: values.price,
+        isActive: values.isActive,
+      },
+    });
+
+    return res.status(201).json({
+      message: "تم حفظ الباقة بنجاح.",
+      plan: serializeKeyPlan(plan),
+    });
   })
 );
 

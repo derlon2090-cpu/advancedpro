@@ -28,11 +28,13 @@ model User {
 model Plan {
   id                       Int      @id @default(autoincrement())
   name                     String
+  description              String?
   imageQuota               Int
   videoQuota               Int
   videoMaxDurationSeconds  Int
   validityDays             Int
   price                    Float?
+  isActive                 Boolean  @default(true)
   createdAt                DateTime @default(now())
   updatedAt                DateTime @updatedAt
 }
