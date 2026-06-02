@@ -4192,6 +4192,7 @@ html[data-theme="dark"] .create-chat-bubble__state {
   background: #f8faff;
   color: #0f174a;
   font-family: "IBM Plex Sans Arabic", system-ui, sans-serif;
+  overflow-x: hidden;
 }
 
 .admin-v2-shell {
@@ -4199,10 +4200,13 @@ html[data-theme="dark"] .create-chat-bubble__state {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 260px;
   direction: ltr;
+  overflow-x: hidden;
 }
 
 .admin-v2-sidebar {
   direction: rtl;
+  grid-column: 2;
+  grid-row: 1;
   position: sticky;
   top: 0;
   height: 100vh;
@@ -4217,6 +4221,8 @@ html[data-theme="dark"] .create-chat-bubble__state {
 
 .admin-v2-main {
   direction: rtl;
+  grid-column: 1;
+  grid-row: 1;
   min-width: 0;
   padding: 18px 24px 32px;
   display: grid;

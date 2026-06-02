@@ -28,6 +28,33 @@
     return payload;
   }
 
+  function getAdminLoginPath() {
+    const configured = String(
+      window.AdvancedProConfig?.adminSecretPath || "advanced-pro-control"
+    ).replace(/^\/+|\/+$/g, "");
+    return `/${configured || "advanced-pro-control"}`;
+  }
+
+  async function logout() {
+    try {
+      await fetch(`${API_BASE_URL}/api/admin/logout`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (error) {
+      // Local cleanup and redirect still happen.
+    }
+
+    try {
+      document.cookie = "admin_session=; Path=/; Max-Age=0; SameSite=Lax";
+    } catch (error) {
+      // ignore
+    }
+
+    window.location.href = getAdminLoginPath();
+  }
+
   function formatDate(value) {
     if (!value) return "غير محدد";
     const date = new Date(value);
@@ -293,6 +320,13 @@
       if (toggle) sidebar?.classList.toggle("is-open");
       if (event.target === sidebar) sidebar.classList.remove("is-open");
 
+      const logoutButton = event.target.closest("[data-logout]");
+      if (logoutButton) {
+        event.preventDefault();
+        logout();
+        return;
+      }
+
       const copyButton = event.target.closest("[data-copy-key]");
       if (copyButton) {
         navigator.clipboard?.writeText(copyButton.dataset.copyKey || "");
@@ -304,11 +338,14 @@
     });
 
     try {
-      const [session, stats] = await Promise.all([
-        requestJson("/api/admin/session").catch(() => null),
-        requestJson("/api/admin/stats"),
-      ]);
-      renderProfile(session?.admin);
+      const session = await requestJson("/api/admin/session").catch(() => null);
+      if (!session?.admin) {
+        window.location.href = getAdminLoginPath();
+        return;
+      }
+
+      const stats = await requestJson("/api/admin/stats");
+      renderProfile(session.admin);
       renderCards(stats);
       renderDonut(stats);
       renderLineChart(stats);
