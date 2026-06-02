@@ -72,6 +72,7 @@ async function postToWaveSpeed({ apiKey, prompt, duration, quality, style }) {
   const response = await fetch(endpoint, {
     method: "POST",
     headers: {
+      Accept: "application/json",
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
     },
@@ -120,6 +121,7 @@ async function pollWaveSpeedResult({ apiKey, initial }) {
     const url = pollingUrl || `${resultEndpoint.replace(/\/$/, "")}/${encodeURIComponent(taskId)}`;
     const response = await fetch(url, {
       headers: {
+        Accept: "application/json",
         Authorization: `Bearer ${apiKey}`,
       },
     });

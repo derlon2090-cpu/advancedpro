@@ -77,6 +77,7 @@ async function postToBfl({ apiKey, prompt, quality, style }) {
   const response = await fetch(endpoint, {
     method: "POST",
     headers: {
+      accept: "application/json",
       "Content-Type": "application/json",
       "x-key": apiKey,
     },
@@ -116,6 +117,7 @@ async function pollBflResult({ apiKey, initial }) {
     const url = pollingUrl || `${resultEndpoint}?id=${encodeURIComponent(requestId)}`;
     const response = await fetch(url, {
       headers: {
+        accept: "application/json",
         "x-key": apiKey,
       },
     });
@@ -126,7 +128,9 @@ async function pollBflResult({ apiKey, initial }) {
     }
 
     const status = String(data?.status || data?.state || "").toLowerCase();
-    if (["failed", "error", "canceled", "cancelled"].includes(status)) {
+    if (
+      ["failed", "error", "canceled", "cancelled", "request moderated", "content moderated"].includes(status)
+    ) {
       const error = new Error(data?.message || data?.error || "فشل توليد الصورة.");
       error.statusCode = 502;
       throw error;

@@ -22,6 +22,20 @@ function httpError(message, statusCode = 400) {
   throw error;
 }
 
+function safeProviderErrorMessage(error, type) {
+  const fallback =
+    type === "image"
+      ? "تعذر الاتصال بمزود الصور أو رفض الطلب."
+      : "تعذر الاتصال بمزود الفيديو أو رفض الطلب.";
+  const raw = String(error?.message || fallback)
+    .replace(/BFL_API_KEY\s*=\s*[^\s"']+/gi, "BFL_API_KEY=***")
+    .replace(/WAVESPEED_API_KEY\s*=\s*[^\s"']+/gi, "WAVESPEED_API_KEY=***")
+    .replace(/x-key:\s*[^\s"']+/gi, "x-key: ***")
+    .replace(/Bearer\s+[A-Za-z0-9._-]+/g, "Bearer ***");
+
+  return raw.length > 240 ? `${raw.slice(0, 240)}...` : raw;
+}
+
 function getKeyId(req) {
   const keyId = Number(req.cookies?.key_session);
   if (!Number.isFinite(keyId)) {
@@ -265,7 +279,10 @@ router.post(
     } catch (error) {
       await markGenerationFailed({ generationId, message: error.message });
       logError(error, { scope: "generateProvider", keyId, generationId, type });
-      httpError("فشل التوليد، لم يتم خصم أي رصيد.", error.statusCode || 502);
+      httpError(
+        `فشل ${type === "image" ? "توليد الصورة" : "توليد الفيديو"}: ${safeProviderErrorMessage(error, type)} لم يتم خصم أي رصيد.`,
+        error.statusCode || 502
+      );
     }
 
     if (!result?.resultUrl) {
