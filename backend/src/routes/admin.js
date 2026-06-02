@@ -345,6 +345,103 @@ function getAdminKeyStatus(code, now = new Date()) {
   return { key: "unused", label: "غير مستخدم" };
 }
 
+const DEFAULT_KEY_PLANS = [
+  {
+    id: "starter",
+    name: "باقة البداية",
+    imagesLimit: 35,
+    videosLimit: 5,
+    validityDays: 30,
+    price: 59,
+  },
+  {
+    id: "creator",
+    name: "باقة إبداع",
+    imagesLimit: 25,
+    videosLimit: 15,
+    validityDays: 90,
+    price: 149,
+  },
+  {
+    id: "pro",
+    name: "باقة تميز",
+    imagesLimit: 100,
+    videosLimit: 50,
+    validityDays: 180,
+    price: 299,
+  },
+];
+
+function generateKeyCode() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const part = () =>
+    Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
+
+  return `APRO-${part()}-${part()}-${part()}`;
+}
+
+async function generateUniqueKeyCode() {
+  for (let attempt = 0; attempt < 25; attempt += 1) {
+    const code = generateKeyCode();
+    const existing = await prisma.activationCode.findUnique({ where: { code } });
+    if (!existing) return code;
+  }
+
+  const error = new Error("تعذر توليد مفتاح فريد. حاول مرة أخرى.");
+  error.statusCode = 500;
+  throw error;
+}
+
+function serializeKeyPlan(plan) {
+  return {
+    id: plan.id,
+    name: plan.name,
+    imagesLimit: Number(plan.imagesLimit ?? plan.imageQuota ?? 0),
+    videosLimit: Number(plan.videosLimit ?? plan.videoQuota ?? 0),
+    validityDays: Number(plan.validityDays || 30),
+    price: Number(plan.price || 0),
+    isActive: plan.isActive !== false,
+  };
+}
+
+async function getAdminPlans() {
+  try {
+    const plans = await prisma.plan.findMany({
+      orderBy: { id: "asc" },
+    });
+
+    if (plans.length) {
+      return plans.map((plan) =>
+        serializeKeyPlan({
+          id: plan.id,
+          name: plan.name,
+          imageQuota: plan.imageQuota,
+          videoQuota: plan.videoQuota,
+          validityDays: plan.validityDays,
+          price: plan.price,
+          isActive: true,
+        })
+      );
+    }
+  } catch (error) {
+    console.error("ADMIN_PLANS_FALLBACK_ERROR", error);
+  }
+
+  return DEFAULT_KEY_PLANS;
+}
+
+async function resolveAdminPlan(planId) {
+  const plans = await getAdminPlans();
+  const normalized = String(planId || "").trim();
+  const plan = plans.find((item) => String(item.id) === normalized);
+  if (!plan) {
+    const error = new Error("اختر باقة صالحة.");
+    error.statusCode = 400;
+    throw error;
+  }
+  return plan;
+}
+
 async function getProjectRows() {
   try {
     await prisma.$executeRawUnsafe(`
@@ -504,6 +601,167 @@ router.get(
       usageLast7Days: Array.from(usageByDay.values()),
       latestKeys,
       recentActivity,
+    });
+  })
+);
+
+router.get(
+  "/plans",
+  asyncHandler(async (_req, res) => {
+    const plans = await getAdminPlans();
+    return res.json({ plans });
+  })
+);
+
+router.get(
+  "/keys",
+  asyncHandler(async (req, res) => {
+    await ensureActivationCodesTable();
+    const search = String(req.query.search || "").trim();
+    const codes = await listActivationCodes({ search });
+    const now = new Date();
+
+    const items = codes.map((code) => {
+      const status =
+        code.statusKey === "expired"
+          ? { key: "expired", label: "منتهي" }
+          : !code.isActive
+            ? { key: "disabled", label: "معطل" }
+            : code.activatedAt || code.isUsed
+              ? { key: "active", label: "نشط" }
+              : { key: "unused", label: "غير مستخدم" };
+
+      return {
+        id: code.id,
+        code: code.code,
+        customerName: code.ownerName || "عميل غير محدد",
+        customerEmail: code.email || "",
+        planName: classifyPlanName({
+          imageLimit: code.imageLimit,
+          videoLimit: code.videoLimit,
+        }),
+        imagesLimit: code.imageLimit,
+        videosLimit: code.videoLimit,
+        imagesUsed: code.imageUsed,
+        videosUsed: code.videoUsed,
+        imagesRemaining: code.imageAvailable,
+        videosRemaining: code.videoAvailable,
+        createdAt: code.createdAt,
+        startsAt: code.startsAt || code.activatedAt || code.createdAt,
+        expiresAt: code.expiresAt,
+        status: status.key,
+        statusLabel: status.label,
+        expired: code.expiresAt ? new Date(code.expiresAt).getTime() < now.getTime() : false,
+      };
+    });
+
+    const summary = {
+      total: items.length,
+      active: items.filter((item) => item.status === "active").length,
+      unused: items.filter((item) => item.status === "unused").length,
+      expired: items.filter((item) => item.status === "expired").length,
+    };
+
+    return res.json({ keys: items, summary });
+  })
+);
+
+router.post(
+  "/keys",
+  asyncHandler(async (req, res) => {
+    await ensureActivationCodesTable();
+
+    const customerName = String(req.body.customerName || "").trim();
+    const customerEmail = String(req.body.customerEmail || "").trim().toLowerCase();
+    const planId = String(req.body.planId || "").trim();
+    const validityMode = String(req.body.validityMode || "plan").trim();
+
+    if (!customerName) {
+      return res.status(400).json({ message: "أدخل اسم العميل." });
+    }
+
+    if (customerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
+      return res.status(400).json({ message: "البريد الإلكتروني غير صالح." });
+    }
+
+    if (!planId) {
+      return res.status(400).json({ message: "اختر الباقة." });
+    }
+
+    const plan = await resolveAdminPlan(planId);
+    let startsAt;
+    let expiresAt;
+
+    if (validityMode === "custom") {
+      startsAt = req.body.startsAt ? new Date(req.body.startsAt) : null;
+      expiresAt = req.body.expiresAt ? new Date(req.body.expiresAt) : null;
+
+      if (!startsAt || !expiresAt || Number.isNaN(startsAt.getTime()) || Number.isNaN(expiresAt.getTime())) {
+        return res.status(400).json({ message: "حدد تاريخ البداية والانتهاء." });
+      }
+
+      if (expiresAt.getTime() <= startsAt.getTime()) {
+        return res.status(400).json({ message: "تاريخ الانتهاء يجب أن يكون بعد تاريخ البداية." });
+      }
+    } else {
+      startsAt = new Date();
+      expiresAt = new Date(startsAt);
+      expiresAt.setDate(startsAt.getDate() + Number(plan.validityDays || 30));
+    }
+
+    let code = String(req.body.code || "").trim().toUpperCase();
+    const manualCodeEnabled = Boolean(req.body.manualCodeEnabled);
+    if (manualCodeEnabled) {
+      if (!/^APRO-[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$/.test(code)) {
+        return res.status(400).json({
+          message: "صيغة المفتاح غير صحيحة. استخدم APRO-XXXX-XXXX-XXXX.",
+        });
+      }
+      const existing = await prisma.activationCode.findUnique({ where: { code } });
+      if (existing) {
+        return res.status(409).json({ message: "هذا المفتاح موجود مسبقًا." });
+      }
+    } else {
+      code = await generateUniqueKeyCode();
+    }
+
+    const created = await prisma.activationCode.create({
+      data: {
+        code,
+        email: customerEmail || null,
+        ownerName: customerName,
+        imageLimit: Number(plan.imagesLimit || 0),
+        videoLimit: Number(plan.videosLimit || 0),
+        imageUsed: 0,
+        videoUsed: 0,
+        balance: Number(plan.imagesLimit || 0) + Number(plan.videosLimit || 0),
+        isActive: true,
+        isUsed: false,
+        isRenewable: false,
+        renewalType: null,
+        startsAt,
+        expiresAt,
+        activatedAt: null,
+        notes: `plan:${plan.name};price:${plan.price};createdByAdminId:${req.admin?.id || ""}`,
+      },
+    });
+
+    return res.status(201).json({
+      message: "تم إنشاء المفتاح بنجاح",
+      key: {
+        id: created.id,
+        code: created.code,
+        customerName,
+        customerEmail: customerEmail || null,
+        planName: plan.name,
+        imagesLimit: created.imageLimit,
+        videosLimit: created.videoLimit,
+        imagesUsed: 0,
+        videosUsed: 0,
+        status: "unused",
+        startsAt,
+        expiresAt,
+      },
     });
   })
 );

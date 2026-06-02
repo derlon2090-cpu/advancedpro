@@ -140,6 +140,7 @@ model ActivationCode {
   notes             String?
   activatedByUserId Int?      @map("activated_by_user_id")
   activatedAt       DateTime? @map("activated_at")
+  startsAt          DateTime? @map("starts_at")
   lastRenewedAt     DateTime? @map("last_renewed_at")
   subscriptionId    Int?      @map("subscription_id")
   createdAt         DateTime  @default(now()) @map("created_at")

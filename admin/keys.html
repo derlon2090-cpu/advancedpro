@@ -2,9 +2,76 @@
 <html lang="ar" dir="rtl">
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="refresh" content="0; url=/admin/codes" />
-    <title>المفاتيح | Advanced Pro</title>
-    <script>window.location.replace("/admin/codes");</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>إدارة المفاتيح | Advanced Pro</title>
+    <meta name="robots" content="noindex,nofollow" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css?v=20260602-admin-keys" />
   </head>
-  <body>جاري فتح إدارة المفاتيح...</body>
+  <body class="admin-v2-page" data-requires-admin="true" data-skip-site-footer="true">
+    <main class="admin-keys-page">
+      <header class="admin-keys-topbar">
+        <div class="admin-v2-profile" data-admin-profile>
+          <span class="admin-v2-avatar">A</span>
+          <div>
+            <strong>مرحبًا</strong>
+            <small>Owner</small>
+          </div>
+        </div>
+        <div class="admin-v2-actions">
+          <button type="button" aria-label="التنبيهات">🔔<b>8</b></button>
+          <button type="button" aria-label="الوضع">☼</button>
+          <button type="button" aria-label="اللغة">◎</button>
+        </div>
+      </header>
+
+      <section class="admin-keys-hero">
+        <div>
+          <span class="admin-keys-icon">⚿</span>
+          <p>المفاتيح</p>
+          <h1>إدارة المفاتيح</h1>
+          <span>إنشاء وإدارة مفاتيح الوصول وتخصيصها للعملاء والباقات</span>
+        </div>
+        <div class="admin-keys-actions">
+          <a class="admin-keys-primary" href="/admin/key-new">＋ إنشاء مفتاح جديد</a>
+          <button type="button">⇩ تصدير</button>
+        </div>
+      </section>
+
+      <section class="admin-keys-summary" data-keys-summary>
+        <article class="admin-v2-skeleton"></article>
+        <article class="admin-v2-skeleton"></article>
+        <article class="admin-v2-skeleton"></article>
+        <article class="admin-v2-skeleton"></article>
+      </section>
+
+      <section class="admin-keys-filters">
+        <label class="admin-v2-search">
+          <span>⌕</span>
+          <input data-key-search type="search" placeholder="ابحث عن مفتاح أو عميل..." />
+        </label>
+        <select data-key-status>
+          <option value="all">كل الحالات</option>
+          <option value="active">نشط</option>
+          <option value="unused">غير مستخدم</option>
+          <option value="expired">منتهي</option>
+          <option value="disabled">معطل</option>
+        </select>
+        <button type="button" data-keys-refresh>إعادة تعيين</button>
+      </section>
+
+      <section class="admin-v2-card admin-keys-table-card">
+        <div data-admin-keys-table>
+          <div class="admin-v2-empty">جارٍ تحميل المفاتيح...</div>
+        </div>
+      </section>
+    </main>
+
+    <script src="/admin/keys-page.js?v=20260602-admin-keys"></script>
+  </body>
 </html>
