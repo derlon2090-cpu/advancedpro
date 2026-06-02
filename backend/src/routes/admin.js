@@ -6,6 +6,7 @@ import { prisma } from "../lib/prisma.js";
 import { setSetting, getSetting, getPublicSettings } from "../services/settings.js";
 import { withDbRetry } from "../utils/dbRetry.js";
 import { signToken, verifyToken } from "../utils/jwt.js";
+import { upsertOwnerFromEnv } from "../services/ownerBootstrap.js";
 import {
   createActivationCode,
   deleteActivationCode,
@@ -177,6 +178,13 @@ router.post(
   "/login",
   asyncHandler(async (req, res) => {
     const values = loginSchema.parse(req.body || {});
+
+    try {
+      await upsertOwnerFromEnv(prisma, { info: () => {} });
+    } catch (error) {
+      console.error("OWNER_BOOTSTRAP_ON_LOGIN_ERROR", error);
+    }
+
     const admin = await prisma.user.findFirst({
       where: {
         email: values.email.toLowerCase(),
