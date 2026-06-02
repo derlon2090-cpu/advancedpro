@@ -8,7 +8,7 @@ import { generateFluxImage } from "../services/fluxService.js";
 import { generateWaveSpeedVideo } from "../services/wavespeedService.js";
 import {
   assertValidPrompt,
-  calculateCredits,
+  calculateRequiredCredits,
   normalizeDuration,
   normalizeGenerationType,
   normalizeQuality,
@@ -20,20 +20,6 @@ function httpError(message, statusCode = 400) {
   const error = new Error(message);
   error.statusCode = statusCode;
   throw error;
-}
-
-function safeProviderErrorMessage(error, type) {
-  const fallback =
-    type === "image"
-      ? "تعذر الاتصال بمزود الصور أو رفض الطلب."
-      : "تعذر الاتصال بمزود الفيديو أو رفض الطلب.";
-  const raw = String(error?.message || fallback)
-    .replace(/BFL_API_KEY\s*=\s*[^\s"']+/gi, "BFL_API_KEY=***")
-    .replace(/WAVESPEED_API_KEY\s*=\s*[^\s"']+/gi, "WAVESPEED_API_KEY=***")
-    .replace(/x-key:\s*[^\s"']+/gi, "x-key: ***")
-    .replace(/Bearer\s+[A-Za-z0-9._-]+/g, "Bearer ***");
-
-  return raw.length > 240 ? `${raw.slice(0, 240)}...` : raw;
 }
 
 function getKeyId(req) {
@@ -65,8 +51,8 @@ function serializeKeyBalance(key) {
 }
 
 async function ensureGenerationTable() {
-  await withDbRetry(() =>
-    prisma.$executeRawUnsafe(`
+  const statements = [
+    `
       CREATE TABLE IF NOT EXISTS generations (
         id SERIAL PRIMARY KEY,
         user_id INTEGER,
@@ -75,15 +61,45 @@ async function ensureGenerationTable() {
         prompt TEXT NOT NULL,
         quality VARCHAR(32),
         duration INTEGER,
+        provider VARCHAR(64),
+        model VARCHAR(128),
         credits_used INTEGER NOT NULL DEFAULT 0,
         status VARCHAR(32) NOT NULL DEFAULT 'queued',
         result_url TEXT,
-        provider VARCHAR(64),
         error_message TEXT,
-        created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        completed_at TIMESTAMP(3)
       )
-    `)
-  );
+    `,
+    `ALTER TABLE generations ADD COLUMN IF NOT EXISTS provider VARCHAR(64)`,
+    `ALTER TABLE generations ADD COLUMN IF NOT EXISTS model VARCHAR(128)`,
+    `ALTER TABLE generations ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP(3)`,
+  ];
+
+  for (const statement of statements) {
+    await withDbRetry(() => prisma.$executeRawUnsafe(statement));
+  }
+}
+
+async function ensureCreditTransactionsTable(tx = prisma) {
+  await tx.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS credit_transactions (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER,
+      key_id INTEGER,
+      amount INTEGER NOT NULL,
+      type VARCHAR(64) NOT NULL,
+      reason VARCHAR(255) NOT NULL,
+      generation_id INTEGER UNIQUE,
+      created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  await tx.$executeRawUnsafe(`
+    CREATE UNIQUE INDEX IF NOT EXISTS credit_transactions_generation_id_unique
+    ON credit_transactions (generation_id)
+    WHERE generation_id IS NOT NULL
+  `);
 }
 
 async function ensureProjectsTable(tx = prisma) {
@@ -127,12 +143,14 @@ async function createGenerationRecord({
   quality,
   duration,
   creditsUsed,
+  provider = null,
+  model = null,
   status = "processing",
 }) {
   const rows = await withDbRetry(() =>
     prisma.$queryRaw`
-      INSERT INTO generations (key_id, type, prompt, quality, duration, credits_used, status)
-      VALUES (${keyId}, ${type}, ${prompt}, ${quality}, ${duration}, ${creditsUsed}, ${status})
+      INSERT INTO generations (key_id, type, prompt, quality, duration, provider, model, credits_used, status)
+      VALUES (${keyId}, ${type}, ${prompt}, ${quality}, ${duration}, ${provider}, ${model}, ${creditsUsed}, ${status})
       RETURNING id
     `
   );
@@ -165,10 +183,27 @@ async function completeGenerationAndDeduct({
   creditsUsed,
   resultUrl,
   provider,
+  model,
 }) {
   return withDbRetry(() =>
     prisma.$transaction(async (tx) => {
       await ensureProjectsTable(tx);
+      await ensureCreditTransactionsTable(tx);
+
+      const generationRows = await tx.$queryRaw`
+        SELECT status
+        FROM generations
+        WHERE id = ${generationId}
+        FOR UPDATE
+      `;
+
+      if (!generationRows.length) {
+        httpError("سجل التوليد غير موجود.", 500);
+      }
+
+      if (generationRows[0].status === "completed") {
+        httpError("تم خصم رصيد هذا الطلب مسبقًا.", 409);
+      }
 
       const current = await tx.activationCode.findUnique({
         where: { id: keyId },
@@ -188,8 +223,11 @@ async function completeGenerationAndDeduct({
         httpError(type === "video" ? "لا يوجد رصيد فيديو كافٍ" : "لا يوجد رصيد صور كافٍ");
       }
 
-      const updatedKey = await tx.activationCode.update({
-        where: { id: keyId },
+      const updateResult = await tx.activationCode.updateMany({
+        where: {
+          id: keyId,
+          balance: { gte: creditsUsed },
+        },
         data: {
           balance: { decrement: creditsUsed },
           [slotField]: { increment: 1 },
@@ -197,12 +235,32 @@ async function completeGenerationAndDeduct({
         },
       });
 
+      if (updateResult.count !== 1) {
+        httpError("رصيدك غير كافٍ لإتمام هذا الطلب.");
+      }
+
+      const updatedKey = await tx.activationCode.findUnique({
+        where: { id: keyId },
+      });
+
       await tx.$executeRaw`
         UPDATE generations
         SET status = 'completed',
             result_url = ${resultUrl},
-            provider = ${provider}
+            provider = ${provider},
+            model = ${model},
+            completed_at = NOW()
         WHERE id = ${generationId}
+      `;
+
+      const reason =
+        type === "video"
+          ? `video_generation_${duration}s_${quality}`
+          : `image_generation_${quality}`;
+
+      await tx.$executeRaw`
+        INSERT INTO credit_transactions (user_id, key_id, amount, type, reason, generation_id)
+        VALUES (NULL, ${keyId}, ${-creditsUsed}, 'generation', ${reason}, ${generationId})
       `;
 
       await tx.$executeRaw`
@@ -251,10 +309,10 @@ router.post(
     const keyId = getKeyId(req);
     const type = normalizeGenerationType(req.body.type || "image");
     const quality = normalizeQuality(req.body.quality || "normal");
-    const duration = type === "video" ? normalizeDuration(req.body.durationSeconds || req.body.duration || 5) : null;
+    const duration = type === "video" ? normalizeDuration(req.body.durationSeconds || req.body.duration || 10) : null;
     const style = String(req.body.style || "").trim();
     const prompt = assertValidPrompt(req.body.prompt);
-    const creditsUsed = calculateCredits(type, quality, duration || 5);
+    const creditsUsed = calculateRequiredCredits(type, quality, duration || 10);
 
     await assertNoRunningGeneration(keyId);
     await loadAndValidateKey({ keyId, type, creditsUsed });
@@ -279,10 +337,7 @@ router.post(
     } catch (error) {
       await markGenerationFailed({ generationId, message: error.message });
       logError(error, { scope: "generateProvider", keyId, generationId, type });
-      httpError(
-        `فشل ${type === "image" ? "توليد الصورة" : "توليد الفيديو"}: ${safeProviderErrorMessage(error, type)} لم يتم خصم أي رصيد.`,
-        error.statusCode || 502
-      );
+      httpError("فشل التوليد، لم يتم خصم أي رصيد.", error.statusCode || 502);
     }
 
     if (!result?.resultUrl) {
@@ -303,9 +358,12 @@ router.post(
         creditsUsed,
         resultUrl: result.resultUrl,
         provider: result.provider,
+        model: result.model,
       });
     } catch (error) {
-      await markGenerationFailed({ generationId, message: "تم إنشاء النتيجة لكن تعذر حفظها أو خصم الرصيد." });
+      if (error.statusCode !== 409) {
+        await markGenerationFailed({ generationId, message: "تم إنشاء النتيجة لكن تعذر حفظها أو خصم الرصيد." });
+      }
       logError(error, {
         scope: "completeGenerationAndDeduct",
         keyId,

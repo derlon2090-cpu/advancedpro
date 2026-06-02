@@ -131,22 +131,21 @@
       ultra: 40,
     };
     const videoBaseCosts = {
-      5: 100,
-      10: 180,
-      20: 350,
-      30: 500,
+      10: 100,
+      20: 200,
+      30: 300,
     };
     const videoMultipliers = {
       normal: 1,
-      high: 1.5,
-      ultra: 2,
+      high: 3,
+      ultra: 5,
     };
 
     if (type === "image") {
       return imageCosts[quality] || imageCosts.normal;
     }
 
-    return Math.ceil((videoBaseCosts[duration] || videoBaseCosts[5]) * (videoMultipliers[quality] || 1));
+    return Math.ceil((videoBaseCosts[duration] || videoBaseCosts[10]) * (videoMultipliers[quality] || 1));
   }
 
   function updateCreditEstimate() {
@@ -205,7 +204,13 @@
     const button = $(".dashboard-submit");
     if (button) {
       button.disabled = isLoading;
-      button.textContent = isLoading ? "جارٍ الإنشاء..." : state.selectedType === "video" ? "إنشاء الفيديو" : "إنشاء الصورة";
+      button.textContent = isLoading
+        ? state.selectedType === "video"
+          ? "جاري إنشاء الفيديو، قد يستغرق بعض الوقت..."
+          : "جاري إنشاء الصورة..."
+        : state.selectedType === "video"
+          ? "إنشاء الفيديو"
+          : "إنشاء الصورة";
     }
   }
 

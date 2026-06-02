@@ -59,10 +59,34 @@ async function readJsonResponse(response) {
   }
 }
 
+function getWaveSpeedModelConfig(quality) {
+  if (quality === "ultra") {
+    return {
+      endpoint: process.env.WAVESPEED_ULTRA_API_URL || process.env.WAVESPEED_API_URL,
+      model: process.env.WAVESPEED_ULTRA_MODEL || "kling-3.0",
+    };
+  }
+
+  if (quality === "high") {
+    return {
+      endpoint: process.env.WAVESPEED_HIGH_API_URL || process.env.WAVESPEED_API_URL,
+      model: process.env.WAVESPEED_HIGH_MODEL || "wan-2.7",
+    };
+  }
+
+  return {
+    endpoint:
+      process.env.WAVESPEED_NORMAL_API_URL ||
+      process.env.WAVESPEED_FAST_API_URL ||
+      process.env.WAVESPEED_API_URL,
+    model: process.env.WAVESPEED_NORMAL_MODEL || "wan-2.2-ultra-fast",
+  };
+}
+
 async function postToWaveSpeed({ apiKey, prompt, duration, quality, style }) {
+  const config = getWaveSpeedModelConfig(quality);
   const endpoint =
-    process.env.WAVESPEED_API_URL ||
-    "https://api.wavespeed.ai/api/v3/wavespeed-ai/wan-2.1-t2v-480p";
+    config.endpoint || "https://api.wavespeed.ai/api/v3/wavespeed-ai/wan-2.1-t2v-480p";
   const payload = {
     prompt: style ? `${prompt}\nStyle: ${style}` : prompt,
     duration,
@@ -87,7 +111,7 @@ async function postToWaveSpeed({ apiKey, prompt, duration, quality, style }) {
     throw error;
   }
 
-  return data;
+  return { data, model: config.model };
 }
 
 async function pollWaveSpeedResult({ apiKey, initial }) {
@@ -151,16 +175,17 @@ async function pollWaveSpeedResult({ apiKey, initial }) {
 
 export async function generateWaveSpeedVideo({
   prompt,
-  duration = 5,
+  duration = 10,
   quality = "normal",
   style = "",
 }) {
   const apiKey = requireApiKey();
-  const initial = await postToWaveSpeed({ apiKey, prompt, duration, quality, style });
+  const { data: initial, model } = await postToWaveSpeed({ apiKey, prompt, duration, quality, style });
   const resultUrl = await pollWaveSpeedResult({ apiKey, initial });
 
   return {
     provider: "wavespeed",
+    model,
     resultUrl,
     raw: initial,
   };

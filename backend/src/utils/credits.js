@@ -5,16 +5,15 @@ const IMAGE_CREDIT_COST = {
 };
 
 const VIDEO_BASE_CREDIT_COST = {
-  5: 100,
-  10: 180,
-  20: 350,
-  30: 500,
+  10: 100,
+  20: 200,
+  30: 300,
 };
 
 const VIDEO_QUALITY_MULTIPLIER = {
   normal: 1,
-  high: 1.5,
-  ultra: 2,
+  high: 3,
+  ultra: 5,
 };
 
 const QUALITY_ALIASES = {
@@ -42,16 +41,16 @@ export function normalizeQuality(value) {
 }
 
 export function normalizeDuration(value) {
-  const duration = Number(value || 5);
-  if ([5, 10, 20, 30].includes(duration)) {
+  const duration = Number(value || 10);
+  if ([10, 20, 30].includes(duration)) {
     return duration;
   }
-  const error = new Error("مدة الفيديو غير مدعومة. اختر 5 أو 10 أو 20 أو 30 ثانية.");
+  const error = new Error("مدة الفيديو غير مدعومة. اختر 10 أو 20 أو 30 ثانية.");
   error.statusCode = 400;
   throw error;
 }
 
-export function calculateCredits(typeValue, qualityValue = "normal", durationValue = 5) {
+export function calculateRequiredCredits(typeValue, qualityValue = "normal", durationValue = 10) {
   const type = normalizeGenerationType(typeValue);
   const quality = normalizeQuality(qualityValue);
 
@@ -63,6 +62,10 @@ export function calculateCredits(typeValue, qualityValue = "normal", durationVal
   const base = VIDEO_BASE_CREDIT_COST[duration];
   const multiplier = VIDEO_QUALITY_MULTIPLIER[quality];
   return Math.ceil(base * multiplier);
+}
+
+export function calculateCredits(typeValue, qualityValue = "normal", durationValue = 10) {
+  return calculateRequiredCredits(typeValue, qualityValue, durationValue);
 }
 
 export function calculateDefaultKeyCredits({ imageLimit = 0, videoLimit = 0 } = {}) {

@@ -59,8 +59,33 @@ async function readJsonResponse(response) {
   }
 }
 
+function getFluxModelConfig(quality) {
+  if (quality === "ultra") {
+    return {
+      endpoint: process.env.BFL_ULTRA_API_URL || process.env.BFL_API_URL || "https://api.bfl.ai/v1/flux-pro-1.1",
+      model: process.env.BFL_ULTRA_MODEL || "flux-pro",
+    };
+  }
+
+  if (quality === "high") {
+    return {
+      endpoint: process.env.BFL_HIGH_API_URL || process.env.BFL_API_URL || "https://api.bfl.ai/v1/flux-pro-1.1",
+      model: process.env.BFL_HIGH_MODEL || "flux-high",
+    };
+  }
+
+  return {
+    endpoint:
+      process.env.BFL_NORMAL_API_URL ||
+      process.env.BFL_FAST_API_URL ||
+      process.env.BFL_API_URL ||
+      "https://api.bfl.ai/v1/flux-pro-1.1",
+    model: process.env.BFL_NORMAL_MODEL || "flux-fast",
+  };
+}
+
 async function postToBfl({ apiKey, prompt, quality, style }) {
-  const endpoint = process.env.BFL_API_URL || "https://api.bfl.ai/v1/flux-pro-1.1";
+  const { endpoint, model } = getFluxModelConfig(quality);
   const payload = {
     prompt,
     width: Number(process.env.BFL_IMAGE_WIDTH || 1024),
@@ -92,7 +117,7 @@ async function postToBfl({ apiKey, prompt, quality, style }) {
     throw error;
   }
 
-  return data;
+  return { data, model };
 }
 
 async function pollBflResult({ apiKey, initial }) {
@@ -149,11 +174,12 @@ async function pollBflResult({ apiKey, initial }) {
 
 export async function generateFluxImage({ prompt, quality = "normal", style = "" }) {
   const apiKey = requireApiKey();
-  const initial = await postToBfl({ apiKey, prompt, quality, style });
+  const { data: initial, model } = await postToBfl({ apiKey, prompt, quality, style });
   const resultUrl = await pollBflResult({ apiKey, initial });
 
   return {
     provider: "bfl",
+    model,
     resultUrl,
     raw: initial,
   };
