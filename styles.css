@@ -4879,6 +4879,207 @@ html[data-theme="dark"] .create-chat-bubble__state {
   cursor: pointer;
 }
 
+.admin-key-actions-cell {
+  position: relative;
+  overflow: visible;
+}
+
+.admin-key-actions-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  inset-inline-start: 0;
+  z-index: 30;
+  width: 220px;
+  padding: 10px;
+  border: 1px solid #e8ecf8;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 22px 48px rgba(15, 23, 74, 0.14);
+  display: none;
+}
+
+.admin-key-actions-menu.is-open {
+  display: grid;
+}
+
+.admin-key-actions-menu button {
+  height: 44px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: #667085;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 0 10px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.admin-key-actions-menu button:hover {
+  background: #f7f3ff;
+  color: #0f174a;
+}
+
+.admin-key-actions-menu button span {
+  width: 24px;
+  text-align: center;
+}
+
+.admin-key-actions-menu button.is-success {
+  color: #12b76a;
+}
+
+.admin-key-actions-menu button.is-warning {
+  color: #f97316;
+}
+
+.admin-key-actions-menu button.is-danger {
+  color: #ef4444;
+}
+
+.admin-key-toast {
+  position: fixed;
+  left: 24px;
+  bottom: 24px;
+  z-index: 80;
+  min-width: 220px;
+  padding: 14px 18px;
+  border-radius: 16px;
+  background: #ecfdf3;
+  color: #027a48;
+  box-shadow: 0 20px 45px rgba(15, 23, 74, 0.16);
+  font-weight: 900;
+  opacity: 0;
+  transform: translateY(14px);
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.admin-key-toast[data-type="error"] {
+  background: #fff1f3;
+  color: #c01048;
+}
+
+.admin-key-toast.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.admin-key-action-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: rgba(15, 23, 74, 0.22);
+  backdrop-filter: blur(10px);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.admin-key-action-modal[hidden] {
+  display: none;
+}
+
+.admin-key-action-modal section {
+  position: relative;
+  width: min(560px, 100%);
+  max-height: min(760px, 90vh);
+  overflow: auto;
+  border: 1px solid #e8ecf8;
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 0 30px 70px rgba(15, 23, 74, 0.2);
+  padding: 28px;
+}
+
+.admin-key-action-modal section > button {
+  position: absolute;
+  inset-inline-start: 18px;
+  top: 18px;
+  width: 38px;
+  height: 38px;
+  border: 1px solid #e8ecf8;
+  border-radius: 14px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.admin-key-action-modal h2 {
+  margin: 0 0 18px;
+  color: #0f174a;
+}
+
+.admin-key-details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.admin-key-details-grid div,
+.admin-key-limit-form label {
+  border: 1px solid #e8ecf8;
+  border-radius: 16px;
+  background: #f8faff;
+  padding: 14px;
+}
+
+.admin-key-details-grid dt,
+.admin-key-limit-form label {
+  color: #667085;
+  font-weight: 800;
+}
+
+.admin-key-details-grid dd {
+  margin: 8px 0 0;
+  color: #0f174a;
+  font-weight: 900;
+}
+
+.admin-key-limit-form {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-key-limit-form input {
+  width: 100%;
+  margin-top: 8px;
+  border: 1px solid #dce4f5;
+  border-radius: 12px;
+  padding: 12px;
+  font: inherit;
+}
+
+.admin-key-limit-form button,
+.admin-key-modal-actions button {
+  height: 44px;
+  border: 0;
+  border-radius: 14px;
+  padding: 0 18px;
+  background: linear-gradient(135deg, #5b35f5, #8b5cf6);
+  color: #fff;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.admin-key-modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.admin-key-modal-actions button:not(.is-danger):not(.is-primary) {
+  border: 1px solid #e8ecf8;
+  background: #fff;
+  color: #667085;
+}
+
+.admin-key-modal-actions .is-danger {
+  background: #ef4444;
+}
+
 .admin-key-customer {
   display: flex;
   align-items: center;

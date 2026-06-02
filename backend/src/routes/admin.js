@@ -1,5 +1,6 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
+import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { prisma } from "../lib/prisma.js";
@@ -349,8 +350,14 @@ function getAdminKeyStatus(code, now = new Date()) {
     return { key: "expired", label: "منتهي" };
   }
 
-  if (code.activatedAt || code.activatedByUserId || code.isUsed) {
+  const notes = String(code.notes || "");
+
+  if (notes.includes("manualActive:true") || code.activatedAt || code.activatedByUserId || code.isUsed) {
     return { key: "active", label: "نشط" };
+  }
+
+  if (notes.includes("approved:true")) {
+    return { key: "approved", label: "معتمد" };
   }
 
   return { key: "unused", label: "غير مستخدم" };
@@ -836,16 +843,39 @@ router.get(
     const search = String(req.query.search || "").trim();
     const codes = await listActivationCodes({ search });
     const now = new Date();
+    const keyIds = codes.map((code) => Number(code.id)).filter(Number.isFinite);
+    let lastUsageByKey = new Map();
+
+    if (keyIds.length) {
+      await prisma.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS projects (
+          id SERIAL PRIMARY KEY,
+          key_id INTEGER NOT NULL,
+          type VARCHAR(32) NOT NULL,
+          prompt TEXT NOT NULL,
+          duration INTEGER,
+          quality VARCHAR(32),
+          style VARCHAR(64),
+          result_url TEXT,
+          status VARCHAR(32) NOT NULL DEFAULT 'completed',
+          created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
+      const usageRows = await prisma.$queryRaw`
+        SELECT DISTINCT ON (key_id) key_id, type, created_at
+        FROM projects
+        WHERE key_id IN (${Prisma.join(keyIds)})
+        ORDER BY key_id, created_at DESC
+      `;
+      lastUsageByKey = new Map(usageRows.map((row) => [Number(row.key_id), row]));
+    }
 
     const items = codes.map((code) => {
       const status =
         code.statusKey === "expired"
           ? { key: "expired", label: "منتهي" }
-          : !code.isActive
-            ? { key: "disabled", label: "معطل" }
-            : code.activatedAt || code.isUsed
-              ? { key: "active", label: "نشط" }
-              : { key: "unused", label: "غير مستخدم" };
+          : getAdminKeyStatus(code, now);
 
       return {
         id: code.id,
@@ -862,6 +892,9 @@ router.get(
         videosUsed: code.videoUsed,
         imagesRemaining: code.imageAvailable,
         videosRemaining: code.videoAvailable,
+        isActive: code.isActive,
+        lastUsage: lastUsageByKey.get(Number(code.id))?.created_at || null,
+        lastUsageType: lastUsageByKey.get(Number(code.id))?.type || null,
         createdAt: code.createdAt,
         startsAt: code.startsAt || code.activatedAt || code.createdAt,
         expiresAt: code.expiresAt,
