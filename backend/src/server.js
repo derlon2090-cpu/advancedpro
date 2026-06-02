@@ -1,6 +1,7 @@
 import app from "./app.js";
 import { prisma } from "./lib/prisma.js";
 import { getAiKeyStatus } from "./services/aiProvider.js";
+import { upsertOwnerFromEnv } from "./services/ownerBootstrap.js";
 import { logError, logInfo } from "./utils/logger.js";
 
 const PORT = process.env.PORT || 3000;
@@ -22,6 +23,9 @@ async function connectWithRetry(maxAttempts = 6, baseDelay = 1500) {
     try {
       await prisma.$connect();
       logInfo("Database connected");
+      await upsertOwnerFromEnv(prisma, {
+        info: (message, meta) => logInfo(message, meta),
+      });
       return;
     } catch (error) {
       logError("Database connection failed", {

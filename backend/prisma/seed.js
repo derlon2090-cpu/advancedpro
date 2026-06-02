@@ -1,29 +1,15 @@
-import bcrypt from "bcryptjs";
 import { PrismaClient } from "@prisma/client";
+import { upsertOwnerFromEnv } from "../src/services/ownerBootstrap.js";
 
 const prisma = new PrismaClient();
 
 async function main() {
   const ownerEmail = process.env.OWNER_EMAIL || process.env.ADMIN_EMAIL || "";
   const ownerPassword = process.env.OWNER_PASSWORD || process.env.ADMIN_PASSWORD || "";
-  const ownerName = process.env.OWNER_NAME || "Owner";
   let adminEmail = ownerEmail || "not-created";
 
-  const adminCount = await prisma.user.count({
-    where: { role: { in: ["owner", "admin"] } },
-  });
-
-  if (adminCount === 0 && ownerEmail && ownerPassword) {
-    const passwordHash = await bcrypt.hash(ownerPassword, 10);
-    await prisma.user.create({
-      data: {
-        fullName: ownerName,
-        email: ownerEmail.toLowerCase(),
-        passwordHash,
-        role: "owner",
-        status: "active",
-      },
-    });
+  if (ownerEmail && ownerPassword) {
+    await upsertOwnerFromEnv(prisma);
     adminEmail = ownerEmail;
   }
 
