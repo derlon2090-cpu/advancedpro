@@ -3,63 +3,126 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>سجل النشاط | Advanced Pro Nano</title>
+    <title>سجل النشاط | Advanced Pro</title>
+    <meta name="robots" content="noindex,nofollow" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/styles.css?v=20260602-admin-activity" />
   </head>
-  <body data-page="admin-activity" data-requires-admin="true" data-skip-site-footer="true">
-    <main class="admin-shell">
-      <aside class="admin-sidebar">
-        <a class="brand brand--column" href="/admin">
-          <span class="brand-mark">AP</span>
-          <span class="brand-copy">
-            <strong>Advanced Pro Nano</strong>
-            <span>Admin Panel</span>
-          </span>
-        </a>
-
-        <nav class="admin-nav">
-          <a href="/admin">الرئيسية</a>
-          <a href="/admin/users">المستخدمون</a>
-          <a href="/admin/create-admin">إنشاء أدمن</a>
-          <a href="/admin/plans">الباقات</a>
-          <a href="/admin/codes">الأكواد</a>
-          <a href="/admin/available-codes">الأكواد المتاحة</a>
-          <a class="is-active" href="/admin/activity">النشاط</a>
-          <a href="/admin/reports">التقارير</a>
-          <a href="/admin/settings">الإعدادات</a>
-        </nav>
-
-        <div class="admin-sidebar__footer">
-          <a class="btn btn-secondary btn-block" href="/student.html">لوحة المستخدم</a>
-          <button class="btn btn-primary btn-block" type="button" data-logout>تسجيل الخروج</button>
-        </div>
-      </aside>
-
-      <section class="admin-main">
-        <div class="admin-toolbar">
+  <body class="admin-v2-page" data-page="admin-activity" data-requires-admin="true" data-skip-site-footer="true">
+    <main class="admin-v2-shell">
+      <aside class="admin-v2-sidebar" id="adminSidebar">
+        <div class="admin-v2-brand">
+          <img src="/ap-mark.svg" alt="" aria-hidden="true" />
           <div>
-            <span class="section-kicker">Activity</span>
-            <h1>سجل النشاط</h1>
+            <strong>Advanced Pro</strong>
+            <span>لوحة تحكم الأدمن</span>
           </div>
         </div>
 
-        <article class="page-card">
-          <form class="toolbar-form">
-            <input type="search" placeholder="ابحث باسم المستخدم أو البريد" />
-            <button class="btn btn-secondary" type="button">بحث</button>
-          </form>
-          <div class="empty-state">سجل النشاط سيتم عرضه هنا عند بدء الاستخدام.</div>
-        </article>
+        <nav class="admin-v2-nav" aria-label="قائمة لوحة الأدمن">
+          <a href="/admin/dashboard" data-icon="⌂">لوحة التحكم</a>
+          <a href="/admin/keys" data-icon="⚿">المفاتيح</a>
+          <a href="/admin/plans" data-icon="◇">الباقات</a>
+          <a href="/admin/customers" data-icon="♙">العملاء</a>
+          <a href="/admin/reports" data-icon="▥">الإحصائيات</a>
+          <a href="/admin/settings" data-icon="⚙">الإعدادات</a>
+          <a class="is-active" href="/admin/activity" data-icon="◷">سجل النشاط</a>
+          <a href="/admin/backup" data-icon="◎">النسخ الاحتياطي</a>
+        </nav>
+
+        <button class="admin-v2-logout" type="button" data-logout>
+          <span>↪</span>
+          تسجيل الخروج
+        </button>
+      </aside>
+
+      <section class="admin-v2-main">
+        <header class="admin-v2-header">
+          <button class="admin-v2-menu" type="button" data-admin-drawer-toggle aria-label="فتح القائمة">☰</button>
+          <div class="admin-v2-profile" data-admin-profile>
+            <span class="admin-v2-avatar">A</span>
+            <div>
+              <strong>مرحبًا</strong>
+              <small>Owner</small>
+            </div>
+          </div>
+          <div class="admin-v2-actions">
+            <button type="button" aria-label="الوضع الليلي">◐</button>
+            <button type="button" aria-label="اللغة">◎</button>
+          </div>
+          <label class="admin-v2-search">
+            <span>⌕</span>
+            <input type="search" placeholder="البحث في النظام..." aria-label="البحث في النظام" />
+          </label>
+        </header>
+
+        <main class="admin-activity-page">
+          <section class="admin-activity-hero">
+            <div>
+              <span class="admin-activity-icon">◷</span>
+              <p>سجل النشاط</p>
+              <h1>سجل النشاط</h1>
+              <span>عرض جميع الأنشطة والعمليات التي تمت داخل النظام</span>
+            </div>
+          </section>
+
+          <section class="admin-activity-tools">
+            <button type="button" data-export-activity>⇩ تصدير</button>
+            <label class="admin-v2-search">
+              <span>⌕</span>
+              <input data-activity-search type="search" placeholder="بحث عن نشاط..." />
+            </label>
+            <select data-activity-user>
+              <option value="all">جميع المستخدمين</option>
+            </select>
+            <select data-activity-type>
+              <option value="all">جميع الأنواع</option>
+              <option value="login">دخول</option>
+              <option value="customers">عملاء</option>
+              <option value="keys">مفاتيح</option>
+              <option value="plans">باقات</option>
+              <option value="projects">مشاريع</option>
+              <option value="settings">إعدادات</option>
+              <option value="export">تصدير</option>
+            </select>
+            <select data-activity-status>
+              <option value="all">جميع الحالات</option>
+              <option value="success">نجاح</option>
+              <option value="failed">فشل</option>
+              <option value="warning">تحذير</option>
+            </select>
+            <button type="button" data-activity-period>▣ تحديد الفترة</button>
+          </section>
+
+          <section class="admin-activity-stats" data-activity-stats>
+            <article class="admin-v2-skeleton"></article>
+            <article class="admin-v2-skeleton"></article>
+            <article class="admin-v2-skeleton"></article>
+            <article class="admin-v2-skeleton"></article>
+            <article class="admin-v2-skeleton"></article>
+          </section>
+
+          <section class="admin-activity-panel">
+            <div data-activity-table>
+              <div class="admin-v2-empty">جارٍ تحميل سجل النشاط...</div>
+            </div>
+          </section>
+        </main>
       </section>
     </main>
 
-    <script src="/site.js"></script>
-    <script src="/portal.js"></script>
+    <div class="admin-activity-drawer" data-activity-drawer hidden>
+      <section role="dialog" aria-modal="true" aria-labelledby="activityDrawerTitle">
+        <button type="button" data-activity-drawer-close aria-label="إغلاق">×</button>
+        <div data-activity-drawer-content></div>
+      </section>
+    </div>
+
+    <script src="/admin/activity-page.js?v=20260602-admin-activity"></script>
   </body>
 </html>

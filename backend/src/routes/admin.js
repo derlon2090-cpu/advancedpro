@@ -506,6 +506,118 @@ async function getProjectRows() {
   }
 }
 
+function getClientIp(req) {
+  const forwarded = req.headers["x-forwarded-for"];
+  const realIp = req.headers["x-real-ip"];
+  const firstForwarded = Array.isArray(forwarded) ? forwarded[0] : forwarded;
+  return String(firstForwarded || realIp || req.ip || "unknown").split(",")[0].trim() || "unknown";
+}
+
+async function getActivityRows() {
+  try {
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS activity_logs (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER,
+        user_type VARCHAR(32),
+        action VARCHAR(80) NOT NULL,
+        module VARCHAR(80) NOT NULL,
+        description TEXT,
+        status VARCHAR(32) NOT NULL DEFAULT 'success',
+        ip_address VARCHAR(96),
+        user_agent TEXT,
+        browser VARCHAR(120),
+        os VARCHAR(120),
+        route TEXT,
+        metadata JSONB,
+        created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    return prisma.$queryRawUnsafe(`
+      SELECT id, user_id, user_type, action, module, description, status, ip_address,
+             user_agent, browser, os, route, metadata, created_at
+      FROM activity_logs
+      ORDER BY created_at DESC
+      LIMIT 500
+    `);
+  } catch (error) {
+    console.error("ADMIN_ACTIVITY_LOGS_ERROR", error);
+    return [];
+  }
+}
+
+function serializeActivityRow(row) {
+  return {
+    id: row.id,
+    userId: row.user_id || null,
+    userType: row.user_type || "admin",
+    userName: row.user_name || "النظام",
+    userEmail: row.user_email || null,
+    action: row.action,
+    module: row.module,
+    description: row.description || "تم تنفيذ العملية داخل النظام.",
+    details: row.description || "تم تنفيذ العملية داخل النظام.",
+    status: row.status || "success",
+    ipAddress: row.ip_address || "unknown",
+    userAgent: row.user_agent || "unknown",
+    browser: row.browser || "غير معروف",
+    os: row.os || "غير معروف",
+    route: row.route || "/admin/dashboard",
+    metadata: row.metadata || {},
+    createdAt: row.created_at || row.createdAt,
+  };
+}
+
+function synthesizeActivity({ codes, projects, req }) {
+  const adminName = req.admin?.fullName || req.admin?.email || "الأدمن";
+  const adminEmail = req.admin?.email || "admin@advancedpro.com";
+  const ip = getClientIp(req);
+  const keyActivities = codes.slice(0, 30).map((code) => ({
+    id: `key-${code.id}`,
+    userId: req.admin?.id || null,
+    userType: "admin",
+    userName: adminName,
+    userEmail: adminEmail,
+    action: code.activatedAt ? "key-activated" : "key-created",
+    module: "keys",
+    description: code.activatedAt ? `تم تفعيل مفتاح ${code.code}` : `تم إنشاء مفتاح ${code.code}`,
+    details: `${code.code} - ${code.ownerName || code.email || "بدون عميل"}`,
+    status: code.isActive ? "success" : "warning",
+    ipAddress: ip,
+    userAgent: req.headers["user-agent"] || "unknown",
+    browser: "غير معروف",
+    os: "غير معروف",
+    route: code.activatedAt ? "/admin/keys" : "/admin/keys/create",
+    metadata: { codeId: code.id, code: code.code },
+    createdAt: code.activatedAt || code.createdAt,
+  }));
+
+  const projectActivities = projects.slice(0, 30).map((project) => ({
+    id: `project-${project.id}`,
+    userId: req.admin?.id || null,
+    userType: "admin",
+    userName: "النظام",
+    userEmail: adminEmail,
+    action: project.type === "video" ? "video-created" : "image-created",
+    module: "projects",
+    description: project.type === "video" ? `تم إنشاء فيديو #${project.id}` : `تم إنشاء صورة #${project.id}`,
+    details: `مشروع #${project.id}`,
+    status: project.status === "failed" ? "failed" : "success",
+    ipAddress: ip,
+    userAgent: req.headers["user-agent"] || "unknown",
+    browser: "غير معروف",
+    os: "غير معروف",
+    route: "/dashboard",
+    metadata: { projectId: project.id },
+    createdAt: project.created_at || project.createdAt,
+  }));
+
+  return [...keyActivities, ...projectActivities]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 100);
+}
+
 router.get(
   "/stats",
   asyncHandler(async (_req, res) => {
@@ -636,6 +748,40 @@ router.get(
       usageLast7Days: Array.from(usageByDay.values()),
       latestKeys,
       recentActivity,
+    });
+  })
+);
+
+router.get(
+  "/activity",
+  asyncHandler(async (req, res) => {
+    await ensureActivationCodesTable();
+
+    const [activityRows, codes, projects] = await Promise.all([
+      getActivityRows(),
+      prisma.activationCode.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 200,
+      }),
+      getProjectRows(),
+    ]);
+
+    const activities = activityRows.length
+      ? activityRows.map(serializeActivityRow)
+      : synthesizeActivity({ codes, projects, req });
+
+    const now = Date.now();
+    const day = 24 * 60 * 60 * 1000;
+
+    return res.json({
+      activities,
+      summary: {
+        totalEvents: activities.length,
+        todayEvents: activities.filter((item) => now - new Date(item.createdAt).getTime() <= day).length,
+        last7DaysEvents: activities.filter((item) => now - new Date(item.createdAt).getTime() <= 7 * day).length,
+        last30DaysEvents: activities.filter((item) => now - new Date(item.createdAt).getTime() <= 30 * day).length,
+        activeUsers: new Set(activities.map((item) => item.userName || item.userEmail || item.userId)).size,
+      },
     });
   })
 );

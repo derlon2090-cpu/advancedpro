@@ -124,6 +124,25 @@ model SiteSetting {
   value String?
 }
 
+model ActivityLog {
+  id          Int      @id @default(autoincrement())
+  userId      Int?     @map("user_id")
+  userType    String?  @map("user_type")
+  action      String
+  module      String
+  description String?
+  status      String   @default("success")
+  ipAddress   String?  @map("ip_address")
+  userAgent   String?  @map("user_agent")
+  browser     String?
+  os          String?
+  route       String?
+  metadata    Json?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("activity_logs")
+}
+
 model ActivationCode {
   id                Int       @id @default(autoincrement())
   code              String    @unique
