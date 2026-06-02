@@ -5,6 +5,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { prisma } from "../lib/prisma.js";
 import { setSetting, getSetting, getPublicSettings } from "../services/settings.js";
 import { withDbRetry } from "../utils/dbRetry.js";
+import { calculateDefaultKeyCredits } from "../utils/credits.js";
 import { signToken, verifyToken } from "../utils/jwt.js";
 import { upsertOwnerFromEnv } from "../services/ownerBootstrap.js";
 import {
@@ -949,7 +950,10 @@ router.post(
         videoLimit: Number(plan.videosLimit || 0),
         imageUsed: 0,
         videoUsed: 0,
-        balance: Number(plan.imagesLimit || 0) + Number(plan.videosLimit || 0),
+        balance: calculateDefaultKeyCredits({
+          imageLimit: Number(plan.imagesLimit || 0),
+          videoLimit: Number(plan.videosLimit || 0),
+        }),
         isActive: true,
         isUsed: false,
         isRenewable: false,

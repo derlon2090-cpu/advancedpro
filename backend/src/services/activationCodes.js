@@ -1,5 +1,6 @@
 import { prisma } from "../lib/prisma.js";
 import { withDbRetry } from "../utils/dbRetry.js";
+import { calculateDefaultKeyCredits } from "../utils/credits.js";
 
 const RENEWAL_TYPES = new Set(["daily", "weekly", "monthly"]);
 
@@ -181,6 +182,7 @@ function serializeActivationCode(record) {
     videoUsed: limits.videoUsed,
     imageAvailable: limits.remainingImages,
     videoAvailable: limits.remainingVideos,
+    creditsRemaining: Math.max(Number(record.balance || 0), 0),
     isActive: Boolean(record.isActive),
     isUsed: Boolean(record.isUsed),
     isRenewable: Boolean(record.isRenewable),
@@ -303,8 +305,10 @@ async function maybeRenewActivationCode(record) {
         videoUsed: 0,
         lastRenewedAt: renewalCursor,
         isUsed: true,
-        balance: (Number(record.imageLimit || 0) || Number(record.balance || 0)) +
-          (Number(record.videoLimit || 0) || Number(record.balance || 0)),
+        balance: calculateDefaultKeyCredits({
+          imageLimit: Number(record.imageLimit || 0) || Number(record.balance || 0),
+          videoLimit: Number(record.videoLimit || 0) || Number(record.balance || 0),
+        }),
       },
     })
   );
@@ -378,7 +382,7 @@ function buildCreateOrUpdatePayload(input, { existing = null } = {}) {
     ownerName,
     imageLimit,
     videoLimit,
-    balance: imageLimit + videoLimit,
+    balance: calculateDefaultKeyCredits({ imageLimit, videoLimit }),
     isActive,
     isRenewable,
     renewalType,

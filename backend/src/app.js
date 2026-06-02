@@ -155,6 +155,7 @@ app.get(
     return res.json({
       planName: accessCode.ownerName || "مفتاح رقمي",
       codeMasked: maskAccessCode(accessCode.code),
+      creditsRemaining: Math.max(Number(accessCode.creditsRemaining || 0), 0),
       imagesLimit,
       imagesUsed,
       imagesRemaining: Math.max(imagesLimit - imagesUsed, 0),

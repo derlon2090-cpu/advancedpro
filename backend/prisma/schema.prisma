@@ -143,6 +143,24 @@ model ActivityLog {
   @@map("activity_logs")
 }
 
+model GenerationJob {
+  id           Int      @id @default(autoincrement())
+  userId       Int?     @map("user_id")
+  keyId        Int?     @map("key_id")
+  type         String
+  prompt       String
+  quality      String?
+  duration     Int?
+  creditsUsed  Int      @default(0) @map("credits_used")
+  status       String   @default("queued")
+  resultUrl    String?  @map("result_url")
+  provider     String?
+  errorMessage String?  @map("error_message")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("generations")
+}
+
 model ActivationCode {
   id                Int       @id @default(autoincrement())
   code              String    @unique

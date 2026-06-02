@@ -105,6 +105,7 @@
     setText("[data-key-plan]", key.planName || "--");
     setProgress("[data-images-progress]", imagesRemaining, imagesLimit);
     setProgress("[data-videos-progress]", videosRemaining, videosLimit);
+    updateCreditEstimate();
   }
 
   function updateWordCount() {
@@ -121,6 +122,51 @@
     message.hidden = !text;
     message.textContent = text || "";
     message.dataset.type = type || "";
+  }
+
+  function calculateCredits(type, quality, duration) {
+    const imageCosts = {
+      normal: 10,
+      high: 20,
+      ultra: 40,
+    };
+    const videoBaseCosts = {
+      5: 100,
+      10: 180,
+      20: 350,
+      30: 500,
+    };
+    const videoMultipliers = {
+      normal: 1,
+      high: 1.5,
+      ultra: 2,
+    };
+
+    if (type === "image") {
+      return imageCosts[quality] || imageCosts.normal;
+    }
+
+    return Math.ceil((videoBaseCosts[duration] || videoBaseCosts[5]) * (videoMultipliers[quality] || 1));
+  }
+
+  function updateCreditEstimate() {
+    const estimate = $("[data-credit-estimate]");
+    if (!estimate) {
+      return;
+    }
+
+    if (!state.selectedType) {
+      estimate.hidden = true;
+      estimate.textContent = "";
+      return;
+    }
+
+    const credits = calculateCredits(state.selectedType, state.quality, state.duration);
+    const remaining = Number(state.key?.creditsRemaining || 0);
+    const remainingText = state.key ? `رصيدك الحالي: ${remaining} نقطة.` : "";
+    estimate.hidden = false;
+    estimate.dataset.type = remaining >= credits ? "info" : "error";
+    estimate.textContent = `سيتم خصم ${credits} رصيد من حسابك عند نجاح التوليد. ${remainingText}`;
   }
 
   function showFormForType(type) {
@@ -145,6 +191,7 @@
     setText("[data-submit-label]", type === "video" ? "إنشاء الفيديو" : "إنشاء الصورة");
     setMessage("", "");
     updateWordCount();
+    updateCreditEstimate();
   }
 
   function setActiveChip(groupSelector, attribute, value) {
@@ -173,6 +220,11 @@
 
     if (type === "video" && Number(state.key.videosRemaining || 0) <= 0) {
       throw new Error("لا يوجد رصيد فيديو كافٍ");
+    }
+
+    const requiredCredits = calculateCredits(type, state.quality, state.duration);
+    if (Number(state.key.creditsRemaining || 0) < requiredCredits) {
+      throw new Error("رصيدك غير كافٍ لإتمام هذا الطلب.");
     }
   }
 
@@ -231,6 +283,7 @@
     }
     state.duration = Number(button.dataset.duration || 10);
     setActiveChip("[data-duration-group]", "duration", state.duration);
+    updateCreditEstimate();
   });
 
   $("[data-quality-group]")?.addEventListener("click", (event) => {
@@ -240,6 +293,7 @@
     }
     state.quality = button.dataset.quality || "high";
     setActiveChip("[data-quality-group]", "quality", state.quality);
+    updateCreditEstimate();
   });
 
   $("#dashboardPrompt")?.addEventListener("input", updateWordCount);
