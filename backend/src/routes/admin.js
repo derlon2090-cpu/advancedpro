@@ -178,9 +178,14 @@ router.post(
   "/login",
   asyncHandler(async (req, res) => {
     const values = loginSchema.parse(req.body || {});
+    const ownerEmail = (process.env.OWNER_EMAIL || process.env.ADMIN_EMAIL || "")
+      .trim()
+      .toLowerCase();
+    const ownerPassword = process.env.OWNER_PASSWORD || process.env.ADMIN_PASSWORD || "";
+    let ownerBootstrapResult = null;
 
     try {
-      await upsertOwnerFromEnv(prisma, { info: () => {} });
+      ownerBootstrapResult = await upsertOwnerFromEnv(prisma, { info: () => {} });
     } catch (error) {
       console.error("OWNER_BOOTSTRAP_ON_LOGIN_ERROR", error);
     }
@@ -194,11 +199,21 @@ router.post(
     });
 
     if (!admin) {
+      if (values.email.toLowerCase() === "owner@advancedpro.com" && (!ownerEmail || !ownerPassword)) {
+        return res.status(503).json({
+          message: "بيانات OWNER_EMAIL و OWNER_PASSWORD غير مفعلة في السيرفر.",
+        });
+      }
       return res.status(401).json({ message: "البريد أو كلمة المرور غير صحيحة." });
     }
 
     const isValid = await bcrypt.compare(values.password, admin.passwordHash);
     if (!isValid) {
+      if (values.email.toLowerCase() === ownerEmail && ownerBootstrapResult?.skipped) {
+        return res.status(503).json({
+          message: "بيانات OWNER_EMAIL و OWNER_PASSWORD غير مفعلة في السيرفر.",
+        });
+      }
       return res.status(401).json({ message: "البريد أو كلمة المرور غير صحيحة." });
     }
 

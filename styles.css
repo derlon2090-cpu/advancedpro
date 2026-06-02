@@ -4158,6 +4158,12 @@ html[data-theme="dark"] .create-chat-bubble__state {
   outline: none;
 }
 
+.admin-secret-form input[type="email"],
+.admin-secret-form input[type="password"] {
+  direction: ltr;
+  text-align: left;
+}
+
 .admin-secret-form input:focus {
   border-color: rgba(91, 53, 245, 0.64);
   box-shadow: 0 0 0 4px rgba(91, 53, 245, 0.08);
