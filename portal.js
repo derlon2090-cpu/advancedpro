@@ -3204,7 +3204,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  if (document.body.dataset.requiresAdmin === "true" && (!user || user.role !== "admin")) {
+  if (
+    document.body.dataset.requiresAdmin === "true" &&
+    (!user || !["admin", "owner"].includes(user.role))
+  ) {
     return;
   }
 

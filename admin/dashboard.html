@@ -3,67 +3,132 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>لوحة الأدمن | Advanced Pro</title>
+    <title>لوحة تحكم الأدمن | Advanced Pro</title>
     <meta name="robots" content="noindex,nofollow" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260601-admin-secret" />
+    <link rel="stylesheet" href="/styles.css?v=20260602-admin-dashboard" />
   </head>
-  <body data-page="admin" data-requires-admin="true" data-skip-site-footer="true">
-    <main class="admin-shell">
-      <aside class="admin-sidebar">
-        <a class="brand brand--column" href="/admin/dashboard">
-          <span class="brand-mark">AP</span>
-          <span class="brand-copy">
-            <strong>Advanced Pro</strong>
-            <span>Admin Panel</span>
-          </span>
-        </a>
-
-        <nav class="admin-nav">
-          <a class="is-active" href="/admin/dashboard">الرئيسية</a>
-          <a href="/admin/plans">الباقات</a>
-          <a href="/admin/codes">الأكواد</a>
-          <a href="/admin/available-codes">الأكواد المتاحة</a>
-          <a href="/admin/settings">الإعدادات</a>
-        </nav>
-
-        <div class="admin-sidebar__footer">
-          <button class="btn btn-primary btn-block" type="button" data-logout>تسجيل الخروج</button>
-        </div>
-      </aside>
-
-      <section class="admin-main">
-        <div class="admin-toolbar">
+  <body
+    class="admin-v2-page"
+    data-page="admin-dashboard-v2"
+    data-requires-admin="true"
+    data-skip-site-footer="true"
+  >
+    <main class="admin-v2-shell">
+      <aside class="admin-v2-sidebar" id="adminSidebar">
+        <div class="admin-v2-brand">
+          <img src="/ap-mark.svg" alt="" aria-hidden="true" />
           <div>
-            <span class="section-kicker">Overview</span>
-            <h1>لوحة الإدارة</h1>
+            <strong>Advanced Pro</strong>
+            <span>لوحة تحكم الأدمن</span>
           </div>
         </div>
 
-        <div class="info-grid" data-admin-summary></div>
+        <nav class="admin-v2-nav" aria-label="قائمة لوحة الأدمن">
+          <a class="is-active" href="/admin/dashboard" data-icon="⌂">لوحة التحكم</a>
+          <a href="/admin/keys" data-icon="⚿">المفاتيح</a>
+          <a href="/admin/plans" data-icon="◈">الباقات</a>
+          <a href="/admin/customers" data-icon="♙">العملاء</a>
+          <a href="/admin/projects" data-icon="▣">المشاريع</a>
+          <a href="/admin/reports" data-icon="▥">الإحصائيات</a>
+          <a href="/admin/support" data-icon="☏">الدعم الفني</a>
+          <a href="/admin/settings" data-icon="⚙">الإعدادات</a>
+          <a href="/admin/activity" data-icon="◷">سجل النشاط</a>
+          <a href="/admin/users" data-icon="♟">المستخدمون</a>
+          <a href="/admin/notifications" data-icon="♢">الإشعارات</a>
+          <a href="/admin/backup" data-icon="◎">النسخ الاحتياطي</a>
+        </nav>
 
-        <div class="page-grid">
-          <article class="page-card">
-            <div class="page-card__top">
-              <h2>أقسام الإدارة</h2>
+        <button class="admin-v2-logout" type="button" data-logout>
+          <span>↪</span>
+          تسجيل الخروج
+        </button>
+      </aside>
+
+      <section class="admin-v2-main">
+        <header class="admin-v2-header">
+          <button class="admin-v2-menu" type="button" data-admin-drawer-toggle aria-label="فتح القائمة">
+            ☰
+          </button>
+          <div class="admin-v2-profile" data-admin-profile>
+            <span class="admin-v2-avatar">A</span>
+            <div>
+              <strong>مرحبًا</strong>
+              <small>Owner</small>
             </div>
-            <div class="quick-links">
-              <a class="quick-link" href="/admin/plans">إدارة الباقات</a>
-              <a class="quick-link" href="/admin/codes">إنشاء المفاتيح</a>
-              <a class="quick-link" href="/admin/available-codes">الأكواد المتاحة</a>
-              <a class="quick-link" href="/admin/settings">إعدادات المنصة</a>
+          </div>
+          <div class="admin-v2-actions">
+            <button type="button" aria-label="التنبيهات">🔔<b>7</b></button>
+            <button type="button" aria-label="الوضع الليلي">☾</button>
+            <button type="button" aria-label="الأهداف">◎</button>
+          </div>
+          <label class="admin-v2-search">
+            <span>⌕</span>
+            <input type="search" placeholder="البحث في النظام..." aria-label="البحث في النظام" />
+          </label>
+        </header>
+
+        <section class="admin-v2-stats" data-admin-dashboard-cards>
+          <article class="admin-v2-skeleton"></article>
+          <article class="admin-v2-skeleton"></article>
+          <article class="admin-v2-skeleton"></article>
+          <article class="admin-v2-skeleton"></article>
+          <article class="admin-v2-skeleton"></article>
+        </section>
+
+        <section class="admin-v2-grid admin-v2-grid--charts">
+          <article class="admin-v2-card">
+            <div class="admin-v2-card__head">
+              <h2>توزيع المفاتيح حسب الباقة</h2>
+              <button type="button">هذا الشهر</button>
+            </div>
+            <div class="admin-v2-donut" data-admin-donut></div>
+          </article>
+
+          <article class="admin-v2-card admin-v2-card--wide">
+            <div class="admin-v2-card__head">
+              <h2>نمو الاستخدام خلال آخر 7 أيام</h2>
+              <button type="button">7 أيام</button>
+            </div>
+            <div class="admin-v2-line-chart" data-admin-line-chart></div>
+          </article>
+        </section>
+
+        <section class="admin-v2-grid admin-v2-grid--lower">
+          <article class="admin-v2-card admin-v2-card--table">
+            <div class="admin-v2-card__head">
+              <h2>آخر المفاتيح المضافة</h2>
+              <a href="/admin/keys">عرض الكل</a>
+            </div>
+            <div data-admin-latest-keys>
+              <div class="admin-v2-empty">جارٍ تحميل المفاتيح...</div>
             </div>
           </article>
-        </div>
+
+          <article class="admin-v2-card">
+            <div class="admin-v2-card__head">
+              <h2>إجمالي الاستخدام</h2>
+            </div>
+            <div class="admin-v2-usage" data-admin-usage-totals></div>
+          </article>
+
+          <article class="admin-v2-card">
+            <div class="admin-v2-card__head">
+              <h2>النشاط الأخير</h2>
+            </div>
+            <div class="admin-v2-activity" data-admin-activity></div>
+          </article>
+        </section>
       </section>
     </main>
 
-    <script src="/site.js?v=20260601-admin-secret"></script>
-    <script src="/portal.js?v=20260601-admin-secret"></script>
+    <script src="/site.js?v=20260602-admin-dashboard"></script>
+    <script src="/portal.js?v=20260602-admin-dashboard"></script>
+    <script src="/admin/dashboard-page.js?v=20260602-admin-dashboard"></script>
   </body>
 </html>

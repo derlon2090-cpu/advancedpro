@@ -311,6 +311,203 @@ router.get(
   })
 );
 
+function startOfDay(date) {
+  const next = new Date(date);
+  next.setHours(0, 0, 0, 0);
+  return next;
+}
+
+function formatDayKey(date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function classifyPlanName(code) {
+  const total = Number(code.imageLimit || 0) + Number(code.videoLimit || 0);
+  if (total <= 10) return "باقة انطلاقة";
+  if (total <= 40) return "باقة إبداع";
+  if (total <= 150) return "باقة تميز";
+  return "باقة احتراف";
+}
+
+function getAdminKeyStatus(code, now = new Date()) {
+  if (!code.isActive) {
+    return { key: "disabled", label: "معطل" };
+  }
+
+  if (code.expiresAt && new Date(code.expiresAt).getTime() < now.getTime()) {
+    return { key: "expired", label: "منتهي" };
+  }
+
+  if (code.activatedAt || code.activatedByUserId || code.isUsed) {
+    return { key: "active", label: "نشط" };
+  }
+
+  return { key: "unused", label: "غير مستخدم" };
+}
+
+async function getProjectRows() {
+  try {
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS projects (
+        id SERIAL PRIMARY KEY,
+        key_id INTEGER NOT NULL,
+        type VARCHAR(32) NOT NULL,
+        prompt TEXT NOT NULL,
+        duration INTEGER,
+        quality VARCHAR(32),
+        style VARCHAR(64),
+        result_url TEXT,
+        status VARCHAR(32) NOT NULL DEFAULT 'completed',
+        created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    return prisma.$queryRawUnsafe(`
+      SELECT id, key_id, type, status, created_at
+      FROM projects
+      ORDER BY created_at DESC
+      LIMIT 200
+    `);
+  } catch (error) {
+    console.error("ADMIN_PROJECT_STATS_ERROR", error);
+    return [];
+  }
+}
+
+router.get(
+  "/stats",
+  asyncHandler(async (_req, res) => {
+    await ensureActivationCodesTable();
+
+    const now = new Date();
+    const sevenDaysAgo = startOfDay(new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000));
+
+    const [codes, usageLogs, projects] = await Promise.all([
+      prisma.activationCode.findMany({
+        orderBy: { createdAt: "desc" },
+        take: 500,
+      }),
+      prisma.usageLog.findMany({
+        where: { createdAt: { gte: sevenDaysAgo } },
+        orderBy: { createdAt: "desc" },
+        take: 500,
+      }),
+      getProjectRows(),
+    ]);
+
+    const counters = {
+      totalKeys: codes.length,
+      activeKeys: 0,
+      unusedKeys: 0,
+      expiredKeys: 0,
+      disabledKeys: 0,
+      imagesUsed: 0,
+      videosUsed: 0,
+    };
+
+    const planMap = new Map();
+    for (const code of codes) {
+      const status = getAdminKeyStatus(code, now);
+      if (status.key === "active") counters.activeKeys += 1;
+      if (status.key === "unused") counters.unusedKeys += 1;
+      if (status.key === "expired") counters.expiredKeys += 1;
+      if (status.key === "disabled") counters.disabledKeys += 1;
+
+      counters.imagesUsed += Number(code.imageUsed || 0);
+      counters.videosUsed += Number(code.videoUsed || 0);
+
+      const planName = classifyPlanName(code);
+      planMap.set(planName, (planMap.get(planName) || 0) + 1);
+    }
+
+    const usageByDay = new Map();
+    for (let index = 0; index < 7; index += 1) {
+      const day = new Date(sevenDaysAgo);
+      day.setDate(sevenDaysAgo.getDate() + index);
+      usageByDay.set(formatDayKey(day), {
+        date: formatDayKey(day),
+        label: day.toLocaleDateString("ar-SA", { weekday: "short" }),
+        images: 0,
+        videos: 0,
+      });
+    }
+
+    for (const log of usageLogs) {
+      const key = formatDayKey(new Date(log.createdAt));
+      const bucket = usageByDay.get(key);
+      if (!bucket) continue;
+      if (log.type === "video") bucket.videos += Number(log.amountUsed || 1);
+      else bucket.images += Number(log.amountUsed || 1);
+    }
+
+    for (const project of projects) {
+      const key = formatDayKey(new Date(project.created_at || project.createdAt));
+      const bucket = usageByDay.get(key);
+      if (!bucket) continue;
+      if (project.type === "video") bucket.videos += 1;
+      if (project.type === "image") bucket.images += 1;
+    }
+
+    const totalProjects = projects.length;
+    const completedProjects = projects.filter((project) => project.status !== "failed").length;
+    const totalUsage = counters.imagesUsed + counters.videosUsed;
+    const successRate =
+      totalProjects > 0 ? Math.round((completedProjects / totalProjects) * 1000) / 10 : 100;
+
+    const latestKeys = codes.slice(0, 6).map((code) => {
+      const status = getAdminKeyStatus(code, now);
+      return {
+        id: code.id,
+        code: code.code,
+        customer: code.ownerName || code.email || "عميل غير محدد",
+        email: code.email || null,
+        plan: classifyPlanName(code),
+        expiresAt: code.expiresAt,
+        status: status.key,
+        statusLabel: status.label,
+      };
+    });
+
+    const recentActivity = [
+      ...codes.slice(0, 5).map((code) => ({
+        id: `key-${code.id}`,
+        type: code.activatedAt ? "key-activated" : "key-created",
+        title: code.activatedAt ? "تم تفعيل مفتاح" : "تم إنشاء مفتاح جديد",
+        description: `${code.code} - ${code.ownerName || code.email || "بدون عميل"}`,
+        createdAt: code.activatedAt || code.createdAt,
+      })),
+      ...projects.slice(0, 5).map((project) => ({
+        id: `project-${project.id}`,
+        type: project.type === "video" ? "video-created" : "image-created",
+        title: project.type === "video" ? "تم إنشاء فيديو" : "تم إنشاء صورة",
+        description: `مشروع #${project.id}`,
+        createdAt: project.created_at || project.createdAt,
+      })),
+    ]
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 8);
+
+    return res.json({
+      totalKeys: counters.totalKeys,
+      activeKeys: counters.activeKeys,
+      unusedKeys: counters.unusedKeys,
+      expiredKeys: counters.expiredKeys,
+      disabledKeys: counters.disabledKeys,
+      totalUsage,
+      imagesUsed: counters.imagesUsed,
+      videosUsed: counters.videosUsed,
+      totalProjects,
+      successRate,
+      averageImagesPerDay: Math.round((counters.imagesUsed / 7) * 10) / 10,
+      averageVideosPerDay: Math.round((counters.videosUsed / 7) * 10) / 10,
+      keysByPlan: Array.from(planMap.entries()).map(([name, value]) => ({ name, value })),
+      usageLast7Days: Array.from(usageByDay.values()),
+      latestKeys,
+      recentActivity,
+    });
+  })
+);
+
 router.post(
   "/admins",
   asyncHandler(async (req, res) => {
