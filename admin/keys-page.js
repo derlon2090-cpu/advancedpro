@@ -18,6 +18,37 @@
     return `/${configured || "advanced-pro-control"}`;
   }
 
+  async function logout() {
+    try {
+      await fetch(`${API_BASE_URL}/api/admin/logout`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (error) {
+      console.warn("Admin logout failed:", error);
+    } finally {
+      window.location.href = loginPath();
+    }
+  }
+
+  function bindAdminShell() {
+    const sidebar = $("#adminSidebar");
+    document.addEventListener("click", (event) => {
+      const toggle = event.target.closest("[data-admin-drawer-toggle]");
+      if (toggle) {
+        sidebar?.classList.toggle("is-open");
+        return;
+      }
+
+      const logoutButton = event.target.closest("[data-logout]");
+      if (logoutButton) {
+        event.preventDefault();
+        logout();
+      }
+    });
+  }
+
   async function requestJson(path) {
     const response = await fetch(`${API_BASE_URL}${path}`, {
       credentials: "include",
@@ -157,6 +188,7 @@
   }
 
   async function init() {
+    bindAdminShell();
     const session = await requestJson("/api/admin/session").catch(() => null);
     if (!session?.admin) {
       window.location.href = loginPath();

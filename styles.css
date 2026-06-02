@@ -4713,13 +4713,11 @@ html[data-theme="dark"] .create-chat-bubble__state {
 
 .admin-keys-page,
 .admin-key-create-page {
-  min-height: 100vh;
-  padding: 22px;
+  min-height: auto;
+  padding: 0;
   display: grid;
   gap: 18px;
-  background:
-    radial-gradient(circle at 8% 0%, rgba(91, 53, 245, 0.08), transparent 28%),
-    #f8faff;
+  background: transparent;
 }
 
 .admin-keys-topbar {
