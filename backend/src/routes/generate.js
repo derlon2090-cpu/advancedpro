@@ -22,6 +22,31 @@ function httpError(message, statusCode = 400) {
   throw error;
 }
 
+function providerFailureMessage(error, type) {
+  const fallback = "فشل التوليد، لم يتم خصم أي رصيد.";
+  const raw = String(error?.message || "").trim();
+
+  if (!raw) {
+    return fallback;
+  }
+
+  if (raw.includes("BFL_API_KEY") || raw.includes("WAVESPEED_API_KEY")) {
+    return raw;
+  }
+
+  if (/unauthorized|invalid api|invalid key|api key|forbidden|401|403/i.test(raw)) {
+    return type === "video"
+      ? "مفتاح WaveSpeed غير صحيح أو غير مفعل في Render. لم يتم خصم أي رصيد."
+      : "مفتاح BFL غير صحيح أو غير مفعل في Render. لم يتم خصم أي رصيد.";
+  }
+
+  if (error?.statusCode && error.statusCode < 500) {
+    return `${raw} لم يتم خصم أي رصيد.`;
+  }
+
+  return `${fallback} السبب: ${raw}`;
+}
+
 function getKeyId(req) {
   const keyId = Number(req.cookies?.key_session);
   if (!Number.isFinite(keyId)) {
@@ -337,10 +362,13 @@ router.post(
     } catch (error) {
       await markGenerationFailed({ generationId, message: error.message });
       logError(error, { scope: "generateProvider", keyId, generationId, type });
+      httpError(providerFailureMessage(error, type), error.statusCode || 502);
       httpError("فشل التوليد، لم يتم خصم أي رصيد.", error.statusCode || 502);
     }
 
     if (!result?.resultUrl) {
+      await markGenerationFailed({ generationId, message: "لم يرجع مزود التوليد رابط نتيجة." });
+      httpError("فشل التوليد، لم يتم خصم أي رصيد. السبب: لم يرجع مزود التوليد رابط نتيجة.", 502);
       await markGenerationFailed({ generationId, message: "لم يرجع المزود رابط نتيجة." });
       httpError("فشل التوليد، لم يتم خصم أي رصيد.", 502);
     }
