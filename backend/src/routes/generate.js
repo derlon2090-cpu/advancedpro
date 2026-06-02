@@ -145,19 +145,32 @@ async function ensureProjectsTable(tx = prisma) {
 }
 
 async function assertNoRunningGeneration(keyId) {
+  const staleMinutes = Math.max(Number(process.env.GENERATION_STALE_MINUTES || 3), 1);
+
+  await withDbRetry(() =>
+    prisma.$executeRaw`
+      UPDATE generations
+      SET status = 'failed',
+          error_message = 'تم إلغاء طلب عالق تلقائيًا قبل إرسال طلب جديد.'
+      WHERE key_id = ${keyId}
+        AND status IN ('queued', 'processing')
+        AND created_at < NOW() - (${`${staleMinutes} minutes`})::interval
+    `
+  );
+
   const rows = await withDbRetry(() =>
     prisma.$queryRaw`
-      SELECT id
+      SELECT id, created_at
       FROM generations
       WHERE key_id = ${keyId}
         AND status IN ('queued', 'processing')
-        AND created_at > NOW() - INTERVAL '15 minutes'
+        AND created_at > NOW() - (${`${staleMinutes} minutes`})::interval
       LIMIT 1
     `
   );
 
   if (rows.length > 0) {
-    httpError("لديك طلب قيد المعالجة حاليًا. انتظر اكتماله قبل إرسال طلب جديد.", 409);
+    httpError(`لديك طلب قيد المعالجة حاليًا. انتظر اكتماله أو أعد المحاولة بعد ${staleMinutes} دقائق.`, 409);
   }
 }
 
