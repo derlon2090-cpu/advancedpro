@@ -16,6 +16,14 @@
     {
       "source": "/admin/plans/create",
       "destination": "/admin/plan-create.html"
+    },
+    {
+      "source": "/admin/keys/create",
+      "destination": "/admin/key-new.html"
+    },
+    {
+      "source": "/admin/customers/:id",
+      "destination": "/admin/customer-detail.html?id=:id"
     }
   ],
   "builds": [

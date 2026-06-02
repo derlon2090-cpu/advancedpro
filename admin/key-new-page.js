@@ -210,6 +210,10 @@
 
     const form = $("#adminKeyCreateForm");
     const customDates = $("[data-custom-dates]");
+    const customerFromUrl = new URLSearchParams(window.location.search).get("customer");
+    if (customerFromUrl && form?.customerName) {
+      form.customerName.value = customerFromUrl;
+    }
 
     form?.addEventListener("change", (event) => {
       if (event.target.name === "planId") {
