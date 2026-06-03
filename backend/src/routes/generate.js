@@ -145,7 +145,7 @@ async function ensureProjectsTable(tx = prisma) {
 }
 
 async function assertNoRunningGeneration(keyId) {
-  const staleMinutes = Math.max(Number(process.env.GENERATION_STALE_MINUTES || 3), 1);
+  const staleSeconds = Math.max(Number(process.env.GENERATION_STALE_SECONDS || 30), 10);
 
   await withDbRetry(() =>
     prisma.$executeRaw`
@@ -154,7 +154,7 @@ async function assertNoRunningGeneration(keyId) {
           error_message = 'تم إلغاء طلب عالق تلقائيًا قبل إرسال طلب جديد.'
       WHERE key_id = ${keyId}
         AND status IN ('queued', 'processing')
-        AND created_at < NOW() - (${`${staleMinutes} minutes`})::interval
+        AND created_at < NOW() - (${`${staleSeconds} seconds`})::interval
     `
   );
 
@@ -164,13 +164,13 @@ async function assertNoRunningGeneration(keyId) {
       FROM generations
       WHERE key_id = ${keyId}
         AND status IN ('queued', 'processing')
-        AND created_at > NOW() - (${`${staleMinutes} minutes`})::interval
+        AND created_at > NOW() - (${`${staleSeconds} seconds`})::interval
       LIMIT 1
     `
   );
 
   if (rows.length > 0) {
-    httpError(`لديك طلب قيد المعالجة حاليًا. انتظر اكتماله أو أعد المحاولة بعد ${staleMinutes} دقائق.`, 409);
+    httpError(`لديك طلب قيد المعالجة حاليًا. أعد المحاولة بعد ${staleSeconds} ثانية.`, 409);
   }
 }
 
@@ -241,6 +241,10 @@ async function completeGenerationAndDeduct({
 
       if (generationRows[0].status === "completed") {
         httpError("تم خصم رصيد هذا الطلب مسبقًا.", 409);
+      }
+
+      if (!["queued", "processing"].includes(generationRows[0].status)) {
+        httpError("تم إلغاء هذا الطلب أو فشل سابقًا، ولن يتم خصم أي رصيد.", 409);
       }
 
       const current = await tx.activationCode.findUnique({
