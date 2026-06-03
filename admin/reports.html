@@ -3,134 +3,76 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>الإحصائيات | Advanced Pro</title>
-    <meta name="robots" content="noindex,nofollow" />
+    <title>التقارير | Advanced Pro Nano</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260602-admin-reports" />
+    <link rel="stylesheet" href="/styles.css" />
   </head>
-  <body class="admin-v2-page" data-page="admin-reports" data-requires-admin="true" data-skip-site-footer="true">
-    <main class="admin-v2-shell">
-      <aside class="admin-v2-sidebar" id="adminSidebar">
-        <div class="admin-v2-brand">
-          <img src="/ap-mark.svg" alt="" aria-hidden="true" />
+  <body data-page="admin-reports" data-requires-admin="true" data-skip-site-footer="true">
+    <main class="admin-shell">
+      <aside class="admin-sidebar">
+        <a class="brand brand--column" href="/admin">
+          <span class="brand-mark">AP</span>
+          <span class="brand-copy">
+            <strong>Advanced Pro Nano</strong>
+            <span>Admin Panel</span>
+          </span>
+        </a>
+
+        <nav class="admin-nav">
+          <a href="/admin">الرئيسية</a>
+          <a href="/admin/users">المستخدمون</a>
+          <a href="/admin/create-admin">إنشاء أدمن</a>
+          <a href="/admin/plans">الباقات</a>
+          <a href="/admin/codes">الأكواد</a>
+          <a href="/admin/available-codes">الأكواد المتاحة</a>
+          <a href="/admin/activity">النشاط</a>
+          <a class="is-active" href="/admin/reports">التقارير</a>
+          <a href="/admin/settings">الإعدادات</a>
+        </nav>
+
+        <div class="admin-sidebar__footer">
+          <a class="btn btn-secondary btn-block" href="/student.html">لوحة المستخدم</a>
+          <button class="btn btn-primary btn-block" type="button" data-logout>تسجيل الخروج</button>
+        </div>
+      </aside>
+
+      <section class="admin-main">
+        <div class="admin-toolbar">
           <div>
-            <strong>Advanced Pro</strong>
-            <span>لوحة تحكم الأدمن</span>
+            <span class="section-kicker">Reports</span>
+            <h1>التقارير</h1>
           </div>
         </div>
 
-        <nav class="admin-v2-nav" aria-label="قائمة لوحة الأدمن">
-          <a href="/admin/dashboard" data-icon="⌂">لوحة التحكم</a>
-          <a href="/admin/keys" data-icon="⚿">المفاتيح</a>
-          <a href="/admin/plans" data-icon="◈">الباقات</a>
-          <a href="/admin/customers" data-icon="♙">العملاء</a>
-          <a class="is-active" href="/admin/reports" data-icon="▥">الإحصائيات</a>
-          <a href="/admin/settings" data-icon="⚙">الإعدادات</a>
-          <a href="/admin/activity" data-icon="◷">سجل النشاط</a>
-          <a href="/admin/backup" data-icon="◉">النسخ الاحتياطي</a>
-        </nav>
-
-        <button class="admin-v2-logout" type="button" data-logout>
-          <span>↪</span>
-          تسجيل الخروج
-        </button>
-      </aside>
-
-      <section class="admin-v2-main">
-        <header class="admin-v2-header">
-          <button class="admin-v2-menu" type="button" data-admin-drawer-toggle aria-label="فتح القائمة">☰</button>
-          <div class="admin-v2-profile" data-admin-profile>
-            <span class="admin-v2-avatar">A</span>
-            <div>
-              <strong>مرحبًا</strong>
-              <small>Owner</small>
+        <div class="page-grid">
+          <article class="page-card">
+            <div class="page-card__top">
+              <h2>أفضل المستخدمين</h2>
             </div>
-          </div>
-          <div class="admin-v2-actions">
-            <button type="button" aria-label="التنبيهات">🔔<b>8</b></button>
-            <button type="button" aria-label="الوضع الليلي">◐</button>
-            <button type="button" aria-label="اللغة">◉</button>
-          </div>
-          <label class="admin-v2-search">
-            <span>⌕</span>
-            <input type="search" placeholder="البحث في النظام..." aria-label="البحث في النظام" />
-          </label>
-        </header>
-
-        <main class="admin-reports-page">
-          <section class="admin-reports-hero">
-            <div>
-              <span class="admin-reports-icon">▥</span>
-              <p>الإحصائيات</p>
-              <h1>الإحصائيات</h1>
-              <span>نظرة عامة على أداء النظام والمستخدمين</span>
+            <p>اعرض أكثر المستخدمين نشاطًا ومعدل الاستخدام عند توفر البيانات.</p>
+          </article>
+          <article class="page-card">
+            <div class="page-card__top">
+              <h2>أكثر الباقات مبيعًا</h2>
             </div>
-          </section>
-
-          <section class="admin-reports-tools">
-            <button type="button" data-export-reports>⇩ تصدير</button>
-            <select data-report-status>
-              <option>جميع الحالات</option>
-              <option>نشط</option>
-              <option>منتهي</option>
-            </select>
-            <select data-report-plan>
-              <option>جميع الباقات</option>
-              <option>انطلاقة</option>
-              <option>إبداع</option>
-              <option>تميز</option>
-              <option>احترافية</option>
-            </select>
-            <button type="button">📅 حدد الفترة</button>
-          </section>
-
-          <section class="admin-reports-stats" data-report-stats>
-            <article class="admin-v2-skeleton"></article>
-            <article class="admin-v2-skeleton"></article>
-            <article class="admin-v2-skeleton"></article>
-            <article class="admin-v2-skeleton"></article>
-          </section>
-
-          <section class="admin-reports-grid admin-reports-grid--wide">
-            <article class="admin-report-card">
-              <div class="admin-report-card__head">
-                <h2>نمو العملاء</h2>
-                <button type="button">آخر 6 أشهر</button>
-              </div>
-              <div class="admin-report-chart" data-customers-growth></div>
-            </article>
-            <article class="admin-report-card">
-              <div class="admin-report-card__head">
-                <h2>الإيرادات</h2>
-                <button type="button">آخر 6 أشهر</button>
-              </div>
-              <div class="admin-report-bars" data-revenue-chart></div>
-            </article>
-          </section>
-
-          <section class="admin-reports-grid admin-reports-grid--three">
-            <article class="admin-report-card">
-              <h2>توزيع الباقات</h2>
-              <div class="admin-report-donut" data-plan-distribution></div>
-            </article>
-            <article class="admin-report-card">
-              <h2>المشاريع حسب الحالة</h2>
-              <div class="admin-report-donut" data-project-status></div>
-            </article>
-            <article class="admin-report-card">
-              <h2>استخدام الموارد</h2>
-              <div class="admin-report-resources" data-resource-usage></div>
-            </article>
-          </section>
-        </main>
+            <p>قائمة بالباقات الأكثر طلبًا لمساعدتك في اتخاذ القرار.</p>
+          </article>
+          <article class="page-card">
+            <div class="page-card__top">
+              <h2>معدل الاستخدام</h2>
+            </div>
+            <p>رسوم بيانية للاستخدام اليومي والمبيعات عند ربط التقارير.</p>
+          </article>
+        </div>
       </section>
     </main>
 
-    <script src="/admin/reports-page.js?v=20260602-admin-reports"></script>
+    <script src="/site.js"></script>
+    <script src="/portal.js"></script>
   </body>
 </html>

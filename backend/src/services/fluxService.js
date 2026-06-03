@@ -18,7 +18,7 @@ function compactForLog(value, maxLength = 500) {
 }
 
 function buildImagePrompt({ prompt, quality, style }) {
-  const exactPrompt = String(prompt || "").trim();
+  const userPrompt = String(prompt || "").trim();
   const styleText = String(style || "").trim();
   const qualityHints = {
     normal: "clean composition, clear subject, good lighting",
@@ -26,19 +26,17 @@ function buildImagePrompt({ prompt, quality, style }) {
     ultra: "ultra detailed, premium composition, realistic textures, cinematic lighting",
   };
 
-  const guardrails = [
-    "Create an image that matches the user's prompt exactly.",
-    "Do not replace the requested subject with animals, food, rabbits, pets, or unrelated objects unless the user explicitly asks for them.",
-    "Keep the main subject centered, fully visible, and not cropped.",
-  ];
-
-  if (hasArabicText(exactPrompt)) {
-    guardrails.unshift("The user prompt is Arabic. Interpret it faithfully and preserve its meaning exactly.");
-  }
-
   return [
-    `User prompt: ${exactPrompt}`,
-    ...guardrails,
+    "Create a realistic, professional image that follows this request exactly:",
+    `"${userPrompt}"`,
+    "",
+    hasArabicText(userPrompt)
+      ? "The request is Arabic. Understand it accurately, translate its meaning internally to English, and follow it exactly."
+      : "Follow the user's request exactly.",
+    "Do not generate food, animals, rabbits, pets, landscapes, or random objects unless explicitly requested.",
+    "No text, no watermark, no distorted face, no extra fingers.",
+    "Keep the requested main subject clear, centered, fully visible, and not cropped.",
+    "High quality, clean composition, professional lighting.",
     `Quality direction: ${qualityHints[quality] || qualityHints.normal}.`,
     styleText ? `Visual style: ${styleText}.` : "",
   ]
@@ -99,7 +97,7 @@ async function readJsonResponse(response) {
 function getFluxModelConfig(quality) {
   if (quality === "ultra") {
     return {
-      endpoint: process.env.BFL_ULTRA_API_URL || process.env.BFL_API_URL || "https://api.bfl.ai/v1/flux-pro-1.1",
+      endpoint: process.env.BFL_ULTRA_API_URL || process.env.BFL_API_URL || "https://api.bfl.ai/v1/flux-pro-1.1-ultra",
       model: process.env.BFL_ULTRA_MODEL || "flux-pro-1.1-ultra",
     };
   }
@@ -116,8 +114,8 @@ function getFluxModelConfig(quality) {
       process.env.BFL_NORMAL_API_URL ||
       process.env.BFL_FAST_API_URL ||
       process.env.BFL_API_URL ||
-      "https://api.bfl.ai/v1/flux-pro-1.1",
-    model: process.env.BFL_NORMAL_MODEL || "flux-pro-1.1",
+      "https://api.bfl.ai/v1/flux-dev",
+    model: process.env.BFL_NORMAL_MODEL || "flux-dev",
   };
 }
 
@@ -133,9 +131,9 @@ async function postToBfl({ apiKey, prompt, quality, style }) {
     safety_tolerance: Number(process.env.BFL_SAFETY_TOLERANCE || 2),
   };
 
-  console.log("MODEL:", model);
-  console.log("PROMPT SENT:", prompt);
-  console.log("FINAL PROMPT SENT TO API:", payload.prompt);
+  console.log("USER_PROMPT", prompt);
+  console.log("FINAL_PROMPT", payload.prompt);
+  console.log("MODEL", model);
 
   console.log(
     "[BFL_IMAGE_REQUEST]",

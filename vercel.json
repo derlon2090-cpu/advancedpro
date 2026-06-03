@@ -15,15 +15,15 @@
     },
     {
       "source": "/admin/plans/create",
-      "destination": "/admin/plan-create.html"
+      "destination": "/admin/plans.html"
     },
     {
       "source": "/admin/keys/create",
-      "destination": "/admin/key-new.html"
+      "destination": "/admin/codes.html"
     },
     {
       "source": "/admin/customers/:id",
-      "destination": "/admin/customer-detail.html?id=:id"
+      "destination": "/admin/users.html"
     },
     {
       "source": "/dashboard",

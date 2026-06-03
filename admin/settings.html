@@ -3,102 +3,74 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>الإعدادات | Advanced Pro</title>
-    <meta name="robots" content="noindex,nofollow" />
+    <title>إعدادات المنصة | Advanced Pro Nano</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260602-admin-settings-v2" />
+    <link rel="stylesheet" href="/styles.css" />
   </head>
-  <body class="admin-v2-page" data-page="admin-settings" data-requires-admin="true" data-skip-site-footer="true">
-    <main class="admin-v2-shell">
-      <aside class="admin-v2-sidebar" id="adminSidebar">
-        <div class="admin-v2-brand">
-          <img src="/ap-mark.svg" alt="" aria-hidden="true" />
+  <body data-page="admin-settings" data-requires-admin="true" data-skip-site-footer="true">
+    <main class="admin-shell">
+      <aside class="admin-sidebar">
+        <a class="brand brand--column" href="/admin">
+          <span class="brand-mark">AP</span>
+          <span class="brand-copy">
+            <strong>Advanced Pro Nano</strong>
+            <span>Admin Panel</span>
+          </span>
+        </a>
+
+        <nav class="admin-nav">
+          <a href="/admin">الرئيسية</a>
+          <a href="/admin/users">المستخدمون</a>
+          <a href="/admin/create-admin">إنشاء أدمن</a>
+          <a href="/admin/plans">الباقات</a>
+          <a href="/admin/codes">الأكواد</a>
+          <a href="/admin/available-codes">الأكواد المتاحة</a>
+          <a href="/admin/activity">النشاط</a>
+          <a href="/admin/reports">التقارير</a>
+          <a class="is-active" href="/admin/settings">الإعدادات</a>
+        </nav>
+
+        <div class="admin-sidebar__footer">
+          <a class="btn btn-secondary btn-block" href="/student.html">لوحة المستخدم</a>
+          <button class="btn btn-primary btn-block" type="button" data-logout>تسجيل الخروج</button>
+        </div>
+      </aside>
+
+      <section class="admin-main">
+        <div class="admin-toolbar">
           <div>
-            <strong>Advanced Pro</strong>
-            <span>لوحة تحكم الأدمن</span>
+            <span class="section-kicker">Settings</span>
+            <h1>إعدادات المنصة</h1>
           </div>
         </div>
 
-        <nav class="admin-v2-nav" aria-label="قائمة لوحة الأدمن">
-          <a href="/admin/dashboard" data-icon="⌂">لوحة التحكم</a>
-          <a href="/admin/keys" data-icon="⚿">المفاتيح</a>
-          <a href="/admin/plans" data-icon="◇">الباقات</a>
-          <a href="/admin/customers" data-icon="♙">العملاء</a>
-          <a href="/admin/reports" data-icon="▥">الإحصائيات</a>
-          <a class="is-active" href="/admin/settings" data-icon="⚙">الإعدادات</a>
-          <a href="/admin/activity" data-icon="◷">سجل النشاط</a>
-          <a href="/admin/backup" data-icon="◎">النسخ الاحتياطي</a>
-        </nav>
-
-        <button class="admin-v2-logout" type="button" data-logout>
-          <span>↪</span>
-          تسجيل الخروج
-        </button>
-      </aside>
-
-      <section class="admin-v2-main">
-        <header class="admin-v2-header">
-          <button class="admin-v2-menu" type="button" data-admin-drawer-toggle aria-label="فتح القائمة">☰</button>
-          <div class="admin-v2-profile" data-admin-profile>
-            <span class="admin-v2-avatar">A</span>
-            <div>
-              <strong>مرحبًا</strong>
-              <small>Owner</small>
+        <article class="page-card">
+          <form id="adminSettingsForm" class="stack-form">
+            <div class="field">
+              <label for="storeUrl">رابط المتجر</label>
+              <input id="storeUrl" name="storeUrl" type="url" />
             </div>
-          </div>
-          <div class="admin-v2-actions">
-            <button type="button" aria-label="الوضع الليلي">◐</button>
-            <button type="button" aria-label="اللغة">◎</button>
-          </div>
-          <label class="admin-v2-search">
-            <span>⌕</span>
-            <input type="search" placeholder="البحث في الإعدادات..." aria-label="البحث في الإعدادات" />
-          </label>
-        </header>
-
-        <main class="admin-settings-page">
-          <section class="admin-settings-hero">
-            <div class="admin-settings-hero__title">
-              <span class="admin-settings-icon">⚙</span>
-              <div>
-                <h1>الإعدادات</h1>
-                <p>إدارة إعدادات النظام والمنصة بالكامل</p>
-              </div>
+            <div class="field">
+              <label for="supportWhatsapp">رقم واتساب</label>
+              <input id="supportWhatsapp" name="supportWhatsapp" type="text" />
             </div>
-          </section>
-
-          <section class="admin-settings-shell">
-            <aside class="admin-settings-side" aria-label="أقسام الإعدادات">
-              <button class="is-active" type="button" data-settings-tab="general"><span>⚙</span> عام</button>
-              <button type="button" data-settings-tab="profile"><span>♙</span> الملف الشخصي</button>
-              <button type="button" data-settings-tab="company"><span>▦</span> الشركة</button>
-              <button type="button" data-settings-tab="keys"><span>⚿</span> المفاتيح</button>
-              <button type="button" data-settings-tab="notifications"><span>◌</span> الإشعارات</button>
-              <button type="button" data-settings-tab="security"><span>🛡</span> الأمان</button>
-              <button type="button" data-settings-tab="backup"><span>☁</span> النسخ الاحتياطي</button>
-              <button type="button" data-settings-tab="api"><span>&lt;/&gt;</span> API</button>
-            </aside>
-
-            <section class="admin-settings-content" data-settings-panel>
-              <div class="admin-v2-empty">جارٍ تحميل الإعدادات...</div>
-            </section>
-          </section>
-        </main>
+            <div class="field">
+              <label for="supportWhatsappMessage">الرسالة الجاهزة</label>
+              <textarea id="supportWhatsappMessage" name="supportWhatsappMessage" rows="4"></textarea>
+            </div>
+            <div class="status-message" hidden data-admin-settings-message></div>
+            <button class="btn btn-primary" type="submit">حفظ الإعدادات</button>
+          </form>
+        </article>
       </section>
     </main>
 
-    <div class="admin-settings-modal" data-settings-modal hidden>
-      <section class="admin-settings-modal__card" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
-        <button class="admin-settings-modal__close" type="button" data-settings-modal-close aria-label="إغلاق">×</button>
-        <div data-settings-modal-content></div>
-      </section>
-    </div>
-
-    <script src="/admin/settings-page.js?v=20260602-admin-settings-v2"></script>
+    <script src="/site.js"></script>
+    <script src="/portal.js"></script>
   </body>
 </html>
