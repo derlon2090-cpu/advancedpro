@@ -6,7 +6,7 @@
     <title>لوحة الإنشاء | Advanced Pro</title>
     <meta
       name="description"
-      content="لوحة إنشاء عربية لاختيار صورة أو فيديو وقراءة رصيد المفتاح المفعّل."
+      content="لوحة مستخدم عربية مرنة لإنشاء الصور والفيديو وقراءة رصيد المفتاح المفعّل."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -14,64 +14,83 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260603-dashboard-responsive" />
+    <link rel="stylesheet" href="/styles.css?v=20260603-dashboard-final" />
   </head>
-  <body class="creator-dashboard-page" data-page="dashboard">
-    <header class="dashboard-topbar" aria-label="رأس لوحة المستخدم">
-      <div class="dashboard-shell dashboard-topbar__inner">
-        <a class="key-brand" href="/" aria-label="Advanced Pro - الرئيسية">
-          <img class="key-brand__mark" src="/ap-mark.svg" alt="" aria-hidden="true" />
-          <span class="key-brand__copy">
+  <body class="creator-dashboard-page dashboard-v2" data-page="dashboard">
+    <header class="user-dashboard-header" aria-label="رأس لوحة المستخدم">
+      <div class="user-dashboard-shell user-dashboard-header__inner">
+        <a class="user-dashboard-brand" href="/" aria-label="Advanced Pro">
+          <img src="/ap-mark.svg" alt="" aria-hidden="true" />
+          <span>
             <strong>Advanced Pro</strong>
-            <span>المفاتيح الرقمية</span>
+            <small>المفاتيح الرقمية</small>
           </span>
         </a>
 
-        <nav class="dashboard-nav" aria-label="روابط اللوحة">
+        <nav class="user-dashboard-nav" aria-label="روابط لوحة المستخدم">
           <a href="/">الرئيسية</a>
           <a href="/activate">تفعيل مفتاح</a>
           <button type="button" data-dashboard-logout>تسجيل الخروج</button>
         </nav>
+
+        <div class="user-dashboard-avatar" aria-label="حساب المستخدم">
+          <span data-customer-initial>J</span>
+          <i aria-hidden="true"></i>
+        </div>
       </div>
     </header>
 
-    <main class="dashboard-main dashboard-shell">
-      <aside class="dashboard-sidebar" aria-label="بيانات المفتاح والرصيد">
-        <section class="dashboard-side-card">
-          <div class="dashboard-card-title">
-            <span>رصيدك الحالي</span>
-            <small data-key-status>جارٍ التحميل...</small>
+    <main class="user-dashboard-shell user-dashboard-layout">
+      <aside class="user-dashboard-sidebar" aria-label="الرصيد وتفاصيل المفتاح">
+        <section class="user-card balance-card">
+          <div class="user-card-title">
+            <div>
+              <span class="status-pill" data-key-status>جار التحميل</span>
+              <h2>رصيدك الحالي</h2>
+            </div>
+            <span class="card-icon" aria-hidden="true">▣</span>
           </div>
 
-          <div class="credit-meter">
-            <div class="credit-meter__row">
+          <div class="balance-meter">
+            <div class="balance-meter__head">
               <span>الصور</span>
               <strong data-images-counter>0 / 0</strong>
+              <span class="mini-icon" aria-hidden="true">▧</span>
             </div>
-            <div class="credit-meter__track">
+            <div class="balance-meter__track">
               <span data-images-progress style="width: 0%"></span>
             </div>
+            <small data-images-percent>0%</small>
           </div>
 
-          <div class="credit-meter">
-            <div class="credit-meter__row">
+          <div class="balance-meter">
+            <div class="balance-meter__head">
               <span>الفيديوهات</span>
               <strong data-videos-counter>0 / 0</strong>
+              <span class="mini-icon" aria-hidden="true">▣</span>
             </div>
-            <div class="credit-meter__track">
+            <div class="balance-meter__track">
               <span data-videos-progress style="width: 0%"></span>
             </div>
+            <small data-videos-percent>0%</small>
           </div>
+
+          <p class="expiry-line">ينتهي في: <b data-key-expires-short>--</b></p>
         </section>
 
-        <section class="dashboard-side-card">
-          <div class="dashboard-card-title">
-            <span>تفاصيل مفتاحك</span>
+        <section class="user-card key-card">
+          <div class="user-card-title">
+            <h2>تفاصيل المفتاح</h2>
+            <span class="key-icon" aria-hidden="true">⌘</span>
           </div>
-          <dl class="key-details-list">
+
+          <dl class="key-info-list">
             <div>
               <dt>المفتاح</dt>
-              <dd data-key-code>APRO-XXXX-XXXX-----</dd>
+              <dd>
+                <span data-key-code>APRO-XXXX-XXXX-XXXX</span>
+                <button type="button" data-copy-key aria-label="نسخ المفتاح">▢</button>
+              </dd>
             </div>
             <div>
               <dt>تاريخ التفعيل</dt>
@@ -85,143 +104,132 @@
               <dt>اسم الباقة</dt>
               <dd data-key-plan>--</dd>
             </div>
+            <div>
+              <dt>الحالة</dt>
+              <dd><span class="dot-status" data-key-status-inline>--</span></dd>
+            </div>
           </dl>
+
+          <a class="soft-link" href="/activate">عرض جميع التفاصيل ←</a>
         </section>
 
-        <section class="upgrade-card">
-          <span class="upgrade-card__icon" aria-hidden="true">◇</span>
-          <h2>ترقية باقتك</h2>
-          <p>احصل على رصيد أعلى وصلاحية أطول عند الحاجة.</p>
-          <a href="/#pricing-title">عرض الباقات</a>
-        </section>
-        <section class="dashboard-side-card quick-links-card">
-          <div class="dashboard-card-title">
-            <span>روابط سريعة</span>
+        <section class="user-card quick-card">
+          <div class="user-card-title">
+            <h2>روابط سريعة</h2>
+            <span class="key-icon" aria-hidden="true">⚡</span>
           </div>
-          <div class="quick-links">
+          <div class="quick-actions">
             <a href="/activate">تفعيل مفتاح جديد <span>+</span></a>
             <button type="button" data-dashboard-logout>تسجيل الخروج <span>↗</span></button>
             <a href="#dashboardCreateForm">بدء إنشاء <span>✦</span></a>
             <a href="/#pricing-title">ترقية الباقة <span>◇</span></a>
           </div>
         </section>
-
-        <section class="dashboard-side-card tip-card">
-          <div class="dashboard-card-title">
-            <span>نصيحة اليوم</span>
-          </div>
-          <p>اكتب وصفًا محددًا: المكان، الإضاءة، الأسلوب، والألوان. كلما كان الوصف أوضح كانت النتيجة أقرب لتوقعك.</p>
-        </section>
       </aside>
 
-      <section class="dashboard-workspace" aria-labelledby="dashboard-title">
-        <section class="dashboard-panel create-selection-panel">
-          <div class="dashboard-heading">
-            <span class="sparkle" aria-hidden="true">✦</span>
-            <h1 id="dashboard-title">ماذا تريد إنشاء اليوم؟</h1>
-            <p>اختر نوع المحتوى أولًا، ثم اكتب وصفك واضبط الخيارات المناسبة.</p>
+      <section class="user-dashboard-workspace" aria-labelledby="dashboard-title">
+        <section class="user-create-panel">
+          <div class="create-panel-header">
+            <div>
+              <span class="sparkle-mark" aria-hidden="true">✦</span>
+              <h1 id="dashboard-title">إنشاء جديد</h1>
+              <p>اكتب وصفك وسنقوم بإنشاء الصورة أو الفيديو لك.</p>
+            </div>
+
+            <div class="type-switch" role="tablist" aria-label="نوع الإنشاء">
+              <button type="button" data-create-kind="video">
+                فيديو
+                <span aria-hidden="true">▣</span>
+              </button>
+              <button type="button" data-create-kind="image">
+                صورة
+                <span aria-hidden="true">▧</span>
+              </button>
+            </div>
           </div>
 
-          <div class="creation-type-grid" role="listbox" aria-label="نوع الإنشاء">
-            <button class="creation-type-card" type="button" data-create-kind="video">
-              <span class="creation-type-card__icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24"><path d="m16 13 5 3V8l-5 3z" /><rect x="3" y="6" width="13" height="12" rx="2" /></svg>
+          <div class="chat-thread" data-chat-stream aria-live="polite">
+            <article class="chat-bubble is-assistant">
+              <span class="bubble-avatar">
+                <img src="/ap-mark.svg" alt="" aria-hidden="true" />
               </span>
-              <strong>فيديو</strong>
-              <small>مقطع مرئي بالوصف والخيارات</small>
-            </button>
-
-            <button class="creation-type-card" type="button" data-create-kind="image">
-              <span class="creation-type-card__icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24"><path d="m21 15-5-5L5 21" /><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><circle cx="9" cy="9" r="2" /></svg>
-              </span>
-              <strong>صورة</strong>
-              <small>صورة واحدة بوصف واضح</small>
-            </button>
-          </div>
-
-          <div class="dashboard-chat-stream" data-chat-stream aria-live="polite">
-            <article class="chat-message is-assistant">
-              <span class="chat-avatar">A</span>
-              <div>
+              <div class="bubble-content">
                 <strong>المساعد الذكي</strong>
-                <p>اختر صورة أو فيديو، ثم اكتب وصفك. سأعرض حالة التنفيذ والنتيجة هنا مباشرة.</p>
+                <p>اختر صورة أو فيديو، ثم اكتب وصفًا دقيقًا للحصول على أفضل نتيجة.</p>
               </div>
             </article>
           </div>
 
-          <form id="dashboardCreateForm" class="dashboard-create-form generation-input" hidden>
-            <div class="field">
-              <label for="dashboardPrompt" data-prompt-label>اكتب الوصف</label>
-              <textarea
-                id="dashboardPrompt"
-                name="prompt"
-                rows="6"
-                placeholder="مثال: مشهد إعلاني فاخر لمنتج على خلفية هادئة وإضاءة ناعمة"
-                required
-              ></textarea>
-              <small class="word-counter" data-word-counter>0 كلمة</small>
+          <section class="generation-state-card" data-result-card hidden aria-live="polite">
+            <div class="result-card__header">
+              <strong data-result-title>تم الإنشاء بنجاح</strong>
+              <a class="download-button" data-download-link href="#" target="_blank" rel="noreferrer">تحميل</a>
             </div>
+            <div class="result-preview" data-result-preview></div>
+          </section>
 
-            <div class="video-options" data-video-options hidden>
-              <span class="option-title">مدة الفيديو</span>
-              <div class="chip-group" data-duration-group>
-                <button type="button" data-duration="10" class="is-active">10 ثواني</button>
-                <button type="button" data-duration="20">20 ثانية</button>
-                <button type="button" data-duration="30">30 ثانية</button>
+          <form id="dashboardCreateForm" class="composer-bar" hidden>
+            <textarea
+              id="dashboardPrompt"
+              name="prompt"
+              rows="2"
+              placeholder="اكتب وصف الصورة هنا..."
+              required
+            ></textarea>
+
+            <div class="composer-controls">
+              <button class="send-button" type="submit" data-submit-label>
+                إرسال
+                <span aria-hidden="true">↗</span>
+              </button>
+
+              <div class="composer-chips">
+                <span class="cost-chip" data-credit-estimate hidden></span>
+                <span class="word-counter" data-word-counter>0 كلمة</span>
+                <span class="mode-chip" data-mode-chip>صورة</span>
+                <span class="quality-chip" data-quality-label>جودة عالية</span>
               </div>
             </div>
 
-            <div>
-              <span class="option-title">الجودة</span>
-              <div class="chip-group" data-quality-group>
-                <button type="button" data-quality="normal">عادية</button>
-                <button type="button" data-quality="high" class="is-active">عالية</button>
-                <button type="button" data-quality="ultra">فائقة</button>
+            <div class="composer-options">
+              <div class="video-options" data-video-options hidden>
+                <span class="option-label">مدة الفيديو</span>
+                <div class="chip-group" data-duration-group>
+                  <button type="button" data-duration="10" class="is-active">10 ثواني</button>
+                  <button type="button" data-duration="20">20 ثانية</button>
+                  <button type="button" data-duration="30">30 ثانية</button>
+                </div>
               </div>
+
+              <div>
+                <span class="option-label">الجودة</span>
+                <div class="chip-group" data-quality-group>
+                  <button type="button" data-quality="normal">عادية</button>
+                  <button type="button" data-quality="high" class="is-active">عالية</button>
+                  <button type="button" data-quality="ultra">فائقة</button>
+                </div>
+              </div>
+
+              <label class="style-select">
+                <span class="option-label">النمط</span>
+                <select id="styleSelect" name="style">
+                  <option value="">اختر النمط المناسب</option>
+                  <option value="realistic">واقعي</option>
+                  <option value="cartoon">كرتوني</option>
+                  <option value="cinematic">سينمائي</option>
+                  <option value="commercial">منتج تجاري</option>
+                </select>
+              </label>
             </div>
 
-            <div>
-              <label class="option-title" for="styleSelect">النمط</label>
-              <select id="styleSelect" name="style">
-                <option value="">اختر النمط المناسب لمحتواك</option>
-                <option value="realistic">واقعي</option>
-                <option value="cartoon">كرتوني</option>
-                <option value="cinematic">سينمائي</option>
-                <option value="commercial">منتج تجاري</option>
-              </select>
-            </div>
-
-            <p class="dashboard-form-message" data-credit-estimate hidden></p>
             <p class="dashboard-form-message" data-create-message hidden></p>
-
-            <button class="dashboard-submit" type="submit" data-submit-label>
-              إنشاء المحتوى
-            </button>
           </form>
-        </section>
 
-        <section class="result-card" data-result-card hidden aria-live="polite">
-          <div class="result-card__header">
-            <strong>تم الإنشاء بنجاح</strong>
-            <a data-download-link href="#" target="_blank" rel="noreferrer">تحميل</a>
-          </div>
-          <div data-result-preview></div>
-        </section>
-
-        <section class="dashboard-panel dashboard-notes">
-          <h2>ملاحظات هامة</h2>
-          <ul>
-            <li>يتم خصم الرصيد فقط بعد نجاح عملية الإنشاء.</li>
-            <li>إذا كان الرصيد غير كافٍ، ستظهر لك رسالة واضحة قبل الإرسال.</li>
-            <li>لا تشارك مفتاحك الرقمي مع أي شخص آخر.</li>
-          </ul>
+          <p class="prompt-tip">اكتب وصفًا دقيقًا للحصول على أفضل النتائج ✨</p>
         </section>
       </section>
     </main>
 
-    <footer class="dashboard-footer">جميع الحقوق محفوظة © Advanced Pro 2026</footer>
-
-    <script src="/dashboard-page.js?v=20260603-dashboard-responsive"></script>
+    <script src="/dashboard-page.js?v=20260603-dashboard-final"></script>
   </body>
 </html>

@@ -28,10 +28,12 @@
     if (!stream) return null;
 
     const message = document.createElement("article");
-    message.className = `chat-message ${role === "user" ? "is-user" : "is-assistant"}`;
+    message.className = `chat-bubble ${role === "user" ? "is-user" : "is-assistant"}`;
     message.innerHTML = `
-      <span class="chat-avatar">${role === "user" ? "أنت" : "A"}</span>
-      <div>
+      <span class="bubble-avatar">${
+        role === "user" ? "أنت" : '<img src="/ap-mark.svg" alt="" aria-hidden="true" />'
+      }</span>
+      <div class="bubble-content">
         <strong>${escapeHtml(title)}</strong>
         ${html || `<p>${escapeHtml(text)}</p>`}
       </div>
@@ -49,7 +51,7 @@
     return appendChatMessage({
       role: "assistant",
       title: "المساعد الذكي",
-      html: `<p>${note}</p><div class="chat-loader" aria-label="${escapeHtml(note)}"></div>`,
+      html: `<p>${note}</p><div class="dashboard-spinner" aria-label="${escapeHtml(note)}"></div>`,
     });
   }
 
@@ -128,6 +130,12 @@
     }
   }
 
+  function setStatusText(value) {
+    const status = value === "active" ? "نشط" : value || "غير مفعل";
+    setText("[data-key-status]", status);
+    setText("[data-key-status-inline]", status);
+  }
+
   function renderKey() {
     const key = state.key || {};
     const imagesRemaining = Number(key.imagesRemaining || 0);
@@ -135,15 +143,22 @@
     const imagesLimit = Number(key.imagesLimit || 0);
     const videosLimit = Number(key.videosLimit || 0);
 
-    setText("[data-key-status]", key.status === "active" ? "نشط" : key.status || "غير مفعل");
+    const imagesPercent = percentage(imagesRemaining, imagesLimit);
+    const videosPercent = percentage(videosRemaining, videosLimit);
+
+    setStatusText(key.status);
     setText("[data-images-counter]", `${imagesRemaining} / ${imagesLimit}`);
     setText("[data-videos-counter]", `${videosRemaining} / ${videosLimit}`);
+    setText("[data-images-percent]", `${imagesPercent}%`);
+    setText("[data-videos-percent]", `${videosPercent}%`);
     setText("[data-key-code]", key.codeMasked || "لا يوجد مفتاح مفعّل");
     setText("[data-key-activated]", formatDate(key.activatedAt));
     setText("[data-key-expires]", formatDate(key.expiresAt));
+    setText("[data-key-expires-short]", formatDate(key.expiresAt));
     setText("[data-key-plan]", key.planName || "--");
     setProgress("[data-images-progress]", imagesRemaining, imagesLimit);
     setProgress("[data-videos-progress]", videosRemaining, videosLimit);
+    setText("[data-customer-initial]", (key.customerName || key.planName || "J").trim().charAt(0).toUpperCase() || "J");
     updateCreditEstimate();
   }
 
@@ -200,16 +215,17 @@
     }
 
     const credits = calculateCredits(state.selectedType, state.quality, state.duration);
+    const hasCredits = state.key && Object.prototype.hasOwnProperty.call(state.key, "creditsRemaining");
     const remaining = Number(state.key?.creditsRemaining || 0);
-    const remainingText = state.key ? `رصيدك الحالي: ${remaining} نقطة.` : "";
+    const remainingText = hasCredits ? `رصيدك الحالي: ${remaining} نقطة.` : "";
     estimate.hidden = false;
-    estimate.dataset.type = remaining >= credits ? "info" : "error";
+    estimate.dataset.type = !hasCredits || remaining >= credits ? "info" : "error";
     estimate.textContent = `سيتم خصم ${credits} رصيد من حسابك عند نجاح التوليد. ${remainingText}`;
   }
 
   function showFormForType(type) {
     state.selectedType = type;
-    $$(".creation-type-card").forEach((button) => {
+    $$("[data-create-kind]").forEach((button) => {
       button.classList.toggle("is-active", button.dataset.createKind === type);
     });
 
@@ -226,7 +242,12 @@
       "[data-prompt-label]",
       type === "video" ? "اكتب وصف الفيديو" : "اكتب وصف الصورة"
     );
-    setText("[data-submit-label]", type === "video" ? "إنشاء الفيديو" : "إنشاء الصورة");
+    setText("[data-submit-label]", "إرسال");
+    setText("[data-mode-chip]", type === "video" ? "فيديو" : "صورة");
+    const prompt = $("#dashboardPrompt");
+    if (prompt) {
+      prompt.placeholder = type === "video" ? "اكتب وصف الفيديو هنا..." : "اكتب وصف الصورة هنا...";
+    }
     setMessage("", "");
     updateWordCount();
     updateCreditEstimate();
@@ -247,9 +268,14 @@
         ? state.selectedType === "video"
           ? "جاري إنشاء الفيديو، قد يستغرق بعض الوقت..."
           : "جاري إنشاء الصورة..."
-        : state.selectedType === "video"
-          ? "إنشاء الفيديو"
-          : "إنشاء الصورة";
+        : "إرسال";
+    }
+    const sendButton = $(".send-button");
+    if (sendButton) {
+      sendButton.disabled = isLoading;
+      sendButton.innerHTML = isLoading
+        ? `<span class="button-spinner" aria-hidden="true"></span>${state.selectedType === "video" ? "جاري إنشاء الفيديو" : "جاري إنشاء الصورة"}`
+        : `إرسال <span aria-hidden="true">↗</span>`;
     }
   }
 
@@ -267,7 +293,10 @@
     }
 
     const requiredCredits = calculateCredits(type, state.quality, state.duration);
-    if (Number(state.key.creditsRemaining || 0) < requiredCredits) {
+    if (
+      Object.prototype.hasOwnProperty.call(state.key, "creditsRemaining") &&
+      Number(state.key.creditsRemaining || 0) < requiredCredits
+    ) {
       throw new Error("رصيدك غير كافٍ لإتمام هذا الطلب.");
     }
   }
@@ -285,9 +314,26 @@
     card.hidden = false;
 
     if (type === "image" && resultUrl) {
-      preview.innerHTML = `<img class="result-media" src="${resultUrl}" alt="نتيجة الصورة" />`;
+      preview.innerHTML = `
+        <p class="result-success-line">تم إنشاء الصورة بنجاح!</p>
+        <img class="result-media" src="${escapeHtml(resultUrl)}" alt="نتيجة الصورة" />
+        <div class="result-actions">
+          <a href="${API_BASE_URL}/api/download/${escapeHtml(payload.generationId || "")}" target="_blank" rel="noreferrer">تحميل</a>
+          <button type="button" data-copy-result="${escapeHtml(resultUrl)}">نسخ</button>
+          <button type="button" data-regenerate>إعادة إنشاء</button>
+          <button type="button" data-enhance-result>تحسين الجودة</button>
+        </div>
+      `;
     } else if (type === "video" && resultUrl) {
-      preview.innerHTML = `<video class="result-media" src="${resultUrl}" controls playsinline></video>`;
+      preview.innerHTML = `
+        <p class="result-success-line">تم إنشاء الفيديو بنجاح!</p>
+        <video class="result-media" src="${escapeHtml(resultUrl)}" controls playsinline></video>
+        <div class="result-actions">
+          <a href="${API_BASE_URL}/api/download/${escapeHtml(payload.generationId || "")}" target="_blank" rel="noreferrer">تحميل</a>
+          <button type="button" data-copy-result="${escapeHtml(resultUrl)}">نسخ الرابط</button>
+          <button type="button" data-regenerate>إعادة إنشاء</button>
+        </div>
+      `;
     } else {
       preview.innerHTML = `<div class="processing-result">تم إرسال طلبك بنجاح، وستظهر النتيجة عند اكتمال المعالجة.</div>`;
     }
@@ -307,9 +353,10 @@
     preview.className = "";
     preview.innerHTML = `
       <div class="result-loading">
-        <div class="chat-loader" aria-hidden="true"></div>
+        <div class="dashboard-spinner" aria-hidden="true"></div>
         <strong>${type === "video" ? "جاري إنشاء الفيديو" : "جاري إنشاء الصورة"}</strong>
-        <p>${type === "video" ? "قد يستغرق الفيديو بعض الوقت..." : "نجهز لك أفضل نتيجة ممكنة..."}</p>
+        <p>${type === "video" ? "جاري التواصل مع المعالجة، قد يستغرق ذلك بعض الوقت..." : "جاري التواصل مع المعالجة وإنشاء الصورة..."}</p>
+        <button type="button" disabled>إيقاف العملية</button>
       </div>
     `;
   }
@@ -323,6 +370,7 @@
   async function init() {
     try {
       await refreshKey();
+      showFormForType("image");
     } catch (error) {
       if (error.status === 401) {
         window.location.href = "/activate";
@@ -332,7 +380,7 @@
     }
   }
 
-  $$(".creation-type-card").forEach((button) => {
+  $$("[data-create-kind]").forEach((button) => {
     button.addEventListener("click", () => showFormForType(button.dataset.createKind));
   });
 
@@ -353,6 +401,8 @@
     }
     state.quality = button.dataset.quality || "high";
     setActiveChip("[data-quality-group]", "quality", state.quality);
+    const labels = { normal: "جودة عادية", high: "جودة عالية", ultra: "جودة فائقة" };
+    setText("[data-quality-label]", labels[state.quality] || "جودة عالية");
     updateCreditEstimate();
   });
 
@@ -435,6 +485,20 @@
   document.addEventListener("click", (event) => {
     if (!event.target.closest("[data-dashboard-logout]")) return;
     logoutDashboard();
+  });
+
+  document.addEventListener("click", async (event) => {
+    const copyKey = event.target.closest("[data-copy-key]");
+    const copyResult = event.target.closest("[data-copy-result]");
+    if (!copyKey && !copyResult) return;
+
+    const value = copyResult?.dataset.copyResult || $("[data-key-code]")?.textContent || "";
+    try {
+      await navigator.clipboard.writeText(value.trim());
+      setMessage("تم النسخ بنجاح", "success");
+    } catch (error) {
+      setMessage("تعذر النسخ، حاول مرة أخرى.", "error");
+    }
   });
 
   init();
