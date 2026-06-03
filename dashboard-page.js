@@ -3,7 +3,7 @@
   const outlet = document.querySelector("#neoPageOutlet");
   const state = {
     key: null,
-    route: normalizeRoute(window.location.pathname),
+    route: "/dashboard",
     type: "image",
     quality: "high",
     duration: 5,
@@ -221,8 +221,20 @@
     document.querySelectorAll(".neo-user-nav a").forEach((link) => {
       link.classList.toggle("is-active", link.dataset.route === state.route);
     });
-    outlet.innerHTML = `${pageHeader(route)}${route.render()}`;
-    bindPageEvents();
+    if (!outlet) return;
+    try {
+      outlet.innerHTML = `${pageHeader(route)}${route.render()}`;
+      bindPageEvents();
+    } catch (error) {
+      console.error("DASHBOARD_RENDER_ERROR", error);
+      outlet.innerHTML = `
+        <div class="neo-empty-state">
+          <span>!</span>
+          <strong>تعذر تحميل هذه الصفحة.</strong>
+          <p>حدث خطأ في رسم الواجهة. افتح Console لمعرفة السبب أو أعد المحاولة.</p>
+        </div>
+      `;
+    }
   }
 
   function renderHome() {
@@ -752,5 +764,6 @@
     renderPage();
   });
 
+  state.route = normalizeRoute(window.location.pathname);
   refreshKey().then(renderPage);
 })();
