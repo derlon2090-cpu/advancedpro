@@ -226,27 +226,7 @@
   }
 
   function renderHome() {
-    return `
-      <section class="neo-page-stack">
-        <div class="neo-alert-card">
-          <strong>مفتاحك نشط وجاهز للاستخدام</strong>
-          <span>رصيد الصور: ${formatNumber(remainingImages())} | رصيد الفيديو: ${formatNumber(remainingVideos())}</span>
-          <a href="/create" data-spa-link>إنشاء جديد</a>
-        </div>
-        <div class="neo-stat-grid">
-          ${statCard("رصيدك الحالي", formatNumber(totalCredits()), "رصيد متاح", "▣")}
-          ${statCard("المفتاح النشط", state.key?.codeMasked || "APRO-XXXX-XXXX-XXXX", "جاهز للتوليد", "⌘")}
-          ${statCard("استخدام هذا الشهر", "72%", "نشاط جيد", "◌")}
-        </div>
-        <section class="neo-panel">
-          <div class="neo-section-head">
-            <h2>آخر 4 نتائج</h2>
-            <a href="/results" data-spa-link>عرض الكل</a>
-          </div>
-          ${resultsGrid(state.results.slice(0, 4))}
-        </section>
-      </section>
-    `;
+    return renderCreate();
   }
 
   function statCard(title, value, desc, icon) {
@@ -262,7 +242,7 @@
 
   function renderCreate() {
     return `
-      <section class="neo-create-layout">
+      <section class="neo-create-layout neo-create-layout--single">
         <form class="neo-create-card" data-generate-form>
           <div class="neo-type-tabs" role="tablist" aria-label="نوع التوليد">
             <button type="button" data-type="image" class="${state.type === "image" ? "is-active" : ""}">صورة ▧</button>
@@ -274,6 +254,12 @@
             <textarea data-prompt maxlength="2000" placeholder="مثال: رجل أعمال وسيم يرتدي بدلة فاخرة داخل مكتب حديث، إضاءة سينمائية"></textarea>
             <small><b data-prompt-count>0</b> / 2000</small>
           </label>
+
+          <div class="neo-helper-actions">
+            <button type="button">تحسين الوصف ✨</button>
+            <button type="button">إضافة مرجع ▧</button>
+            <button type="button">إضافة سلبية ⊖</button>
+          </div>
 
           <div class="neo-control-grid">
             ${chipGroup("الجودة", "quality", [
@@ -320,6 +306,14 @@
             <strong>ستظهر نتيجتك هنا</strong>
             <p>بعد اكتمال التوليد ستظهر المعاينة وأزرار التحميل والنسخ.</p>
           </div>
+        </section>
+
+        <section class="neo-panel neo-latest-panel">
+          <div class="neo-section-head">
+            <h2>أحدث النتائج</h2>
+            <a href="/results" data-spa-link>عرض الكل</a>
+          </div>
+          ${resultsGrid(state.results.slice(0, 4))}
         </section>
       </section>
     `;

@@ -1182,8 +1182,13 @@ html[data-theme="dark"] .btn-icon {
   margin: 0 auto;
   padding: 26px 30px 34px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 330px;
+  grid-template-columns: 330px minmax(0, 1fr);
   gap: 24px;
+  direction: ltr;
+}
+
+.neo-user-grid > * {
+  direction: rtl;
 }
 
 .neo-info-rail {
@@ -1460,6 +1465,10 @@ html[data-theme="dark"] .btn-icon {
   gap: 20px;
 }
 
+.neo-create-layout--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .neo-create-card,
 .neo-result-live {
   padding: 24px;
@@ -1542,6 +1551,25 @@ html[data-theme="dark"] .btn-icon {
   margin-top: 24px;
 }
 
+.neo-helper-actions {
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.neo-helper-actions button {
+  min-height: 46px;
+  padding: 0 18px;
+  border: 1px solid #e1e6f4;
+  border-radius: 14px;
+  color: #5b35f5;
+  background: #fff;
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+
 .neo-chip-group {
   display: flex;
   flex-wrap: wrap;
@@ -1594,12 +1622,16 @@ html[data-theme="dark"] .btn-icon {
 .neo-empty-result,
 .neo-processing-card,
 .neo-live-result-card {
-  min-height: 430px;
+  min-height: 280px;
   display: grid;
   place-items: center;
   align-content: center;
   gap: 12px;
   text-align: center;
+}
+
+.neo-latest-panel {
+  margin-top: 0;
 }
 
 .neo-empty-result span,
@@ -1904,6 +1936,7 @@ html[data-theme="dark"] .btn-icon {
 
   .neo-user-grid {
     grid-template-columns: 1fr;
+    direction: rtl;
   }
 
   .neo-info-rail {
