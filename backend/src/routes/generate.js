@@ -356,6 +356,18 @@ router.post(
     const prompt = assertValidPrompt(req.body.prompt);
     const creditsUsed = calculateRequiredCredits(type, quality, duration || 5);
 
+    console.log("PROMPT SENT:", prompt);
+    console.log("CREDITS USED:", creditsUsed);
+
+    logInfo("GENERATION_REQUEST", {
+      keyId,
+      type,
+      quality,
+      duration,
+      creditsUsed,
+      prompt,
+    });
+
     await assertNoRunningGeneration(keyId);
     await loadAndValidateKey({ keyId, type, creditsUsed });
 
@@ -376,6 +388,15 @@ router.post(
       } else {
         result = await generateWaveSpeedVideo({ prompt, duration, quality, style });
       }
+
+      logInfo("GENERATION_PROVIDER_RESULT", {
+        keyId,
+        generationId,
+        type,
+        provider: result?.provider,
+        model: result?.model,
+        resultUrl: result?.resultUrl,
+      });
     } catch (error) {
       await markGenerationFailed({ generationId, message: error.message });
       logError(error, { scope: "generateProvider", keyId, generationId, type });

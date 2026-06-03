@@ -8,6 +8,44 @@ function serviceError(message, statusCode = 502) {
   return error;
 }
 
+function hasArabicText(value) {
+  return /[\u0600-\u06ff]/.test(String(value || ""));
+}
+
+function compactForLog(value, maxLength = 500) {
+  const text = String(value || "").replace(/\s+/g, " ").trim();
+  return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
+}
+
+function buildImagePrompt({ prompt, quality, style }) {
+  const exactPrompt = String(prompt || "").trim();
+  const styleText = String(style || "").trim();
+  const qualityHints = {
+    normal: "clean composition, clear subject, good lighting",
+    high: "high quality, realistic details, sharp focus, professional lighting",
+    ultra: "ultra detailed, premium composition, realistic textures, cinematic lighting",
+  };
+
+  const guardrails = [
+    "Create an image that matches the user's prompt exactly.",
+    "Do not replace the requested subject with animals, food, rabbits, pets, or unrelated objects unless the user explicitly asks for them.",
+    "Keep the main subject centered, fully visible, and not cropped.",
+  ];
+
+  if (hasArabicText(exactPrompt)) {
+    guardrails.unshift("The user prompt is Arabic. Interpret it faithfully and preserve its meaning exactly.");
+  }
+
+  return [
+    `User prompt: ${exactPrompt}`,
+    ...guardrails,
+    `Quality direction: ${qualityHints[quality] || qualityHints.normal}.`,
+    styleText ? `Visual style: ${styleText}.` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
 function requireApiKey() {
   const apiKey = String(process.env.BFL_API_KEY || "").trim();
   if (!apiKey) {
@@ -85,14 +123,30 @@ function getFluxModelConfig(quality) {
 
 async function postToBfl({ apiKey, prompt, quality, style }) {
   const { endpoint, model } = getFluxModelConfig(quality);
+  const finalPrompt = buildImagePrompt({ prompt, quality, style });
   const payload = {
-    prompt: style ? `${prompt}\nStyle: ${style}` : prompt,
+    prompt: finalPrompt,
     width: Number(process.env.BFL_IMAGE_WIDTH || 1024),
     height: Number(process.env.BFL_IMAGE_HEIGHT || 1024),
     output_format: process.env.BFL_OUTPUT_FORMAT || "jpeg",
     prompt_upsampling: quality === "ultra",
     safety_tolerance: Number(process.env.BFL_SAFETY_TOLERANCE || 2),
   };
+
+  console.log("MODEL:", model);
+  console.log("PROMPT SENT:", payload.prompt);
+
+  console.log(
+    "[BFL_IMAGE_REQUEST]",
+    JSON.stringify({
+      model,
+      quality,
+      width: payload.width,
+      height: payload.height,
+      originalPrompt: compactForLog(prompt),
+      promptSent: compactForLog(payload.prompt),
+    })
+  );
 
   const response = await fetch(endpoint, {
     method: "POST",
@@ -105,6 +159,15 @@ async function postToBfl({ apiKey, prompt, quality, style }) {
   });
 
   const data = await readJsonResponse(response);
+  console.log(
+    "[BFL_IMAGE_RESPONSE]",
+    JSON.stringify({
+      model,
+      ok: response.ok,
+      status: response.status,
+      responseKeys: data && typeof data === "object" ? Object.keys(data).slice(0, 12) : [],
+    })
+  );
   if (!response.ok) {
     const message = data?.detail || data?.message || data?.error || "فشل طلب توليد الصورة من BFL.";
     throw serviceError(typeof message === "string" ? message : JSON.stringify(message), response.status >= 500 ? 502 : 400);

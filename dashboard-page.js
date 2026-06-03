@@ -356,6 +356,10 @@
           <button type="button" data-enhance-result>تحسين الجودة</button>
         </div>
       `;
+      preview.innerHTML = preview.innerHTML.replace(
+        '<img class="result-media"',
+        '<img class="result-media generated-image" loading="eager"'
+      );
     } else if (type === "video" && resultUrl) {
       preview.innerHTML = `
         <p class="result-success-line">تم إنشاء الفيديو بنجاح!</p>

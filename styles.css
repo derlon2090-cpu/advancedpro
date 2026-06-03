@@ -8467,10 +8467,22 @@ html[data-theme="dark"] .create-chat-bubble__state {
 
 .result-media {
   width: 100%;
-  max-height: 420px;
+  max-height: 800px;
   display: block;
-  object-fit: cover;
+  object-fit: contain;
   border-radius: 18px;
+  background: #f8f9ff;
+}
+
+.creator-dashboard-page img.result-media,
+.dashboard-v2 img.result-media,
+.generated-image {
+  width: 100%;
+  height: auto;
+  max-height: 800px;
+  object-fit: contain;
+  object-position: center;
+  background: #f8f9ff;
 }
 
 .result-actions {
