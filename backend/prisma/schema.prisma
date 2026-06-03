@@ -149,6 +149,8 @@ model GenerationJob {
   keyId        Int?     @map("key_id")
   type         String
   prompt       String
+  finalPrompt  String?  @map("final_prompt")
+  requestId    String?  @map("request_id")
   quality      String?
   duration     Int?
   model        String?

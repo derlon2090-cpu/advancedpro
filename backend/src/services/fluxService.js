@@ -134,7 +134,8 @@ async function postToBfl({ apiKey, prompt, quality, style }) {
   };
 
   console.log("MODEL:", model);
-  console.log("PROMPT SENT:", payload.prompt);
+  console.log("PROMPT SENT:", prompt);
+  console.log("FINAL PROMPT SENT TO API:", payload.prompt);
 
   console.log(
     "[BFL_IMAGE_REQUEST]",
@@ -173,7 +174,7 @@ async function postToBfl({ apiKey, prompt, quality, style }) {
     throw serviceError(typeof message === "string" ? message : JSON.stringify(message), response.status >= 500 ? 502 : 400);
   }
 
-  return { data, model };
+  return { data, model, finalPrompt: payload.prompt };
 }
 
 async function pollBflResult({ apiKey, initial }) {
@@ -220,12 +221,13 @@ async function pollBflResult({ apiKey, initial }) {
 
 export async function generateFluxImage({ prompt, quality = "normal", style = "" }) {
   const apiKey = requireApiKey();
-  const { data: initial, model } = await postToBfl({ apiKey, prompt, quality, style });
+  const { data: initial, model, finalPrompt } = await postToBfl({ apiKey, prompt, quality, style });
   const resultUrl = await pollBflResult({ apiKey, initial });
 
   return {
     provider: "bfl",
     model,
+    finalPrompt,
     resultUrl,
     raw: initial,
   };

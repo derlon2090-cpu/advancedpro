@@ -88,6 +88,8 @@ async function ensureGenerationTable() {
         duration INTEGER,
         provider VARCHAR(64),
         model VARCHAR(128),
+        final_prompt TEXT,
+        request_id VARCHAR(80),
         credits_used INTEGER NOT NULL DEFAULT 0,
         status VARCHAR(32) NOT NULL DEFAULT 'queued',
         result_url TEXT,
@@ -98,6 +100,8 @@ async function ensureGenerationTable() {
     `,
     `ALTER TABLE generations ADD COLUMN IF NOT EXISTS provider VARCHAR(64)`,
     `ALTER TABLE generations ADD COLUMN IF NOT EXISTS model VARCHAR(128)`,
+    `ALTER TABLE generations ADD COLUMN IF NOT EXISTS final_prompt TEXT`,
+    `ALTER TABLE generations ADD COLUMN IF NOT EXISTS request_id VARCHAR(80)`,
     `ALTER TABLE generations ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP(3)`,
   ];
 
@@ -183,12 +187,14 @@ async function createGenerationRecord({
   creditsUsed,
   provider = null,
   model = null,
+  finalPrompt = null,
+  requestId = null,
   status = "processing",
 }) {
   const rows = await withDbRetry(() =>
     prisma.$queryRaw`
-      INSERT INTO generations (key_id, type, prompt, quality, duration, provider, model, credits_used, status)
-      VALUES (${keyId}, ${type}, ${prompt}, ${quality}, ${duration}, ${provider}, ${model}, ${creditsUsed}, ${status})
+      INSERT INTO generations (key_id, type, prompt, quality, duration, provider, model, final_prompt, request_id, credits_used, status)
+      VALUES (${keyId}, ${type}, ${prompt}, ${quality}, ${duration}, ${provider}, ${model}, ${finalPrompt}, ${requestId}, ${creditsUsed}, ${status})
       RETURNING id
     `
   );
@@ -222,6 +228,7 @@ async function completeGenerationAndDeduct({
   resultUrl,
   provider,
   model,
+  finalPrompt,
 }) {
   return withDbRetry(() =>
     prisma.$transaction(async (tx) => {
@@ -291,6 +298,7 @@ async function completeGenerationAndDeduct({
             result_url = ${resultUrl},
             provider = ${provider},
             model = ${model},
+            final_prompt = ${finalPrompt || prompt},
             completed_at = NOW()
         WHERE id = ${generationId}
       `;
@@ -354,9 +362,13 @@ router.post(
     const duration = type === "video" ? normalizeDuration(req.body.durationSeconds || req.body.duration || 5) : null;
     const style = String(req.body.style || "").trim();
     const prompt = assertValidPrompt(req.body.prompt);
+    const requestId = String(req.body.requestId || "").trim().slice(0, 80) || `server-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const creditsUsed = calculateRequiredCredits(type, quality, duration || 5);
 
+    console.log("REQUEST ID:", requestId);
     console.log("PROMPT SENT:", prompt);
+    console.log("SELECTED TYPE:", type);
+    console.log("SELECTED QUALITY:", quality);
     console.log("CREDITS USED:", creditsUsed);
 
     logInfo("GENERATION_REQUEST", {
@@ -366,6 +378,7 @@ router.post(
       duration,
       creditsUsed,
       prompt,
+      requestId,
     });
 
     await assertNoRunningGeneration(keyId);
@@ -378,6 +391,8 @@ router.post(
       quality,
       duration,
       creditsUsed,
+      finalPrompt: prompt,
+      requestId,
     });
 
     let result;
@@ -395,6 +410,7 @@ router.post(
         type,
         provider: result?.provider,
         model: result?.model,
+        finalPrompt: result?.finalPrompt || prompt,
         resultUrl: result?.resultUrl,
       });
     } catch (error) {
@@ -425,6 +441,7 @@ router.post(
         resultUrl: result.resultUrl,
         provider: result.provider,
         model: result.model,
+        finalPrompt: result.finalPrompt || prompt,
       });
     } catch (error) {
       if (error.statusCode !== 409) {
@@ -450,6 +467,7 @@ router.post(
     return res.json({
       message: "تم الإنشاء بنجاح.",
       generationId,
+      requestId,
       resultUrl: result.resultUrl,
       status: "completed",
       creditsUsed,

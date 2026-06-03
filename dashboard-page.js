@@ -70,9 +70,12 @@
   async function requestJson(path, options = {}) {
     const response = await fetch(`${API_BASE_URL}${path}`, {
       credentials: "include",
+      cache: "no-store",
       ...options,
       headers: {
         "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+        Pragma: "no-cache",
         ...(token() ? { Authorization: `Bearer ${token()}` } : {}),
         ...(options.headers || {}),
       },
@@ -199,6 +202,14 @@
     }
 
     return Math.ceil((videoBaseCosts[duration] || videoBaseCosts[5]) * (videoMultipliers[quality] || 1));
+  }
+
+  function createRequestId() {
+    if (window.crypto?.randomUUID) {
+      return window.crypto.randomUUID();
+    }
+
+    return `req-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   }
 
   function updateCreditEstimate() {
@@ -457,9 +468,17 @@
       assertCanGenerate(type);
 
       const prompt = String($("#dashboardPrompt")?.value || "").trim();
-      if (!prompt) {
+      if (!prompt || prompt.length < 3) {
         throw new Error("اكتب وصفًا واضحًا قبل الإرسال.");
       }
+
+      const requestId = createRequestId();
+      const model = "server-selected";
+      console.log("FINAL PROMPT SENT TO API:", prompt);
+      console.log("SELECTED TYPE:", type);
+      console.log("SELECTED QUALITY:", state.quality);
+      console.log("MODEL:", model);
+      console.log("REQUEST ID:", requestId);
 
       setLoading(true);
       setMessage("", "");
@@ -476,6 +495,8 @@
         body: JSON.stringify({
           type,
           prompt,
+          model,
+          requestId,
           duration: type === "video" ? state.duration : undefined,
           durationSeconds: type === "video" ? state.duration : undefined,
           quality: state.quality,

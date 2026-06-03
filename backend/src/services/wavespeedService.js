@@ -148,12 +148,17 @@ async function postToWaveSpeed({ apiKey, prompt, duration, quality, style }) {
   const endpoint =
     config.endpoint || "https://api.wavespeed.ai/api/v3/wavespeed-ai/wan-2.2/t2v-480p-ultra-fast";
   const safeDuration = validateDuration(config.model, endpoint, duration);
+  const finalPrompt = style ? `${String(prompt || "").trim()}\nStyle: ${String(style || "").trim()}` : String(prompt || "").trim();
   const payload = {
-    prompt: style ? `${prompt}\nStyle: ${style}` : prompt,
+    prompt: finalPrompt,
     duration: safeDuration,
     quality,
     seed: -1,
   };
+
+  console.log("MODEL:", config.model);
+  console.log("PROMPT SENT:", prompt);
+  console.log("FINAL PROMPT SENT TO API:", payload.prompt);
 
   const response = await fetch(endpoint, {
     method: "POST",
@@ -171,7 +176,7 @@ async function postToWaveSpeed({ apiKey, prompt, duration, quality, style }) {
     throw serviceError(typeof message === "string" ? message : JSON.stringify(message), response.status >= 500 ? 502 : 400);
   }
 
-  return { data, model: config.model };
+  return { data, model: config.model, finalPrompt: payload.prompt };
 }
 
 async function pollWaveSpeedResult({ apiKey, initial }) {
@@ -228,12 +233,13 @@ async function pollWaveSpeedResult({ apiKey, initial }) {
 
 export async function generateWaveSpeedVideo({ prompt, duration = 5, quality = "normal", style = "" }) {
   const apiKey = requireApiKey();
-  const { data: initial, model } = await postToWaveSpeed({ apiKey, prompt, duration, quality, style });
+  const { data: initial, model, finalPrompt } = await postToWaveSpeed({ apiKey, prompt, duration, quality, style });
   const resultUrl = await pollWaveSpeedResult({ apiKey, initial });
 
   return {
     provider: "wavespeed",
     model,
+    finalPrompt,
     resultUrl,
     raw: initial,
   };
