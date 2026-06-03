@@ -223,7 +223,8 @@
     });
     if (!outlet) return;
     try {
-      outlet.innerHTML = `${pageHeader(route)}${route.render()}`;
+      const compactRoutes = ["/dashboard", "/create"];
+      outlet.innerHTML = `${compactRoutes.includes(state.route) ? "" : pageHeader(route)}${route.render()}`;
       bindPageEvents();
     } catch (error) {
       console.error("DASHBOARD_RENDER_ERROR", error);
@@ -256,9 +257,19 @@
     return `
       <section class="neo-create-layout neo-create-layout--single">
         <form class="neo-create-card" data-generate-form>
-          <div class="neo-type-tabs" role="tablist" aria-label="نوع التوليد">
-            <button type="button" data-type="image" class="${state.type === "image" ? "is-active" : ""}">صورة ▧</button>
-            <button type="button" data-type="video" class="${state.type === "video" ? "is-active" : ""}">فيديو ▦</button>
+          <div class="neo-create-top">
+            <div class="neo-create-heading">
+              <div>
+                <h1>إنشاء جديد</h1>
+                <p>اكتب وصفك واختر الإعدادات المناسبة وابدأ الإبداع.</p>
+              </div>
+              <span>✦</span>
+            </div>
+
+            <div class="neo-type-tabs" role="tablist" aria-label="نوع التوليد">
+              <button type="button" data-type="image" class="${state.type === "image" ? "is-active" : ""}">صورة ▧</button>
+              <button type="button" data-type="video" class="${state.type === "video" ? "is-active" : ""}">فيديو ▦</button>
+            </div>
           </div>
 
           <label class="neo-prompt-field">
@@ -626,6 +637,9 @@
         }),
       });
       const resultUrl = payload.resultUrl || payload.url || "";
+      if (!resultUrl) {
+        throw new Error("فشل التوليد، لم يرجع الخادم رابط نتيجة صالح.");
+      }
       const generationId = payload.generationId || `local-${Date.now()}`;
       const item = {
         id: generationId,
@@ -635,7 +649,7 @@
         creditsUsed: payload.creditsUsed || calculateCredits(),
         createdAt: new Date().toISOString(),
         favorite: false,
-        resultUrl: resultUrl || state.results[0]?.resultUrl,
+        resultUrl,
       };
       state.results.unshift(item);
       showMessage(message, "تم الإنشاء بنجاح", "success");
@@ -729,6 +743,34 @@
     }
   }
 
+  function normalizeGeneration(item) {
+    return {
+      id: item.id || item.generationId || `result-${Date.now()}`,
+      type: item.type === "video" ? "video" : "image",
+      prompt: item.prompt || item.description || "نتيجة بدون وصف",
+      quality: item.quality || "high",
+      creditsUsed: Number(item.creditsUsed || item.credits_used || 0),
+      createdAt: item.createdAt || item.created_at || new Date().toISOString(),
+      favorite: Boolean(item.isFavorite || item.favorite),
+      resultUrl: item.resultUrl || item.result_url || item.url || "",
+    };
+  }
+
+  async function refreshGenerations() {
+    try {
+      const payload = await requestJson("/api/generations");
+      const rows = Array.isArray(payload)
+        ? payload
+        : payload.generations || payload.items || payload.results || [];
+      const normalized = rows.map(normalizeGeneration).filter((item) => item.resultUrl);
+      if (normalized.length) {
+        state.results = normalized;
+      }
+    } catch (error) {
+      console.info("Using bundled dashboard examples until generations API is available.", error.message);
+    }
+  }
+
   function toast(text) {
     const toastEl = document.createElement("div");
     toastEl.className = "neo-toast";
@@ -765,5 +807,5 @@
   });
 
   state.route = normalizeRoute(window.location.pathname);
-  refreshKey().then(renderPage);
+  Promise.all([refreshKey(), refreshGenerations()]).finally(renderPage);
 })();

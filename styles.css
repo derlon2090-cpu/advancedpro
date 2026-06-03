@@ -1474,6 +1474,49 @@ html[data-theme="dark"] .btn-icon {
   padding: 24px;
 }
 
+.neo-create-top,
+.neo-create-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.neo-create-top {
+  padding-bottom: 22px;
+  border-bottom: 1px solid #edf0f7;
+}
+
+.neo-create-heading {
+  justify-content: flex-start;
+}
+
+.neo-create-heading h1 {
+  margin: 0;
+  color: #11183f;
+  font-size: clamp(24px, 3vw, 32px);
+  font-weight: 900;
+}
+
+.neo-create-heading p {
+  margin: 7px 0 0;
+  color: #667085;
+  font-weight: 800;
+}
+
+.neo-create-heading > span {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  color: #5b35f5;
+  background: linear-gradient(135deg, #fff, #f2edff);
+  box-shadow: 0 14px 28px rgba(91, 53, 245, 0.1);
+  font-size: 24px;
+}
+
 .neo-type-tabs {
   width: fit-content;
   padding: 7px;
@@ -1999,6 +2042,19 @@ html[data-theme="dark"] .btn-icon {
   .neo-page-header {
     border-radius: 18px;
     padding: 16px;
+  }
+
+  .neo-create-top {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .neo-type-tabs {
+    width: 100%;
+  }
+
+  .neo-type-tabs button {
+    flex: 1;
   }
 
   .neo-result-actions {
