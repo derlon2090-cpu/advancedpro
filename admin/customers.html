@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>الباقات | Advanced Pro</title>
+    <title>العملاء | Advanced Pro</title>
     <meta name="robots" content="noindex,nofollow" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -11,9 +11,9 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260602-admin-plans" />
+    <link rel="stylesheet" href="/styles.css?v=20260602-admin-customers-v2" />
   </head>
-  <body class="admin-v2-page" data-page="admin-plans" data-requires-admin="true" data-skip-site-footer="true">
+  <body class="admin-v2-page" data-page="admin-customers" data-requires-admin="true" data-skip-site-footer="true">
     <main class="admin-v2-shell">
       <aside class="admin-v2-sidebar" id="adminSidebar">
         <div class="admin-v2-brand">
@@ -27,8 +27,8 @@
         <nav class="admin-v2-nav" aria-label="قائمة لوحة الأدمن">
           <a href="/admin/dashboard" data-icon="⌂">لوحة التحكم</a>
           <a href="/admin/keys" data-icon="⚿">المفاتيح</a>
-          <a class="is-active" href="/admin/plans" data-icon="◈">الباقات</a>
-          <a href="/admin/customers" data-icon="♙">العملاء</a>
+          <a href="/admin/plans" data-icon="◈">الباقات</a>
+          <a class="is-active" href="/admin/customers" data-icon="♙">العملاء</a>
           <a href="/admin/reports" data-icon="▥">الإحصائيات</a>
           <a href="/admin/settings" data-icon="⚙">الإعدادات</a>
           <a href="/admin/activity" data-icon="◷">سجل النشاط</a>
@@ -62,46 +62,53 @@
           </label>
         </header>
 
-        <main class="admin-plans-page">
-          <section class="admin-plans-hero">
+        <main class="admin-customers-page">
+          <section class="admin-customers-hero">
             <div>
-              <span class="admin-plans-icon">◈</span>
-              <p>الباقات</p>
-              <h1>الباقات</h1>
-              <span>إدارة جميع الباقات المتاحة في النظام</span>
+              <span class="admin-customers-icon">♙</span>
+              <p>العملاء</p>
+              <h1>العملاء</h1>
+              <span>إدارة جميع العملاء المرتبطين بالمفاتيح والباقات</span>
             </div>
-            <a class="admin-plans-create" href="/admin/plans/create">＋ إنشاء باقة جديدة</a>
+            <a class="admin-customers-create" href="/admin/key-new">＋ إضافة عميل</a>
           </section>
 
-          <section class="admin-plans-stats" data-plan-stats>
+          <section class="admin-customers-stats" data-customer-stats>
             <article class="admin-v2-skeleton"></article>
             <article class="admin-v2-skeleton"></article>
             <article class="admin-v2-skeleton"></article>
             <article class="admin-v2-skeleton"></article>
           </section>
 
-          <section class="admin-plans-panel">
-            <div class="admin-plans-tools">
+          <section class="admin-customers-panel">
+            <div class="admin-customers-tools">
+              <button type="button" data-export-customers>⇩ تصدير</button>
+              <select data-customer-status>
+                <option value="all">جميع الحالات</option>
+                <option value="active">نشط</option>
+                <option value="expired">منتهي</option>
+                <option value="disabled">معطل</option>
+              </select>
               <label class="admin-v2-search">
                 <span>⌕</span>
-                <input data-plan-search type="search" placeholder="ابحث عن باقة..." />
+                <input data-customer-search type="search" placeholder="ابحث عن عميل..." />
               </label>
-              <select data-plan-status>
-                <option value="all">كل الحالات</option>
-                <option value="active">نشطة</option>
-                <option value="disabled">معطلة</option>
-              </select>
-              <button type="button" data-export-plans>⇩ تصدير</button>
             </div>
-
-            <div data-plans-table>
-              <div class="admin-v2-empty">جارٍ تحميل الباقات...</div>
+            <div data-admin-customers-table>
+              <div class="admin-v2-empty">جارٍ تحميل العملاء...</div>
             </div>
           </section>
         </main>
       </section>
     </main>
 
-    <script src="/admin/plans-page.js?v=20260602-admin-plans"></script>
+    <div class="admin-customer-modal" data-customer-modal hidden>
+      <section>
+        <button type="button" data-close-customer-modal>×</button>
+        <div data-customer-modal-content></div>
+      </section>
+    </div>
+
+    <script src="/admin/customers-page.js?v=20260602-admin-customers-v2"></script>
   </body>
 </html>

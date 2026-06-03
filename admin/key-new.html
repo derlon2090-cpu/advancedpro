@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>إنشاء مفتاح جديد | Advanced Pro</title>
+    <meta name="robots" content="noindex,nofollow" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css?v=20260602-admin-keys-shell" />
+  </head>
+  <body
+    class="admin-v2-page"
+    data-page="admin-key-new"
+    data-requires-admin="true"
+    data-skip-site-footer="true"
+  >
+    <main class="admin-v2-shell">
+      <aside class="admin-v2-sidebar" id="adminSidebar">
+        <div class="admin-v2-brand">
+          <img src="/ap-mark.svg" alt="" aria-hidden="true" />
+          <div>
+            <strong>Advanced Pro</strong>
+            <span>لوحة تحكم الأدمن</span>
+          </div>
+        </div>
+
+        <nav class="admin-v2-nav" aria-label="قائمة لوحة الأدمن">
+          <a href="/admin/dashboard" data-icon="⌂">لوحة التحكم</a>
+          <a class="is-active" href="/admin/keys" data-icon="⚿">المفاتيح</a>
+          <a href="/admin/plans" data-icon="◈">الباقات</a>
+          <a href="/admin/customers" data-icon="♙">العملاء</a>
+          <a href="/admin/reports" data-icon="▥">الإحصائيات</a>
+          <a href="/admin/settings" data-icon="⚙">الإعدادات</a>
+          <a href="/admin/activity" data-icon="◷">سجل النشاط</a>
+          <a href="/admin/backup" data-icon="◉">النسخ الاحتياطي</a>
+        </nav>
+
+        <button class="admin-v2-logout" type="button" data-logout>
+          <span>↪</span>
+          تسجيل الخروج
+        </button>
+      </aside>
+
+      <section class="admin-v2-main">
+        <header class="admin-v2-header">
+          <button class="admin-v2-menu" type="button" data-admin-drawer-toggle aria-label="فتح القائمة">
+            ☰
+          </button>
+          <div class="admin-v2-profile" data-admin-profile>
+            <span class="admin-v2-avatar">A</span>
+            <div>
+              <strong>مرحبًا</strong>
+              <small>Owner</small>
+            </div>
+          </div>
+          <div class="admin-v2-actions">
+            <button type="button" aria-label="التنبيهات">🔔<b>8</b></button>
+            <button type="button" aria-label="الوضع الليلي">◐</button>
+            <button type="button" aria-label="اللغة">◉</button>
+          </div>
+          <nav class="admin-key-breadcrumb">
+            <a href="/admin/keys">المفاتيح</a>
+            <span>›</span>
+            <strong>إنشاء مفتاح جديد</strong>
+          </nav>
+        </header>
+
+        <main class="admin-key-create-page">
+          <section class="admin-key-create-hero">
+            <span>⚿</span>
+            <div>
+              <h1>إنشاء مفتاح جديد</h1>
+              <p>أنشئ مفتاحًا جديدًا للعميل مع تحديد الصلاحية والباقات</p>
+            </div>
+          </section>
+
+          <form id="adminKeyCreateForm" class="admin-key-create-grid">
+            <section class="admin-v2-card admin-key-create-main">
+              <div class="admin-key-section-title">
+                <span>♙</span>
+                <h2>معلومات العميل</h2>
+              </div>
+
+              <div class="admin-key-fields">
+                <label>
+                  اسم العميل
+                  <input name="customerName" type="text" placeholder="ادخل اسم العميل" required />
+                </label>
+                <label>
+                  البريد الإلكتروني
+                  <input name="customerEmail" type="email" dir="ltr" placeholder="ادخل البريد الإلكتروني (اختياري)" />
+                </label>
+              </div>
+
+              <div class="admin-key-section-title">
+                <span>▣</span>
+                <h2>اختيار الباقة</h2>
+              </div>
+              <div class="admin-key-plan-grid" data-plan-options>
+                <article class="admin-v2-skeleton"></article>
+                <article class="admin-v2-skeleton"></article>
+                <article class="admin-v2-skeleton"></article>
+              </div>
+
+              <div class="admin-v2-card admin-key-preview-card">
+                <div class="admin-v2-card__head">
+                  <h2>ملخص المفتاح</h2>
+                </div>
+                <div class="admin-key-preview-summary" data-key-summary></div>
+              </div>
+
+              <div class="admin-key-create-actions">
+                <a href="/admin/keys">إلغاء</a>
+                <button type="submit">⚿ إنشاء المفتاح</button>
+              </div>
+              <p class="admin-secret-message" data-key-create-message hidden></p>
+            </section>
+
+            <aside class="admin-v2-card admin-key-create-side">
+              <div class="admin-key-section-title">
+                <span>▧</span>
+                <h2>الصلاحية</h2>
+              </div>
+
+              <label class="admin-key-radio">
+                <input type="radio" name="validityMode" value="plan" checked />
+                <span>
+                  <strong>حسب مدة الباقة تلقائيًا</strong>
+                  <small>سيتم تحديد تاريخ الانتهاء بناءً على الباقة</small>
+                </span>
+              </label>
+
+              <label class="admin-key-radio">
+                <input type="radio" name="validityMode" value="custom" />
+                <span>
+                  <strong>تحديد فترة مخصصة</strong>
+                  <small>اختر تاريخ بداية ونهاية يدويًا</small>
+                </span>
+              </label>
+
+              <div class="admin-key-date-fields" data-custom-dates hidden>
+                <label>
+                  تاريخ البداية
+                  <input name="startsAt" type="date" />
+                </label>
+                <label>
+                  تاريخ الانتهاء
+                  <input name="expiresAt" type="date" />
+                </label>
+              </div>
+
+              <div class="admin-key-code-preview">
+                <span>معاينة المفتاح</span>
+                <strong data-key-preview>APRO-XXXX-XXXX-XXXX</strong>
+                <button type="button" data-regenerate-key>توليد جديد</button>
+              </div>
+
+              <label class="admin-key-manual">
+                <input type="checkbox" name="manualCodeEnabled" />
+                <span>تعديل الكود يدويًا</span>
+              </label>
+              <input name="manualCode" type="text" dir="ltr" placeholder="APRO-XXXX-XXXX-XXXX" hidden />
+            </aside>
+          </form>
+        </main>
+      </section>
+    </main>
+
+    <div class="admin-key-modal" data-key-success-modal hidden>
+      <section>
+        <button type="button" data-close-modal>×</button>
+        <h2>تم إنشاء المفتاح بنجاح</h2>
+        <div data-key-success-content></div>
+        <div class="admin-key-modal-actions">
+          <button type="button" data-copy-created-key>نسخ المفتاح</button>
+          <button type="button" data-create-another>إنشاء مفتاح آخر</button>
+          <a href="/admin/keys">الرجوع لقائمة المفاتيح</a>
+        </div>
+      </section>
+    </div>
+
+    <script src="/admin/key-new-page.js?v=20260602-admin-keys-shell"></script>
+  </body>
+</html>
