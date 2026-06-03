@@ -24,6 +24,42 @@
     {
       "source": "/admin/customers/:id",
       "destination": "/admin/customer-detail.html?id=:id"
+    },
+    {
+      "source": "/dashboard",
+      "destination": "/dashboard.html"
+    },
+    {
+      "source": "/create",
+      "destination": "/dashboard.html"
+    },
+    {
+      "source": "/results",
+      "destination": "/dashboard.html"
+    },
+    {
+      "source": "/projects",
+      "destination": "/dashboard.html"
+    },
+    {
+      "source": "/favorites",
+      "destination": "/dashboard.html"
+    },
+    {
+      "source": "/models",
+      "destination": "/dashboard.html"
+    },
+    {
+      "source": "/billing",
+      "destination": "/dashboard.html"
+    },
+    {
+      "source": "/support",
+      "destination": "/dashboard.html"
+    },
+    {
+      "source": "/settings",
+      "destination": "/dashboard.html"
     }
   ],
   "builds": [

@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>لوحة تحكم الأدمن | Advanced Pro</title>
+    <title>لوحة الأدمن | Advanced Pro</title>
     <meta name="robots" content="noindex,nofollow" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -11,118 +11,230 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260602-admin-dashboard" />
+    <link rel="stylesheet" href="/styles.css?v=20260603-admin-neo-board" />
   </head>
   <body
-    class="admin-v2-page"
-    data-page="admin-dashboard-v2"
+    class="admin-neo-board"
+    data-page="admin-dashboard"
     data-requires-admin="true"
     data-skip-site-footer="true"
   >
-    <main class="admin-v2-shell">
-      <aside class="admin-v2-sidebar" id="adminSidebar">
-        <div class="admin-v2-brand">
-          <img src="/ap-mark.svg" alt="" aria-hidden="true" />
+    <header class="admin-neo-topbar">
+      <a class="admin-neo-brand" href="/admin/dashboard" aria-label="Advanced Pro">
+        <img src="/ap-mark.svg" alt="" aria-hidden="true" />
+        <strong>Advanced Pro</strong>
+      </a>
+
+      <div class="admin-neo-credit-pill" aria-live="polite">
+        <span class="admin-neo-gem">◆</span>
+        <small>رصيدك الحالي</small>
+        <strong data-neo-total>1,248</strong>
+        <em>رصيد</em>
+      </div>
+
+      <div class="admin-neo-switcher" role="tablist" aria-label="نوع الإنشاء">
+        <button class="is-active" type="button" data-neo-type="image" role="tab" aria-selected="true">
+          <span>▣</span>
+          صورة
+        </button>
+        <button type="button" data-neo-type="video" role="tab" aria-selected="false">
+          <span>▦</span>
+          فيديو
+        </button>
+      </div>
+
+      <div class="admin-neo-userbar">
+        <button class="admin-neo-icon-button" type="button" aria-label="التنبيهات">
+          🔔
+          <b>3</b>
+        </button>
+        <button class="admin-neo-icon-button" type="button" aria-label="الوضع الليلي">◐</button>
+        <button class="admin-neo-profile" type="button" data-admin-profile aria-label="حساب الأدمن">
+          <img
+            src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=96&q=80"
+            alt=""
+          />
+          <span></span>
+        </button>
+      </div>
+    </header>
+
+    <main class="admin-neo-shell">
+      <aside class="admin-neo-left">
+        <section class="admin-neo-key-card">
+          <div class="admin-neo-key-icon">👑</div>
           <div>
-            <strong>Advanced Pro</strong>
-            <span>لوحة تحكم الأدمن</span>
+            <strong>مفتاحك نشط</strong>
+            <span data-neo-key-code>APRO-XXXX-YYYY</span>
+          </div>
+          <small>✓</small>
+        </section>
+
+        <nav class="admin-neo-side-menu" aria-label="لوحة الأدمن">
+          <a class="is-active" href="/admin/dashboard">
+            <span>＋</span>
+            إنشاء جديد
+          </a>
+          <a href="/admin/keys">
+            <span>□</span>
+            المفاتيح
+          </a>
+          <a href="/admin/plans">
+            <span>◇</span>
+            الباقات
+          </a>
+          <a href="/admin/customers">
+            <span>♡</span>
+            العملاء
+          </a>
+          <a href="/admin/reports">
+            <span>▥</span>
+            إحصائي
+          </a>
+        </nav>
+
+        <section class="admin-neo-usage">
+          <h2>استخدام هذا الشهر</h2>
+          <div class="admin-neo-ring" style="--percent:72">
+            <strong>72%</strong>
+            <span>استخدام</span>
+          </div>
+          <div class="admin-neo-usage-row">
+            <span>صور</span>
+            <strong data-neo-images>128 / 200</strong>
+            <em>▧</em>
+          </div>
+          <div class="admin-neo-usage-row">
+            <span>فيديو</span>
+            <strong data-neo-videos>24 / 100</strong>
+            <em>▦</em>
+          </div>
+        </section>
+
+        <section class="admin-neo-upgrade">
+          <span>◆</span>
+          <strong>Advanced Pro</strong>
+          <p>استمتع بإبداع احترافي على جودة أعلى.</p>
+          <a href="/admin/plans">ترقية الخطة ✨</a>
+        </section>
+      </aside>
+
+      <section class="admin-neo-compose">
+        <div class="admin-neo-card-head">
+          <span>✦</span>
+          <div>
+            <h1>اكتب وصفك</h1>
+            <p>كن واضحًا لتصل على أفضل نتيجة</p>
           </div>
         </div>
 
-        <nav class="admin-v2-nav" aria-label="قائمة لوحة الأدمن">
-          <a class="is-active" href="/admin/dashboard" data-icon="⌂">لوحة التحكم</a>
-          <a href="/admin/keys" data-icon="⚿">المفاتيح</a>
-          <a href="/admin/plans" data-icon="◈">الباقات</a>
-          <a href="/admin/customers" data-icon="♙">العملاء</a>
-          <a href="/admin/reports" data-icon="▥">الإحصائيات</a>
-          <a href="/admin/settings" data-icon="⚙">الإعدادات</a>
-          <a href="/admin/activity" data-icon="◷">سجل النشاط</a>
-          <a href="/admin/backup" data-icon="◎">النسخ الاحتياطي</a>
-        </nav>
+        <label class="admin-neo-prompt-box">
+          <span>✐</span>
+          <textarea
+            data-neo-prompt
+            maxlength="1000"
+            placeholder="من فضلك اعمل صورة رجل أعمال وسيم يرتدي بدلة فاخرة داخل مكتب حديث، وإضاءة سينمائية عالية الجودة"
+          >من فضلك اعمل صورة رجل أعمال وسيم يرتدي بدلة فاخرة داخل مكتب حديث، وإضاءة سينمائية عالية الجودة</textarea>
+          <small><b data-neo-count>104</b> / 1000</small>
+        </label>
 
-        <button class="admin-v2-logout" type="button" data-logout>
-          <span>↪</span>
-          تسجيل الخروج
+        <div class="admin-neo-options">
+          <div>
+            <h2>خيارات التوليد</h2>
+            <div class="admin-neo-chip-row">
+              <button type="button">عادية ✨</button>
+              <button class="is-active" type="button">عالية 💎</button>
+              <button class="is-premium" type="button">فائقة 👑</button>
+            </div>
+          </div>
+
+          <div>
+            <h2>النمط</h2>
+            <div class="admin-neo-chip-row">
+              <button class="is-active" type="button">واقعي 📷</button>
+              <button type="button">سينمائي ⌁</button>
+              <button type="button">فني ✎</button>
+              <button type="button">منتج تجاري ◇</button>
+            </div>
+          </div>
+
+          <div>
+            <h2>الدقة</h2>
+            <div class="admin-neo-ratio-row">
+              <button type="button">1:1<br /><small>قصة</small></button>
+              <button class="is-active" type="button">16:9<br /><small>أفقي</small></button>
+              <button type="button">4:5<br /><small>عمودي</small></button>
+              <button type="button">9:19<br /><small>قصة</small></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="admin-neo-cost">
+          <span>🪙</span>
+          سيتم خصم 20 رصيد عند نجاح التوليد فقط
+        </div>
+
+        <button class="admin-neo-submit" type="button" data-neo-preview>
+          إنشاء الآن
+          <span>✦</span>
         </button>
-      </aside>
+      </section>
 
-      <section class="admin-v2-main">
-        <header class="admin-v2-header">
-          <button class="admin-v2-menu" type="button" data-admin-drawer-toggle aria-label="فتح القائمة">
-            ☰
+      <section class="admin-neo-results">
+        <div class="admin-neo-card-head">
+          <span>✦</span>
+          <div>
+            <h2>نتيجتك</h2>
+            <p>ستظهر النتيجة هنا بعد اكتمال التوليد</p>
+          </div>
+        </div>
+
+        <article class="admin-neo-preview">
+          <img
+            data-neo-result-image
+            src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=1200&q=85"
+            alt="نتيجة إنشاء صورة رجل أعمال"
+          />
+          <span class="admin-neo-quality">باقة الجودة 👑</span>
+          <button class="admin-neo-heart" type="button" aria-label="إضافة للمفضلة">♥</button>
+          <button class="admin-neo-arrow is-right" type="button" aria-label="السابق">›</button>
+          <button class="admin-neo-arrow is-left" type="button" aria-label="التالي">‹</button>
+        </article>
+
+        <div class="admin-neo-actions">
+          <button type="button">تحميل ⭳</button>
+          <button type="button">نسخ الرابط 🔗</button>
+          <button type="button">إعادة إنشاء ↻</button>
+          <button type="button">تحسين ✨</button>
+          <button type="button">مشاركة ⤴</button>
+        </div>
+
+        <div class="admin-neo-recent-head">
+          <strong>أحدث النتائج</strong>
+          <a href="/admin/reports">عرض الكل</a>
+        </div>
+
+        <div class="admin-neo-thumbs" aria-label="أحدث النتائج">
+          <button class="is-active" type="button">
+            <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=200&q=70" alt="" />
+            <span>✓</span>
           </button>
-          <div class="admin-v2-profile" data-admin-profile>
-            <span class="admin-v2-avatar">A</span>
-            <div>
-              <strong>مرحبًا</strong>
-              <small>Owner</small>
-            </div>
-          </div>
-          <div class="admin-v2-actions">
-            <button type="button" aria-label="التنبيهات">🔔<b>7</b></button>
-            <button type="button" aria-label="الوضع الليلي">☾</button>
-            <button type="button" aria-label="الأهداف">◎</button>
-          </div>
-          <label class="admin-v2-search">
-            <span>⌕</span>
-            <input type="search" placeholder="البحث في النظام..." aria-label="البحث في النظام" />
-          </label>
-        </header>
-
-        <section class="admin-v2-stats" data-admin-dashboard-cards>
-          <article class="admin-v2-skeleton"></article>
-          <article class="admin-v2-skeleton"></article>
-          <article class="admin-v2-skeleton"></article>
-          <article class="admin-v2-skeleton"></article>
-          <article class="admin-v2-skeleton"></article>
-        </section>
-
-        <section class="admin-v2-grid admin-v2-grid--charts">
-          <article class="admin-v2-card">
-            <div class="admin-v2-card__head">
-              <h2>توزيع المفاتيح حسب الباقة</h2>
-              <button type="button">هذا الشهر</button>
-            </div>
-            <div class="admin-v2-donut" data-admin-donut></div>
-          </article>
-
-          <article class="admin-v2-card admin-v2-card--wide">
-            <div class="admin-v2-card__head">
-              <h2>نمو الاستخدام خلال آخر 7 أيام</h2>
-              <button type="button">7 أيام</button>
-            </div>
-            <div class="admin-v2-line-chart" data-admin-line-chart></div>
-          </article>
-        </section>
-
-        <section class="admin-v2-grid admin-v2-grid--lower">
-          <article class="admin-v2-card admin-v2-card--table">
-            <div class="admin-v2-card__head">
-              <h2>آخر المفاتيح المضافة</h2>
-              <a href="/admin/keys">عرض الكل</a>
-            </div>
-            <div data-admin-latest-keys>
-              <div class="admin-v2-empty">جارٍ تحميل المفاتيح...</div>
-            </div>
-          </article>
-
-          <article class="admin-v2-card">
-            <div class="admin-v2-card__head">
-              <h2>إجمالي الاستخدام</h2>
-            </div>
-            <div class="admin-v2-usage" data-admin-usage-totals></div>
-          </article>
-
-          <article class="admin-v2-card">
-            <div class="admin-v2-card__head">
-              <h2>النشاط الأخير</h2>
-            </div>
-            <div class="admin-v2-activity" data-admin-activity></div>
-          </article>
-        </section>
+          <button type="button">
+            <img src="https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=200&q=70" alt="" />
+          </button>
+          <button type="button">
+            <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=200&q=70" alt="" />
+          </button>
+          <button type="button">
+            <img src="https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=200&q=70" alt="" />
+          </button>
+          <button type="button">
+            <img src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=200&q=70" alt="" />
+          </button>
+        </div>
       </section>
     </main>
 
-    <script src="/admin/dashboard-page.js?v=20260602-admin-dashboard-2"></script>
+    <script src="/admin/dashboard-page.js?v=20260603-admin-neo-board"></script>
   </body>
 </html>

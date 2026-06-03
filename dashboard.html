@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>لوحة الإنشاء | Advanced Pro</title>
+    <title>لوحة المستخدم | Advanced Pro</title>
     <meta
       name="description"
-      content="لوحة مستخدم عربية مرنة لإنشاء الصور والفيديو وقراءة رصيد المفتاح المفعّل."
+      content="لوحة مستخدم Advanced Pro لإنشاء الصور والفيديو وإدارة النتائج والمشاريع والرصيد."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -14,236 +14,115 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260603-dashboard-final" />
+    <link rel="stylesheet" href="/styles.css?v=20260603-user-neo-routes" />
   </head>
-  <body class="creator-dashboard-page dashboard-v2" data-page="dashboard">
-    <header class="user-dashboard-header" aria-label="رأس لوحة المستخدم">
-      <div class="user-dashboard-shell user-dashboard-header__inner">
-        <a class="user-dashboard-brand" href="/" aria-label="Advanced Pro">
-          <img src="/ap-mark.svg" alt="" aria-hidden="true" />
-          <span>
-            <strong>Advanced Pro</strong>
-            <small>المفاتيح الرقمية</small>
-          </span>
-        </a>
+  <body class="neo-user-app" data-page="dashboard">
+    <aside class="neo-user-sidebar" data-sidebar>
+      <a class="neo-user-logo" href="/dashboard" aria-label="Advanced Pro">
+        <img src="/ap-mark.svg" alt="" aria-hidden="true" />
+        <span>
+          <strong>Advanced Pro</strong>
+        </span>
+      </a>
 
-        <nav class="user-dashboard-nav" aria-label="روابط لوحة المستخدم">
-          <a href="/">الرئيسية</a>
-          <a href="/activate">تفعيل مفتاح</a>
-          <button type="button" data-dashboard-logout>تسجيل الخروج</button>
-        </nav>
+      <nav class="neo-user-nav" aria-label="قائمة لوحة المستخدم">
+        <a href="/dashboard" data-route="/dashboard" data-icon="⌂">الرئيسية</a>
+        <a href="/create" data-route="/create" data-icon="✦">إنشاء جديد</a>
+        <a href="/results" data-route="/results" data-icon="▧">نتائجك</a>
+        <a href="/projects" data-route="/projects" data-icon="□">مشاريعي</a>
+        <a href="/favorites" data-route="/favorites" data-icon="♡">المفضلة</a>
+        <a href="/models" data-route="/models" data-icon="◇">الموديلات</a>
+        <a href="/billing" data-route="/billing" data-icon="▣">الاشتراك والفواتير</a>
+        <a href="/support" data-route="/support" data-icon="☊">الدعم والمساعدة</a>
+        <a href="/settings" data-route="/settings" data-icon="⚙">الإعدادات</a>
+      </nav>
 
-        <div class="user-dashboard-avatar" aria-label="حساب المستخدم">
-          <span data-customer-initial>J</span>
-          <i aria-hidden="true"></i>
+      <section class="neo-upgrade-card">
+        <span>♛</span>
+        <strong>ترقية حسابك</strong>
+        <p>احصل على مزايا أكثر وسرعة توليد أعلى وجودة فائقة.</p>
+        <a href="/billing">ترقية الآن ✨</a>
+      </section>
+    </aside>
+
+    <div class="neo-mobile-scrim" data-sidebar-close></div>
+
+    <section class="neo-user-main">
+      <header class="neo-user-topbar">
+        <button class="neo-menu-button" type="button" data-sidebar-toggle aria-label="فتح القائمة">☰</button>
+
+        <div class="neo-profile">
+          <img
+            src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=96&q=80"
+            alt=""
+          />
+          <div>
+            <strong data-customer-name>مرحبًا، محمد</strong>
+            <span data-key-status-text>عضو نشط</span>
+          </div>
         </div>
-      </div>
-    </header>
 
-    <main class="user-dashboard-shell user-dashboard-layout">
-      <aside class="user-dashboard-sidebar" aria-label="الرصيد وتفاصيل المفتاح">
-        <section class="user-card balance-card">
-          <div class="user-card-title">
-            <div>
-              <span class="status-pill" data-key-status>جار التحميل</span>
+        <div class="neo-top-actions">
+          <button type="button" aria-label="التنبيهات">🔔<b>3</b></button>
+          <button type="button" aria-label="الرسائل">✉<b>2</b></button>
+          <div class="neo-credit-top">
+            <span>رصيدك الحالي</span>
+            <strong data-total-credit>2,450</strong>
+            <i>▣</i>
+          </div>
+        </div>
+      </header>
+
+      <main class="neo-user-grid">
+        <aside class="neo-info-rail">
+          <section class="neo-card neo-balance-card">
+            <div class="neo-card-heading">
               <h2>رصيدك الحالي</h2>
+              <span>▣</span>
             </div>
-            <span class="card-icon" aria-hidden="true">▣</span>
-          </div>
+            <strong class="neo-balance-number" data-total-credit-side>2,450</strong>
+            <p>رصيد متاح</p>
+            <div class="neo-progress"><span data-credit-progress style="width: 74%"></span></div>
+            <small>سيتم خصم الرصيد عند نجاح التوليد فقط ✅</small>
+            <a class="neo-gradient-button" href="/billing">شحن الرصيد ＋</a>
+          </section>
 
-          <div class="balance-meter">
-            <div class="balance-meter__head">
-              <span>الصور</span>
-              <strong data-images-counter>0 / 0</strong>
-              <span class="mini-icon" aria-hidden="true">▧</span>
+          <section class="neo-card">
+            <div class="neo-card-heading">
+              <h2>مفتاحك النشط</h2>
+              <span>⌘</span>
             </div>
-            <div class="balance-meter__track">
-              <span data-images-progress style="width: 0%"></span>
+            <strong class="neo-key-code" data-key-code>APRO-XXXX-XXXX-XXXX</strong>
+            <div class="neo-key-meta">
+              <span data-key-status-badge>نشط</span>
+              <small>تاريخ الانتهاء: <b data-key-expires>2026-05-25</b></small>
             </div>
-            <small data-images-percent>0%</small>
-          </div>
+          </section>
 
-          <div class="balance-meter">
-            <div class="balance-meter__head">
-              <span>الفيديوهات</span>
-              <strong data-videos-counter>0 / 0</strong>
-              <span class="mini-icon" aria-hidden="true">▣</span>
+          <section class="neo-card">
+            <div class="neo-card-heading">
+              <h2>أدوات سريعة</h2>
+              <span>⚡</span>
             </div>
-            <div class="balance-meter__track">
-              <span data-videos-progress style="width: 0%"></span>
+            <div class="neo-quick-list">
+              <a href="/support">دليل الاستخدام <span>□</span></a>
+              <a href="/models">نماذج وأمثلة جاهزة <span>▦</span></a>
+              <a href="/results">اختر الأفضل لك <span>☆</span></a>
+              <a href="/settings">تحديثات المنصة <span>☌</span></a>
             </div>
-            <small data-videos-percent>0%</small>
-          </div>
+          </section>
 
-          <p class="expiry-line">ينتهي في: <b data-key-expires-short>--</b></p>
-        </section>
-
-        <section class="user-card key-card">
-          <div class="user-card-title">
-            <h2>تفاصيل المفتاح</h2>
-            <span class="key-icon" aria-hidden="true">⌘</span>
-          </div>
-
-          <dl class="key-info-list">
-            <div>
-              <dt>المفتاح</dt>
-              <dd>
-                <span data-key-code>APRO-XXXX-XXXX-XXXX</span>
-                <button type="button" data-copy-key aria-label="نسخ المفتاح">▢</button>
-              </dd>
-            </div>
-            <div>
-              <dt>تاريخ التفعيل</dt>
-              <dd data-key-activated>--</dd>
-            </div>
-            <div>
-              <dt>تاريخ الانتهاء</dt>
-              <dd data-key-expires>--</dd>
-            </div>
-            <div>
-              <dt>اسم الباقة</dt>
-              <dd data-key-plan>--</dd>
-            </div>
-            <div>
-              <dt>الحالة</dt>
-              <dd><span class="dot-status" data-key-status-inline>--</span></dd>
-            </div>
-          </dl>
-
-          <a class="soft-link" href="/activate">عرض جميع التفاصيل ←</a>
-        </section>
-
-        <section class="user-card quick-card">
-          <div class="user-card-title">
-            <h2>روابط سريعة</h2>
-            <span class="key-icon" aria-hidden="true">⚡</span>
-          </div>
-          <div class="quick-actions">
-            <a href="/activate">تفعيل مفتاح جديد <span>+</span></a>
-            <button type="button" data-dashboard-logout>تسجيل الخروج <span>↗</span></button>
-            <a href="#dashboardCreateForm">بدء إنشاء <span>✦</span></a>
-            <a href="/#pricing-title">ترقية الباقة <span>◇</span></a>
-          </div>
-        </section>
-      </aside>
-
-      <section class="user-dashboard-workspace workspace" aria-labelledby="dashboard-title">
-        <section class="user-create-panel chat-panel">
-          <div class="create-panel-header chat-header">
-            <div>
-              <span class="sparkle-mark" aria-hidden="true">✦</span>
-              <h1 id="dashboard-title">إنشاء جديد</h1>
-              <p>اكتب وصفك وسنقوم بإنشاء الصورة أو الفيديو لك.</p>
-            </div>
-
-            <div class="type-switch" role="tablist" aria-label="نوع الإنشاء">
-              <button type="button" data-create-kind="video">
-                فيديو
-                <span aria-hidden="true">▣</span>
-              </button>
-              <button type="button" data-create-kind="image">
-                صورة
-                <span aria-hidden="true">▧</span>
-              </button>
-            </div>
-          </div>
-
-          <div class="chat-thread chat-messages" data-chat-stream aria-live="polite">
-            <article class="chat-bubble is-assistant">
-              <span class="bubble-avatar">
-                <img src="/ap-mark.svg" alt="" aria-hidden="true" />
-              </span>
-              <div class="bubble-content">
-                <strong>المساعد الذكي</strong>
-                <p>اختر صورة أو فيديو، ثم اكتب وصفًا دقيقًا للحصول على أفضل نتيجة.</p>
-              </div>
-            </article>
-          </div>
-
-          <form id="dashboardCreateForm" class="composer-bar composer" hidden>
-            <textarea
-              id="dashboardPrompt"
-              name="prompt"
-              rows="2"
-              placeholder="اكتب وصف الصورة هنا..."
-              required
-            ></textarea>
-
-            <div class="composer-controls">
-              <button class="send-button" type="submit" data-submit-label>
-                إرسال
-                <span aria-hidden="true">↗</span>
-              </button>
-
-              <div class="composer-chips">
-                <span class="cost-chip" data-credit-estimate hidden></span>
-                <span class="word-counter" data-word-counter>0 كلمة</span>
-                <span class="mode-chip" data-mode-chip>صورة</span>
-                <span class="quality-chip" data-quality-label>جودة عالية</span>
-              </div>
-            </div>
-
-            <div class="composer-options">
-              <div class="video-options" data-video-options hidden>
-                <span class="option-label">مدة الفيديو</span>
-                <div class="chip-group" data-duration-group>
-                  <button type="button" data-duration="5" class="is-active">5 ثواني</button>
-                  <button type="button" data-duration="8">8 ثواني</button>
-                </div>
-              </div>
-
-              <div>
-                <span class="option-label">الجودة</span>
-                <div class="chip-group" data-quality-group>
-                  <button type="button" data-quality="normal">عادية</button>
-                  <button type="button" data-quality="high" class="is-active">عالية</button>
-                  <button type="button" data-quality="ultra">فائقة</button>
-                </div>
-              </div>
-
-              <label class="style-select">
-                <span class="option-label">النمط</span>
-                <select id="styleSelect" name="style">
-                  <option value="">اختر النمط المناسب</option>
-                  <option value="realistic">واقعي</option>
-                  <option value="cartoon">كرتوني</option>
-                  <option value="cinematic">سينمائي</option>
-                  <option value="commercial">منتج تجاري</option>
-                </select>
-              </label>
-            </div>
-
-            <p class="dashboard-form-message" data-create-message hidden></p>
-          </form>
-
-          <p class="prompt-tip">اكتب وصفًا دقيقًا للحصول على أفضل النتائج ✨</p>
-        </section>
-
-        <aside class="dashboard-result-panel result-panel" aria-label="نتيجتك">
-          <div class="result-panel-heading">
-            <span class="sparkle-mark" aria-hidden="true">✦</span>
-            <div>
-              <h2>نتيجتك</h2>
-              <p>ستظهر نتيجتك هنا بعد اكتمال التوليد.</p>
-            </div>
-          </div>
-
-          <div class="result-placeholder" data-result-placeholder>
-            <strong>ستظهر نتيجتك هنا بعد اكتمال التوليد.</strong>
-            <p>ابدأ بكتابة وصف واضح ثم اضغط إرسال.</p>
-          </div>
-
-          <section class="generation-state-card" data-result-card hidden aria-live="polite">
-            <div class="result-card__header">
-              <strong data-result-title>تم الإنشاء بنجاح</strong>
-              <a class="download-button" data-download-link href="#" target="_blank" rel="noreferrer">تحميل</a>
-            </div>
-            <div class="result-preview" data-result-preview></div>
+          <section class="neo-card neo-tip-card">
+            <span>🪄</span>
+            <h2>نصيحة اليوم</h2>
+            <p>للحصول على أفضل النتائج، صف فكرتك بالتفصيل واستخدم الكلمات الدلالية المناسبة.</p>
           </section>
         </aside>
-      </section>
-    </main>
 
-    <script src="/dashboard-page.js?v=20260603-dashboard-final"></script>
+        <section class="neo-content-area" id="neoPageOutlet" aria-live="polite"></section>
+      </main>
+    </section>
+
+    <script src="/dashboard-page.js?v=20260603-user-neo-routes"></script>
   </body>
 </html>

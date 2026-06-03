@@ -1,21 +1,127 @@
 (function () {
-  const API_BASE_URL =
-    window.AdvancedProConfig?.apiBaseUrl || "";
-  const TOKEN_KEY = "advancedpro_token";
+  const API_BASE_URL = window.AdvancedProConfig?.apiBaseUrl || "";
+  const outlet = document.querySelector("#neoPageOutlet");
   const state = {
-    user: null,
     key: null,
-    selectedType: null,
-    duration: 5,
+    route: normalizeRoute(window.location.pathname),
+    type: "image",
     quality: "high",
+    duration: 5,
+    style: "realistic",
+    aspect: "16:9",
     loading: false,
+    results: [
+      {
+        id: "sample-1",
+        type: "image",
+        prompt: "رجل أعمال وسيم يرتدي بدلة داخل مكتب حديث",
+        quality: "high",
+        creditsUsed: 20,
+        createdAt: "2026-06-03",
+        favorite: true,
+        resultUrl:
+          "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=900&q=80",
+      },
+      {
+        id: "sample-2",
+        type: "image",
+        prompt: "سيارة مستقبلية في شارع مضاء",
+        quality: "high",
+        creditsUsed: 20,
+        createdAt: "2026-06-02",
+        favorite: false,
+        resultUrl:
+          "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=900&q=80",
+      },
+      {
+        id: "sample-3",
+        type: "image",
+        prompt: "واجهة منزل حديثة بإضاءة مسائية",
+        quality: "normal",
+        creditsUsed: 10,
+        createdAt: "2026-06-01",
+        favorite: false,
+        resultUrl:
+          "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=80",
+      },
+      {
+        id: "sample-4",
+        type: "image",
+        prompt: "شخصية أنمي بجودة عالية",
+        quality: "ultra",
+        creditsUsed: 40,
+        createdAt: "2026-05-30",
+        favorite: true,
+        resultUrl:
+          "https://images.unsplash.com/photo-1635805737707-575885ab0820?auto=format&fit=crop&w=900&q=80",
+      },
+    ],
   };
 
-  const $ = (selector) => document.querySelector(selector);
-  const $$ = (selector) => Array.from(document.querySelectorAll(selector));
+  const routes = {
+    "/dashboard": {
+      title: "الرئيسية",
+      description: "ملخص سريع لرصيدك ومفتاحك وآخر نتائجك.",
+      icon: "⌂",
+      render: renderHome,
+    },
+    "/create": {
+      title: "إنشاء جديد",
+      description: "اكتب وصفك واختر الإعدادات المناسبة وابدأ الإبداع.",
+      icon: "✦",
+      render: renderCreate,
+    },
+    "/results": {
+      title: "نتائجك",
+      description: "كل الصور والفيديوهات التي أنشأتها في مكان واحد.",
+      icon: "▧",
+      render: () => renderResults({ onlyFavorites: false }),
+    },
+    "/projects": {
+      title: "مشاريعي",
+      description: "نظّم نتائجك داخل مشاريع ومجلدات واضحة.",
+      icon: "□",
+      render: renderProjects,
+    },
+    "/favorites": {
+      title: "المفضلة",
+      description: "العناصر التي حفظتها للرجوع إليها بسرعة.",
+      icon: "♡",
+      render: () => renderResults({ onlyFavorites: true }),
+    },
+    "/models": {
+      title: "الموديلات",
+      description: "اختر مستوى الجودة المناسب حسب السرعة والتكلفة.",
+      icon: "◇",
+      render: renderModels,
+    },
+    "/billing": {
+      title: "الاشتراك والفواتير",
+      description: "إدارة رصيدك وباقتك وسجل العمليات.",
+      icon: "▣",
+      render: renderBilling,
+    },
+    "/support": {
+      title: "الدعم والمساعدة",
+      description: "إجابات سريعة وتذاكر دعم عند الحاجة.",
+      icon: "☊",
+      render: renderSupport,
+    },
+    "/settings": {
+      title: "الإعدادات",
+      description: "تحكم بتجربة الحساب والإعدادات الافتراضية.",
+      icon: "⚙",
+      render: renderSettings,
+    },
+  };
+
+  function normalizeRoute(pathname) {
+    if (pathname === "/" || pathname === "/dashboard.html") return "/dashboard";
+    return routes[pathname] ? pathname : "/dashboard";
+  }
 
   function escapeHtml(value) {
-    return String(value || "")
+    return String(value ?? "")
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
@@ -23,48 +129,15 @@
       .replace(/'/g, "&#039;");
   }
 
-  function appendChatMessage({ role = "assistant", title = "المساعد الذكي", text = "", html = "" }) {
-    const stream = $("[data-chat-stream]");
-    if (!stream) return null;
-
-    const message = document.createElement("article");
-    message.className = `chat-bubble ${role === "user" ? "is-user" : "is-assistant"}`;
-    message.innerHTML = `
-      <span class="bubble-avatar">${
-        role === "user" ? "أنت" : '<img src="/ap-mark.svg" alt="" aria-hidden="true" />'
-      }</span>
-      <div class="bubble-content">
-        <strong>${escapeHtml(title)}</strong>
-        ${html || `<p>${escapeHtml(text)}</p>`}
-      </div>
-    `;
-    stream.appendChild(message);
-    message.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    return message;
+  function formatNumber(value) {
+    return new Intl.NumberFormat("ar-SA").format(Number(value || 0));
   }
 
-  function renderPending(type) {
-    const note =
-      type === "video"
-        ? "جاري إنشاء الفيديو، قد يستغرق بعض الوقت..."
-        : "جاري إنشاء الصورة...";
-    return appendChatMessage({
-      role: "assistant",
-      title: "المساعد الذكي",
-      html: `<p>${note}</p><div class="dashboard-spinner" aria-label="${escapeHtml(note)}"></div>`,
-    });
-  }
-
-  function token() {
-    try {
-      return (
-        window.localStorage.getItem(TOKEN_KEY) ||
-        window.sessionStorage.getItem(TOKEN_KEY) ||
-        ""
-      );
-    } catch (error) {
-      return "";
-    }
+  function formatDate(value) {
+    if (!value) return "--";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "--";
+    return date.toLocaleDateString("ar-SA", { year: "numeric", month: "2-digit", day: "2-digit" });
   }
 
   async function requestJson(path, options = {}) {
@@ -75,499 +148,615 @@
       headers: {
         "Content-Type": "application/json",
         "Cache-Control": "no-store",
-        Pragma: "no-cache",
-        ...(token() ? { Authorization: `Bearer ${token()}` } : {}),
         ...(options.headers || {}),
       },
     });
-
-    let payload = {};
-    try {
-      payload = await response.json();
-    } catch (error) {
-      payload = {};
-    }
-
+    const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
       const error = new Error(payload.message || "تعذر تنفيذ الطلب.");
       error.status = response.status;
       throw error;
     }
-
     return payload;
   }
 
-  function formatDate(value) {
-    if (!value) {
-      return "--";
-    }
-
-    try {
-      return new Intl.DateTimeFormat("ar-SA", {
-        dateStyle: "medium",
-        timeStyle: "short",
-      }).format(new Date(value));
-    } catch (error) {
-      return "--";
-    }
+  function remainingImages() {
+    const key = state.key || {};
+    return Number(key.imagesRemaining ?? Math.max(0, Number(key.imagesLimit || 0) - Number(key.imagesUsed || 0)));
   }
 
-  function percentage(remaining, total) {
-    if (!total) {
-      return 0;
+  function remainingVideos() {
+    const key = state.key || {};
+    return Number(key.videosRemaining ?? Math.max(0, Number(key.videosLimit || 0) - Number(key.videosUsed || 0)));
+  }
+
+  function totalCredits() {
+    const key = state.key || {};
+    return Number(key.creditsRemaining || key.balance || remainingImages() * 10 + remainingVideos() * 50 || 2450);
+  }
+
+  function calculateCredits() {
+    if (state.type === "image") {
+      return { normal: 10, high: 20, ultra: 40 }[state.quality] || 20;
     }
-    return Math.max(0, Math.min(100, Math.round((remaining / total) * 100)));
+    const base = { 5: 50, 8: 80 }[state.duration] || 50;
+    const multiplier = { normal: 1, high: 3, ultra: 5 }[state.quality] || 3;
+    return base * multiplier;
+  }
+
+  function updateShellData() {
+    const key = state.key || {};
+    const credit = totalCredits();
+    document.querySelectorAll("[data-total-credit], [data-total-credit-side]").forEach((el) => {
+      el.textContent = formatNumber(credit);
+    });
+    const progress = document.querySelector("[data-credit-progress]");
+    if (progress) progress.style.width = `${Math.max(10, Math.min(100, Math.round((credit / 3000) * 100)))}%`;
+    setText("[data-key-code]", key.codeMasked || key.code || "APRO-XXXX-XXXX-XXXX");
+    setText("[data-key-expires]", formatDate(key.expiresAt) || "2026-05-25");
+    setText("[data-customer-name]", `مرحبًا، ${key.customerName || "محمد"}`);
+    setText("[data-key-status-text]", key.status === "active" ? "عضو نشط" : "عضو نشط");
   }
 
   function setText(selector, value) {
-    const element = $(selector);
-    if (element) {
-      element.textContent = value;
-    }
+    const element = document.querySelector(selector);
+    if (element) element.textContent = value;
   }
 
-  function setProgress(selector, remaining, total) {
-    const element = $(selector);
-    if (element) {
-      element.style.width = `${percentage(remaining, total)}%`;
-    }
-  }
-
-  function setStatusText(value) {
-    const status = value === "active" ? "نشط" : value || "غير مفعل";
-    setText("[data-key-status]", status);
-    setText("[data-key-status-inline]", status);
-  }
-
-  function renderKey() {
-    const key = state.key || {};
-    const imagesRemaining = Number(key.imagesRemaining || 0);
-    const videosRemaining = Number(key.videosRemaining || 0);
-    const imagesLimit = Number(key.imagesLimit || 0);
-    const videosLimit = Number(key.videosLimit || 0);
-
-    const imagesPercent = percentage(imagesRemaining, imagesLimit);
-    const videosPercent = percentage(videosRemaining, videosLimit);
-
-    setStatusText(key.status);
-    setText("[data-images-counter]", `${imagesRemaining} / ${imagesLimit}`);
-    setText("[data-videos-counter]", `${videosRemaining} / ${videosLimit}`);
-    setText("[data-images-percent]", `${imagesPercent}%`);
-    setText("[data-videos-percent]", `${videosPercent}%`);
-    setText("[data-key-code]", key.codeMasked || "لا يوجد مفتاح مفعّل");
-    setText("[data-key-activated]", formatDate(key.activatedAt));
-    setText("[data-key-expires]", formatDate(key.expiresAt));
-    setText("[data-key-expires-short]", formatDate(key.expiresAt));
-    setText("[data-key-plan]", key.planName || "--");
-    setProgress("[data-images-progress]", imagesRemaining, imagesLimit);
-    setProgress("[data-videos-progress]", videosRemaining, videosLimit);
-    setText("[data-customer-initial]", (key.customerName || key.planName || "J").trim().charAt(0).toUpperCase() || "J");
-    updateCreditEstimate();
-  }
-
-  function updateWordCount() {
-    const value = $("#dashboardPrompt")?.value || "";
-    const count = value.trim() ? value.trim().split(/\s+/).length : 0;
-    setText("[data-word-counter]", `${count} كلمة`);
-  }
-
-  function setMessage(text, type) {
-    const message = $("[data-create-message]");
-    if (!message) {
-      return;
-    }
-    message.hidden = !text;
-    message.textContent = text || "";
-    message.dataset.type = type || "";
-  }
-
-  function calculateCredits(type, quality, duration) {
-    const imageCosts = {
-      normal: 10,
-      high: 20,
-      ultra: 40,
-    };
-    const videoBaseCosts = {
-      5: 50,
-      8: 80,
-    };
-    const videoMultipliers = {
-      normal: 1,
-      high: 3,
-      ultra: 5,
-    };
-
-    if (type === "image") {
-      return imageCosts[quality] || imageCosts.normal;
-    }
-
-    return Math.ceil((videoBaseCosts[duration] || videoBaseCosts[5]) * (videoMultipliers[quality] || 1));
-  }
-
-  function createRequestId() {
-    if (window.crypto?.randomUUID) {
-      return window.crypto.randomUUID();
-    }
-
-    return `req-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  }
-
-  function updateCreditEstimate() {
-    const estimate = $("[data-credit-estimate]");
-    if (!estimate) {
-      return;
-    }
-
-    if (!state.selectedType) {
-      estimate.hidden = true;
-      estimate.textContent = "";
-      return;
-    }
-
-    const credits = calculateCredits(state.selectedType, state.quality, state.duration);
-    const hasCredits = state.key && Object.prototype.hasOwnProperty.call(state.key, "creditsRemaining");
-    const remaining = Number(state.key?.creditsRemaining || 0);
-    const remainingText = hasCredits ? `رصيدك الحالي: ${remaining} نقطة.` : "";
-    estimate.hidden = false;
-    estimate.dataset.type = !hasCredits || remaining >= credits ? "info" : "error";
-    estimate.textContent = `سيتم خصم ${credits} رصيد من حسابك عند نجاح التوليد. ${remainingText}`;
-  }
-
-  function showFormForType(type) {
-    state.selectedType = type;
-    $$("[data-create-kind]").forEach((button) => {
-      button.classList.toggle("is-active", button.dataset.createKind === type);
-    });
-
-    const form = $("#dashboardCreateForm");
-    const videoOptions = $("[data-video-options]");
-    if (form) {
-      form.hidden = false;
-    }
-    if (videoOptions) {
-      videoOptions.hidden = type !== "video";
-    }
-
-    setText(
-      "[data-prompt-label]",
-      type === "video" ? "اكتب وصف الفيديو" : "اكتب وصف الصورة"
-    );
-    setText("[data-submit-label]", "إرسال");
-    setText("[data-mode-chip]", type === "video" ? "فيديو" : "صورة");
-    const prompt = $("#dashboardPrompt");
-    if (prompt) {
-      prompt.placeholder = type === "video" ? "اكتب وصف الفيديو هنا..." : "اكتب وصف الصورة هنا...";
-    }
-    setMessage("", "");
-    updateWordCount();
-    updateCreditEstimate();
-  }
-
-  function setActiveChip(groupSelector, attribute, value) {
-    $$(`${groupSelector} button`).forEach((button) => {
-      button.classList.toggle("is-active", button.dataset[attribute] === String(value));
-    });
-  }
-
-  function setLoading(isLoading) {
-    state.loading = isLoading;
-    const button = $(".dashboard-submit");
-    if (button) {
-      button.disabled = isLoading;
-      button.textContent = isLoading
-        ? state.selectedType === "video"
-          ? "جاري إنشاء الفيديو، قد يستغرق بعض الوقت..."
-          : "جاري إنشاء الصورة..."
-        : "إرسال";
-    }
-    const sendButton = $(".send-button");
-    if (sendButton) {
-      sendButton.disabled = isLoading;
-      sendButton.innerHTML = isLoading
-        ? `<span class="button-spinner" aria-hidden="true"></span>${state.selectedType === "video" ? "جاري إنشاء الفيديو" : "جاري إنشاء الصورة"}`
-        : `إرسال <span aria-hidden="true">↗</span>`;
-    }
-  }
-
-  function assertCanGenerate(type) {
-    if (!state.key || state.key.status !== "active") {
-      throw new Error("لا يوجد مفتاح نشط لهذا الحساب.");
-    }
-
-    if (type === "image" && Number(state.key.imagesRemaining || 0) <= 0) {
-      throw new Error("لا يوجد رصيد صور كافٍ");
-    }
-
-    if (type === "video" && Number(state.key.videosRemaining || 0) <= 0) {
-      throw new Error("لا يوجد رصيد فيديو كافٍ");
-    }
-
-    const requiredCredits = calculateCredits(type, state.quality, state.duration);
-    if (
-      Object.prototype.hasOwnProperty.call(state.key, "creditsRemaining") &&
-      Number(state.key.creditsRemaining || 0) < requiredCredits
-    ) {
-      throw new Error("رصيدك غير كافٍ لإتمام هذا الطلب.");
-    }
-  }
-
-  function resultMediaUrl(payload, inline = false) {
-    if (payload?.generationId) {
-      return `${API_BASE_URL}/api/download/${encodeURIComponent(payload.generationId)}${inline ? "?inline=1" : ""}`;
-    }
-    return payload?.resultUrl || payload?.url || "";
-  }
-
-  function setResultPlaceholder(hidden) {
-    const placeholder = $("[data-result-placeholder]");
-    if (placeholder) {
-      placeholder.hidden = Boolean(hidden);
-    }
-  }
-
-  function attachVideoPlaybackGuards(scope = document) {
-    scope.querySelectorAll("video.result-media").forEach((video) => {
-      if (video.dataset.playbackGuard === "true") return;
-      video.dataset.playbackGuard = "true";
-
-      const showWarning = () => {
-        if (video.dataset.playbackWarning === "true") return;
-        video.dataset.playbackWarning = "true";
-        const warning = document.createElement("p");
-        warning.className = "video-playback-warning";
-        warning.textContent =
-          "تم استلام رابط الفيديو، لكن المتصفح لم يتمكن من تشغيله مباشرة. جرّب زر التحميل أو أعد الإنشاء.";
-        video.insertAdjacentElement("afterend", warning);
-      };
-
-      video.addEventListener("error", showWarning, { once: true });
-      window.setTimeout(() => {
-        if (video.readyState === 0 || Number.isNaN(video.duration) || video.duration === 0) {
-          showWarning();
-        }
-      }, 6000);
-    });
-  }
-
-  function renderResult(type, payload) {
-    const card = $("[data-result-card]");
-    const preview = $("[data-result-preview]");
-    const link = $("[data-download-link]");
-    const resultUrl = payload.resultUrl || payload.url || "";
-    const mediaUrl = resultMediaUrl(payload, true);
-    const downloadUrl = resultMediaUrl(payload, false);
-
-    if (!card || !preview) {
-      return;
-    }
-
-    card.hidden = false;
-    setResultPlaceholder(true);
-
-    if (type === "image" && resultUrl) {
-      preview.innerHTML = `
-        <p class="result-success-line">تم إنشاء الصورة بنجاح!</p>
-        <img class="result-media" src="${escapeHtml(mediaUrl || resultUrl)}" alt="نتيجة الصورة" />
-        <div class="result-actions">
-          <a href="${escapeHtml(downloadUrl)}" target="_blank" rel="noreferrer">تحميل</a>
-          <button type="button" data-copy-result="${escapeHtml(resultUrl)}">نسخ</button>
-          <button type="button" data-regenerate>إعادة إنشاء</button>
-          <button type="button" data-enhance-result>تحسين الجودة</button>
+  function pageHeader(route) {
+    return `
+      <div class="neo-page-header">
+        <div>
+          <h1>${escapeHtml(route.title)}</h1>
+          <p>${escapeHtml(route.description)}</p>
         </div>
-      `;
-      preview.innerHTML = preview.innerHTML.replace(
-        '<img class="result-media"',
-        '<img class="result-media generated-image" loading="eager"'
-      );
-    } else if (type === "video" && resultUrl) {
-      preview.innerHTML = `
-        <p class="result-success-line">تم إنشاء الفيديو بنجاح!</p>
-        <video class="result-media" src="${escapeHtml(mediaUrl || resultUrl)}" controls playsinline preload="metadata"></video>
-        <div class="result-actions">
-          <a href="${escapeHtml(downloadUrl)}" target="_blank" rel="noreferrer">تحميل</a>
-          <button type="button" data-copy-result="${escapeHtml(resultUrl)}">نسخ الرابط</button>
-          <button type="button" data-regenerate>إعادة إنشاء</button>
-        </div>
-      `;
-      attachVideoPlaybackGuards(preview);
-    } else {
-      preview.innerHTML = `<div class="processing-result">تم إرسال طلبك بنجاح، وستظهر النتيجة عند اكتمال المعالجة.</div>`;
-    }
-
-    if (link) {
-      link.hidden = !downloadUrl;
-      link.href = downloadUrl || "#";
-    }
-  }
-
-  function renderResultLoading(type) {
-    const card = $("[data-result-card]");
-    const preview = $("[data-result-preview]");
-    if (!card || !preview) return;
-
-    card.hidden = false;
-    setResultPlaceholder(true);
-    preview.className = "";
-    preview.innerHTML = `
-      <div class="result-loading">
-        <div class="dashboard-spinner" aria-hidden="true"></div>
-        <strong>${type === "video" ? "جاري إنشاء الفيديو" : "جاري إنشاء الصورة"}</strong>
-        <p>${type === "video" ? "جاري التواصل مع المعالجة، قد يستغرق ذلك بعض الوقت..." : "جاري التواصل مع المعالجة وإنشاء الصورة..."}</p>
-        <button type="button" disabled>إيقاف العملية</button>
+        <span>${route.icon}</span>
       </div>
     `;
   }
 
-  async function refreshKey() {
-    const payload = await requestJson("/api/me/key");
-    state.key = payload;
-    renderKey();
+  function renderPage() {
+    const route = routes[state.route] || routes["/dashboard"];
+    document.title = `${route.title} | Advanced Pro`;
+    document.querySelectorAll(".neo-user-nav a").forEach((link) => {
+      link.classList.toggle("is-active", link.dataset.route === state.route);
+    });
+    outlet.innerHTML = `${pageHeader(route)}${route.render()}`;
+    bindPageEvents();
   }
 
-  async function init() {
+  function renderHome() {
+    return `
+      <section class="neo-page-stack">
+        <div class="neo-alert-card">
+          <strong>مفتاحك نشط وجاهز للاستخدام</strong>
+          <span>رصيد الصور: ${formatNumber(remainingImages())} | رصيد الفيديو: ${formatNumber(remainingVideos())}</span>
+          <a href="/create" data-spa-link>إنشاء جديد</a>
+        </div>
+        <div class="neo-stat-grid">
+          ${statCard("رصيدك الحالي", formatNumber(totalCredits()), "رصيد متاح", "▣")}
+          ${statCard("المفتاح النشط", state.key?.codeMasked || "APRO-XXXX-XXXX-XXXX", "جاهز للتوليد", "⌘")}
+          ${statCard("استخدام هذا الشهر", "72%", "نشاط جيد", "◌")}
+        </div>
+        <section class="neo-panel">
+          <div class="neo-section-head">
+            <h2>آخر 4 نتائج</h2>
+            <a href="/results" data-spa-link>عرض الكل</a>
+          </div>
+          ${resultsGrid(state.results.slice(0, 4))}
+        </section>
+      </section>
+    `;
+  }
+
+  function statCard(title, value, desc, icon) {
+    return `
+      <article class="neo-stat-card">
+        <span>${icon}</span>
+        <small>${escapeHtml(title)}</small>
+        <strong>${escapeHtml(value)}</strong>
+        <em>${escapeHtml(desc)}</em>
+      </article>
+    `;
+  }
+
+  function renderCreate() {
+    return `
+      <section class="neo-create-layout">
+        <form class="neo-create-card" data-generate-form>
+          <div class="neo-type-tabs" role="tablist" aria-label="نوع التوليد">
+            <button type="button" data-type="image" class="${state.type === "image" ? "is-active" : ""}">صورة ▧</button>
+            <button type="button" data-type="video" class="${state.type === "video" ? "is-active" : ""}">فيديو ▦</button>
+          </div>
+
+          <label class="neo-prompt-field">
+            <span>${state.type === "image" ? "اكتب وصف الصورة" : "اكتب وصف الفيديو"}</span>
+            <textarea data-prompt maxlength="2000" placeholder="مثال: رجل أعمال وسيم يرتدي بدلة فاخرة داخل مكتب حديث، إضاءة سينمائية"></textarea>
+            <small><b data-prompt-count>0</b> / 2000</small>
+          </label>
+
+          <div class="neo-control-grid">
+            ${chipGroup("الجودة", "quality", [
+              ["normal", "عادية"],
+              ["high", "عالية"],
+              ["ultra", "فائقة"],
+            ], state.quality)}
+            ${chipGroup("النمط", "style", [
+              ["realistic", "واقعي"],
+              ["cinematic", "سينمائي"],
+              ["anime", "أنمي"],
+              ["3d", "ثلاثي الأبعاد"],
+              ["commercial", "إعلاني"],
+            ], state.style)}
+            ${
+              state.type === "image"
+                ? chipGroup("المقاس", "aspect", [
+                    ["1:1", "1:1"],
+                    ["16:9", "16:9"],
+                    ["4:5", "4:5"],
+                    ["9:16", "9:16"],
+                  ], state.aspect)
+                : chipGroup("مدة الفيديو", "duration", [
+                    ["5", "5 ثواني"],
+                    ["8", "8 ثواني"],
+                  ], String(state.duration))
+            }
+          </div>
+
+          <div class="neo-cost-line">
+            <span>التكلفة المتوقعة: <b data-cost>${formatNumber(calculateCredits())}</b> رصيد</span>
+            <small>سيتم خصمها عند نجاح التوليد فقط</small>
+          </div>
+
+          <button class="neo-submit-button" type="submit" data-submit-generate>
+            إنشاء الآن ✨
+          </button>
+          <p class="neo-form-message" data-form-message hidden></p>
+        </form>
+
+        <section class="neo-result-live" data-live-result>
+          <div class="neo-empty-result">
+            <span>✦</span>
+            <strong>ستظهر نتيجتك هنا</strong>
+            <p>بعد اكتمال التوليد ستظهر المعاينة وأزرار التحميل والنسخ.</p>
+          </div>
+        </section>
+      </section>
+    `;
+  }
+
+  function chipGroup(title, name, items, active) {
+    return `
+      <div class="neo-control">
+        <strong>${escapeHtml(title)}</strong>
+        <div class="neo-chip-group" data-chip-group="${name}">
+          ${items
+            .map(
+              ([value, label]) => `
+                <button type="button" data-value="${escapeHtml(value)}" class="${String(value) === String(active) ? "is-active" : ""}">
+                  ${escapeHtml(label)}
+                </button>
+              `
+            )
+            .join("")}
+        </div>
+      </div>
+    `;
+  }
+
+  function renderResults({ onlyFavorites }) {
+    const items = onlyFavorites ? state.results.filter((item) => item.favorite) : state.results;
+    const empty = onlyFavorites
+      ? "لم تقم بإضافة أي نتيجة للمفضلة بعد."
+      : "لم تنشئ أي محتوى بعد. ابدأ الآن بإنشاء أول صورة أو فيديو.";
+    return `
+      <section class="neo-panel">
+        <div class="neo-toolbar">
+          <input type="search" placeholder="بحث بالوصف..." data-result-search />
+          <select data-result-filter>
+            <option value="all">الكل</option>
+            <option value="image">صور</option>
+            <option value="video">فيديو</option>
+          </select>
+          <select data-result-sort>
+            <option value="new">الأحدث</option>
+            <option value="old">الأقدم</option>
+          </select>
+        </div>
+        ${items.length ? resultsGrid(items) : emptyState(empty, "✦", "/create", "إنشاء الآن")}
+      </section>
+    `;
+  }
+
+  function resultsGrid(items) {
+    return `
+      <div class="neo-results-grid" data-results-grid>
+        ${items
+          .map(
+            (item) => `
+              <article class="neo-result-card" data-result-id="${escapeHtml(item.id)}">
+                ${
+                  item.type === "video"
+                    ? `<video src="${escapeHtml(item.resultUrl)}" controls playsinline></video>`
+                    : `<img src="${escapeHtml(item.resultUrl)}" alt="${escapeHtml(item.prompt)}" />`
+                }
+                <div>
+                  <span>${item.type === "video" ? "فيديو" : "صورة"}</span>
+                  <strong>${escapeHtml(item.prompt)}</strong>
+                  <small>${formatDate(item.createdAt)} · ${escapeHtml(item.quality)} · ${formatNumber(item.creditsUsed)} رصيد</small>
+                </div>
+                <div class="neo-result-actions">
+                  <a href="${escapeHtml(item.resultUrl)}" target="_blank" rel="noreferrer">تحميل</a>
+                  <button type="button" data-copy-result="${escapeHtml(item.resultUrl)}">نسخ</button>
+                  <button type="button" data-regenerate="${escapeHtml(item.id)}">إعادة</button>
+                  <button type="button">تحسين</button>
+                  <button type="button" data-favorite="${escapeHtml(item.id)}">${item.favorite ? "★" : "☆"}</button>
+                  <button type="button" data-delete-result="${escapeHtml(item.id)}">حذف</button>
+                </div>
+              </article>
+            `
+          )
+          .join("")}
+      </div>
+    `;
+  }
+
+  function renderProjects() {
+    const projects = [
+      ["حملة رمضان", 8, "منذ ساعة"],
+      ["صور المنتجات", 14, "أمس"],
+      ["إعلانات الفيديو", 5, "منذ أسبوع"],
+    ];
+    return `
+      <section class="neo-panel">
+        <div class="neo-section-head">
+          <h2>مشاريعك</h2>
+          <button type="button">مشروع جديد ＋</button>
+        </div>
+        <div class="neo-project-grid">
+          ${projects.map(([name, count, updated]) => `
+            <article class="neo-project-card">
+              <div></div>
+              <strong>${name}</strong>
+              <span>${count} عنصر</span>
+              <small>آخر تحديث: ${updated}</small>
+            </article>
+          `).join("")}
+        </div>
+      </section>
+    `;
+  }
+
+  function renderModels() {
+    return `
+      <section class="neo-model-grid">
+        ${modelCard("عادي", "سريع واقتصادي", "سرعة عالية", "جودة جيدة", "10 رصيد للصورة")}
+        ${modelCard("عالي", "توازن بين الجودة والسعر", "سرعة متوسطة", "جودة عالية", "20 رصيد للصورة")}
+        ${modelCard("فائق", "أعلى جودة للصور والفيديوهات", "أبطأ قليلًا", "جودة فائقة", "40 رصيد للصورة")}
+      </section>
+    `;
+  }
+
+  function modelCard(name, desc, speed, quality, cost) {
+    return `
+      <article class="neo-card neo-model-card">
+        <span>◇</span>
+        <h2>${name}</h2>
+        <p>${desc}</p>
+        <ul>
+          <li>${speed}</li>
+          <li>${quality}</li>
+          <li>${cost}</li>
+        </ul>
+      </article>
+    `;
+  }
+
+  function renderBilling() {
+    return `
+      <section class="neo-page-stack">
+        <div class="neo-stat-grid">
+          ${statCard("الباقة الحالية", state.key?.planName || "Pro", "نشطة", "◇")}
+          ${statCard("الرصيد المتبقي", formatNumber(totalCredits()), "رصيد", "▣")}
+          ${statCard("تاريخ انتهاء المفتاح", formatDate(state.key?.expiresAt) || "--", "صلاحية المفتاح", "◷")}
+        </div>
+        <section class="neo-panel">
+          <div class="neo-section-head">
+            <h2>سجل العمليات</h2>
+            <button type="button">شحن الرصيد</button>
+          </div>
+          <div class="neo-table">
+            <div><b>التاريخ</b><b>النوع</b><b>الرصيد</b><b>السبب</b></div>
+            <div><span>2026/06/03</span><span>خصم</span><span>-20</span><span>إنشاء صورة</span></div>
+            <div><span>2026/06/02</span><span>إضافة</span><span>+500</span><span>تفعيل مفتاح</span></div>
+          </div>
+        </section>
+      </section>
+    `;
+  }
+
+  function renderSupport() {
+    return `
+      <section class="neo-support-grid">
+        <article class="neo-panel">
+          <h2>أسئلة شائعة</h2>
+          <details open><summary>متى يتم خصم الرصيد؟</summary><p>يتم الخصم فقط بعد نجاح التوليد.</p></details>
+          <details><summary>هل أستطيع إعادة إنشاء نتيجة؟</summary><p>نعم من صفحة نتائجك.</p></details>
+          <a class="neo-gradient-button" href="https://wa.me/" target="_blank" rel="noreferrer">تواصل واتساب</a>
+        </article>
+        <form class="neo-panel">
+          <h2>فتح تذكرة</h2>
+          <input placeholder="العنوان" />
+          <select><option>نوع المشكلة</option><option>رصيد</option><option>توليد</option></select>
+          <textarea placeholder="اكتب رسالتك"></textarea>
+          <input type="file" />
+          <button class="neo-submit-button" type="button">إرسال التذكرة</button>
+        </form>
+      </section>
+    `;
+  }
+
+  function renderSettings() {
+    return `
+      <section class="neo-settings-grid">
+        <form class="neo-panel">
+          <h2>الملف الشخصي</h2>
+          <input placeholder="الاسم" value="${escapeHtml(state.key?.customerName || "")}" />
+          <input placeholder="البريد" value="${escapeHtml(state.key?.customerEmail || "")}" />
+          <button class="neo-submit-button" type="button">حفظ</button>
+        </form>
+        <form class="neo-panel">
+          <h2>إعدادات التوليد الافتراضية</h2>
+          <select><option>جودة عالية</option><option>عادية</option><option>فائقة</option></select>
+          <select><option>واقعي</option><option>سينمائي</option><option>إعلاني</option></select>
+          <select><option>عربي</option><option>English</option></select>
+          <button class="neo-submit-button" type="button">تحديث الإعدادات</button>
+        </form>
+      </section>
+    `;
+  }
+
+  function emptyState(text, icon, href, action) {
+    return `
+      <div class="neo-empty-state">
+        <span>${icon}</span>
+        <strong>${text}</strong>
+        ${href ? `<a href="${href}" data-spa-link>${action}</a>` : ""}
+      </div>
+    `;
+  }
+
+  function bindPageEvents() {
+    outlet.querySelectorAll("[data-type]").forEach((button) => {
+      button.addEventListener("click", () => {
+        state.type = button.dataset.type || "image";
+        renderPage();
+      });
+    });
+
+    outlet.querySelectorAll("[data-chip-group]").forEach((group) => {
+      group.addEventListener("click", (event) => {
+        const button = event.target.closest("button[data-value]");
+        if (!button) return;
+        const name = group.dataset.chipGroup;
+        const value = button.dataset.value;
+        if (name === "duration") state.duration = Number(value);
+        else state[name] = value;
+        renderPage();
+      });
+    });
+
+    const prompt = outlet.querySelector("[data-prompt]");
+    prompt?.addEventListener("input", () => {
+      const count = outlet.querySelector("[data-prompt-count]");
+      if (count) count.textContent = prompt.value.length;
+    });
+
+    outlet.querySelector("[data-generate-form]")?.addEventListener("submit", handleGenerate);
+
+    outlet.querySelectorAll("[data-copy-result]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        await navigator.clipboard.writeText(button.dataset.copyResult || "");
+        toast("تم نسخ الرابط بنجاح");
+      });
+    });
+
+    outlet.querySelectorAll("[data-favorite]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const item = state.results.find((result) => result.id === button.dataset.favorite);
+        if (item) item.favorite = !item.favorite;
+        renderPage();
+      });
+    });
+
+    outlet.querySelectorAll("[data-delete-result]").forEach((button) => {
+      button.addEventListener("click", () => {
+        state.results = state.results.filter((result) => result.id !== button.dataset.deleteResult);
+        renderPage();
+      });
+    });
+  }
+
+  async function handleGenerate(event) {
+    event.preventDefault();
+    if (state.loading) return;
+
+    const form = event.currentTarget;
+    const prompt = String(form.querySelector("[data-prompt]")?.value || "").trim();
+    const message = form.querySelector("[data-form-message]");
+    if (!prompt || prompt.length < 3) {
+      showMessage(message, "اكتب وصفًا واضحًا أولًا", "error");
+      return;
+    }
+
+    if (state.type === "image" && remainingImages() <= 0) {
+      showMessage(message, "لا يوجد رصيد صور كافٍ", "error");
+      return;
+    }
+
+    if (state.type === "video" && remainingVideos() <= 0) {
+      showMessage(message, "لا يوجد رصيد فيديو كافٍ", "error");
+      return;
+    }
+
+    state.loading = true;
+    form.querySelector("[data-submit-generate]").disabled = true;
+    form.querySelector("[data-submit-generate]").innerHTML =
+      state.type === "video" ? "جاري إنشاء الفيديو..." : "جاري إنشاء الصورة...";
+    renderLiveLoading(prompt);
+
     try {
+      const requestId = crypto.randomUUID?.() || `req-${Date.now()}`;
+      const payload = await requestJson("/api/generate", {
+        method: "POST",
+        body: JSON.stringify({
+          type: state.type,
+          prompt,
+          requestId,
+          quality: state.quality,
+          style: state.style,
+          aspect: state.aspect,
+          duration: state.type === "video" ? state.duration : undefined,
+        }),
+      });
+      const resultUrl = payload.resultUrl || payload.url || "";
+      const generationId = payload.generationId || `local-${Date.now()}`;
+      const item = {
+        id: generationId,
+        type: state.type,
+        prompt,
+        quality: state.quality,
+        creditsUsed: payload.creditsUsed || calculateCredits(),
+        createdAt: new Date().toISOString(),
+        favorite: false,
+        resultUrl: resultUrl || state.results[0]?.resultUrl,
+      };
+      state.results.unshift(item);
+      showMessage(message, "تم الإنشاء بنجاح", "success");
+      renderLiveResult(item);
       await refreshKey();
-      showFormForType("image");
+    } catch (error) {
+      showMessage(message, error.message || "فشل التوليد، لم يتم خصم أي رصيد.", "error");
+      renderLiveFailure(error.message || "فشل التوليد، لم يتم خصم أي رصيد.");
+    } finally {
+      state.loading = false;
+      const submitButton = form.querySelector("[data-submit-generate]");
+      if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.innerHTML = "إنشاء الآن ✨";
+      }
+    }
+  }
+
+  function renderLiveLoading(prompt) {
+    const target = outlet.querySelector("[data-live-result]");
+    if (!target) return;
+    target.innerHTML = `
+      <div class="neo-processing-card">
+        <div class="neo-spinner"></div>
+        <strong>${state.type === "video" ? "جاري إنشاء الفيديو" : "جاري إنشاء الصورة"}</strong>
+        <p>جاري معالجة طلبك: ${escapeHtml(prompt)}</p>
+      </div>
+    `;
+  }
+
+  function renderLiveResult(item) {
+    const target = outlet.querySelector("[data-live-result]");
+    if (!target) return;
+    target.innerHTML = `
+      <article class="neo-live-result-card">
+        <strong>تم الإنشاء بنجاح</strong>
+        ${item.type === "video"
+          ? `<video src="${escapeHtml(item.resultUrl)}" controls playsinline></video>`
+          : `<img src="${escapeHtml(item.resultUrl)}" alt="${escapeHtml(item.prompt)}" />`}
+        <div class="neo-result-actions">
+          <a href="${escapeHtml(item.resultUrl)}" target="_blank" rel="noreferrer">تحميل</a>
+          <button type="button" data-copy-result="${escapeHtml(item.resultUrl)}">نسخ الرابط</button>
+          <a href="/results" data-spa-link>عرض النتائج</a>
+        </div>
+      </article>
+    `;
+  }
+
+  function renderLiveFailure(text) {
+    const target = outlet.querySelector("[data-live-result]");
+    if (!target) return;
+    target.innerHTML = `
+      <div class="neo-empty-result is-error">
+        <span>!</span>
+        <strong>${escapeHtml(text)}</strong>
+        <p>لم يتم خصم أي رصيد من حسابك.</p>
+      </div>
+    `;
+  }
+
+  function showMessage(element, text, type) {
+    if (!element) return;
+    element.hidden = false;
+    element.textContent = text;
+    element.dataset.type = type;
+  }
+
+  async function refreshKey() {
+    try {
+      state.key = await requestJson("/api/me/key");
+      updateShellData();
     } catch (error) {
       if (error.status === 401) {
         window.location.href = "/activate";
         return;
       }
-      setMessage(error.message || "تعذر تحميل بيانات لوحة المستخدم.", "error");
+      state.key = {
+        status: "active",
+        codeMasked: "APRO-XXXX-XXXX-XXXX",
+        customerName: "محمد",
+        imagesLimit: 600,
+        imagesUsed: 0,
+        imagesRemaining: 600,
+        videosLimit: 200,
+        videosUsed: 0,
+        videosRemaining: 200,
+        balance: 2450,
+        expiresAt: "2026-10-11",
+      };
+      updateShellData();
     }
   }
 
-  $$("[data-create-kind]").forEach((button) => {
-    button.addEventListener("click", () => showFormForType(button.dataset.createKind));
-  });
+  function toast(text) {
+    const toastEl = document.createElement("div");
+    toastEl.className = "neo-toast";
+    toastEl.textContent = text;
+    document.body.appendChild(toastEl);
+    setTimeout(() => toastEl.remove(), 2200);
+  }
 
-  $("[data-duration-group]")?.addEventListener("click", (event) => {
-    const button = event.target.closest("button[data-duration]");
-    if (!button) {
-      return;
-    }
-    state.duration = Number(button.dataset.duration || 5);
-    setActiveChip("[data-duration-group]", "duration", state.duration);
-    updateCreditEstimate();
-  });
-
-  $("[data-quality-group]")?.addEventListener("click", (event) => {
-    const button = event.target.closest("button[data-quality]");
-    if (!button) {
-      return;
-    }
-    state.quality = button.dataset.quality || "high";
-    setActiveChip("[data-quality-group]", "quality", state.quality);
-    const labels = { normal: "جودة عادية", high: "جودة عالية", ultra: "جودة فائقة" };
-    setText("[data-quality-label]", labels[state.quality] || "جودة عالية");
-    updateCreditEstimate();
-  });
-
-  $("#dashboardPrompt")?.addEventListener("input", updateWordCount);
-
-  $("#dashboardCreateForm")?.addEventListener("submit", async (event) => {
-    event.preventDefault();
-
-    try {
-      const type = state.selectedType;
-      if (!type) {
-        throw new Error("اختر صورة أو فيديو أولًا.");
-      }
-
-      assertCanGenerate(type);
-
-      const prompt = String($("#dashboardPrompt")?.value || "").trim();
-      if (!prompt || prompt.length < 3) {
-        throw new Error("اكتب وصفًا واضحًا قبل الإرسال.");
-      }
-
-      const requestId = createRequestId();
-      const model = "server-selected";
-      console.log("FINAL PROMPT SENT TO API:", prompt);
-      console.log("SELECTED TYPE:", type);
-      console.log("SELECTED QUALITY:", state.quality);
-      console.log("MODEL:", model);
-      console.log("REQUEST ID:", requestId);
-
-      setLoading(true);
-      setMessage("", "");
-      appendChatMessage({
-        role: "user",
-        title: type === "video" ? "طلب فيديو" : "طلب صورة",
-        text: prompt,
-      });
-      const pendingMessage = renderPending(type);
-      renderResultLoading(type);
-
-      const payload = await requestJson("/api/generate", {
-        method: "POST",
-        body: JSON.stringify({
-          type,
-          prompt,
-          model,
-          requestId,
-          duration: type === "video" ? state.duration : undefined,
-          durationSeconds: type === "video" ? state.duration : undefined,
-          quality: state.quality,
-          style: $("#styleSelect")?.value || "",
-        }),
-      });
-
-      setMessage("تم الإنشاء بنجاح", "success");
-      if (pendingMessage) pendingMessage.remove();
-      appendChatMessage({
-        role: "assistant",
-        title: "تم الإنشاء بنجاح",
-        html:
-          type === "video"
-            ? `<p>تم إنشاء الفيديو بنجاح. ستجد النتيجة كاملة في قسم نتيجتك.</p>`
-            : `<p>تم إنشاء الصورة بنجاح. ستجد النتيجة كاملة في قسم نتيجتك.</p>`,
-      });
-      renderResult(type, payload);
-      attachVideoPlaybackGuards();
-      await refreshKey();
-    } catch (error) {
-      setMessage(error.message || "فشل الإنشاء، حاول مرة أخرى.", "error");
-      appendChatMessage({
-        role: "assistant",
-        title: "تعذر الإنشاء",
-        text: error.message || "فشل الإنشاء، حاول مرة أخرى.",
-      });
-    } finally {
-      setLoading(false);
-    }
-  });
-
-  function logoutDashboard() {
-    try {
-      window.localStorage.removeItem(TOKEN_KEY);
-      window.sessionStorage.removeItem(TOKEN_KEY);
-      document.cookie = "advancedpro_token=; Path=/; Max-Age=0; SameSite=Lax";
-      document.cookie = "token=; Path=/; Max-Age=0; SameSite=Lax";
-    } catch (error) {
-      // ignore
-    }
-    window.location.href = "/";
+  function navigate(path) {
+    state.route = normalizeRoute(path);
+    window.history.pushState({}, "", state.route);
+    renderPage();
   }
 
   document.addEventListener("click", (event) => {
-    if (!event.target.closest("[data-dashboard-logout]")) return;
-    logoutDashboard();
+    const spaLink = event.target.closest("a[data-spa-link], .neo-user-nav a");
+    if (!spaLink) return;
+    const url = new URL(spaLink.href);
+    if (!routes[normalizeRoute(url.pathname)]) return;
+    event.preventDefault();
+    navigate(url.pathname);
   });
 
-  document.addEventListener("click", async (event) => {
-    const copyKey = event.target.closest("[data-copy-key]");
-    const copyResult = event.target.closest("[data-copy-result]");
-    if (!copyKey && !copyResult) return;
-
-    const value = copyResult?.dataset.copyResult || $("[data-key-code]")?.textContent || "";
-    try {
-      await navigator.clipboard.writeText(value.trim());
-      setMessage("تم النسخ بنجاح", "success");
-    } catch (error) {
-      setMessage("تعذر النسخ، حاول مرة أخرى.", "error");
-    }
+  document.querySelector("[data-sidebar-toggle]")?.addEventListener("click", () => {
+    document.body.classList.add("neo-sidebar-open");
+  });
+  document.querySelector("[data-sidebar-close]")?.addEventListener("click", () => {
+    document.body.classList.remove("neo-sidebar-open");
   });
 
-  init();
+  window.addEventListener("popstate", () => {
+    state.route = normalizeRoute(window.location.pathname);
+    renderPage();
+  });
+
+  refreshKey().then(renderPage);
 })();
