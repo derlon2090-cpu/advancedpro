@@ -1,7 +1,6 @@
 import { Router } from "express";
 import { Readable } from "node:stream";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { requireAuth } from "../middleware/auth.js";
 import { prisma } from "../lib/prisma.js";
 
 const router = Router();
@@ -15,11 +14,16 @@ function sanitizeFilename(name) {
 
 router.get(
   "/:id",
-  requireAuth,
   asyncHandler(async (req, res) => {
     const id = Number(req.params.id);
-    const generation = await prisma.generation.findFirst({
-      where: { id, userId: req.user.id },
+    const keyId = Number(req.cookies?.key_session);
+
+    if (!Number.isFinite(id) || !Number.isFinite(keyId)) {
+      return res.status(401).json({ message: "جلسة المفتاح غير صالحة للتحميل." });
+    }
+
+    const generation = await prisma.generationJob.findFirst({
+      where: { id, keyId },
     });
 
     if (!generation || !generation.resultUrl) {
@@ -38,7 +42,9 @@ router.get(
       return res.status(400).json({ message: "رابط غير صالح للتحميل." });
     }
 
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      headers: req.headers.range ? { Range: req.headers.range } : undefined,
+    });
 
     if (!response.ok || !response.body) {
       return res.status(502).json({ message: "تعذر تنزيل الملف حاليًا." });
@@ -46,13 +52,23 @@ router.get(
 
     const contentType = response.headers.get("content-type") || "application/octet-stream";
     const length = response.headers.get("content-length");
+    const contentRange = response.headers.get("content-range");
+    const acceptRanges = response.headers.get("accept-ranges");
     const fallbackName = sanitizeFilename(parsed.pathname.split("/").pop());
     const filename = fallbackName || `advancedpro-${id}`;
+    const disposition = req.query.inline === "1" ? "inline" : "attachment";
 
+    res.status(response.status === 206 ? 206 : 200);
     res.setHeader("Content-Type", contentType);
-    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.setHeader("Content-Disposition", `${disposition}; filename="${filename}"`);
     if (length) {
       res.setHeader("Content-Length", length);
+    }
+    if (contentRange) {
+      res.setHeader("Content-Range", contentRange);
+    }
+    if (acceptRanges) {
+      res.setHeader("Accept-Ranges", acceptRanges);
     }
 
     Readable.fromWeb(response.body).pipe(res);

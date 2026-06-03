@@ -300,11 +300,44 @@
     }
   }
 
+  function resultMediaUrl(payload, inline = false) {
+    if (payload?.generationId) {
+      return `${API_BASE_URL}/api/download/${encodeURIComponent(payload.generationId)}${inline ? "?inline=1" : ""}`;
+    }
+    return payload?.resultUrl || payload?.url || "";
+  }
+
+  function attachVideoPlaybackGuards(scope = document) {
+    scope.querySelectorAll("video.result-media").forEach((video) => {
+      if (video.dataset.playbackGuard === "true") return;
+      video.dataset.playbackGuard = "true";
+
+      const showWarning = () => {
+        if (video.dataset.playbackWarning === "true") return;
+        video.dataset.playbackWarning = "true";
+        const warning = document.createElement("p");
+        warning.className = "video-playback-warning";
+        warning.textContent =
+          "تم استلام رابط الفيديو، لكن المتصفح لم يتمكن من تشغيله مباشرة. جرّب زر التحميل أو أعد الإنشاء.";
+        video.insertAdjacentElement("afterend", warning);
+      };
+
+      video.addEventListener("error", showWarning, { once: true });
+      window.setTimeout(() => {
+        if (video.readyState === 0 || Number.isNaN(video.duration) || video.duration === 0) {
+          showWarning();
+        }
+      }, 6000);
+    });
+  }
+
   function renderResult(type, payload) {
     const card = $("[data-result-card]");
     const preview = $("[data-result-preview]");
     const link = $("[data-download-link]");
     const resultUrl = payload.resultUrl || payload.url || "";
+    const mediaUrl = resultMediaUrl(payload, true);
+    const downloadUrl = resultMediaUrl(payload, false);
 
     if (!card || !preview) {
       return;
@@ -315,9 +348,9 @@
     if (type === "image" && resultUrl) {
       preview.innerHTML = `
         <p class="result-success-line">تم إنشاء الصورة بنجاح!</p>
-        <img class="result-media" src="${escapeHtml(resultUrl)}" alt="نتيجة الصورة" />
+        <img class="result-media" src="${escapeHtml(mediaUrl || resultUrl)}" alt="نتيجة الصورة" />
         <div class="result-actions">
-          <a href="${API_BASE_URL}/api/download/${escapeHtml(payload.generationId || "")}" target="_blank" rel="noreferrer">تحميل</a>
+          <a href="${escapeHtml(downloadUrl)}" target="_blank" rel="noreferrer">تحميل</a>
           <button type="button" data-copy-result="${escapeHtml(resultUrl)}">نسخ</button>
           <button type="button" data-regenerate>إعادة إنشاء</button>
           <button type="button" data-enhance-result>تحسين الجودة</button>
@@ -326,20 +359,21 @@
     } else if (type === "video" && resultUrl) {
       preview.innerHTML = `
         <p class="result-success-line">تم إنشاء الفيديو بنجاح!</p>
-        <video class="result-media" src="${escapeHtml(resultUrl)}" controls playsinline></video>
+        <video class="result-media" src="${escapeHtml(mediaUrl || resultUrl)}" controls playsinline preload="metadata"></video>
         <div class="result-actions">
-          <a href="${API_BASE_URL}/api/download/${escapeHtml(payload.generationId || "")}" target="_blank" rel="noreferrer">تحميل</a>
+          <a href="${escapeHtml(downloadUrl)}" target="_blank" rel="noreferrer">تحميل</a>
           <button type="button" data-copy-result="${escapeHtml(resultUrl)}">نسخ الرابط</button>
           <button type="button" data-regenerate>إعادة إنشاء</button>
         </div>
       `;
+      attachVideoPlaybackGuards(preview);
     } else {
       preview.innerHTML = `<div class="processing-result">تم إرسال طلبك بنجاح، وستظهر النتيجة عند اكتمال المعالجة.</div>`;
     }
 
     if (link) {
-      link.hidden = !payload.generationId;
-      link.href = payload.generationId ? `${API_BASE_URL}/api/download/${payload.generationId}` : "#";
+      link.hidden = !downloadUrl;
+      link.href = downloadUrl || "#";
     }
   }
 
@@ -452,10 +486,11 @@
         title: "تم الإنشاء بنجاح",
         html:
           type === "video"
-            ? `<p>تم إنشاء الفيديو بنجاح.</p><video class="result-media" src="${escapeHtml(payload.resultUrl || "")}" controls playsinline></video>`
+            ? `<p>تم إنشاء الفيديو بنجاح.</p><video class="result-media" src="${escapeHtml(resultMediaUrl(payload, true))}" controls playsinline preload="metadata"></video>`
             : `<p>تم إنشاء الصورة بنجاح.</p><img class="result-media" src="${escapeHtml(payload.resultUrl || "")}" alt="نتيجة الصورة" />`,
       });
       renderResult(type, payload);
+      attachVideoPlaybackGuards();
       await refreshKey();
     } catch (error) {
       setMessage(error.message || "فشل الإنشاء، حاول مرة أخرى.", "error");

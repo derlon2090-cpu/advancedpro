@@ -8454,6 +8454,17 @@ html[data-theme="dark"] .create-chat-bubble__state {
   font-weight: 900;
 }
 
+.video-playback-warning {
+  margin: 12px 0 0;
+  padding: 12px 14px;
+  border: 1px solid #fedf89;
+  border-radius: 14px;
+  color: #93370d;
+  background: #fffaeb;
+  font-weight: 900;
+  line-height: 1.8;
+}
+
 .result-media {
   width: 100%;
   max-height: 420px;

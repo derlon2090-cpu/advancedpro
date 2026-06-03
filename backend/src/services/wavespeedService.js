@@ -19,29 +19,66 @@ function requireApiKey() {
   return apiKey;
 }
 
-function firstUrlFrom(value) {
+function isHttpUrl(value) {
+  return typeof value === "string" && /^https?:\/\//i.test(value);
+}
+
+function isLikelyVideoFileUrl(value) {
+  if (!isHttpUrl(value)) return false;
+
+  try {
+    const parsed = new URL(value);
+    const url = `${parsed.pathname}${parsed.search}`.toLowerCase();
+
+    if (/(^|\/)(predictions?|tasks?|jobs?)(\/|$)/i.test(parsed.pathname)) {
+      return false;
+    }
+
+    if (/poll|status|result\/?$|\/get\/?$/i.test(parsed.pathname)) {
+      return false;
+    }
+
+    return /\.(mp4|webm|mov|m4v|m3u8)(\?|$)/i.test(url) || /video|output|cdn|storage|files?/i.test(value);
+  } catch (error) {
+    return false;
+  }
+}
+
+function firstVideoUrlFrom(value) {
   if (!value) return null;
 
-  if (typeof value === "string" && /^https?:\/\//i.test(value)) {
+  if (isLikelyVideoFileUrl(value)) {
     return value;
   }
 
   if (Array.isArray(value)) {
     for (const item of value) {
-      const found = firstUrlFrom(item);
+      const found = firstVideoUrlFrom(item);
       if (found) return found;
     }
     return null;
   }
 
   if (typeof value === "object") {
-    for (const key of ["url", "video", "video_url", "output_url", "resultUrl", "outputs"]) {
-      const found = firstUrlFrom(value[key]);
+    for (const key of [
+      "video_url",
+      "videoUrl",
+      "video",
+      "videos",
+      "output_url",
+      "outputUrl",
+      "resultUrl",
+      "url",
+      "file",
+      "files",
+      "outputs",
+    ]) {
+      const found = firstVideoUrlFrom(value[key]);
       if (found) return found;
     }
 
-    for (const nested of Object.values(value)) {
-      const found = firstUrlFrom(nested);
+    for (const key of ["result", "output", "data"]) {
+      const found = firstVideoUrlFrom(value[key]);
       if (found) return found;
     }
   }
@@ -138,7 +175,7 @@ async function postToWaveSpeed({ apiKey, prompt, duration, quality, style }) {
 }
 
 async function pollWaveSpeedResult({ apiKey, initial }) {
-  const immediateUrl = firstUrlFrom(initial?.result || initial?.output || initial?.data || initial?.video);
+  const immediateUrl = firstVideoUrlFrom(initial?.result || initial?.output || initial?.data || initial?.video);
   if (immediateUrl) return immediateUrl;
 
   const pollingUrl =
@@ -180,7 +217,7 @@ async function pollWaveSpeedResult({ apiKey, initial }) {
       throw serviceError(data?.message || data?.error || data?.data?.error || "فشل توليد الفيديو.");
     }
 
-    const resultUrl = firstUrlFrom(data?.result || data?.output || data?.data || data);
+    const resultUrl = firstVideoUrlFrom(data?.result || data?.output || data?.data || data);
     if (resultUrl && ["completed", "succeeded", "success", "done", ""].includes(status)) {
       return resultUrl;
     }
