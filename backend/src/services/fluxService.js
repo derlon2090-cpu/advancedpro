@@ -17,9 +17,71 @@ function compactForLog(value, maxLength = 500) {
   return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
 }
 
+function envFlag(name, fallback = false) {
+  const raw = process.env[name];
+  if (raw === undefined) return fallback;
+  return ["1", "true", "yes", "on"].includes(String(raw).trim().toLowerCase());
+}
+
+const IMAGE_NEGATIVE_PROMPT = [
+  "text",
+  "words",
+  "letters",
+  "arabic text",
+  "watermark",
+  "logo",
+  "captions",
+  "subtitles",
+  "grid",
+  "grid lines",
+  "lines",
+  "overlay",
+  "UI",
+  "blurry",
+  "distorted face",
+  "extra fingers",
+  "deformed hands",
+  "random woman",
+  "random man",
+  "food",
+  "animals",
+  "rabbit",
+  "pet",
+].join(", ");
+
+function arabicPromptHints(userPrompt) {
+  const text = String(userPrompt || "").toLowerCase();
+  const hints = [];
+
+  const addIf = (patterns, hint) => {
+    if (patterns.some((pattern) => pattern.test(text))) {
+      hints.push(hint);
+    }
+  };
+
+  addIf([/رجل\s*أعمال/, /رجل اعمال/, /businessman/], "male businessman");
+  addIf([/وسيم/, /handsome/], "handsome");
+  addIf([/بدلة/, /بذلة/, /suit/], "formal suit");
+  addIf([/مكتب\s*حديث/, /مكتب/, /office/], "modern luxury office");
+  addIf([/روبوت/, /robot/], "friendly robot assistant");
+  addIf([/سيارة/, /car/], "car");
+  addIf([/منزل/, /بيت/, /house/, /villa/], "modern house");
+  addIf([/أنمي/, /انمي/, /anime/], "anime style character");
+  addIf([/سينمائي/, /cinematic/], "cinematic lighting");
+  addIf([/واقعي/, /realistic/], "realistic professional photo");
+  addIf([/امرأة|مرأة|بنت|فتاة|سيدة/, "woman", "female"].map((item) => (item instanceof RegExp ? item : new RegExp(item))), "female subject");
+
+  if (/رجل|ذكر|شاب/.test(text) && !hints.includes("male businessman")) {
+    hints.push("male subject");
+  }
+
+  return [...new Set(hints)];
+}
+
 function buildImagePrompt({ prompt, quality, style }) {
   const userPrompt = String(prompt || "").trim();
   const styleText = String(style || "").trim();
+  const hints = arabicPromptHints(userPrompt);
   const qualityHints = {
     normal: "clean composition, clear subject, good lighting",
     high: "high quality, realistic details, sharp focus, professional lighting",
@@ -27,18 +89,26 @@ function buildImagePrompt({ prompt, quality, style }) {
   };
 
   return [
-    "Create a realistic, professional image that follows this request exactly:",
+    "Create a high quality image that follows this user request exactly:",
     `"${userPrompt}"`,
     "",
+    hints.length ? `Interpreted English intent: ${hints.join(", ")}.` : "",
     hasArabicText(userPrompt)
-      ? "The request is Arabic. Understand it accurately, translate its meaning internally to English, and follow it exactly."
+      ? "The request is Arabic. Translate its meaning accurately into English before generating, and follow that translated meaning exactly."
       : "Follow the user's request exactly.",
-    "Do not generate food, animals, rabbits, pets, landscapes, or random objects unless explicitly requested.",
-    "No text, no watermark, no distorted face, no extra fingers.",
+    "Important subject rules:",
+    "- If the request says رجل, generate a male person only.",
+    "- If the request says امرأة, generate a female person only.",
+    "- If the request mentions businessman or رجل أعمال, create a male businessman wearing a formal suit.",
+    "- Do not create random women, food, animals, rabbits, pets, landscapes, or unrelated scenes unless explicitly requested.",
+    "- Do not add any written text inside the image.",
+    "- Do not add Arabic letters, captions, subtitles, watermarks, logos, grid lines, UI overlays, or frames.",
+    "- Avoid blurry output, distorted faces, extra fingers, and deformed hands.",
     "Keep the requested main subject clear, centered, fully visible, and not cropped.",
-    "High quality, clean composition, professional lighting.",
+    "Professional realistic photography, clean composition, cinematic professional lighting.",
     `Quality direction: ${qualityHints[quality] || qualityHints.normal}.`,
     styleText ? `Visual style: ${styleText}.` : "",
+    `Negative prompt guidance: ${IMAGE_NEGATIVE_PROMPT}.`,
   ]
     .filter(Boolean)
     .join("\n");
@@ -122,18 +192,35 @@ function getFluxModelConfig(quality) {
 async function postToBfl({ apiKey, prompt, quality, style }) {
   const { endpoint, model } = getFluxModelConfig(quality);
   const finalPrompt = buildImagePrompt({ prompt, quality, style });
+  const negativePrompt = IMAGE_NEGATIVE_PROMPT;
   const payload = {
     prompt: finalPrompt,
     width: Number(process.env.BFL_IMAGE_WIDTH || 1024),
     height: Number(process.env.BFL_IMAGE_HEIGHT || 1024),
     output_format: process.env.BFL_OUTPUT_FORMAT || "jpeg",
-    prompt_upsampling: quality === "ultra",
+    prompt_upsampling: envFlag("BFL_PROMPT_UPSAMPLING", false),
     safety_tolerance: Number(process.env.BFL_SAFETY_TOLERANCE || 2),
   };
 
-  console.log("USER_PROMPT", prompt);
-  console.log("FINAL_PROMPT", payload.prompt);
-  console.log("MODEL", model);
+  const negativePromptField = String(process.env.BFL_NEGATIVE_PROMPT_FIELD || "").trim();
+  if (negativePromptField) {
+    payload[negativePromptField] = negativePrompt;
+  }
+
+  console.log("USER_PROMPT:", prompt);
+  console.log("FINAL_PROMPT:", payload.prompt);
+  console.log("NEGATIVE_PROMPT:", negativePrompt);
+  console.log("MODEL:", model);
+  console.log(
+    "API_BODY:",
+    JSON.stringify({
+      ...payload,
+      prompt: compactForLog(payload.prompt, 1400),
+      [negativePromptField || "negativePromptAppliedInFinalPrompt"]: negativePromptField
+        ? compactForLog(negativePrompt, 700)
+        : true,
+    })
+  );
 
   console.log(
     "[BFL_IMAGE_REQUEST]",
@@ -144,6 +231,7 @@ async function postToBfl({ apiKey, prompt, quality, style }) {
       height: payload.height,
       originalPrompt: compactForLog(prompt),
       promptSent: compactForLog(payload.prompt),
+      negativePromptSentAsField: Boolean(negativePromptField),
     })
   );
 

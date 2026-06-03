@@ -1750,7 +1750,8 @@ html[data-theme="dark"] .btn-icon {
 .neo-result-card img,
 .neo-result-card video {
   height: 170px;
-  object-fit: cover;
+  object-fit: contain;
+  background: #f8f9ff;
 }
 
 .neo-result-card > div {
