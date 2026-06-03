@@ -82,13 +82,38 @@ function getWaveSpeedModelConfig(quality) {
   };
 }
 
+const ALLOWED_DURATIONS_BY_MODEL = {
+  "wan-2.2-ultra-fast": [5, 8],
+  "wan-2.7": [5, 8],
+  "veo-3.1-fast": [5, 8],
+  "kling-3.0-std": [5, 8],
+};
+
+function allowedDurationsForModel(model, endpoint) {
+  const haystack = `${model || ""} ${endpoint || ""}`.toLowerCase();
+  const match = Object.entries(ALLOWED_DURATIONS_BY_MODEL).find(([name]) => haystack.includes(name));
+  return match?.[1] || [5, 8];
+}
+
+function validateDuration(model, endpoint, duration) {
+  const normalizedDuration = Number(duration || 5);
+  const allowed = allowedDurationsForModel(model, endpoint);
+
+  if (!allowed.includes(normalizedDuration)) {
+    throw serviceError(`مدة الفيديو غير مدعومة لهذا النموذج. اختر: ${allowed.join(" أو ")} ثواني`, 400);
+  }
+
+  return normalizedDuration;
+}
+
 async function postToWaveSpeed({ apiKey, prompt, duration, quality, style }) {
   const config = getWaveSpeedModelConfig(quality);
   const endpoint =
     config.endpoint || "https://api.wavespeed.ai/api/v3/wavespeed-ai/wan-2.2/t2v-480p-ultra-fast";
+  const safeDuration = validateDuration(config.model, endpoint, duration);
   const payload = {
     prompt: style ? `${prompt}\nStyle: ${style}` : prompt,
-    duration,
+    duration: safeDuration,
     quality,
     seed: -1,
   };
@@ -164,7 +189,7 @@ async function pollWaveSpeedResult({ apiKey, initial }) {
   throw serviceError("انتهت مهلة انتظار نتيجة الفيديو.", 504);
 }
 
-export async function generateWaveSpeedVideo({ prompt, duration = 10, quality = "normal", style = "" }) {
+export async function generateWaveSpeedVideo({ prompt, duration = 5, quality = "normal", style = "" }) {
   const apiKey = requireApiKey();
   const { data: initial, model } = await postToWaveSpeed({ apiKey, prompt, duration, quality, style });
   const resultUrl = await pollWaveSpeedResult({ apiKey, initial });

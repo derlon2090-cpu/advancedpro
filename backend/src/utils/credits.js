@@ -5,9 +5,8 @@ const IMAGE_CREDIT_COST = {
 };
 
 const VIDEO_BASE_CREDIT_COST = {
-  10: 100,
-  20: 200,
-  30: 300,
+  5: 50,
+  8: 80,
 };
 
 const VIDEO_QUALITY_MULTIPLIER = {
@@ -15,6 +14,8 @@ const VIDEO_QUALITY_MULTIPLIER = {
   high: 3,
   ultra: 5,
 };
+
+export const SUPPORTED_VIDEO_DURATIONS = [5, 8];
 
 const QUALITY_ALIASES = {
   normal: "normal",
@@ -41,16 +42,16 @@ export function normalizeQuality(value) {
 }
 
 export function normalizeDuration(value) {
-  const duration = Number(value || 10);
-  if ([10, 20, 30].includes(duration)) {
+  const duration = Number(value || 5);
+  if (SUPPORTED_VIDEO_DURATIONS.includes(duration)) {
     return duration;
   }
-  const error = new Error("مدة الفيديو غير مدعومة. اختر 10 أو 20 أو 30 ثانية.");
+  const error = new Error("مدة الفيديو غير مدعومة لهذا النموذج. اختر: 5 أو 8 ثواني.");
   error.statusCode = 400;
   throw error;
 }
 
-export function calculateRequiredCredits(typeValue, qualityValue = "normal", durationValue = 10) {
+export function calculateRequiredCredits(typeValue, qualityValue = "normal", durationValue = 5) {
   const type = normalizeGenerationType(typeValue);
   const quality = normalizeQuality(qualityValue);
 
@@ -64,7 +65,7 @@ export function calculateRequiredCredits(typeValue, qualityValue = "normal", dur
   return Math.ceil(base * multiplier);
 }
 
-export function calculateCredits(typeValue, qualityValue = "normal", durationValue = 10) {
+export function calculateCredits(typeValue, qualityValue = "normal", durationValue = 5) {
   return calculateRequiredCredits(typeValue, qualityValue, durationValue);
 }
 
@@ -73,7 +74,7 @@ export function calculateDefaultKeyCredits({ imageLimit = 0, videoLimit = 0 } = 
   const videos = Math.max(Number(videoLimit || 0), 0);
 
   // Give every image/video slot enough credits for the most expensive allowed option.
-  return images * IMAGE_CREDIT_COST.ultra + videos * calculateCredits("video", "ultra", 30);
+  return images * IMAGE_CREDIT_COST.ultra + videos * calculateCredits("video", "ultra", 8);
 }
 
 export function assertValidPrompt(prompt) {

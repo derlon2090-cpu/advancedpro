@@ -6,7 +6,7 @@
     user: null,
     key: null,
     selectedType: null,
-    duration: 10,
+    duration: 5,
     quality: "high",
     loading: false,
   };
@@ -185,9 +185,8 @@
       ultra: 40,
     };
     const videoBaseCosts = {
-      10: 100,
-      20: 200,
-      30: 300,
+      5: 50,
+      8: 80,
     };
     const videoMultipliers = {
       normal: 1,
@@ -199,7 +198,7 @@
       return imageCosts[quality] || imageCosts.normal;
     }
 
-    return Math.ceil((videoBaseCosts[duration] || videoBaseCosts[10]) * (videoMultipliers[quality] || 1));
+    return Math.ceil((videoBaseCosts[duration] || videoBaseCosts[5]) * (videoMultipliers[quality] || 1));
   }
 
   function updateCreditEstimate() {
@@ -389,7 +388,7 @@
     if (!button) {
       return;
     }
-    state.duration = Number(button.dataset.duration || 10);
+    state.duration = Number(button.dataset.duration || 5);
     setActiveChip("[data-duration-group]", "duration", state.duration);
     updateCreditEstimate();
   });

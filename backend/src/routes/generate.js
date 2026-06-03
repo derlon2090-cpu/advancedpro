@@ -351,10 +351,10 @@ router.post(
     const keyId = getKeyId(req);
     const type = normalizeGenerationType(req.body.type || "image");
     const quality = normalizeQuality(req.body.quality || "normal");
-    const duration = type === "video" ? normalizeDuration(req.body.durationSeconds || req.body.duration || 10) : null;
+    const duration = type === "video" ? normalizeDuration(req.body.durationSeconds || req.body.duration || 5) : null;
     const style = String(req.body.style || "").trim();
     const prompt = assertValidPrompt(req.body.prompt);
-    const creditsUsed = calculateRequiredCredits(type, quality, duration || 10);
+    const creditsUsed = calculateRequiredCredits(type, quality, duration || 5);
 
     await assertNoRunningGeneration(keyId);
     await loadAndValidateKey({ keyId, type, creditsUsed });
