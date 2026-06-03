@@ -127,9 +127,9 @@
         </section>
       </aside>
 
-      <section class="user-dashboard-workspace" aria-labelledby="dashboard-title">
-        <section class="user-create-panel">
-          <div class="create-panel-header">
+      <section class="user-dashboard-workspace workspace" aria-labelledby="dashboard-title">
+        <section class="user-create-panel chat-panel">
+          <div class="create-panel-header chat-header">
             <div>
               <span class="sparkle-mark" aria-hidden="true">✦</span>
               <h1 id="dashboard-title">إنشاء جديد</h1>
@@ -148,7 +148,7 @@
             </div>
           </div>
 
-          <div class="chat-thread" data-chat-stream aria-live="polite">
+          <div class="chat-thread chat-messages" data-chat-stream aria-live="polite">
             <article class="chat-bubble is-assistant">
               <span class="bubble-avatar">
                 <img src="/ap-mark.svg" alt="" aria-hidden="true" />
@@ -160,15 +160,7 @@
             </article>
           </div>
 
-          <section class="generation-state-card" data-result-card hidden aria-live="polite">
-            <div class="result-card__header">
-              <strong data-result-title>تم الإنشاء بنجاح</strong>
-              <a class="download-button" data-download-link href="#" target="_blank" rel="noreferrer">تحميل</a>
-            </div>
-            <div class="result-preview" data-result-preview></div>
-          </section>
-
-          <form id="dashboardCreateForm" class="composer-bar" hidden>
+          <form id="dashboardCreateForm" class="composer-bar composer" hidden>
             <textarea
               id="dashboardPrompt"
               name="prompt"
@@ -226,6 +218,29 @@
 
           <p class="prompt-tip">اكتب وصفًا دقيقًا للحصول على أفضل النتائج ✨</p>
         </section>
+
+        <aside class="dashboard-result-panel result-panel" aria-label="نتيجتك">
+          <div class="result-panel-heading">
+            <span class="sparkle-mark" aria-hidden="true">✦</span>
+            <div>
+              <h2>نتيجتك</h2>
+              <p>ستظهر نتيجتك هنا بعد اكتمال التوليد.</p>
+            </div>
+          </div>
+
+          <div class="result-placeholder" data-result-placeholder>
+            <strong>ستظهر نتيجتك هنا بعد اكتمال التوليد.</strong>
+            <p>ابدأ بكتابة وصف واضح ثم اضغط إرسال.</p>
+          </div>
+
+          <section class="generation-state-card" data-result-card hidden aria-live="polite">
+            <div class="result-card__header">
+              <strong data-result-title>تم الإنشاء بنجاح</strong>
+              <a class="download-button" data-download-link href="#" target="_blank" rel="noreferrer">تحميل</a>
+            </div>
+            <div class="result-preview" data-result-preview></div>
+          </section>
+        </aside>
       </section>
     </main>
 

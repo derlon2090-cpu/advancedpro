@@ -318,6 +318,13 @@
     return payload?.resultUrl || payload?.url || "";
   }
 
+  function setResultPlaceholder(hidden) {
+    const placeholder = $("[data-result-placeholder]");
+    if (placeholder) {
+      placeholder.hidden = Boolean(hidden);
+    }
+  }
+
   function attachVideoPlaybackGuards(scope = document) {
     scope.querySelectorAll("video.result-media").forEach((video) => {
       if (video.dataset.playbackGuard === "true") return;
@@ -355,6 +362,7 @@
     }
 
     card.hidden = false;
+    setResultPlaceholder(true);
 
     if (type === "image" && resultUrl) {
       preview.innerHTML = `
@@ -398,6 +406,7 @@
     if (!card || !preview) return;
 
     card.hidden = false;
+    setResultPlaceholder(true);
     preview.className = "";
     preview.innerHTML = `
       <div class="result-loading">
@@ -511,8 +520,8 @@
         title: "تم الإنشاء بنجاح",
         html:
           type === "video"
-            ? `<p>تم إنشاء الفيديو بنجاح.</p><video class="result-media" src="${escapeHtml(resultMediaUrl(payload, true))}" controls playsinline preload="metadata"></video>`
-            : `<p>تم إنشاء الصورة بنجاح.</p><img class="result-media" src="${escapeHtml(payload.resultUrl || "")}" alt="نتيجة الصورة" />`,
+            ? `<p>تم إنشاء الفيديو بنجاح. ستجد النتيجة كاملة في قسم نتيجتك.</p>`
+            : `<p>تم إنشاء الصورة بنجاح. ستجد النتيجة كاملة في قسم نتيجتك.</p>`,
       });
       renderResult(type, payload);
       attachVideoPlaybackGuards();
