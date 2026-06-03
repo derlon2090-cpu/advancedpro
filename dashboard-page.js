@@ -14,6 +14,45 @@
   const $ = (selector) => document.querySelector(selector);
   const $$ = (selector) => Array.from(document.querySelectorAll(selector));
 
+  function escapeHtml(value) {
+    return String(value || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function appendChatMessage({ role = "assistant", title = "المساعد الذكي", text = "", html = "" }) {
+    const stream = $("[data-chat-stream]");
+    if (!stream) return null;
+
+    const message = document.createElement("article");
+    message.className = `chat-message ${role === "user" ? "is-user" : "is-assistant"}`;
+    message.innerHTML = `
+      <span class="chat-avatar">${role === "user" ? "أنت" : "A"}</span>
+      <div>
+        <strong>${escapeHtml(title)}</strong>
+        ${html || `<p>${escapeHtml(text)}</p>`}
+      </div>
+    `;
+    stream.appendChild(message);
+    message.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    return message;
+  }
+
+  function renderPending(type) {
+    const note =
+      type === "video"
+        ? "جاري إنشاء الفيديو، قد يستغرق بعض الوقت..."
+        : "جاري إنشاء الصورة...";
+    return appendChatMessage({
+      role: "assistant",
+      title: "المساعد الذكي",
+      html: `<p>${note}</p><div class="chat-loader" aria-label="${escapeHtml(note)}"></div>`,
+    });
+  }
+
   function token() {
     try {
       return (
@@ -259,6 +298,22 @@
     }
   }
 
+  function renderResultLoading(type) {
+    const card = $("[data-result-card]");
+    const preview = $("[data-result-preview]");
+    if (!card || !preview) return;
+
+    card.hidden = false;
+    preview.className = "";
+    preview.innerHTML = `
+      <div class="result-loading">
+        <div class="chat-loader" aria-hidden="true"></div>
+        <strong>${type === "video" ? "جاري إنشاء الفيديو" : "جاري إنشاء الصورة"}</strong>
+        <p>${type === "video" ? "قد يستغرق الفيديو بعض الوقت..." : "نجهز لك أفضل نتيجة ممكنة..."}</p>
+      </div>
+    `;
+  }
+
   async function refreshKey() {
     const payload = await requestJson("/api/me/key");
     state.key = payload;
@@ -321,6 +376,13 @@
 
       setLoading(true);
       setMessage("", "");
+      appendChatMessage({
+        role: "user",
+        title: type === "video" ? "طلب فيديو" : "طلب صورة",
+        text: prompt,
+      });
+      const pendingMessage = renderPending(type);
+      renderResultLoading(type);
 
       const payload = await requestJson("/api/generate", {
         method: "POST",
@@ -335,16 +397,30 @@
       });
 
       setMessage("تم الإنشاء بنجاح", "success");
+      if (pendingMessage) pendingMessage.remove();
+      appendChatMessage({
+        role: "assistant",
+        title: "تم الإنشاء بنجاح",
+        html:
+          type === "video"
+            ? `<p>تم إنشاء الفيديو بنجاح.</p><video class="result-media" src="${escapeHtml(payload.resultUrl || "")}" controls playsinline></video>`
+            : `<p>تم إنشاء الصورة بنجاح.</p><img class="result-media" src="${escapeHtml(payload.resultUrl || "")}" alt="نتيجة الصورة" />`,
+      });
       renderResult(type, payload);
       await refreshKey();
     } catch (error) {
       setMessage(error.message || "فشل الإنشاء، حاول مرة أخرى.", "error");
+      appendChatMessage({
+        role: "assistant",
+        title: "تعذر الإنشاء",
+        text: error.message || "فشل الإنشاء، حاول مرة أخرى.",
+      });
     } finally {
       setLoading(false);
     }
   });
 
-  $("[data-dashboard-logout]")?.addEventListener("click", () => {
+  function logoutDashboard() {
     try {
       window.localStorage.removeItem(TOKEN_KEY);
       window.sessionStorage.removeItem(TOKEN_KEY);
@@ -354,6 +430,11 @@
       // ignore
     }
     window.location.href = "/";
+  }
+
+  document.addEventListener("click", (event) => {
+    if (!event.target.closest("[data-dashboard-logout]")) return;
+    logoutDashboard();
   });
 
   init();

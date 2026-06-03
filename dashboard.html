@@ -14,7 +14,7 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260601-dashboard" />
+    <link rel="stylesheet" href="/styles.css?v=20260603-dashboard-responsive" />
   </head>
   <body class="creator-dashboard-page" data-page="dashboard">
     <header class="dashboard-topbar" aria-label="رأس لوحة المستخدم">
@@ -94,6 +94,24 @@
           <p>احصل على رصيد أعلى وصلاحية أطول عند الحاجة.</p>
           <a href="/#pricing-title">عرض الباقات</a>
         </section>
+        <section class="dashboard-side-card quick-links-card">
+          <div class="dashboard-card-title">
+            <span>روابط سريعة</span>
+          </div>
+          <div class="quick-links">
+            <a href="/activate">تفعيل مفتاح جديد <span>+</span></a>
+            <button type="button" data-dashboard-logout>تسجيل الخروج <span>↗</span></button>
+            <a href="#dashboardCreateForm">بدء إنشاء <span>✦</span></a>
+            <a href="/#pricing-title">ترقية الباقة <span>◇</span></a>
+          </div>
+        </section>
+
+        <section class="dashboard-side-card tip-card">
+          <div class="dashboard-card-title">
+            <span>نصيحة اليوم</span>
+          </div>
+          <p>اكتب وصفًا محددًا: المكان، الإضاءة، الأسلوب، والألوان. كلما كان الوصف أوضح كانت النتيجة أقرب لتوقعك.</p>
+        </section>
       </aside>
 
       <section class="dashboard-workspace" aria-labelledby="dashboard-title">
@@ -122,7 +140,17 @@
             </button>
           </div>
 
-          <form id="dashboardCreateForm" class="dashboard-create-form" hidden>
+          <div class="dashboard-chat-stream" data-chat-stream aria-live="polite">
+            <article class="chat-message is-assistant">
+              <span class="chat-avatar">A</span>
+              <div>
+                <strong>المساعد الذكي</strong>
+                <p>اختر صورة أو فيديو، ثم اكتب وصفك. سأعرض حالة التنفيذ والنتيجة هنا مباشرة.</p>
+              </div>
+            </article>
+          </div>
+
+          <form id="dashboardCreateForm" class="dashboard-create-form generation-input" hidden>
             <div class="field">
               <label for="dashboardPrompt" data-prompt-label>اكتب الوصف</label>
               <textarea
@@ -194,6 +222,6 @@
 
     <footer class="dashboard-footer">جميع الحقوق محفوظة © Advanced Pro 2026</footer>
 
-    <script src="/dashboard-page.js?v=20260601-dashboard"></script>
+    <script src="/dashboard-page.js?v=20260603-dashboard-responsive"></script>
   </body>
 </html>
