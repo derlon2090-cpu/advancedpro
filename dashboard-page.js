@@ -60,6 +60,9 @@
     ],
   };
 
+  // Never show bundled demo generations as real user results.
+  state.results = [];
+
   const routes = {
     "/dashboard": {
       title: "الرئيسية",
@@ -633,6 +636,11 @@
     }
 
     const requestId = crypto.randomUUID?.() || `req-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const selectedType = state.type;
+    const selectedQuality = state.quality;
+    const selectedStyle = state.style;
+    const selectedAspect = state.aspect;
+    const selectedDuration = selectedType === "video" ? state.duration : undefined;
     state.loading = true;
     state.activeRequestId = requestId;
     state.currentResult = null;
@@ -642,19 +650,36 @@
     renderLiveLoading(prompt);
 
     try {
+      console.log("GENERATE_REQUEST", {
+        requestId,
+        userPrompt: prompt,
+        type: selectedType,
+        quality: selectedQuality,
+        style: selectedStyle,
+        aspect: selectedAspect,
+        duration: selectedDuration,
+      });
+
       const payload = await requestJson("/api/generate", {
         method: "POST",
         body: JSON.stringify({
-          type: state.type,
+          type: selectedType,
           prompt,
           requestId,
-          quality: state.quality,
-          style: state.style,
-          aspect: state.aspect,
-          duration: state.type === "video" ? state.duration : undefined,
+          quality: selectedQuality,
+          style: selectedStyle,
+          aspect: selectedAspect,
+          duration: selectedDuration,
         }),
       });
-      const resultUrl = payload.resultUrl || payload.url || "";
+      const responseRequestId = payload.requestId || payload.generation?.requestId || payload.generation?.request_id || "";
+      if (responseRequestId && responseRequestId !== requestId) {
+        console.warn("Ignoring stale generation response", { requestId, responseRequestId });
+        return;
+      }
+
+      const generation = payload.generation || {};
+      const resultUrl = generation.resultUrl || generation.result_url || payload.resultUrl || payload.url || "";
       if (!resultUrl) {
         throw new Error("فشل التوليد، لم يرجع الخادم رابط نتيجة صالح.");
       }
@@ -663,20 +688,30 @@
         return;
       }
 
-      const generationId = payload.generationId || `local-${Date.now()}`;
+      const generationId = generation.id || payload.generationId || `local-${Date.now()}`;
       const item = {
         id: generationId,
-        requestId,
-        type: state.type,
-        prompt,
-        quality: state.quality,
-        creditsUsed: payload.creditsUsed || calculateCredits(),
-        createdAt: new Date().toISOString(),
-        favorite: false,
+        requestId: generation.requestId || generation.request_id || requestId,
+        type: generation.type || selectedType,
+        prompt: generation.userPrompt || generation.prompt || prompt,
+        quality: generation.quality || selectedQuality,
+        creditsUsed: generation.creditsUsed || generation.credits_used || payload.creditsUsed || calculateCredits(),
+        createdAt: generation.createdAt || generation.created_at || new Date().toISOString(),
+        favorite: Boolean(generation.favorite || generation.isFavorite),
         resultUrl,
       };
+      console.log("GENERATE_RESPONSE", {
+        requestId,
+        responseRequestId: item.requestId,
+        generationId: item.id,
+        resultUrl: item.resultUrl,
+        userPrompt: item.prompt,
+      });
       state.currentResult = item;
-      state.results.unshift(item);
+      state.results = [
+        item,
+        ...state.results.filter((existing) => existing.id !== item.id && existing.requestId !== item.requestId),
+      ];
       showMessage(message, "تم الإنشاء بنجاح", "success");
       renderLiveResult(item);
       await refreshKey();
@@ -789,16 +824,14 @@
 
   async function refreshGenerations() {
     try {
-      const payload = await requestJson("/api/generations");
+      const payload = await requestJson("/api/generate");
       const rows = Array.isArray(payload)
         ? payload
         : payload.generations || payload.items || payload.results || [];
       const normalized = rows.map(normalizeGeneration).filter((item) => item.resultUrl);
-      if (normalized.length) {
-        state.results = normalized;
-      }
+      state.results = normalized;
     } catch (error) {
-      console.info("Using bundled dashboard examples until generations API is available.", error.message);
+      console.info("Generations API unavailable; keeping only live session results.", error.message);
     }
   }
 

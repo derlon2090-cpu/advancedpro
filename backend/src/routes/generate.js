@@ -75,6 +75,26 @@ function serializeKeyBalance(key) {
   };
 }
 
+function serializeGeneration(row) {
+  return {
+    id: row.id,
+    requestId: row.request_id,
+    userPrompt: row.prompt,
+    prompt: row.prompt,
+    finalPrompt: row.final_prompt,
+    type: row.type,
+    quality: row.quality,
+    duration: row.duration,
+    provider: row.provider,
+    model: row.model,
+    creditsUsed: Number(row.credits_used || 0),
+    status: row.status,
+    resultUrl: row.result_url,
+    createdAt: row.created_at,
+    completedAt: row.completed_at,
+  };
+}
+
 async function ensureGenerationTable() {
   const statements = [
     `
@@ -350,6 +370,44 @@ async function loadAndValidateKey({ keyId, type, creditsUsed }) {
   return key;
 }
 
+router.get(
+  "/",
+  asyncHandler(async (req, res) => {
+    await ensureGenerationTable();
+
+    const keyId = getKeyId(req);
+    const rows = await withDbRetry(() =>
+      prisma.$queryRaw`
+        SELECT id,
+               request_id,
+               type,
+               prompt,
+               quality,
+               duration,
+               provider,
+               model,
+               final_prompt,
+               credits_used,
+               status,
+               result_url,
+               created_at,
+               completed_at
+        FROM generations
+        WHERE key_id = ${keyId}
+          AND status = 'completed'
+          AND result_url IS NOT NULL
+        ORDER BY created_at DESC
+        LIMIT 60
+      `
+    );
+
+    return res.json({
+      success: true,
+      generations: rows.map(serializeGeneration),
+    });
+  })
+);
+
 router.post(
   "/",
   aiLimiter,
@@ -466,7 +524,37 @@ router.post(
       seed: result.seed,
     });
 
+    const responseGeneration = {
+      id: generationId,
+      requestId,
+      userPrompt: prompt,
+      prompt,
+      finalPrompt: result.finalPrompt || prompt,
+      resultUrl: result.resultUrl,
+      type,
+      quality,
+      style,
+      duration,
+      provider: result.provider,
+      model: result.model,
+      seed: result.seed,
+      creditsUsed,
+      status: "completed",
+      createdAt: new Date().toISOString(),
+    };
+
+    console.log("GENERATION_RESPONSE_BINDING:", {
+      requestId,
+      generationId,
+      userPrompt: prompt,
+      finalPrompt: responseGeneration.finalPrompt,
+      resultUrl: result.resultUrl,
+      model: result.model,
+      seed: result.seed,
+    });
+
     return res.json({
+      success: true,
       message: "تم الإنشاء بنجاح.",
       generationId,
       requestId,
@@ -475,6 +563,7 @@ router.post(
       creditsUsed,
       creditsRemaining: Number(updatedKey.balance || 0),
       accessCode: serializeKeyBalance(updatedKey),
+      generation: responseGeneration,
     });
   })
 );
