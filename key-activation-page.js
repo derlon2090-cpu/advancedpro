@@ -55,10 +55,9 @@
     const raw = String(value || "")
       .toUpperCase()
       .replace(/[^A-Z0-9]/g, "")
-      .replace(/^APRO/, "");
-    const body = raw.slice(0, 12);
-    const parts = body.match(/.{1,4}/g) || [];
-    return ["APRO", ...parts].join("-").slice(0, 19);
+      .slice(0, 16);
+    const parts = raw.match(/.{1,4}/g) || [];
+    return parts.join("-").slice(0, 19);
   }
 
   function compactCode(value) {
@@ -257,7 +256,8 @@
     const code = formatKey(input.value);
     input.value = code;
 
-    if (compactCode(code).length < 16) {
+    const compacted = compactCode(code);
+    if (!compacted.startsWith("APRO") || compacted.length !== 16) {
       setInlineMessage("أدخل مفتاحًا صحيحًا بصيغة APRO-XXXX-XXXX-XXXX.", "error");
       shakeInput();
       showToast(ERROR_META.INVALID_KEY, { onAction: () => input.focus() });
