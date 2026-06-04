@@ -8,41 +8,138 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800;900&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260601-admin-secret-2" />
+    <link rel="stylesheet" href="/styles.css?v=20260604-admin-login-v2" />
   </head>
-  <body class="admin-secret-page">
-    <main class="admin-secret-shell">
-      <section class="admin-secret-card" aria-label="تسجيل دخول الأدمن">
-        <a class="key-brand admin-secret-brand" href="/" aria-label="Advanced Pro">
-          <img class="key-brand__mark" src="/ap-mark.svg" alt="" aria-hidden="true" />
-          <span class="key-brand__copy">
-            <strong>Advanced Pro</strong>
-            <span>منطقة إدارة خاصة</span>
-          </span>
-        </a>
-
-        <div class="admin-secret-heading">
-          <h1>دخول الأدمن</h1>
-          <p>هذه الصفحة مخصصة لإدارة المنصة فقط، ولا تظهر في واجهة العملاء.</p>
+  <body class="admin-secret-page admin-login-v2">
+    <main class="admin-login-v2__page">
+      <header class="admin-login-v2__header" aria-label="منطقة إدارة خاصة">
+        <div class="admin-login-v2__secure">
+          <span class="admin-login-v2__secure-icon" aria-hidden="true">🔒</span>
+          <div>
+            <strong>منطقة إدارة خاصة</strong>
+            <p><i></i> الدخول مخصص للإداريين فقط</p>
+          </div>
         </div>
 
-        <form id="adminSecretLoginForm" class="admin-secret-form">
-          <label>
-            البريد الإلكتروني
-            <input name="email" type="email" autocomplete="username" dir="ltr" required />
-          </label>
-          <label>
-            كلمة المرور
-            <input name="password" type="password" autocomplete="current-password" dir="ltr" required />
-          </label>
-          <p class="admin-secret-message" data-admin-secret-message hidden></p>
-          <button type="submit">دخول لوحة الأدمن</button>
-        </form>
+        <a class="admin-login-v2__brand" href="/advanced-pro-control" aria-label="Advanced Pro">
+          <img src="/ap-mark.svg" alt="" aria-hidden="true" />
+          <div>
+            <strong>Advanced Pro</strong>
+            <p>
+              لوحة الإدارة
+              <span>v2.0</span>
+            </p>
+          </div>
+        </a>
+      </header>
+
+      <section class="admin-login-v2__shell" aria-label="تسجيل دخول الأدمن">
+        <aside class="admin-login-v2__visual">
+          <div class="admin-login-v2__orb" aria-hidden="true">
+            <span class="admin-login-v2__bubble admin-login-v2__bubble--user">👤</span>
+            <span class="admin-login-v2__bubble admin-login-v2__bubble--card">▤</span>
+            <span class="admin-login-v2__bubble admin-login-v2__bubble--check">✓</span>
+            <div class="admin-login-v2__shield">
+              <span>🔒</span>
+            </div>
+          </div>
+
+          <div class="admin-login-v2__visual-copy">
+            <h2>أمان. خصوصية. تحكم كامل</h2>
+            <p>لوحة تحكم متقدمة لإدارة المنصة ومراقبة الأداء وإدارة المستخدمين والمحتوى بكفاءة عالية.</p>
+          </div>
+
+          <div class="admin-login-v2__features">
+            <article>
+              <span>🛡</span>
+              <strong>حماية متقدمة</strong>
+            </article>
+            <article>
+              <span>📊</span>
+              <strong>تقارير لحظية</strong>
+            </article>
+            <article>
+              <span>👥</span>
+              <strong>إدارة شاملة</strong>
+            </article>
+          </div>
+        </aside>
+
+        <section class="admin-login-v2__card">
+          <img class="admin-login-v2__card-logo" src="/ap-mark.svg" alt="" aria-hidden="true" />
+          <div class="admin-login-v2__heading">
+            <h1>دخول الأدمن</h1>
+            <p>هذه الصفحة مخصصة لإدارة المنصة فقط، ولا تظهر في واجهة العملاء.</p>
+            <span aria-hidden="true"></span>
+          </div>
+
+          <form id="adminSecretLoginForm" class="admin-secret-form admin-login-v2__form">
+            <label>
+              <span>البريد الإلكتروني</span>
+              <div class="admin-login-v2__field">
+                <input
+                  name="email"
+                  type="email"
+                  autocomplete="username"
+                  placeholder="أدخل بريدك الإلكتروني"
+                  dir="ltr"
+                  required
+                />
+                <b aria-hidden="true">✉</b>
+              </div>
+            </label>
+
+            <label>
+              <span>كلمة المرور</span>
+              <div class="admin-login-v2__field">
+                <input
+                  name="password"
+                  type="password"
+                  autocomplete="current-password"
+                  placeholder="أدخل كلمة المرور"
+                  dir="ltr"
+                  required
+                />
+                <b aria-hidden="true">🔒</b>
+                <button class="admin-login-v2__toggle" type="button" data-toggle-password aria-label="إظهار كلمة المرور">
+                  ◉
+                </button>
+              </div>
+            </label>
+
+            <div class="admin-login-v2__meta">
+              <label class="admin-login-v2__remember">
+                <input type="checkbox" name="remember" checked />
+                <span>تذكرني</span>
+              </label>
+              <a href="mailto:support@advancedpro.com">نسيت كلمة المرور؟</a>
+            </div>
+
+            <p class="admin-secret-message" data-admin-secret-message hidden></p>
+
+            <button class="admin-login-v2__submit" type="submit">
+              دخول لوحة الأدمن
+              <span aria-hidden="true">🔒</span>
+            </button>
+
+            <p class="admin-login-v2__safe-note">
+              <span aria-hidden="true">🛡</span>
+              يتم تسجيل الدخول بشكل آمن ومشفّر
+            </p>
+          </form>
+        </section>
       </section>
+
+      <footer class="admin-login-v2__footer">
+        <span aria-hidden="true">🛡</span>
+        <p>جميع الحقوق محفوظة © 2025 Advanced Pro</p>
+      </footer>
     </main>
-    <script src="/admin-secret.js?v=20260601-admin-secret-2"></script>
+
+    <script src="/config.js"></script>
+    <script src="/admin-secret.js?v=20260604-admin-login-v2"></script>
   </body>
 </html>

@@ -24,7 +24,7 @@
     let payload = {};
     try {
       payload = await response.json();
-    } catch (error) {
+    } catch {
       payload = {};
     }
 
@@ -41,6 +41,17 @@
     const form = $("#adminSecretLoginForm");
     if (!form) return;
 
+    const passwordInput = form.querySelector("input[name='password']");
+    const togglePassword = form.querySelector("[data-toggle-password]");
+
+    togglePassword?.addEventListener("click", () => {
+      if (!passwordInput) return;
+      const shouldShow = passwordInput.type === "password";
+      passwordInput.type = shouldShow ? "text" : "password";
+      togglePassword.textContent = shouldShow ? "◌" : "◉";
+      togglePassword.setAttribute("aria-label", shouldShow ? "إخفاء كلمة المرور" : "إظهار كلمة المرور");
+    });
+
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
       const button = form.querySelector("button[type='submit']");
@@ -53,7 +64,7 @@
       }
 
       button.disabled = true;
-      button.textContent = "جارٍ الدخول...";
+      button.innerHTML = "جاري دخول لوحة الأدمن...";
       setMessage("", "");
 
       try {
@@ -66,7 +77,7 @@
         setMessage(error.message || "فشل تسجيل الدخول.");
       } finally {
         button.disabled = false;
-        button.textContent = "دخول لوحة الأدمن";
+        button.innerHTML = 'دخول لوحة الأدمن <span aria-hidden="true">🔒</span>';
       }
     });
   }
@@ -97,13 +108,14 @@
         setMessage("أكمل جميع الحقول.");
         return;
       }
+
       if (password !== passwordConfirm) {
         setMessage("تأكيد كلمة المرور غير مطابق.");
         return;
       }
 
       button.disabled = true;
-      button.textContent = "جارٍ إنشاء الأدمن...";
+      button.textContent = "جاري إنشاء الأدمن...";
       setMessage("", "");
 
       try {
