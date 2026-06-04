@@ -18,15 +18,51 @@ function setKeySessionCookie(res, keyId) {
   });
 }
 
+function getActivationErrorCode(error) {
+  const status = Number(error?.statusCode || error?.status || 500);
+  const message = String(error?.message || "").toLowerCase();
+
+  if (status === 404 || message.includes("غير صحيح") || message.includes("invalid")) {
+    return "INVALID_KEY";
+  }
+
+  if (status === 410 || message.includes("انتهت") || message.includes("expired")) {
+    return "EXPIRED_KEY";
+  }
+
+  if (status === 403 || message.includes("غير متاح") || message.includes("موقوف") || message.includes("disabled")) {
+    return "DISABLED_KEY";
+  }
+
+  if (message.includes("استخدام") || message.includes("used")) {
+    return "USED_KEY";
+  }
+
+  return "SERVER_ERROR";
+}
+
 router.post(
   "/activate",
   asyncHandler(async (req, res) => {
     const codeValue = String(req.body.code || "").trim();
-    const accessCode = await activateAdminCodeAsKeySession({ codeValue });
+    let accessCode = null;
+
+    try {
+      accessCode = await activateAdminCodeAsKeySession({ codeValue });
+    } catch (error) {
+      const code = getActivationErrorCode(error);
+      return res.status(error?.statusCode || 500).json({
+        success: false,
+        code,
+        message: error?.message || "تعذر إتمام العملية حالياً.",
+      });
+    }
+
     setKeySessionCookie(res, accessCode.id);
 
     return res.json({
       success: true,
+      code: "SUCCESS",
       message: buildActivationSuccessMessage(accessCode),
       accessCode,
       codeInfo: accessCode,
