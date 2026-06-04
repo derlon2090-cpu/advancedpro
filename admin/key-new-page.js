@@ -134,8 +134,8 @@
             <strong>${escapeHtml(plan.name)}</strong>
             <em>${Number(plan.price || 0)} ريال</em>
             <small>${Number(plan.validityDays || 0)} يوم</small>
-            <p>${Number(plan.imagesLimit || 0)} صورة</p>
-            <p>${Number(plan.videosLimit || 0)} فيديو</p>
+            <p>${Number(plan.xpBalance || 0)} XP</p>
+            <p>${escapeHtml(plan.description || "باقة XP")}</p>
           </label>
         `
       )
@@ -148,8 +148,8 @@
     const dates = getDates();
     const items = [
       ["الباقة", selectedPlan.name],
-      ["الصور", `${selectedPlan.imagesLimit} صورة`],
-      ["الفيديو", `${selectedPlan.videosLimit} فيديو`],
+      ["الرصيد", `${Number(selectedPlan.xpBalance || 0)} XP`],
+      ["السعر", `${Number(selectedPlan.price || 0)} ريال`],
       ["تاريخ البداية", formatDate(dates.startsAt)],
       ["تاريخ الانتهاء", formatDate(dates.expiresAt)],
       ["مدة الصلاحية", `${selectedPlan.validityDays} يوم`],

@@ -3,150 +3,93 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>الباقات | Advanced Pro Nano</title>
+    <title>الباقات | Advanced Pro</title>
     <meta
       name="description"
-      content="استعرض باقات Advanced Pro Nano لمشاريع الفيديو حتى 60 ثانية والصور والـ Storyboard التلقائي."
+      content="باقات Advanced Pro الرسمية بنظام XP: انطلاقة، إبداع، وتميز."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="/styles.css?v=20260604-xp-plans" />
   </head>
-  <body>
-    <header class="site-header">
-      <div class="container header-inner">
-        <a class="brand" href="index.html">
-          <span class="brand-mark">AP</span>
-          <span class="brand-copy">
-            <strong>Advanced Pro Nano</strong>
-            <span>Pricing</span>
+  <body class="key-activation-page" data-page="pricing">
+    <header class="key-header" aria-label="رأس الصفحة">
+      <div class="key-shell key-header__inner">
+        <a class="key-brand" href="/" aria-label="Advanced Pro - الرئيسية">
+          <img class="key-brand__mark" src="/ap-mark.svg" alt="" aria-hidden="true" />
+          <span class="key-brand__copy">
+            <strong>Advanced Pro</strong>
+            <span>المفاتيح الرقمية</span>
           </span>
         </a>
 
-        <nav class="nav-links">
-          <a href="index.html">الرئيسية</a>
-          <a class="is-active" href="pricing.html">الباقات</a>
-          <a href="how-it-works.html">كيف تعمل</a>
-          <a href="activate.html">التفعيل</a>
-          <a href="legal.html">القوانين</a>
-          <a href="login.html">تسجيل الدخول</a>
-        </nav>
-
-        <div class="header-actions">
-          <a class="btn btn-secondary" href="how-it-works.html">كيف تعمل</a>
-          <a class="btn btn-primary" href="activate.html">فعّل كودك</a>
-        </div>
+        <a class="key-home-link" href="/">
+          <span>الرئيسية</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m3 11 9-8 9 8" />
+            <path d="M5 10v10h5v-6h4v6h5V10" />
+          </svg>
+        </a>
       </div>
     </header>
 
-    <main>
-      <section class="page-hero">
-        <div class="container">
-          <div class="section-title">
-            <span class="section-kicker">Pricing</span>
-            <h2>اختر خطة تناسب حجم مشاريع الفيديو لديك</h2>
-            <p>
-              كل باقة تمنحك رصيد صور ومشاريع فيديو كاملة حتى 60 ثانية، مع Storyboard تلقائي من 6
-              مشاهد ومخرجات قابلة للمراجعة والتعديل.
-            </p>
-            <div class="badge-row">
-              <span class="badge">الأسعار بالدولار الأمريكي</span>
-              <span class="badge">الأسعار لا تشمل الضريبة</span>
-              <span class="badge">يمكن التفعيل بعد الدفع أو عبر كود مخصص</span>
-            </div>
-          </div>
-
-          <div class="packages-grid">
-            <article class="plan-card">
-              <div class="package-meta">
-                <h3>Starter</h3>
-                <span class="pill pill-soft">للبداية السريعة</span>
-              </div>
-              <div class="plan-price">$19 <small>/ 15 يوم</small></div>
-              <ul class="package-list">
-                <li><span>50 صورة</span><strong>مضمنة</strong></li>
-                <li><span>4 مشاريع فيديو</span><strong>مضمنة</strong></li>
-                <li><span>مدة المشروع</span><strong>حتى 60 ثانية</strong></li>
-                <li><span>التقسيم</span><strong>6 مشاهد تلقائية</strong></li>
-              </ul>
-              <button class="btn btn-secondary" type="button" data-purchase-plan="Starter">
-                اشترك الآن
-              </button>
-            </article>
-
-            <article class="plan-card featured">
-              <div class="package-meta">
-                <h3>Creator</h3>
-                <span class="pill pill-dark">الأكثر شيوعًا</span>
-              </div>
-              <div class="plan-price">$49 <small>/ 30 يوم</small></div>
-              <ul class="package-list">
-                <li><span>150 صورة</span><strong>مضمنة</strong></li>
-                <li><span>12 مشروع فيديو</span><strong>مضمنة</strong></li>
-                <li><span>مدة المشروع</span><strong>حتى 60 ثانية</strong></li>
-                <li><span>المخرجات</span><strong>Storyboard + نصوص</strong></li>
-              </ul>
-              <button class="btn btn-primary" type="button" data-purchase-plan="Creator">
-                اشترك الآن
-              </button>
-            </article>
-
-            <article class="plan-card">
-              <div class="package-meta">
-                <h3>Pro</h3>
-                <span class="pill pill-soft">للوكالات والبراندات</span>
-              </div>
-              <div class="plan-price">$119 <small>/ 30 يوم</small></div>
-              <ul class="package-list">
-                <li><span>500 صورة</span><strong>مضمنة</strong></li>
-                <li><span>30 مشروع فيديو</span><strong>مضمنة</strong></li>
-                <li><span>مدة المشروع</span><strong>حتى 60 ثانية</strong></li>
-                <li><span>التحكم</span><strong>إعادة مشهد محدد</strong></li>
-              </ul>
-              <button class="btn btn-secondary" type="button" data-purchase-plan="Pro">
-                اشترك الآن
-              </button>
-            </article>
-          </div>
+    <main class="key-main">
+      <section class="pricing-section key-shell" aria-labelledby="pricing-title">
+        <div class="key-section-heading key-section-heading--compact">
+          <span class="sparkle" aria-hidden="true">✦</span>
+          <h1 id="pricing-title">اختر الباقة المناسبة لك</h1>
+          <p>ثلاث باقات رسمية فقط بنظام XP واضح؛ اختر الرصيد المناسب لاستخدامك.</p>
         </div>
-      </section>
 
-      <section>
-        <div class="container compare-grid">
-          <article class="compare-panel">
-            <h3>مقارنة سريعة</h3>
-            <div class="compare-row"><span>أفضل بداية</span><strong>Starter</strong></div>
-            <div class="compare-row"><span>أفضل توازن</span><strong>Creator</strong></div>
-            <div class="compare-row"><span>أفضل لفِرَق التسويق</span><strong>Pro</strong></div>
+        <div class="pricing-grid">
+          <article class="plan-card">
+            <span class="plan-badge">أساسية</span>
+            <h3>انطلاقة</h3>
+            <p>لبداية سهلة وفعالة</p>
+            <ul class="plan-features">
+              <li><span>300 XP</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20" /><path d="m17 5-5-3-5 3" /><path d="m17 19-5 3-5-3" /></svg></li>
+              <li><span>صلاحية 30 يومًا</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2v4" /><path d="M16 2v4" /><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M3 10h18" /></svg></li>
+              <li><span>جودة عالية</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.2 1.2 0 0 1 1.52 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z" /></svg></li>
+              <li><span>دعم فني أساسي</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18v-6a9 9 0 0 1 18 0v6" /><path d="M21 19a2 2 0 0 1-2 2h-1v-7h3z" /><path d="M3 19a2 2 0 0 0 2 2h1v-7H3z" /></svg></li>
+            </ul>
+            <div class="plan-price"><strong>19</strong><span>ريال</span></div>
+            <a class="plan-button" href="/activate">فعّل مفتاحك</a>
           </article>
 
-          <article class="compare-panel">
-            <h3>ما الذي يشمله كل مشروع فيديو؟</h3>
-            <div class="compare-row"><span>مدة المشروع</span><strong>حتى 60 ثانية</strong></div>
-            <div class="compare-row"><span>المشاهد</span><strong>6 × 10 ثوانٍ</strong></div>
-            <div class="compare-row"><span>المخرجات</span><strong>Storyboard + Prompts</strong></div>
+          <article class="plan-card plan-card--featured">
+            <span class="plan-ribbon">الأكثر اختيارًا</span>
+            <span class="plan-badge">احترافية</span>
+            <h3>إبداع</h3>
+            <p>لصناع المحتوى والمبدعين</p>
+            <ul class="plan-features">
+              <li><span>1200 XP</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20" /><path d="m17 5-5-3-5 3" /><path d="m17 19-5 3-5-3" /></svg></li>
+              <li><span>صلاحية 90 يومًا</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2v4" /><path d="M16 2v4" /><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M3 10h18" /></svg></li>
+              <li><span>جودة عالية جدًا</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.2 1.2 0 0 1 1.52 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z" /></svg></li>
+              <li><span>دعم فني متقدم</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18v-6a9 9 0 0 1 18 0v6" /><path d="M21 19a2 2 0 0 1-2 2h-1v-7h3z" /><path d="M3 19a2 2 0 0 0 2 2h1v-7H3z" /></svg></li>
+            </ul>
+            <div class="plan-price"><strong>49</strong><span>ريال</span></div>
+            <a class="plan-button plan-button--featured" href="/activate">فعّل مفتاحك</a>
           </article>
-        </div>
-      </section>
 
-      <section>
-        <div class="container">
-          <div class="cta-band">
-            <h2>ابدأ بخطة تناسب عدد مشاريعك لا طول المقطع فقط</h2>
-            <p>كل اشتراك مبني الآن على فكرة مشروع فيديو كامل قابل للتطوير، لا مجرد مقطع قصير منفصل.</p>
-            <div class="hero-actions">
-              <a class="btn btn-primary" href="activate.html">فعّل كودك</a>
-              <a class="btn btn-secondary" href="index.html">العودة للرئيسية</a>
-            </div>
-          </div>
+          <article class="plan-card">
+            <span class="plan-badge">متقدمة</span>
+            <h3>تميز</h3>
+            <p>للمحترفين بلا حدود</p>
+            <ul class="plan-features">
+              <li><span>5000 XP</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20" /><path d="m17 5-5-3-5 3" /><path d="m17 19-5 3-5-3" /></svg></li>
+              <li><span>صلاحية 180 يومًا</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2v4" /><path d="M16 2v4" /><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M3 10h18" /></svg></li>
+              <li><span>جودة فائقة</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.2 1.2 0 0 1 1.52 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z" /></svg></li>
+              <li><span>دعم VIP</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18v-6a9 9 0 0 1 18 0v6" /><path d="M21 19a2 2 0 0 1-2 2h-1v-7h3z" /><path d="M3 19a2 2 0 0 0 2 2h1v-7H3z" /></svg></li>
+            </ul>
+            <div class="plan-price"><strong>89</strong><span>ريال</span></div>
+            <a class="plan-button" href="/activate">فعّل مفتاحك</a>
+          </article>
         </div>
       </section>
     </main>
-
-    <script src="site.js"></script>
   </body>
 </html>

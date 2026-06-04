@@ -147,7 +147,7 @@
       base.push(["activate", "▶", "تنشيط", "is-success"]);
     }
 
-    base.push(["edit-limit", "✎", "تعديل الحد", ""]);
+    base.push(["edit-limit", "✎", "تعديل الرصيد", ""]);
     base.push(["delete", "🗑", "حذف", "is-danger"]);
     return base;
   }
@@ -211,7 +211,7 @@
                       </div>
                     </td>
                     <td><span class="admin-key-plan-pill">${escapeHtml(key.planName)}</span></td>
-                    <td>${nf.format(Number(key.imagesLimit || 0))} صور<br />${nf.format(Number(key.videosLimit || 0))} فيديو</td>
+                    <td><strong>${nf.format(Number(key.xpBalance || key.balance || 0))}</strong> XP</td>
                     <td>${formatDate(key.createdAt)}</td>
                     <td>${formatDate(key.expiresAt)}</td>
                     <td><span class="admin-v2-status ${statusClass(key.status)}">${escapeHtml(key.statusLabel)}</span></td>
@@ -309,7 +309,7 @@
           <div><dt>الكود</dt><dd dir="ltr">${escapeHtml(key.code)}</dd></div>
           <div><dt>العميل</dt><dd>${escapeHtml(key.customerName || "غير محدد")}</dd></div>
           <div><dt>الباقة</dt><dd>${escapeHtml(key.planName || "--")}</dd></div>
-          <div><dt>الحد</dt><dd>${nf.format(Number(key.imagesLimit || 0))} صور / ${nf.format(Number(key.videosLimit || 0))} فيديو</dd></div>
+          <div><dt>الرصيد</dt><dd>${nf.format(Number(key.xpBalance || key.balance || 0))} XP</dd></div>
           <div><dt>تاريخ الإنشاء</dt><dd>${formatDateTime(key.createdAt)}</dd></div>
           <div><dt>تاريخ الانتهاء</dt><dd>${formatDateTime(key.expiresAt)}</dd></div>
           <div><dt>الحالة</dt><dd>${escapeHtml(key.statusLabel || key.status)}</dd></div>
@@ -336,11 +336,10 @@
 
   function openEditLimit(key) {
     modalShell(
-      "تعديل الحد",
+      "تعديل رصيد XP",
       `
         <form data-key-limit-form class="admin-key-limit-form">
-          <label>حد الصور <input name="imageLimit" type="number" min="0" value="${Number(key.imagesLimit || 0)}" /></label>
-          <label>حد الفيديو <input name="videoLimit" type="number" min="0" value="${Number(key.videosLimit || 0)}" /></label>
+          <label>رصيد XP <input name="balance" type="number" min="0" value="${Number(key.xpBalance || key.balance || 0)}" /></label>
           <label>تاريخ الانتهاء <input name="expiresAt" type="date" value="${key.expiresAt ? new Date(key.expiresAt).toISOString().slice(0, 10) : ""}" /></label>
           <button type="submit">حفظ التعديلات</button>
         </form>
@@ -350,8 +349,7 @@
       event.preventDefault();
       const form = event.currentTarget;
       await updateKey(key.id, {
-        imageLimit: Number(form.imageLimit.value || 0),
-        videoLimit: Number(form.videoLimit.value || 0),
+        balance: Number(form.balance.value || 0),
         expiresAt: form.expiresAt.value || null,
       });
       closeModal();

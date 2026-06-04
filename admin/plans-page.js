@@ -97,10 +97,11 @@
     const active = plans.filter((plan) => plan.isActive !== false).length;
     const disabled = Math.max(0, total - active);
     const customers = keys.filter((key) => key.customerName || key.customerEmail).length;
+    const totalXp = plans.reduce((sum, plan) => sum + Number(plan.xpBalance || 0), 0);
     const cards = [
       ["إجمالي الباقات", total, "باقة", "◈", "#5B35F5"],
       ["الباقات النشطة", active, "نشطة", "✓", "#12B76A"],
-      ["الباقات المعطلة", disabled, "معطلة", "Ⅱ", "#F97316"],
+      ["إجمالي XP المعروض", totalXp, "XP", "▦", "#8B5CF6"],
       ["إجمالي العملاء المشتركين", customers, "عميل", "▥", "#8B5CF6"],
     ];
     target.innerHTML = cards
@@ -149,8 +150,7 @@
             <tr>
               <th>اسم الباقة</th>
               <th>الوصف</th>
-              <th>حد الصور</th>
-              <th>حد الفيديوهات</th>
+              <th>رصيد XP</th>
               <th>مدة الصلاحية</th>
               <th>السعر</th>
               <th>الحالة</th>
@@ -172,9 +172,8 @@
                         </div>
                       </div>
                     </td>
-                    <td>${escapeHtml(plan.description || "باقة مرنة لإدارة الرصيد")}</td>
-                    <td>${nf.format(Number(plan.imagesLimit || 0))} صورة</td>
-                    <td>${nf.format(Number(plan.videosLimit || 0))} فيديو</td>
+                    <td>${escapeHtml(plan.description || "باقة XP مرنة لإدارة الرصيد")}</td>
+                    <td><strong>${nf.format(Number(plan.xpBalance || 0))}</strong> XP</td>
                     <td>${nf.format(Number(plan.validityDays || 0))} يوم</td>
                     <td>${nf.format(Number(plan.price || 0))} ر.س</td>
                     <td><span class="admin-plan-status ${active ? "is-active" : "is-disabled"}">${active ? "نشطة" : "معطلة"}</span></td>
@@ -201,12 +200,11 @@
 
   function exportPlans() {
     const csv = [
-      ["name", "description", "images", "videos", "validityDays", "price", "status"],
+      ["name", "description", "xpBalance", "validityDays", "price", "status"],
       ...filteredPlans().map((plan) => [
         plan.name,
         plan.description || "",
-        plan.imagesLimit,
-        plan.videosLimit,
+        plan.xpBalance,
         plan.validityDays,
         plan.price,
         plan.isActive !== false ? "active" : "disabled",

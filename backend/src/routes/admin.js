@@ -334,6 +334,13 @@ function formatDayKey(date) {
 }
 
 function classifyPlanName(code) {
+  const balance = Number(code.balance || 0);
+  if (balance > 0) {
+    if (balance <= 300) return "باقة انطلاقة";
+    if (balance <= 1200) return "باقة إبداع";
+    return "باقة تميز";
+  }
+
   const total = Number(code.imageLimit || 0) + Number(code.videoLimit || 0);
   if (total <= 10) return "باقة انطلاقة";
   if (total <= 40) return "باقة إبداع";
@@ -367,9 +374,9 @@ const DEFAULT_KEY_PLANS = [
   {
     id: "starter",
     name: "انطلاقة",
-    description: "بداية سهلة للمستخدمين الجدد",
-    imagesLimit: 5,
-    videosLimit: 5,
+    description: "بداية سهلة وفعالة",
+    imagesLimit: 0,
+    videosLimit: 0,
     validityDays: 30,
     price: 19,
     xpBalance: 300,
@@ -378,9 +385,9 @@ const DEFAULT_KEY_PLANS = [
   {
     id: "creator",
     name: "إبداع",
-    description: "للمبدعين والمحترفين",
-    imagesLimit: 25,
-    videosLimit: 15,
+    description: "لصناع المحتوى والمبدعين",
+    imagesLimit: 0,
+    videosLimit: 0,
     validityDays: 90,
     price: 49,
     xpBalance: 1200,
@@ -389,22 +396,12 @@ const DEFAULT_KEY_PLANS = [
   {
     id: "pro",
     name: "تميز",
-    description: "الأفضل لأصحاب الأعمال",
-    imagesLimit: 100,
-    videosLimit: 50,
+    description: "للمحترفين بلا حدود",
+    imagesLimit: 0,
+    videosLimit: 0,
     validityDays: 180,
     price: 89,
     xpBalance: 5000,
-    isActive: true,
-  },
-  {
-    id: "business",
-    name: "احترافية",
-    description: "للاستخدام المكثف والفرق",
-    imagesLimit: 600,
-    videosLimit: 200,
-    validityDays: 365,
-    price: 699,
     isActive: true,
   },
 ];
@@ -462,10 +459,11 @@ async function generateUniqueKeyCode() {
 
 function serializeKeyPlan(plan) {
   const profile = getPlanXpProfile(plan);
+  if (!profile) return null;
   return {
     id: plan.id,
     name: plan.name,
-    description: plan.description || "باقة مرنة لإدارة رصيد الصور والفيديوهات",
+    description: plan.description || "باقة XP مرنة لإدارة رصيد التوليد",
     imagesLimit: Number(plan.imagesLimit ?? plan.imageQuota ?? 0),
     videosLimit: Number(plan.videosLimit ?? plan.videoQuota ?? 0),
     validityDays: Number(plan.validityDays || 30),
@@ -493,20 +491,9 @@ async function ensureAdminPlansTable() {
 }
 
 async function getAdminPlans() {
-  try {
-    await ensureAdminPlansTable();
-    const plans = await prisma.plan.findMany({
-      orderBy: { id: "asc" },
-    });
-
-    if (plans.length) {
-      return plans.map((plan) => serializeKeyPlan(plan));
-    }
-  } catch (error) {
-    console.error("ADMIN_PLANS_FALLBACK_ERROR", error);
-  }
-
-  return DEFAULT_KEY_PLANS;
+  // Plans are intentionally locked to the three public XP packages.
+  // Old/custom database plans are ignored so admin and public pages stay consistent.
+  return DEFAULT_KEY_PLANS.map((plan) => serializeKeyPlan(plan)).filter(Boolean);
 }
 
 async function resolveAdminPlan(planId) {
@@ -912,16 +899,20 @@ router.get(
         code.statusKey === "expired"
           ? { key: "expired", label: "منتهي" }
           : getAdminKeyStatus(code, now);
+      const notePlan = String(code.notes || "").match(/plan:([^;]+)/)?.[1]?.trim();
 
       return {
         id: code.id,
         code: code.code,
         customerName: code.ownerName || "عميل غير محدد",
         customerEmail: code.email || "",
-        planName: classifyPlanName({
+        planName: notePlan || classifyPlanName({
+          balance: code.balance,
           imageLimit: code.imageLimit,
           videoLimit: code.videoLimit,
         }),
+        balance: Number(code.balance || 0),
+        xpBalance: Number(code.balance || 0),
         imagesLimit: code.imageLimit,
         videosLimit: code.videoLimit,
         imagesUsed: code.imageUsed,
