@@ -30,6 +30,10 @@
       "destination": "/dashboard.html"
     },
     {
+      "source": "/generations/:id",
+      "destination": "/generation.html?id=:id"
+    },
+    {
       "source": "/create",
       "destination": "/dashboard.html"
     },

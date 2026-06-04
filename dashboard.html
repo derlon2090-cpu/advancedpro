@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>لوحة المستخدم | PixiGen</title>
+    <title>لوحة التحكم | PixiGen</title>
     <meta
       name="description"
-      content="لوحة PixiGen لإنشاء الصور والفيديو بالذكاء الاصطناعي وإدارة رصيد XP والنتائج."
+      content="لوحة PixiGen لإنشاء الصور والفيديو وإدارة رصيد XP والنتائج."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -14,9 +14,9 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800;900&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260604-user-dashboard-v3" />
+    <link rel="stylesheet" href="/styles.css?v=20260604-pixigen-v4" />
   </head>
-  <body class="user-dashboard-v3" data-page="dashboard-v3">
+  <body class="user-dashboard-v3" data-page="dashboard-v4">
     <aside class="udv3-sidebar" aria-label="قائمة لوحة المستخدم">
       <a class="udv3-brand" href="/dashboard" aria-label="PixiGen">
         <span class="udv3-brand-mark">✧</span>
@@ -24,7 +24,7 @@
       </a>
 
       <nav class="udv3-nav">
-        <a class="is-active" href="/dashboard" data-local-nav>
+        <a class="is-active" href="/dashboard">
           <span>⌂</span>
           لوحة التحكم
         </a>
@@ -41,7 +41,7 @@
 
         <p>المحتوى</p>
         <a href="#recent" data-local-nav>
-          <span>▭</span>
+          <span>▤</span>
           مشاريعي
         </a>
         <a href="#recent" data-local-nav>
@@ -53,14 +53,14 @@
           النماذج
         </a>
         <a href="#tips" data-local-nav>
-          <span>▤</span>
+          <span>▦</span>
           القوالب
         </a>
 
         <p>الحساب</p>
         <a href="#balance" data-local-nav>
           <span>▱</span>
-          باقاتي
+          باقتي
         </a>
         <a href="#transactions" data-local-nav>
           <span>☷</span>
@@ -75,11 +75,11 @@
       <section class="udv3-support-card">
         <strong>مركز الدعم</strong>
         <span>تحتاج إلى مساعدة؟</span>
-        <a href="#support" data-local-nav>تواصل معنا</a>
+        <a href="mailto:support@advancedpro.com">تواصل معنا</a>
       </section>
     </aside>
 
-    <main class="udv3-main">
+    <div class="udv3-app">
       <header class="udv3-topbar">
         <div class="udv3-profile">
           <img
@@ -103,174 +103,193 @@
         <button class="udv3-add-button" type="button" data-focus-create aria-label="إنشاء جديد">＋</button>
       </header>
 
-      <section class="udv3-create-card" id="create">
-        <div class="udv3-section-title">
-          <span>✧</span>
-          <div>
-            <h1>ماذا ترغب في إنشاء اليوم؟</h1>
-            <p>اختر نوع المحتوى وابدأ تجربة الإبداع</p>
-          </div>
-        </div>
+      <div class="udv3-workspace">
+        <main class="udv3-main">
+          <section class="udv3-create-card" id="create">
+            <div class="udv3-section-title">
+              <span>✧</span>
+              <div>
+                <h1>ماذا ترغب في إنشاء اليوم؟</h1>
+                <p>اختر نوع المحتوى وابدأ تجربة الإبداع</p>
+              </div>
+            </div>
 
-        <form class="udv3-create-form" data-create-form>
-          <div class="udv3-type-tabs" role="tablist" aria-label="نوع الإنشاء">
-            <button class="is-active" type="button" data-type-tab="image">
-              صورة
-              <span>▧</span>
-            </button>
-            <button type="button" data-type-tab="video">
-              فيديو
-              <span>▣</span>
-            </button>
-          </div>
+            <form class="udv3-create-form" data-create-form>
+              <div class="udv3-type-tabs" role="tablist" aria-label="نوع الإنشاء">
+                <button class="is-active" type="button" data-type-tab="image">
+                  صورة
+                  <span>▧</span>
+                </button>
+                <button type="button" data-type-tab="video">
+                  فيديو
+                  <span>▣</span>
+                </button>
+              </div>
 
-          <div class="udv3-form-grid">
-            <label class="udv3-prompt-box">
-              <span data-prompt-label>اكتب وصف الصورة التي تريد إنشاءها...</span>
-              <textarea
-                data-prompt-input
-                maxlength="2000"
-                rows="5"
-                placeholder="مثال: رجل أعمال وسيم يرتدي بدلة فاخرة داخل مكتب حديث، إضاءة سينمائية..."
-              ></textarea>
-              <small><b data-char-count>0</b> / 2000</small>
-            </label>
+              <div class="udv3-form-grid">
+                <label class="udv3-prompt-box">
+                  <span data-prompt-label>اكتب وصف الصورة التي تريد إنشاءها...</span>
+                  <textarea
+                    data-prompt-input
+                    maxlength="2000"
+                    rows="5"
+                    placeholder="مثال: رجل أعمال وسيم يرتدي بدلة فاخرة داخل مكتب حديث، إضاءة سينمائية..."
+                  ></textarea>
+                  <small><b data-char-count>0</b> / 2000</small>
+                </label>
 
-            <aside class="udv3-cost-card">
-              <span>التكلفة المتوقعة</span>
-              <strong data-cost-value>10 XP</strong>
-              <p data-cost-label>صورة عالية الدقة</p>
-              <button type="submit" data-submit-button>إنشاء الآن ✨</button>
-            </aside>
-          </div>
+                <aside class="udv3-cost-card">
+                  <span>التكلفة المتوقعة</span>
+                  <strong data-cost-value>10 XP</strong>
+                  <p data-cost-label>صورة عالية الدقة</p>
+                  <button type="submit" data-submit-button>إنشاء الآن ✨</button>
+                </aside>
+              </div>
 
-          <div class="udv3-options-grid">
-            <label>
-              <span>النمط</span>
-              <select data-style-select>
-                <option value="realistic">واقعي</option>
-                <option value="cinematic">سينمائي</option>
-                <option value="anime">أنمي</option>
-                <option value="three-d">ثلاثي الأبعاد</option>
-                <option value="commercial">إعلاني</option>
-              </select>
-            </label>
+              <div class="udv3-options-grid">
+                <label>
+                  <span>النمط</span>
+                  <select data-style-select>
+                    <option value="realistic">واقعي</option>
+                    <option value="cinematic">سينمائي</option>
+                    <option value="anime">أنمي</option>
+                    <option value="three-d">ثلاثي الأبعاد</option>
+                    <option value="commercial">إعلاني</option>
+                  </select>
+                </label>
 
-            <label data-image-only>
-              <span>المقاس</span>
-              <select data-aspect-select>
-                <option value="16:9">16:9</option>
-                <option value="1:1">1:1</option>
-                <option value="9:16">9:16</option>
-                <option value="4:5">4:5</option>
-              </select>
-            </label>
+                <label data-image-only>
+                  <span>المقاس</span>
+                  <select data-aspect-select>
+                    <option value="16:9">16:9</option>
+                    <option value="1:1">1:1</option>
+                    <option value="9:16">9:16</option>
+                    <option value="4:5">4:5</option>
+                  </select>
+                </label>
 
-            <label data-video-only hidden>
-              <span>المدة</span>
-              <select data-duration-select>
-                <option value="5">5 ثواني</option>
-                <option value="8">8 ثواني</option>
-              </select>
-            </label>
+                <label data-video-only hidden>
+                  <span>المدة</span>
+                  <select data-duration-select>
+                    <option value="5">5 ثواني</option>
+                    <option value="8">8 ثواني</option>
+                  </select>
+                </label>
 
-            <label>
-              <span>الجودة</span>
-              <select data-quality-select>
-                <option value="normal">عادية</option>
-                <option value="high" selected>عالية</option>
-                <option value="ultra">فائقة</option>
-              </select>
-            </label>
-          </div>
+                <label>
+                  <span>الجودة</span>
+                  <select data-quality-select>
+                    <option value="normal">عادية</option>
+                    <option value="high" selected>عالية</option>
+                    <option value="ultra">فائقة</option>
+                  </select>
+                </label>
+              </div>
 
-          <p class="udv3-inline-message" data-form-message role="status"></p>
-        </form>
-      </section>
+              <p class="udv3-inline-message" data-form-message role="status"></p>
+            </form>
+          </section>
 
-      <section class="udv3-recent-card" id="recent">
-        <div class="udv3-card-header">
-          <h2>أحدث الإبداعات</h2>
-          <a href="#recent" data-local-nav>عرض الكل</a>
-        </div>
-        <div class="udv3-creations-grid" data-recent-grid></div>
-      </section>
+          <section class="udv3-processing-card" data-processing-card hidden>
+            <div class="udv3-spinner" aria-hidden="true"></div>
+            <h2 data-processing-title>جاري إنشاء صورتك...</h2>
+            <p>قد يستغرق الأمر من 10 إلى 30 ثانية حسب تعقيد الطلب</p>
+            <div class="udv3-progress-steps" aria-label="مراحل المعالجة">
+              <article class="is-active">
+                <b></b>
+                <strong>جاري المعالجة</strong>
+                <span>تحليل الوصف</span>
+              </article>
+              <article>
+                <b></b>
+                <strong>جاري التوليد</strong>
+                <span>إنشاء التفاصيل</span>
+              </article>
+              <article>
+                <b></b>
+                <strong>جاري التحسين</strong>
+                <span>تحسين الجودة</span>
+              </article>
+              <article>
+                <b></b>
+                <strong>جاري الإنهاء</strong>
+                <span>جاهز قريبًا</span>
+              </article>
+            </div>
+            <button type="button" data-cancel-generation>إلغاء الإنشاء</button>
+          </section>
 
-      <section class="udv3-tips-card" id="tips">
-        <h2>نصائح للإبداع</h2>
-        <div>
-          <article>
-            <strong>استخدم تفاصيل دقيقة</strong>
-            <span>كلما كان وصفك دقيقًا كانت النتيجة أفضل.</span>
-          </article>
-          <article>
-            <strong>اختر الجودة المناسبة</strong>
-            <span>الجودة الأعلى تعطي تفاصيل أدق بتكلفة أكبر.</span>
-          </article>
-          <article>
-            <strong>جرّب أنماطًا مختلفة</strong>
-            <span>اكتشف جمال الفكرة بأكثر من أسلوب.</span>
-          </article>
-          <article>
-            <strong>الأبعاد تؤثر على النتيجة</strong>
-            <span>اختر المقاس المناسب لاستخدامك.</span>
-          </article>
-        </div>
-      </section>
-    </main>
+          <section class="udv3-recent-card" id="recent">
+            <div class="udv3-card-header">
+              <h2>أحدث الإبداعات</h2>
+              <a href="#recent" data-local-nav>عرض الكل</a>
+            </div>
+            <div class="udv3-creations-grid" data-recent-grid></div>
+          </section>
 
-    <aside class="udv3-widgets">
-      <section class="udv3-balance-widget" id="balance">
-        <div>
-          <span>رصيدي الحالي</span>
-          <strong data-widget-xp>1,095 XP</strong>
-          <p data-expiry-text>ينتهي في 25 أغسطس 2026</p>
-        </div>
-        <img src="/ap-mark.svg" alt="" aria-hidden="true" />
-        <div class="udv3-progress">
-          <i data-xp-progress></i>
-        </div>
-        <small data-days-left>90 يوم متبقية</small>
-        <a href="#balance" data-local-nav>ترقية الباقة ✨</a>
-      </section>
+          <section class="udv3-tips-card" id="tips">
+            <h2>نصائح للإبداع</h2>
+            <div>
+              <article>
+                <strong>استخدم تفاصيل دقيقة</strong>
+                <span>كلما كان وصفك دقيقًا كانت النتيجة أفضل.</span>
+              </article>
+              <article>
+                <strong>اختر الجودة المناسبة</strong>
+                <span>الجودة الأعلى تعطي تفاصيل أدق بتكلفة أكبر.</span>
+              </article>
+              <article>
+                <strong>جرّب أنماطًا مختلفة</strong>
+                <span>اكتشف جمال الفكرة بأكثر من أسلوب.</span>
+              </article>
+              <article>
+                <strong>الأبعاد تؤثر على النتيجة</strong>
+                <span>اختر المقاس المناسب لاستخدامك.</span>
+              </article>
+            </div>
+          </section>
+        </main>
 
-      <section class="udv3-usage-widget">
-        <h2>استهلاكك سريع</h2>
-        <div class="udv3-meter-row">
-          <span class="udv3-ring" data-image-ring>▧</span>
-          <p>صور <b data-images-count>18 / 240</b></p>
-        </div>
-        <div class="udv3-meter-row">
-          <span class="udv3-ring is-orange" data-video-ring>▣</span>
-          <p>فيديو <b data-videos-count>4 / 24</b></p>
-        </div>
-        <a href="#recent" data-local-nav>عرض كل الإحصائيات</a>
-      </section>
+        <aside class="udv3-widgets">
+          <section class="udv3-balance-widget" id="balance">
+            <div>
+              <span>رصيدي الحالي</span>
+              <strong data-widget-xp>1,095 XP</strong>
+              <p data-expiry-text>ينتهي في 25 أغسطس 2026</p>
+            </div>
+            <div class="udv3-stack-icon" aria-hidden="true">◉</div>
+            <div class="udv3-progress">
+              <i data-xp-progress></i>
+            </div>
+            <small data-days-left>90 يوم متبقية</small>
+            <a href="#balance" data-local-nav>ترقية الباقة ✨</a>
+          </section>
 
-      <section class="udv3-transactions-widget" id="transactions">
-        <h2>معاملات حديثة</h2>
-        <div data-transactions-list></div>
-        <a href="#transactions" data-local-nav>عرض كل المعاملات</a>
-      </section>
-    </aside>
+          <section class="udv3-usage-widget">
+            <h2>استهلاكك سريع</h2>
+            <div class="udv3-meter-row">
+              <span class="udv3-ring" data-image-ring>▧</span>
+              <p>صور <b data-images-count>18 / 240</b></p>
+            </div>
+            <div class="udv3-meter-row">
+              <span class="udv3-ring is-orange" data-video-ring>▣</span>
+              <p>فيديو <b data-videos-count>4 / 24</b></p>
+            </div>
+            <a href="#recent" data-local-nav>عرض كل الإحصائيات</a>
+          </section>
 
-    <div class="udv3-toast" data-toast hidden></div>
-
-    <div class="udv3-result-modal" data-result-modal hidden>
-      <div class="udv3-result-dialog" role="dialog" aria-modal="true" aria-labelledby="resultTitle">
-        <button type="button" data-close-result aria-label="إغلاق">×</button>
-        <h2 id="resultTitle">تم الإنشاء بنجاح</h2>
-        <div class="udv3-result-preview" data-result-preview></div>
-        <p data-result-prompt></p>
-        <div class="udv3-result-actions">
-          <a href="#" data-result-download download>تحميل</a>
-          <button type="button" data-copy-result>نسخ الرابط</button>
-          <button type="button" data-close-result>إغلاق</button>
-        </div>
+          <section class="udv3-transactions-widget" id="transactions">
+            <h2>معاملات حديثة</h2>
+            <div data-transactions-list></div>
+            <a href="#transactions" data-local-nav>عرض كل المعاملات</a>
+          </section>
+        </aside>
       </div>
     </div>
 
+    <div class="udv3-toast" data-toast hidden></div>
+
     <script src="/config.js"></script>
-    <script src="/dashboard-page.js?v=20260604-user-dashboard-v3"></script>
+    <script src="/dashboard-page.js?v=20260604-pixigen-v4"></script>
   </body>
 </html>

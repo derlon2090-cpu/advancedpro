@@ -10,60 +10,70 @@
     duration: 5,
     loading: false,
     activeRequestId: null,
-    latestResultUrl: "",
+    abortController: null,
     results: [],
   };
 
   const fallbackResults = [
     {
-      id: "demo-car",
+      id: "demo-business-video",
       type: "video",
-      prompt: "سيارة مستقبلية في شارع مضاء",
+      prompt: "رجل أعمال داخل سيارة فاخرة",
       quality: "high",
-      creditsUsed: 80,
+      style: "realistic",
+      aspectRatio: "16:9",
+      creditsUsed: 100,
       createdAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
       resultUrl:
-        "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=900&q=80",
+        "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=900&q=85",
     },
     {
       id: "demo-villa",
       type: "image",
-      prompt: "منزل حديث فاخر",
+      prompt: "منزل عصري فاخر",
       quality: "high",
+      style: "realistic",
+      aspectRatio: "16:9",
       creditsUsed: 10,
       createdAt: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
       resultUrl:
-        "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=80",
+        "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=85",
     },
     {
-      id: "demo-city",
+      id: "demo-car",
       type: "image",
-      prompt: "مدينة مستقبلية مضيئة",
-      quality: "normal",
-      creditsUsed: 5,
+      prompt: "سيارة رياضية في المدينة",
+      quality: "high",
+      style: "realistic",
+      aspectRatio: "16:9",
+      creditsUsed: 10,
       createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
       resultUrl:
-        "https://images.unsplash.com/photo-1519608487953-e999c86e7455?auto=format&fit=crop&w=900&q=80",
+        "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=900&q=85",
     },
     {
       id: "demo-robot",
       type: "image",
-      prompt: "روبوت أصفر وسط مدينة",
-      quality: "high",
-      creditsUsed: 10,
+      prompt: "روبوت مستقبلي",
+      quality: "normal",
+      style: "three-d",
+      aspectRatio: "1:1",
+      creditsUsed: 5,
       createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
       resultUrl:
-        "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=900&q=80",
+        "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=900&q=85",
     },
     {
       id: "demo-room",
       type: "image",
-      prompt: "غرفة معيشة حديثة",
+      prompt: "غرفة معيشة أنيقة",
       quality: "high",
+      style: "realistic",
+      aspectRatio: "16:9",
       creditsUsed: 10,
       createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
       resultUrl:
-        "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=900&q=80",
+        "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=900&q=85",
     },
   ];
 
@@ -157,7 +167,7 @@
 
   function keyTotalCredits() {
     const key = state.key || {};
-    return Number(key.creditsLimit ?? key.balanceLimit ?? key.totalCredits ?? keyCredits() ?? 1095);
+    return Number(key.creditsLimit ?? key.balanceLimit ?? key.totalCredits ?? Math.max(keyCredits(), 1095));
   }
 
   function calculateCredits(type = state.type, quality = state.quality, duration = state.duration) {
@@ -177,32 +187,27 @@
     return { normal: "عادية", high: "عالية", ultra: "فائقة" }[value] || "عالية";
   }
 
+  function styleLabel(value = state.style) {
+    return {
+      realistic: "واقعي",
+      cinematic: "سينمائي",
+      anime: "أنمي",
+      "three-d": "ثلاثي الأبعاد",
+      commercial: "إعلاني",
+    }[value] || "واقعي";
+  }
+
   function typeLabel(value = state.type) {
     return value === "video" ? "فيديو" : "صورة";
   }
 
-  function updateCost() {
-    const cost = calculateCredits();
-    const suffix = state.type === "video" ? `فيديو ${state.duration} ثواني` : "صورة";
-    $("[data-cost-value]").textContent = `${formatNumber(cost)} XP`;
-    $("[data-cost-label]").textContent = `${suffix} ${qualityLabel()}`;
-  }
-
-  function setMessage(message, kind = "info") {
-    const node = $("[data-form-message]");
-    node.textContent = message || "";
-    node.dataset.kind = kind;
-  }
-
-  function showToast(message, kind = "success") {
-    const toast = $("[data-toast]");
-    toast.textContent = message;
-    toast.dataset.kind = kind;
-    toast.hidden = false;
-    clearTimeout(showToast.timer);
-    showToast.timer = setTimeout(() => {
-      toast.hidden = true;
-    }, 3500);
+  function daysLeftText(value) {
+    if (!value) return "صلاحية مفتوحة";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "صلاحية مفتوحة";
+    const days = Math.ceil((date.getTime() - Date.now()) / 86400000);
+    if (days <= 0) return "منتهي";
+    return `${days} يوم متبقية`;
   }
 
   function normalizeKey(payload) {
@@ -224,13 +229,27 @@
       requestId: item.requestId,
       type: item.type || "image",
       prompt: item.userPrompt || item.prompt || item.description || "نتيجة جديدة",
+      finalPrompt: item.finalPrompt || item.final_prompt || "",
       quality: item.quality || "high",
       style: item.style || "realistic",
-      creditsUsed: Number(item.creditsUsed ?? item.credits_used ?? item.cost ?? calculateCredits()),
+      aspectRatio: item.aspectRatio || item.aspect || "16:9",
+      duration: item.duration,
+      provider: item.provider,
+      model: item.model || (item.type === "video" ? "PixiGen Motion" : "PixiGen Pro v2"),
+      seed: item.seed,
+      creditsUsed: Number(item.creditsUsed ?? item.credits_used ?? item.xpCost ?? item.cost ?? calculateCredits()),
       createdAt: item.createdAt || item.created_at || new Date().toISOString(),
       resultUrl: item.resultUrl || item.url || item.outputUrl || item.imageUrl || item.videoUrl || "",
       thumbnailUrl: item.thumbnailUrl || item.resultUrl || item.url || item.outputUrl || "",
+      status: item.status || "completed",
     };
+  }
+
+  function updateCost() {
+    const cost = calculateCredits();
+    const suffix = state.type === "video" ? `فيديو ${state.duration} ثواني` : "صورة";
+    $("[data-cost-value]").textContent = `${formatNumber(cost)} XP`;
+    $("[data-cost-label]").textContent = `${suffix} ${qualityLabel()}`;
   }
 
   function updateKeyUi() {
@@ -252,31 +271,74 @@
     $("[data-days-left]").textContent = daysLeftText(key.expiresAt);
   }
 
-  function daysLeftText(value) {
-    if (!value) return "صلاحية مفتوحة";
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "صلاحية مفتوحة";
-    const days = Math.ceil((date.getTime() - Date.now()) / 86400000);
-    if (days <= 0) return "منتهي";
-    return `${days} يوم متبقية`;
+  function setMessage(message, kind = "info") {
+    const node = $("[data-form-message]");
+    node.textContent = message || "";
+    node.dataset.kind = kind;
+  }
+
+  function showToast(message, kind = "success") {
+    const toast = $("[data-toast]");
+    toast.textContent = message;
+    toast.dataset.kind = kind;
+    toast.hidden = false;
+    clearTimeout(showToast.timer);
+    showToast.timer = setTimeout(() => {
+      toast.hidden = true;
+    }, 3500);
+  }
+
+  function showProcessing(show) {
+    const card = $("[data-processing-card]");
+    card.hidden = !show;
+    if (show) {
+      $("[data-processing-title]").textContent =
+        state.type === "video" ? "جاري إنشاء الفيديو..." : "جاري إنشاء صورتك...";
+      card.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }
+
+  function setLoading(isLoading) {
+    state.loading = isLoading;
+    const button = $("[data-submit-button]");
+    button.disabled = isLoading;
+    button.textContent = isLoading
+      ? state.type === "video"
+        ? "جاري إنشاء الفيديو..."
+        : "جاري إنشاء الصورة..."
+      : "إنشاء الآن ✨";
+    showProcessing(isLoading);
+  }
+
+  function setType(type) {
+    state.type = type;
+    $$("[data-type-tab]").forEach((button) => button.classList.toggle("is-active", button.dataset.typeTab === type));
+    $$("[data-video-only]").forEach((node) => {
+      node.hidden = type !== "video";
+    });
+    $$("[data-image-only]").forEach((node) => {
+      node.hidden = type !== "image";
+    });
+    $("[data-prompt-label]").textContent =
+      type === "video" ? "اكتب وصف الفيديو الذي تريد إنشاءه..." : "اكتب وصف الصورة التي تريد إنشاءها...";
+    $("[data-prompt-input]").placeholder =
+      type === "video"
+        ? "مثال: لقطة سينمائية لروبوتات صفراء تتحرك في مدينة مستقبلية..."
+        : "مثال: رجل أعمال وسيم يرتدي بدلة فاخرة داخل مكتب حديث، إضاءة سينمائية...";
+    updateCost();
   }
 
   function renderRecent() {
     const grid = $("[data-recent-grid]");
     const list = (state.results.length ? state.results : fallbackResults).slice(0, 5);
     grid.innerHTML = list.map(renderCreationCard).join("");
-    $$("[data-open-result]", grid).forEach((button) => {
-      button.addEventListener("click", () => {
-        const item = list.find((result) => String(result.id) === button.dataset.openResult);
-        if (item) openResult(item);
-      });
-    });
   }
 
   function renderCreationCard(item) {
     const mediaUrl = item.thumbnailUrl || item.resultUrl;
     const prompt = escapeHtml(item.prompt);
     const meta = `${qualityLabel(item.quality)} · ${relativeTime(item.createdAt)}`;
+    const targetUrl = `/generations/${encodeURIComponent(item.id)}`;
     const media =
       item.type === "video"
         ? `<video src="${escapeHtml(mediaUrl)}" muted playsinline preload="metadata"></video>`
@@ -284,17 +346,13 @@
 
     return `
       <article class="udv3-creation-card">
-        <button type="button" data-open-result="${escapeHtml(item.id)}" aria-label="عرض النتيجة">
+        <a class="udv3-creation-preview" href="${targetUrl}" data-generation-link="${escapeHtml(item.id)}">
           <span class="udv3-creation-media">${media}</span>
           <b>${typeLabel(item.type)}</b>
-        </button>
+        </a>
         <h3>${prompt}</h3>
         <p>${meta}</p>
-        <div>
-          <button type="button" data-copy-url="${escapeHtml(item.resultUrl)}">نسخ</button>
-          <a href="${escapeHtml(item.resultUrl)}" download>تحميل</a>
-          <span>${formatNumber(item.creditsUsed)} XP</span>
-        </div>
+        <button class="udv3-card-menu" type="button" aria-label="إجراءات">⋮</button>
       </article>
     `;
   }
@@ -331,33 +389,20 @@
     $("[data-videos-count]").textContent = `${videos} / 24`;
   }
 
-  function setType(type) {
-    state.type = type;
-    $$("[data-type-tab]").forEach((button) => button.classList.toggle("is-active", button.dataset.typeTab === type));
-    $$("[data-video-only]").forEach((node) => {
-      node.hidden = type !== "video";
-    });
-    $$("[data-image-only]").forEach((node) => {
-      node.hidden = type !== "image";
-    });
-    $("[data-prompt-label]").textContent =
-      type === "video" ? "اكتب وصف الفيديو الذي تريد إنشاءه..." : "اكتب وصف الصورة التي تريد إنشاءها...";
-    $("[data-prompt-input]").placeholder =
-      type === "video"
-        ? "مثال: لقطة سينمائية لروبوتات صفراء تتحرك في مدينة مستقبلية..."
-        : "مثال: رجل أعمال وسيم يرتدي بدلة فاخرة داخل مكتب حديث، إضاءة سينمائية...";
-    updateCost();
-  }
-
-  function setLoading(isLoading) {
-    state.loading = isLoading;
-    const button = $("[data-submit-button]");
-    button.disabled = isLoading;
-    button.textContent = isLoading
-      ? state.type === "video"
-        ? "جاري إنشاء الفيديو..."
-        : "جاري إنشاء الصورة..."
-      : "إنشاء الآن ✨";
+  function persistGeneration(generation) {
+    try {
+      sessionStorage.setItem(`generation:${generation.id}`, JSON.stringify(generation));
+      sessionStorage.setItem("latestGeneration", JSON.stringify(generation));
+      sessionStorage.setItem("pixigen:lastGeneration", JSON.stringify(generation));
+      const stored = JSON.parse(sessionStorage.getItem("pixigen:generations") || "[]");
+      const merged = [
+        generation,
+        ...stored.filter((item) => String(item.id) !== String(generation.id)),
+      ].slice(0, 30);
+      sessionStorage.setItem("pixigen:generations", JSON.stringify(merged));
+    } catch {
+      // Session storage is only a client-side convenience for static routing.
+    }
   }
 
   async function handleGenerate(event) {
@@ -380,14 +425,10 @@
     }
 
     const requestId = crypto.randomUUID();
+    const controller = new AbortController();
     state.activeRequestId = requestId;
-    state.latestResultUrl = "";
-    setMessage(
-      state.type === "video"
-        ? "جاري إنشاء الفيديو، قد يستغرق بعض الوقت..."
-        : "جاري إنشاء الصورة...",
-      "loading"
-    );
+    state.abortController = controller;
+    setMessage("", "info");
     setLoading(true);
 
     const payload = {
@@ -410,9 +451,10 @@
       const data = await requestJson("/api/generate", {
         method: "POST",
         body: JSON.stringify(payload),
+        signal: controller.signal,
       });
 
-      if (data.requestId && data.requestId !== state.activeRequestId) {
+      if ((data.requestId || data.generation?.requestId) !== state.activeRequestId) {
         return;
       }
 
@@ -423,6 +465,8 @@
         prompt: rawGeneration.userPrompt || rawGeneration.prompt || userPrompt,
         type: rawGeneration.type || state.type,
         quality: rawGeneration.quality || state.quality,
+        style: rawGeneration.style || state.style,
+        aspectRatio: rawGeneration.aspectRatio || state.aspect,
         creditsUsed: rawGeneration.creditsUsed ?? requiredCredits,
       });
 
@@ -430,53 +474,32 @@
         throw new Error("تم إنشاء العملية لكن لم يصل رابط النتيجة من الخادم.");
       }
 
-      state.results = [generation, ...state.results.filter((item) => item.id !== generation.id)];
-      state.latestResultUrl = generation.resultUrl;
-      setMessage("تم الإنشاء بنجاح.", "success");
-      showToast("تم الإنشاء بنجاح.");
+      state.results = [generation, ...state.results.filter((item) => String(item.id) !== String(generation.id))];
+      persistGeneration(generation);
+      try {
+        sessionStorage.setItem("pixigen:key", JSON.stringify(state.key || {}));
+      } catch {
+        // Ignore storage failures; the API remains the source of truth.
+      }
       promptInput.value = "";
       $("[data-char-count]").textContent = "0";
-      openResult(generation);
       renderAll();
+      showToast(`تم الإنشاء بنجاح وتم خصم ${formatNumber(generation.creditsUsed)} XP.`);
       await refreshKey({ silent: true });
-      await refreshGenerations({ silent: true });
+      window.location.href = `/generations/${encodeURIComponent(generation.id)}`;
     } catch (error) {
-      console.error("GENERATE ERROR:", error);
-      setMessage(error.message || "فشل التوليد، لم يتم خصم أي رصيد.", "error");
-      showToast(error.message || "فشل التوليد، لم يتم خصم أي رصيد.", "error");
+      if (error.name === "AbortError") {
+        setMessage("تم إلغاء الإنشاء. لم يتم خصم أي رصيد.", "info");
+        showToast("تم إلغاء الإنشاء. لم يتم خصم أي رصيد.", "error");
+      } else {
+        console.error("GENERATE ERROR:", error);
+        setMessage(error.message || "فشل التوليد، لم يتم خصم أي رصيد.", "error");
+        showToast(error.message || "فشل التوليد، لم يتم خصم أي رصيد.", "error");
+      }
     } finally {
       setLoading(false);
       state.activeRequestId = null;
-    }
-  }
-
-  function openResult(item) {
-    const modal = $("[data-result-modal]");
-    const preview = $("[data-result-preview]");
-    const url = item.resultUrl || "";
-    const urlWithCacheBust = url ? `${url}${url.includes("?") ? "&" : "?"}v=${encodeURIComponent(item.requestId || item.id)}` : "";
-
-    preview.innerHTML =
-      item.type === "video"
-        ? `<video src="${escapeHtml(urlWithCacheBust)}" controls playsinline></video>`
-        : `<img src="${escapeHtml(urlWithCacheBust)}" alt="${escapeHtml(item.prompt)}" />`;
-    $("[data-result-prompt]").textContent = item.prompt || "";
-    $("[data-result-download]").href = url;
-    $("[data-copy-result]").onclick = () => copyText(url);
-    modal.hidden = false;
-  }
-
-  function closeResult() {
-    $("[data-result-modal]").hidden = true;
-  }
-
-  async function copyText(value) {
-    if (!value) return;
-    try {
-      await navigator.clipboard.writeText(value);
-      showToast("تم النسخ بنجاح");
-    } catch {
-      showToast("تعذر النسخ تلقائيًا", "error");
+      state.abortController = null;
     }
   }
 
@@ -490,9 +513,7 @@
         window.location.href = "/activate";
         return;
       }
-      if (!silent) {
-        console.warn("KEY LOAD WARNING:", error);
-      }
+      if (!silent) console.warn("KEY LOAD WARNING:", error);
       state.key = normalizeKey({});
       updateKeyUi();
     }
@@ -505,24 +526,9 @@
       state.results = list.map(normalizeGeneration).filter((item) => item.resultUrl);
       renderAll();
     } catch (error) {
-      if (!silent) {
-        console.warn("GENERATIONS LOAD WARNING:", error);
-      }
+      if (!silent) console.warn("GENERATIONS LOAD WARNING:", error);
       renderAll();
     }
-  }
-
-  async function handleLogout() {
-    try {
-      await requestJson("/api/keys/logout", { method: "POST" });
-    } catch {
-      try {
-        await requestJson("/api/logout", { method: "POST" });
-      } catch {
-        // Redirect anyway; the protected page will reject missing/expired sessions.
-      }
-    }
-    window.location.href = "/activate";
   }
 
   function renderAll() {
@@ -574,13 +580,9 @@
       state.duration = Number(event.target.value);
       updateCost();
     });
-    $$("[data-close-result]").forEach((button) => button.addEventListener("click", closeResult));
-    document.addEventListener("click", (event) => {
-      const copyButton = event.target.closest("[data-copy-url]");
-      if (copyButton) copyText(copyButton.dataset.copyUrl);
-    });
-    document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") closeResult();
+    $("[data-cancel-generation]").addEventListener("click", () => {
+      state.abortController?.abort();
+      setLoading(false);
     });
   }
 

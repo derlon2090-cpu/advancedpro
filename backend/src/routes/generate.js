@@ -88,9 +88,12 @@ function serializeGeneration(row) {
     finalPrompt: row.final_prompt,
     type: row.type,
     quality: row.quality,
+    style: row.style,
+    aspectRatio: row.aspect_ratio,
     duration: row.duration,
     provider: row.provider,
     model: row.model,
+    seed: row.seed,
     creditsUsed: Number(row.credits_used || 0),
     status: row.status,
     resultUrl: row.result_url,
@@ -114,6 +117,9 @@ async function ensureGenerationTable() {
         model VARCHAR(128),
         final_prompt TEXT,
         request_id VARCHAR(80),
+        style VARCHAR(64),
+        aspect_ratio VARCHAR(32),
+        seed BIGINT,
         credits_used INTEGER NOT NULL DEFAULT 0,
         status VARCHAR(32) NOT NULL DEFAULT 'queued',
         result_url TEXT,
@@ -126,6 +132,9 @@ async function ensureGenerationTable() {
     `ALTER TABLE generations ADD COLUMN IF NOT EXISTS model VARCHAR(128)`,
     `ALTER TABLE generations ADD COLUMN IF NOT EXISTS final_prompt TEXT`,
     `ALTER TABLE generations ADD COLUMN IF NOT EXISTS request_id VARCHAR(80)`,
+    `ALTER TABLE generations ADD COLUMN IF NOT EXISTS style VARCHAR(64)`,
+    `ALTER TABLE generations ADD COLUMN IF NOT EXISTS aspect_ratio VARCHAR(32)`,
+    `ALTER TABLE generations ADD COLUMN IF NOT EXISTS seed BIGINT`,
     `ALTER TABLE generations ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP(3)`,
   ];
 
@@ -213,12 +222,14 @@ async function createGenerationRecord({
   model = null,
   finalPrompt = null,
   requestId = null,
+  style = null,
+  aspectRatio = null,
   status = "processing",
 }) {
   const rows = await withDbRetry(() =>
     prisma.$queryRaw`
-      INSERT INTO generations (key_id, type, prompt, quality, duration, provider, model, final_prompt, request_id, credits_used, status)
-      VALUES (${keyId}, ${type}, ${prompt}, ${quality}, ${duration}, ${provider}, ${model}, ${finalPrompt}, ${requestId}, ${creditsUsed}, ${status})
+      INSERT INTO generations (key_id, type, prompt, quality, duration, provider, model, final_prompt, request_id, style, aspect_ratio, credits_used, status)
+      VALUES (${keyId}, ${type}, ${prompt}, ${quality}, ${duration}, ${provider}, ${model}, ${finalPrompt}, ${requestId}, ${style}, ${aspectRatio}, ${creditsUsed}, ${status})
       RETURNING id
     `
   );
@@ -253,6 +264,8 @@ async function completeGenerationAndDeduct({
   provider,
   model,
   finalPrompt,
+  aspectRatio,
+  seed,
 }) {
   return withDbRetry(() =>
     prisma.$transaction(async (tx) => {
@@ -323,6 +336,9 @@ async function completeGenerationAndDeduct({
             provider = ${provider},
             model = ${model},
             final_prompt = ${finalPrompt || prompt},
+            style = ${style || null},
+            aspect_ratio = ${aspectRatio || null},
+            seed = ${seed ?? null},
             completed_at = NOW()
         WHERE id = ${generationId}
       `;
@@ -387,9 +403,12 @@ router.get(
                type,
                prompt,
                quality,
+               style,
+               aspect_ratio,
                duration,
                provider,
                model,
+               seed,
                final_prompt,
                credits_used,
                status,
@@ -412,6 +431,57 @@ router.get(
   })
 );
 
+router.get(
+  "/:id",
+  asyncHandler(async (req, res) => {
+    await ensureGenerationTable();
+
+    const keyId = getKeyId(req);
+    const generationId = Number(req.params.id);
+
+    if (!Number.isFinite(generationId)) {
+      httpError("معرف النتيجة غير صالح.", 400);
+    }
+
+    const rows = await withDbRetry(() =>
+      prisma.$queryRaw`
+        SELECT id,
+               request_id,
+               type,
+               prompt,
+               quality,
+               style,
+               aspect_ratio,
+               duration,
+               provider,
+               model,
+               seed,
+               final_prompt,
+               credits_used,
+               status,
+               result_url,
+               created_at,
+               completed_at
+        FROM generations
+        WHERE key_id = ${keyId}
+          AND id = ${generationId}
+          AND status = 'completed'
+          AND result_url IS NOT NULL
+        LIMIT 1
+      `
+    );
+
+    if (!rows.length) {
+      httpError("لم يتم العثور على النتيجة المطلوبة.", 404);
+    }
+
+    return res.json({
+      success: true,
+      generation: serializeGeneration(rows[0]),
+    });
+  })
+);
+
 router.post(
   "/",
   aiLimiter,
@@ -423,6 +493,7 @@ router.post(
     const quality = normalizeQuality(req.body.quality || "normal");
     const duration = type === "video" ? normalizeDuration(req.body.durationSeconds || req.body.duration || 5) : null;
     const style = String(req.body.style || "").trim();
+    const aspectRatio = String(req.body.aspectRatio || req.body.aspect || "").trim();
     const prompt = assertValidPrompt(req.body.prompt);
     const requestId = String(req.body.requestId || "").trim().slice(0, 80) || `server-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const creditsUsed = calculateRequiredCredits(type, quality, duration || 5);
@@ -455,6 +526,8 @@ router.post(
       creditsUsed,
       finalPrompt: prompt,
       requestId,
+      style,
+      aspectRatio,
     });
 
     let result;
@@ -500,11 +573,13 @@ router.post(
         duration,
         quality,
         style,
+        aspectRatio,
         creditsUsed,
         resultUrl: result.resultUrl,
         provider: result.provider,
         model: result.model,
         finalPrompt: result.finalPrompt || prompt,
+        seed: result.seed,
       });
     } catch (error) {
       if (error.statusCode !== 409) {
@@ -538,6 +613,7 @@ router.post(
       type,
       quality,
       style,
+      aspectRatio,
       duration,
       provider: result.provider,
       model: result.model,

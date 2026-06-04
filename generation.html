@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>نتيجة الإنشاء | PixiGen</title>
+    <meta name="description" content="عرض نتيجة الإنشاء وتفاصيلها داخل لوحة PixiGen." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css?v=20260604-pixigen-v5" />
+  </head>
+  <body class="user-dashboard-v3 generation-detail-v4" data-page="generation-detail-v4">
+    <aside class="udv3-sidebar" aria-label="قائمة لوحة المستخدم">
+      <a class="udv3-brand" href="/dashboard" aria-label="PixiGen">
+        <span class="udv3-brand-mark">✧</span>
+        <strong>PixiGen</strong>
+      </a>
+
+      <nav class="udv3-nav">
+        <a class="is-active" href="/dashboard">
+          <span>⌂</span>
+          لوحة التحكم
+        </a>
+
+        <p>إنشاء جديد</p>
+        <a href="/dashboard#create" data-type-shortcut="image">
+          <span>▧</span>
+          صورة
+        </a>
+        <a href="/dashboard#create" data-type-shortcut="video">
+          <span>▣</span>
+          فيديو
+        </a>
+
+        <p>المحتوى</p>
+        <a href="/dashboard#recent">
+          <span>▤</span>
+          مشاريعي
+        </a>
+        <a href="/dashboard#recent">
+          <span>♡</span>
+          المفضلة
+        </a>
+        <a href="/dashboard#tips">
+          <span>◇</span>
+          النماذج
+        </a>
+        <a href="/dashboard#tips">
+          <span>▦</span>
+          القوالب
+        </a>
+
+        <p>الحساب</p>
+        <a href="/dashboard#balance">
+          <span>▱</span>
+          باقتي
+        </a>
+        <a href="/dashboard#transactions">
+          <span>▥</span>
+          معاملاتي
+        </a>
+        <a href="/dashboard#settings">
+          <span>⚙</span>
+          إعدادات الحساب
+        </a>
+      </nav>
+
+      <section class="udv3-support-card">
+        <strong>مركز الدعم</strong>
+        <span>تحتاج إلى مساعدة؟</span>
+        <a href="mailto:support@advancedpro.com">تواصل معنا</a>
+      </section>
+    </aside>
+
+    <div class="udv3-app">
+      <header class="udv3-topbar">
+        <div class="udv3-profile">
+          <img
+            src="https://api.dicebear.com/8.x/avataaars/svg?seed=advanced-pro"
+            alt=""
+            data-customer-avatar
+          />
+          <div>
+            <strong data-customer-name>أحمد العتيبي</strong>
+            <span data-plan-badge>VIP</span>
+          </div>
+        </div>
+
+        <button class="udv3-icon-button" type="button" aria-label="التنبيهات">♧</button>
+
+        <div class="udv3-xp-pill" aria-label="رصيدك الحالي">
+          <span>◉</span>
+          <strong data-total-xp>1,095 XP</strong>
+        </div>
+
+        <a class="udv3-add-button" href="/dashboard#create" aria-label="إنشاء جديد">＋</a>
+      </header>
+
+      <div class="udv3-workspace">
+        <main class="udv3-main">
+          <a class="udv3-back-link" href="/dashboard">العودة للوحة التحكم ←</a>
+
+          <section class="udv3-success-alert" data-success-alert>
+            <span>✓</span>
+            <div>
+              <strong data-success-title>تم إنشاء الصورة بنجاح!</strong>
+              <p data-success-copy>تم خصم 10 XP من رصيدك.</p>
+            </div>
+            <a href="/dashboard#create">إنشاء جديد ✨</a>
+          </section>
+
+          <section class="udv3-result-page-card">
+            <aside class="udv3-result-details">
+              <h2 data-details-title>تفاصيل الصورة</h2>
+              <dl>
+                <div>
+                  <dt>النمط</dt>
+                  <dd data-detail-style>واقعي</dd>
+                </div>
+                <div>
+                  <dt>المقاس</dt>
+                  <dd data-detail-aspect>16:9</dd>
+                </div>
+                <div>
+                  <dt>الجودة</dt>
+                  <dd data-detail-quality>عالية الدقة</dd>
+                </div>
+                <div>
+                  <dt>تم الإنشاء</dt>
+                  <dd data-detail-created>منذ أقل من دقيقة</dd>
+                </div>
+                <div>
+                  <dt>الموديل</dt>
+                  <dd data-detail-model>PixiGen Pro v2</dd>
+                </div>
+                <div>
+                  <dt>التكلفة</dt>
+                  <dd data-detail-cost>10 XP</dd>
+                </div>
+              </dl>
+              <h3>الوصف المستخدم</h3>
+              <p data-detail-prompt>سيظهر وصفك هنا.</p>
+            </aside>
+
+            <article class="udv3-result-hero">
+              <div class="udv3-result-badge" data-result-badge>عالية الدقة</div>
+              <button class="udv3-result-menu" type="button" aria-label="خيارات">⋮</button>
+              <div class="udv3-result-media" data-result-media>
+                <div class="udv3-result-placeholder">جاري تحميل النتيجة...</div>
+              </div>
+              <div class="udv3-result-actions">
+                <a href="#" data-download-result>تحميل الصورة</a>
+                <button type="button" data-share-result>مشاركة</button>
+                <button type="button" data-copy-result>نسخ الرابط</button>
+                <a href="/dashboard#create" data-regenerate>إعادة إنشاء</a>
+                <button class="is-danger" type="button" data-delete-result>حذف</button>
+              </div>
+            </article>
+          </section>
+
+          <section class="udv3-recent-card" id="recent">
+            <div class="udv3-card-header">
+              <h2>أحدث إبداعاتك</h2>
+              <a href="/dashboard#recent">عرض الكل</a>
+            </div>
+            <div class="udv3-creations-grid" data-recent-grid></div>
+          </section>
+        </main>
+
+        <aside class="udv3-widgets">
+          <section class="udv3-balance-widget" id="balance">
+            <div>
+              <span>رصيدي الحالي</span>
+              <strong data-widget-xp>1,095 XP</strong>
+              <p data-expiry-text>ينتهي في 25 أغسطس 2026</p>
+            </div>
+            <div class="udv3-stack-icon" aria-hidden="true">◉</div>
+            <div class="udv3-progress">
+              <i data-xp-progress></i>
+            </div>
+            <small data-days-left>90 يوم متبقية</small>
+            <a href="/dashboard#balance">ترقية الباقة ✨</a>
+          </section>
+
+          <section class="udv3-usage-widget">
+            <h2>استهلاكك سريع</h2>
+            <div class="udv3-meter-row">
+              <span class="udv3-ring" data-image-ring>▧</span>
+              <p>صور <b data-images-count>18 / 240</b></p>
+            </div>
+            <div class="udv3-meter-row">
+              <span class="udv3-ring is-orange" data-video-ring>▣</span>
+              <p>فيديو <b data-videos-count>4 / 24</b></p>
+            </div>
+            <a href="/dashboard#recent">عرض كل الإحصائيات</a>
+          </section>
+
+          <section class="udv3-transactions-widget" id="transactions">
+            <h2>معاملات حديثة</h2>
+            <div data-transactions-list></div>
+            <a href="/dashboard#transactions">عرض كل المعاملات</a>
+          </section>
+        </aside>
+      </div>
+    </div>
+
+    <div class="udv3-toast" data-toast hidden></div>
+
+    <script src="/config.js"></script>
+    <script src="/generation-page.js?v=20260604-pixigen-v5"></script>
+  </body>
+</html>
