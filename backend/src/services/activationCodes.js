@@ -375,6 +375,13 @@ function buildCreateOrUpdatePayload(input, { existing = null } = {}) {
   const ownerName = String(input.ownerName || existing?.ownerName || "").trim() || null;
   const notes = String(input.notes || existing?.notes || "").trim() || "";
   const isActive = normalizeBoolean(input.isActive ?? existing?.isActive, true);
+  const balance = normalizeInteger(
+    input.balance ??
+      input.xpBalance ??
+      existing?.balance ??
+      calculateDefaultKeyCredits({ imageLimit, videoLimit }),
+    "ط§ظ„ط±طµظٹط¯"
+  );
 
   return {
     code,
@@ -382,7 +389,7 @@ function buildCreateOrUpdatePayload(input, { existing = null } = {}) {
     ownerName,
     imageLimit,
     videoLimit,
-    balance: calculateDefaultKeyCredits({ imageLimit, videoLimit }),
+    balance,
     isActive,
     isRenewable,
     renewalType,

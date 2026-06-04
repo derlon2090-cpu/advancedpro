@@ -181,11 +181,17 @@
 
   function remainingImages() {
     const key = state.key || {};
+    if (Number(key.creditsRemaining || key.balance || 0) > 0) {
+      return Number.MAX_SAFE_INTEGER;
+    }
     return Number(key.imagesRemaining ?? Math.max(0, Number(key.imagesLimit || 0) - Number(key.imagesUsed || 0)));
   }
 
   function remainingVideos() {
     const key = state.key || {};
+    if (Number(key.creditsRemaining || key.balance || 0) > 0) {
+      return Number.MAX_SAFE_INTEGER;
+    }
     return Number(key.videosRemaining ?? Math.max(0, Number(key.videosLimit || 0) - Number(key.videosUsed || 0)));
   }
 
@@ -196,10 +202,10 @@
 
   function calculateCredits() {
     if (state.type === "image") {
-      return { normal: 10, high: 20, ultra: 40 }[state.quality] || 20;
+      return { normal: 5, high: 10, ultra: 20 }[state.quality] || 10;
     }
     const base = { 5: 50, 8: 80 }[state.duration] || 50;
-    const multiplier = { normal: 1, high: 3, ultra: 5 }[state.quality] || 3;
+    const multiplier = { normal: 1, high: 2, ultra: 4 }[state.quality] || 2;
     return base * multiplier;
   }
 
@@ -210,7 +216,7 @@
       el.textContent = formatNumber(credit);
     });
     const progress = document.querySelector("[data-credit-progress]");
-    if (progress) progress.style.width = `${Math.max(10, Math.min(100, Math.round((credit / 3000) * 100)))}%`;
+    if (progress) progress.style.width = `${Math.max(10, Math.min(100, Math.round((credit / 5000) * 100)))}%`;
     setText("[data-key-code]", key.codeMasked || key.code || "APRO-XXXX-XXXX-XXXX");
     setText("[data-key-expires]", formatDate(key.expiresAt) || "2026-05-25");
     setText("[data-customer-name]", `مرحبًا، ${key.customerName || "محمد"}`);
@@ -332,7 +338,7 @@
           </div>
 
           <div class="neo-cost-line">
-            <span>التكلفة المتوقعة: <b data-cost>${formatNumber(calculateCredits())}</b> رصيد</span>
+            <span>التكلفة المتوقعة: <b data-cost>${formatNumber(calculateCredits())}</b> XP</span>
             <small>سيتم خصمها عند نجاح التوليد فقط</small>
           </div>
 
@@ -419,7 +425,7 @@
                 <div>
                   <span>${item.type === "video" ? "فيديو" : "صورة"}</span>
                   <strong>${escapeHtml(item.prompt)}</strong>
-                  <small>${formatDate(item.createdAt)} · ${escapeHtml(item.quality)} · ${formatNumber(item.creditsUsed)} رصيد</small>
+                  <small>${formatDate(item.createdAt)} · ${escapeHtml(item.quality)} · ${formatNumber(item.creditsUsed)} XP</small>
                 </div>
                 <div class="neo-result-actions">
                   <a href="${escapeHtml(item.resultUrl)}" target="_blank" rel="noreferrer">تحميل</a>
@@ -466,9 +472,9 @@
   function renderModels() {
     return `
       <section class="neo-model-grid">
-        ${modelCard("عادي", "سريع واقتصادي", "سرعة عالية", "جودة جيدة", "10 رصيد للصورة")}
-        ${modelCard("عالي", "توازن بين الجودة والسعر", "سرعة متوسطة", "جودة عالية", "20 رصيد للصورة")}
-        ${modelCard("فائق", "أعلى جودة للصور والفيديوهات", "أبطأ قليلًا", "جودة فائقة", "40 رصيد للصورة")}
+        ${modelCard("عادي", "سريع واقتصادي", "سرعة عالية", "جودة جيدة", "5 XP للصورة")}
+        ${modelCard("عالي", "توازن بين الجودة والسعر", "سرعة متوسطة", "جودة عالية", "10 XP للصورة")}
+        ${modelCard("فائق", "أعلى جودة للصور والفيديوهات", "أبطأ قليلًا", "جودة فائقة", "20 XP للصورة")}
       </section>
     `;
   }
@@ -620,8 +626,14 @@
     const form = event.currentTarget;
     const prompt = String(form.querySelector("[data-prompt]")?.value || "").trim();
     const message = form.querySelector("[data-form-message]");
+    const requiredCredits = calculateCredits();
     if (!prompt || prompt.length < 3) {
       showMessage(message, "اكتب وصفًا واضحًا أولًا", "error");
+      return;
+    }
+
+    if (totalCredits() < requiredCredits) {
+      showMessage(message, "رصيدك غير كافٍ لإتمام هذا الطلب.", "error");
       return;
     }
 

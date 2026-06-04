@@ -371,7 +371,8 @@ const DEFAULT_KEY_PLANS = [
     imagesLimit: 5,
     videosLimit: 5,
     validityDays: 30,
-    price: 59,
+    price: 19,
+    xpBalance: 300,
     isActive: true,
   },
   {
@@ -381,7 +382,8 @@ const DEFAULT_KEY_PLANS = [
     imagesLimit: 25,
     videosLimit: 15,
     validityDays: 90,
-    price: 149,
+    price: 49,
+    xpBalance: 1200,
     isActive: true,
   },
   {
@@ -391,7 +393,8 @@ const DEFAULT_KEY_PLANS = [
     imagesLimit: 100,
     videosLimit: 50,
     validityDays: 180,
-    price: 299,
+    price: 89,
+    xpBalance: 5000,
     isActive: true,
   },
   {
@@ -405,6 +408,37 @@ const DEFAULT_KEY_PLANS = [
     isActive: true,
   },
 ];
+
+function getPlanXpProfile(plan = {}) {
+  const id = String(plan.id || "").toLowerCase();
+  const name = String(plan.name || "").toLowerCase();
+
+  if (id.includes("starter") || name.includes("انطلاقة") || name.includes("starter")) {
+    return { xpBalance: 300, price: 19 };
+  }
+
+  if (id.includes("creator") || name.includes("إبداع") || name.includes("ابداع") || name.includes("creator")) {
+    return { xpBalance: 1200, price: 49 };
+  }
+
+  if (id.includes("pro") || name.includes("تميز") || name.includes("تميّز")) {
+    return { xpBalance: 5000, price: 89 };
+  }
+
+  return null;
+}
+
+function getPlanXpBalance(plan) {
+  const profile = getPlanXpProfile(plan);
+  if (profile) {
+    return profile.xpBalance;
+  }
+
+  return calculateDefaultKeyCredits({
+    imageLimit: Number(plan.imagesLimit || 0),
+    videoLimit: Number(plan.videosLimit || 0),
+  });
+}
 
 function generateKeyCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -427,6 +461,7 @@ async function generateUniqueKeyCode() {
 }
 
 function serializeKeyPlan(plan) {
+  const profile = getPlanXpProfile(plan);
   return {
     id: plan.id,
     name: plan.name,
@@ -434,7 +469,8 @@ function serializeKeyPlan(plan) {
     imagesLimit: Number(plan.imagesLimit ?? plan.imageQuota ?? 0),
     videosLimit: Number(plan.videosLimit ?? plan.videoQuota ?? 0),
     validityDays: Number(plan.validityDays || 30),
-    price: Number(plan.price || 0),
+    price: Number(profile?.price ?? plan.price ?? 0),
+    xpBalance: Number(profile?.xpBalance ?? plan.xpBalance ?? 0),
     isActive: plan.isActive !== false,
     createdAt: plan.createdAt || null,
     updatedAt: plan.updatedAt || null,
@@ -974,6 +1010,7 @@ router.post(
       code = await generateUniqueKeyCode();
     }
 
+    const xpBalance = getPlanXpBalance(plan);
     const created = await prisma.activationCode.create({
       data: {
         code,
@@ -983,10 +1020,7 @@ router.post(
         videoLimit: Number(plan.videosLimit || 0),
         imageUsed: 0,
         videoUsed: 0,
-        balance: calculateDefaultKeyCredits({
-          imageLimit: Number(plan.imagesLimit || 0),
-          videoLimit: Number(plan.videosLimit || 0),
-        }),
+        balance: xpBalance,
         isActive: true,
         isUsed: false,
         isRenewable: false,
@@ -1008,6 +1042,8 @@ router.post(
         planName: plan.name,
         imagesLimit: created.imageLimit,
         videosLimit: created.videoLimit,
+        balance: created.balance,
+        xpBalance,
         imagesUsed: 0,
         videosUsed: 0,
         status: "unused",

@@ -56,6 +56,10 @@ function getKeyId(req) {
 }
 
 function getRemainingSlots(key, type) {
+  if (Number(key.balance || 0) > 0) {
+    return Number.MAX_SAFE_INTEGER;
+  }
+
   const limit = type === "video" ? Number(key.videoLimit || 0) : Number(key.imageLimit || 0);
   const used = type === "video" ? Number(key.videoUsed || 0) : Number(key.imageUsed || 0);
   return Math.max(limit - used, 0);

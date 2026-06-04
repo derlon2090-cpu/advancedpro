@@ -1,7 +1,7 @@
 const IMAGE_CREDIT_COST = {
-  normal: 10,
-  high: 20,
-  ultra: 40,
+  normal: 5,
+  high: 10,
+  ultra: 20,
 };
 
 const VIDEO_BASE_CREDIT_COST = {
@@ -11,8 +11,8 @@ const VIDEO_BASE_CREDIT_COST = {
 
 const VIDEO_QUALITY_MULTIPLIER = {
   normal: 1,
-  high: 3,
-  ultra: 5,
+  high: 2,
+  ultra: 4,
 };
 
 export const SUPPORTED_VIDEO_DURATIONS = [5, 8];
