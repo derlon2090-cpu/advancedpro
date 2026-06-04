@@ -12746,6 +12746,59 @@ html[data-theme="dark"] .create-chat-bubble__state {
   margin: 0;
 }
 
+/* PixiGenl topbar/logo refinements */
+.user-dashboard-v3 .udv3-brand {
+  direction: ltr;
+  justify-content: flex-start;
+  gap: 12px;
+  padding-bottom: 26px;
+}
+
+.user-dashboard-v3 .udv3-brand-mark {
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  color: #7c3cff;
+  background: none;
+  box-shadow: none;
+  font-size: 43px;
+  line-height: 1;
+  text-shadow: 0 14px 24px rgba(109, 53, 255, 0.22);
+}
+
+.user-dashboard-v3 .udv3-brand strong {
+  color: #050816;
+  font-size: 34px;
+  font-weight: 900;
+  letter-spacing: -0.045em;
+}
+
+.user-dashboard-v3 .udv3-topbar {
+  direction: ltr;
+  justify-content: flex-start;
+}
+
+.user-dashboard-v3 .udv3-profile {
+  margin: 0;
+  direction: rtl;
+  order: 1;
+}
+
+.user-dashboard-v3 .udv3-icon-button {
+  order: 2;
+}
+
+.user-dashboard-v3 .udv3-xp-pill {
+  order: 3;
+}
+
+.user-dashboard-v3 .udv3-add-button {
+  order: 4;
+  display: inline-grid;
+  place-items: center;
+  text-decoration: none;
+}
+
 @media (max-width: 1200px) {
   .admin-login-v2__page {
     padding: 22px;

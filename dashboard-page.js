@@ -338,7 +338,7 @@
     const mediaUrl = item.thumbnailUrl || item.resultUrl;
     const prompt = escapeHtml(item.prompt);
     const meta = `${qualityLabel(item.quality)} · ${relativeTime(item.createdAt)}`;
-    const targetUrl = `/generations/${encodeURIComponent(item.id)}`;
+    const targetUrl = `/generation.html?id=${encodeURIComponent(item.id)}`;
     const media =
       item.type === "video"
         ? `<video src="${escapeHtml(mediaUrl)}" muted playsinline preload="metadata"></video>`
@@ -486,7 +486,7 @@
       renderAll();
       showToast(`تم الإنشاء بنجاح وتم خصم ${formatNumber(generation.creditsUsed)} XP.`);
       await refreshKey({ silent: true });
-      window.location.href = `/generations/${encodeURIComponent(generation.id)}`;
+      window.location.href = `/generation.html?id=${encodeURIComponent(generation.id)}`;
     } catch (error) {
       if (error.name === "AbortError") {
         setMessage("تم إلغاء الإنشاء. لم يتم خصم أي رصيد.", "info");
