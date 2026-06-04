@@ -1,132 +1,140 @@
 (function () {
   const API_BASE_URL = window.AdvancedProConfig?.apiBaseUrl || "";
-  const outlet = document.querySelector("#neoPageOutlet");
+
   const state = {
     key: null,
-    route: "/dashboard",
     type: "image",
     quality: "high",
-    duration: 5,
     style: "realistic",
     aspect: "16:9",
+    duration: 5,
     loading: false,
     activeRequestId: null,
-    currentResult: null,
-    results: [
-      {
-        id: "sample-1",
-        type: "image",
-        prompt: "رجل أعمال وسيم يرتدي بدلة داخل مكتب حديث",
-        quality: "high",
-        creditsUsed: 20,
-        createdAt: "2026-06-03",
-        favorite: true,
-        resultUrl:
-          "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=900&q=80",
-      },
-      {
-        id: "sample-2",
-        type: "image",
-        prompt: "سيارة مستقبلية في شارع مضاء",
-        quality: "high",
-        creditsUsed: 20,
-        createdAt: "2026-06-02",
-        favorite: false,
-        resultUrl:
-          "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=900&q=80",
-      },
-      {
-        id: "sample-3",
-        type: "image",
-        prompt: "واجهة منزل حديثة بإضاءة مسائية",
-        quality: "normal",
-        creditsUsed: 10,
-        createdAt: "2026-06-01",
-        favorite: false,
-        resultUrl:
-          "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=80",
-      },
-      {
-        id: "sample-4",
-        type: "image",
-        prompt: "شخصية أنمي بجودة عالية",
-        quality: "ultra",
-        creditsUsed: 40,
-        createdAt: "2026-05-30",
-        favorite: true,
-        resultUrl:
-          "https://images.unsplash.com/photo-1635805737707-575885ab0820?auto=format&fit=crop&w=900&q=80",
-      },
-    ],
+    latestResultUrl: "",
+    results: [],
   };
 
-  // Never show bundled demo generations as real user results.
-  state.results = [];
+  const fallbackResults = [
+    {
+      id: "demo-car",
+      type: "video",
+      prompt: "سيارة مستقبلية في شارع مضاء",
+      quality: "high",
+      creditsUsed: 80,
+      createdAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+      resultUrl:
+        "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=900&q=80",
+    },
+    {
+      id: "demo-villa",
+      type: "image",
+      prompt: "منزل حديث فاخر",
+      quality: "high",
+      creditsUsed: 10,
+      createdAt: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+      resultUrl:
+        "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=80",
+    },
+    {
+      id: "demo-city",
+      type: "image",
+      prompt: "مدينة مستقبلية مضيئة",
+      quality: "normal",
+      creditsUsed: 5,
+      createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+      resultUrl:
+        "https://images.unsplash.com/photo-1519608487953-e999c86e7455?auto=format&fit=crop&w=900&q=80",
+    },
+    {
+      id: "demo-robot",
+      type: "image",
+      prompt: "روبوت أصفر وسط مدينة",
+      quality: "high",
+      creditsUsed: 10,
+      createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+      resultUrl:
+        "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=900&q=80",
+    },
+    {
+      id: "demo-room",
+      type: "image",
+      prompt: "غرفة معيشة حديثة",
+      quality: "high",
+      creditsUsed: 10,
+      createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+      resultUrl:
+        "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=900&q=80",
+    },
+  ];
 
-  const routes = {
-    "/dashboard": {
-      title: "الرئيسية",
-      description: "ملخص سريع لرصيدك ومفتاحك وآخر نتائجك.",
-      icon: "⌂",
-      render: renderHome,
-    },
-    "/create": {
-      title: "إنشاء جديد",
-      description: "اكتب وصفك واختر الإعدادات المناسبة وابدأ الإبداع.",
-      icon: "✦",
-      render: renderCreate,
-    },
-    "/results": {
-      title: "نتائجك",
-      description: "كل الصور والفيديوهات التي أنشأتها في مكان واحد.",
-      icon: "▧",
-      render: () => renderResults({ onlyFavorites: false }),
-    },
-    "/projects": {
-      title: "مشاريعي",
-      description: "نظّم نتائجك داخل مشاريع ومجلدات واضحة.",
-      icon: "□",
-      render: renderProjects,
-    },
-    "/favorites": {
-      title: "المفضلة",
-      description: "العناصر التي حفظتها للرجوع إليها بسرعة.",
-      icon: "♡",
-      render: () => renderResults({ onlyFavorites: true }),
-    },
-    "/models": {
-      title: "الموديلات",
-      description: "اختر مستوى الجودة المناسب حسب السرعة والتكلفة.",
-      icon: "◇",
-      render: renderModels,
-    },
-    "/billing": {
-      title: "الاشتراك والفواتير",
-      description: "إدارة رصيدك وباقتك وسجل العمليات.",
-      icon: "▣",
-      render: renderBilling,
-    },
-    "/support": {
-      title: "الدعم والمساعدة",
-      description: "إجابات سريعة وتذاكر دعم عند الحاجة.",
-      icon: "☊",
-      render: renderSupport,
-    },
-    "/settings": {
-      title: "الإعدادات",
-      description: "تحكم بتجربة الحساب والإعدادات الافتراضية.",
-      icon: "⚙",
-      render: renderSettings,
-    },
-  };
+  const $ = (selector, root = document) => root.querySelector(selector);
+  const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
-  function normalizeRoute(pathname) {
-    if (pathname === "/" || pathname === "/dashboard.html") return "/dashboard";
-    return routes[pathname] ? pathname : "/dashboard";
+  function apiUrl(path) {
+    return `${API_BASE_URL}${path}`;
+  }
+
+  async function requestJson(path, options = {}) {
+    const response = await fetch(apiUrl(path), {
+      credentials: "include",
+      cache: "no-store",
+      ...options,
+      headers: {
+        Accept: "application/json",
+        ...(options.body ? { "Content-Type": "application/json" } : {}),
+        ...(options.headers || {}),
+      },
+    });
+
+    const text = await response.text();
+    let data = {};
+    if (text) {
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = { message: text };
+      }
+    }
+
+    if (!response.ok) {
+      const error = new Error(data.message || data.error || "تعذر تنفيذ الطلب");
+      error.status = response.status;
+      error.data = data;
+      throw error;
+    }
+
+    return data;
+  }
+
+  function formatNumber(value) {
+    return new Intl.NumberFormat("en-US").format(Number(value || 0));
+  }
+
+  function formatDate(value) {
+    if (!value) return "غير محدد";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "غير محدد";
+    return new Intl.DateTimeFormat("ar-SA", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    }).format(date);
+  }
+
+  function relativeTime(value) {
+    if (!value) return "الآن";
+    const date = new Date(value);
+    const diff = Math.max(0, Date.now() - date.getTime());
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "الآن";
+    if (mins < 60) return `منذ ${mins} دقائق`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `منذ ${hours} ساعة`;
+    return `منذ ${Math.floor(hours / 24)} يوم`;
   }
 
   function escapeHtml(value) {
-    return String(value ?? "")
+    return String(value || "")
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
@@ -134,795 +142,455 @@
       .replace(/'/g, "&#039;");
   }
 
-  function formatNumber(value) {
-    return new Intl.NumberFormat("ar-SA").format(Number(value || 0));
+  function keyCredits() {
+    const key = state.key || {};
+    return Number(
+      key.creditsRemaining ??
+        key.balanceRemaining ??
+        key.balance ??
+        key.credits ??
+        key.xpRemaining ??
+        key.xp ??
+        1095
+    );
   }
 
-  function formatDate(value) {
-    if (!value) return "--";
+  function keyTotalCredits() {
+    const key = state.key || {};
+    return Number(key.creditsLimit ?? key.balanceLimit ?? key.totalCredits ?? keyCredits() ?? 1095);
+  }
+
+  function calculateCredits(type = state.type, quality = state.quality, duration = state.duration) {
+    if (type === "image") {
+      return { normal: 5, high: 10, ultra: 20 }[quality] || 10;
+    }
+
+    const table = {
+      5: { normal: 50, high: 100, ultra: 200 },
+      8: { normal: 80, high: 160, ultra: 320 },
+    };
+
+    return table[Number(duration)]?.[quality] || 50;
+  }
+
+  function qualityLabel(value = state.quality) {
+    return { normal: "عادية", high: "عالية", ultra: "فائقة" }[value] || "عالية";
+  }
+
+  function typeLabel(value = state.type) {
+    return value === "video" ? "فيديو" : "صورة";
+  }
+
+  function updateCost() {
+    const cost = calculateCredits();
+    const suffix = state.type === "video" ? `فيديو ${state.duration} ثواني` : "صورة";
+    $("[data-cost-value]").textContent = `${formatNumber(cost)} XP`;
+    $("[data-cost-label]").textContent = `${suffix} ${qualityLabel()}`;
+  }
+
+  function setMessage(message, kind = "info") {
+    const node = $("[data-form-message]");
+    node.textContent = message || "";
+    node.dataset.kind = kind;
+  }
+
+  function showToast(message, kind = "success") {
+    const toast = $("[data-toast]");
+    toast.textContent = message;
+    toast.dataset.kind = kind;
+    toast.hidden = false;
+    clearTimeout(showToast.timer);
+    showToast.timer = setTimeout(() => {
+      toast.hidden = true;
+    }, 3500);
+  }
+
+  function normalizeKey(payload) {
+    const key = payload?.key || payload?.data || payload || {};
+    return {
+      ...key,
+      customerName: key.customerName || key.customer_name || key.ownerName || key.name || "أحمد العتيبي",
+      customerEmail: key.customerEmail || key.customer_email || key.email || "",
+      planName: key.planName || key.plan_name || key.plan || "VIP",
+      status: key.status || "active",
+      codeMasked: key.codeMasked || key.maskedCode || key.code || "APRO-XXXX-YYYY",
+      expiresAt: key.expiresAt || key.expires_at,
+    };
+  }
+
+  function normalizeGeneration(item) {
+    return {
+      id: item.id || item.generationId || crypto.randomUUID(),
+      requestId: item.requestId,
+      type: item.type || "image",
+      prompt: item.userPrompt || item.prompt || item.description || "نتيجة جديدة",
+      quality: item.quality || "high",
+      style: item.style || "realistic",
+      creditsUsed: Number(item.creditsUsed ?? item.credits_used ?? item.cost ?? calculateCredits()),
+      createdAt: item.createdAt || item.created_at || new Date().toISOString(),
+      resultUrl: item.resultUrl || item.url || item.outputUrl || item.imageUrl || item.videoUrl || "",
+      thumbnailUrl: item.thumbnailUrl || item.resultUrl || item.url || item.outputUrl || "",
+    };
+  }
+
+  function updateKeyUi() {
+    const key = state.key || {};
+    const remaining = keyCredits();
+    const total = Math.max(keyTotalCredits(), remaining, 1);
+    const percent = Math.max(4, Math.min(100, Math.round((remaining / total) * 100)));
+    const name = key.customerName || "أحمد العتيبي";
+    const seed = encodeURIComponent(name);
+
+    $("[data-customer-name]").textContent = name;
+    $("[data-customer-avatar]").src =
+      key.avatarUrl || `https://api.dicebear.com/8.x/avataaars/svg?seed=${seed}`;
+    $("[data-plan-badge]").textContent = key.planName || "VIP";
+    $("[data-total-xp]").textContent = `${formatNumber(remaining)} XP`;
+    $("[data-widget-xp]").textContent = `${formatNumber(remaining)} XP`;
+    $("[data-xp-progress]").style.width = `${percent}%`;
+    $("[data-expiry-text]").textContent = `ينتهي في ${formatDate(key.expiresAt)}`;
+    $("[data-days-left]").textContent = daysLeftText(key.expiresAt);
+  }
+
+  function daysLeftText(value) {
+    if (!value) return "صلاحية مفتوحة";
     const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "--";
-    return date.toLocaleDateString("ar-SA", { year: "numeric", month: "2-digit", day: "2-digit" });
+    if (Number.isNaN(date.getTime())) return "صلاحية مفتوحة";
+    const days = Math.ceil((date.getTime() - Date.now()) / 86400000);
+    if (days <= 0) return "منتهي";
+    return `${days} يوم متبقية`;
   }
 
-  function cacheBustUrl(url, requestId) {
-    const raw = String(url || "");
-    if (!raw || /^(data:|blob:)/i.test(raw) || !requestId) return raw;
-
-    try {
-      const parsed = new URL(raw, window.location.href);
-      parsed.searchParams.set("v", requestId);
-      return parsed.toString();
-    } catch (error) {
-      const separator = raw.includes("?") ? "&" : "?";
-      return `${raw}${separator}v=${encodeURIComponent(requestId)}`;
-    }
-  }
-
-  async function requestJson(path, options = {}) {
-    const response = await fetch(`${API_BASE_URL}${path}`, {
-      credentials: "include",
-      cache: "no-store",
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        "Cache-Control": "no-store",
-        ...(options.headers || {}),
-      },
+  function renderRecent() {
+    const grid = $("[data-recent-grid]");
+    const list = (state.results.length ? state.results : fallbackResults).slice(0, 5);
+    grid.innerHTML = list.map(renderCreationCard).join("");
+    $$("[data-open-result]", grid).forEach((button) => {
+      button.addEventListener("click", () => {
+        const item = list.find((result) => String(result.id) === button.dataset.openResult);
+        if (item) openResult(item);
+      });
     });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      const error = new Error(payload.message || "تعذر تنفيذ الطلب.");
-      error.status = response.status;
-      throw error;
-    }
-    return payload;
   }
 
-  function remainingImages() {
-    const key = state.key || {};
-    if (Number(key.creditsRemaining || key.balance || 0) > 0) {
-      return Number.MAX_SAFE_INTEGER;
-    }
-    return Number(key.imagesRemaining ?? Math.max(0, Number(key.imagesLimit || 0) - Number(key.imagesUsed || 0)));
-  }
+  function renderCreationCard(item) {
+    const mediaUrl = item.thumbnailUrl || item.resultUrl;
+    const prompt = escapeHtml(item.prompt);
+    const meta = `${qualityLabel(item.quality)} · ${relativeTime(item.createdAt)}`;
+    const media =
+      item.type === "video"
+        ? `<video src="${escapeHtml(mediaUrl)}" muted playsinline preload="metadata"></video>`
+        : `<img src="${escapeHtml(mediaUrl)}" alt="${prompt}" loading="lazy" />`;
 
-  function remainingVideos() {
-    const key = state.key || {};
-    if (Number(key.creditsRemaining || key.balance || 0) > 0) {
-      return Number.MAX_SAFE_INTEGER;
-    }
-    return Number(key.videosRemaining ?? Math.max(0, Number(key.videosLimit || 0) - Number(key.videosUsed || 0)));
-  }
-
-  function totalCredits() {
-    const key = state.key || {};
-    return Number(key.creditsRemaining || key.balance || remainingImages() * 10 + remainingVideos() * 50 || 2450);
-  }
-
-  function calculateCredits() {
-    if (state.type === "image") {
-      return { normal: 5, high: 10, ultra: 20 }[state.quality] || 10;
-    }
-    const base = { 5: 50, 8: 80 }[state.duration] || 50;
-    const multiplier = { normal: 1, high: 2, ultra: 4 }[state.quality] || 2;
-    return base * multiplier;
-  }
-
-  function updateShellData() {
-    const key = state.key || {};
-    const credit = totalCredits();
-    document.querySelectorAll("[data-total-credit], [data-total-credit-side]").forEach((el) => {
-      el.textContent = formatNumber(credit);
-    });
-    const progress = document.querySelector("[data-credit-progress]");
-    if (progress) progress.style.width = `${Math.max(10, Math.min(100, Math.round((credit / 5000) * 100)))}%`;
-    setText("[data-key-code]", key.codeMasked || key.code || "APRO-XXXX-XXXX-XXXX");
-    setText("[data-key-expires]", formatDate(key.expiresAt) || "2026-05-25");
-    setText("[data-customer-name]", `مرحبًا، ${key.customerName || key.ownerName || "محمد"}`);
-    setText("[data-key-status-text]", key.status === "active" ? "عضو نشط" : "عضو نشط");
-    const avatar = document.querySelector("[data-customer-avatar]");
-    if (avatar) {
-      const customAvatar = key.customerAvatar || key.avatarUrl || key.imageUrl;
-      if (customAvatar) {
-        avatar.src = customAvatar;
-      } else {
-        const name = key.customerName || key.ownerName || key.customerEmail || "A";
-        avatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=6D35FF&color=fff&bold=true`;
-      }
-      avatar.alt = key.customerName || key.ownerName || "صورة المستخدم";
-    }
-  }
-
-  function setText(selector, value) {
-    const element = document.querySelector(selector);
-    if (element) element.textContent = value;
-  }
-
-  function pageHeader(route) {
     return `
-      <div class="neo-page-header">
+      <article class="udv3-creation-card">
+        <button type="button" data-open-result="${escapeHtml(item.id)}" aria-label="عرض النتيجة">
+          <span class="udv3-creation-media">${media}</span>
+          <b>${typeLabel(item.type)}</b>
+        </button>
+        <h3>${prompt}</h3>
+        <p>${meta}</p>
         <div>
-          <h1>${escapeHtml(route.title)}</h1>
-          <p>${escapeHtml(route.description)}</p>
+          <button type="button" data-copy-url="${escapeHtml(item.resultUrl)}">نسخ</button>
+          <a href="${escapeHtml(item.resultUrl)}" download>تحميل</a>
+          <span>${formatNumber(item.creditsUsed)} XP</span>
         </div>
-        <span>${route.icon}</span>
-      </div>
-    `;
-  }
-
-  function renderPage() {
-    const route = routes[state.route] || routes["/dashboard"];
-    document.title = `${route.title} | Advanced Pro`;
-    document.querySelectorAll(".neo-user-nav a").forEach((link) => {
-      link.classList.toggle("is-active", link.dataset.route === state.route);
-    });
-    if (!outlet) return;
-    try {
-      const compactRoutes = ["/dashboard", "/create"];
-      outlet.innerHTML = `${compactRoutes.includes(state.route) ? "" : pageHeader(route)}${route.render()}`;
-      bindPageEvents();
-    } catch (error) {
-      console.error("DASHBOARD_RENDER_ERROR", error);
-      outlet.innerHTML = `
-        <div class="neo-empty-state">
-          <span>!</span>
-          <strong>تعذر تحميل هذه الصفحة.</strong>
-          <p>حدث خطأ في رسم الواجهة. افتح Console لمعرفة السبب أو أعد المحاولة.</p>
-        </div>
-      `;
-    }
-  }
-
-  function renderHome() {
-    return renderCreate();
-  }
-
-  function statCard(title, value, desc, icon) {
-    return `
-      <article class="neo-stat-card">
-        <span>${icon}</span>
-        <small>${escapeHtml(title)}</small>
-        <strong>${escapeHtml(value)}</strong>
-        <em>${escapeHtml(desc)}</em>
       </article>
     `;
   }
 
-  function renderCreate() {
-    return `
-      <section class="neo-create-layout neo-create-layout--single">
-        <form class="neo-create-card" data-generate-form>
-          <div class="neo-create-top">
-            <div class="neo-create-heading">
-              <div>
-                <h1>إنشاء جديد</h1>
-                <p>اكتب وصفك واختر الإعدادات المناسبة وابدأ الإبداع.</p>
-              </div>
-              <span>✦</span>
-            </div>
+  function renderTransactions() {
+    const recent = state.results.slice(0, 2).map((item) => ({
+      label: `إنشاء ${typeLabel(item.type)} ${qualityLabel(item.quality)}`,
+      time: relativeTime(item.createdAt),
+      amount: `-${formatNumber(item.creditsUsed)} XP`,
+      positive: false,
+    }));
 
-            <div class="neo-type-tabs" role="tablist" aria-label="نوع التوليد">
-              <button type="button" data-type="image" class="${state.type === "image" ? "is-active" : ""}">صورة ▧</button>
-              <button type="button" data-type="video" class="${state.type === "video" ? "is-active" : ""}">فيديو ▦</button>
-            </div>
-          </div>
+    const list = [
+      ...recent,
+      { label: "شحن باقة إبداع", time: "منذ يومين", amount: "+1,200 XP", positive: true },
+    ].slice(0, 3);
 
-          <label class="neo-prompt-field">
-            <span>${state.type === "image" ? "اكتب وصف الصورة" : "اكتب وصف الفيديو"}</span>
-            <textarea data-prompt maxlength="2000" placeholder="مثال: رجل أعمال وسيم يرتدي بدلة فاخرة داخل مكتب حديث، إضاءة سينمائية"></textarea>
-            <small><b data-prompt-count>0</b> / 2000</small>
-          </label>
-
-          <div class="neo-helper-actions">
-            <button type="button">تحسين الوصف ✨</button>
-            <button type="button">إضافة مرجع ▧</button>
-            <button type="button">إضافة سلبية ⊖</button>
-          </div>
-
-          <div class="neo-control-grid">
-            ${chipGroup("الجودة", "quality", [
-              ["normal", "عادية"],
-              ["high", "عالية"],
-              ["ultra", "فائقة"],
-            ], state.quality)}
-            ${chipGroup("النمط", "style", [
-              ["realistic", "واقعي"],
-              ["cinematic", "سينمائي"],
-              ["anime", "أنمي"],
-              ["3d", "ثلاثي الأبعاد"],
-              ["commercial", "إعلاني"],
-            ], state.style)}
-            ${
-              state.type === "image"
-                ? chipGroup("المقاس", "aspect", [
-                    ["1:1", "1:1"],
-                    ["16:9", "16:9"],
-                    ["4:5", "4:5"],
-                    ["9:16", "9:16"],
-                  ], state.aspect)
-                : chipGroup("مدة الفيديو", "duration", [
-                    ["5", "5 ثواني"],
-                    ["8", "8 ثواني"],
-                  ], String(state.duration))
-            }
-          </div>
-
-          <div class="neo-cost-line">
-            <span>التكلفة المتوقعة: <b data-cost>${formatNumber(calculateCredits())}</b> XP</span>
-            <small>سيتم خصمها عند نجاح التوليد فقط</small>
-          </div>
-
-          <button class="neo-submit-button" type="submit" data-submit-generate>
-            إنشاء الآن ✨
-          </button>
-          <p class="neo-form-message" data-form-message hidden></p>
-        </form>
-
-        <section class="neo-result-live" data-live-result>
-          <div class="neo-empty-result">
-            <span>✦</span>
-            <strong>ستظهر نتيجتك هنا</strong>
-            <p>بعد اكتمال التوليد ستظهر المعاينة وأزرار التحميل والنسخ.</p>
-          </div>
-        </section>
-
-        <section class="neo-panel neo-latest-panel">
-          <div class="neo-section-head">
-            <h2>أحدث النتائج</h2>
-            <a href="/results" data-spa-link>عرض الكل</a>
-          </div>
-          ${resultsGrid(state.results.slice(0, 4))}
-        </section>
-      </section>
-    `;
+    $("[data-transactions-list]").innerHTML = list
+      .map(
+        (item) => `
+          <article>
+            <span>${escapeHtml(item.label)}<small>${escapeHtml(item.time)}</small></span>
+            <b class="${item.positive ? "is-positive" : ""}">${escapeHtml(item.amount)}</b>
+          </article>
+        `
+      )
+      .join("");
   }
 
-  function chipGroup(title, name, items, active) {
-    return `
-      <div class="neo-control">
-        <strong>${escapeHtml(title)}</strong>
-        <div class="neo-chip-group" data-chip-group="${name}">
-          ${items
-            .map(
-              ([value, label]) => `
-                <button type="button" data-value="${escapeHtml(value)}" class="${String(value) === String(active) ? "is-active" : ""}">
-                  ${escapeHtml(label)}
-                </button>
-              `
-            )
-            .join("")}
-        </div>
-      </div>
-    `;
+  function updateUsageUi() {
+    const images = state.results.filter((item) => item.type === "image").length + 18;
+    const videos = state.results.filter((item) => item.type === "video").length + 4;
+    $("[data-images-count]").textContent = `${images} / 240`;
+    $("[data-videos-count]").textContent = `${videos} / 24`;
   }
 
-  function renderResults({ onlyFavorites }) {
-    const items = onlyFavorites ? state.results.filter((item) => item.favorite) : state.results;
-    const empty = onlyFavorites
-      ? "لم تقم بإضافة أي نتيجة للمفضلة بعد."
-      : "لم تنشئ أي محتوى بعد. ابدأ الآن بإنشاء أول صورة أو فيديو.";
-    return `
-      <section class="neo-panel">
-        <div class="neo-toolbar">
-          <input type="search" placeholder="بحث بالوصف..." data-result-search />
-          <select data-result-filter>
-            <option value="all">الكل</option>
-            <option value="image">صور</option>
-            <option value="video">فيديو</option>
-          </select>
-          <select data-result-sort>
-            <option value="new">الأحدث</option>
-            <option value="old">الأقدم</option>
-          </select>
-        </div>
-        ${items.length ? resultsGrid(items) : emptyState(empty, "✦", "/create", "إنشاء الآن")}
-      </section>
-    `;
-  }
-
-  function resultsGrid(items) {
-    return `
-      <div class="neo-results-grid" data-results-grid>
-        ${items
-          .map(
-            (item) => `
-              <article class="neo-result-card" data-result-id="${escapeHtml(item.id)}">
-                ${
-                  item.type === "video"
-                    ? `<video src="${escapeHtml(cacheBustUrl(item.resultUrl, item.requestId || item.id))}" controls playsinline></video>`
-                    : `<img src="${escapeHtml(cacheBustUrl(item.resultUrl, item.requestId || item.id))}" alt="${escapeHtml(item.prompt)}" />`
-                }
-                <div>
-                  <span>${item.type === "video" ? "فيديو" : "صورة"}</span>
-                  <strong>${escapeHtml(item.prompt)}</strong>
-                  <small>${formatDate(item.createdAt)} · ${escapeHtml(item.quality)} · ${formatNumber(item.creditsUsed)} XP</small>
-                </div>
-                <div class="neo-result-actions">
-                  <a href="${escapeHtml(item.resultUrl)}" target="_blank" rel="noreferrer">تحميل</a>
-                  <button type="button" data-copy-result="${escapeHtml(item.resultUrl)}">نسخ</button>
-                  <button type="button" data-regenerate="${escapeHtml(item.id)}">إعادة</button>
-                  <button type="button">تحسين</button>
-                  <button type="button" data-favorite="${escapeHtml(item.id)}">${item.favorite ? "★" : "☆"}</button>
-                  <button type="button" data-delete-result="${escapeHtml(item.id)}">حذف</button>
-                </div>
-              </article>
-            `
-          )
-          .join("")}
-      </div>
-    `;
-  }
-
-  function renderProjects() {
-    const projects = [
-      ["حملة رمضان", 8, "منذ ساعة"],
-      ["صور المنتجات", 14, "أمس"],
-      ["إعلانات الفيديو", 5, "منذ أسبوع"],
-    ];
-    return `
-      <section class="neo-panel">
-        <div class="neo-section-head">
-          <h2>مشاريعك</h2>
-          <button type="button">مشروع جديد ＋</button>
-        </div>
-        <div class="neo-project-grid">
-          ${projects.map(([name, count, updated]) => `
-            <article class="neo-project-card">
-              <div></div>
-              <strong>${name}</strong>
-              <span>${count} عنصر</span>
-              <small>آخر تحديث: ${updated}</small>
-            </article>
-          `).join("")}
-        </div>
-      </section>
-    `;
-  }
-
-  function renderModels() {
-    return `
-      <section class="neo-model-grid">
-        ${modelCard("عادي", "سريع واقتصادي", "سرعة عالية", "جودة جيدة", "5 XP للصورة")}
-        ${modelCard("عالي", "توازن بين الجودة والسعر", "سرعة متوسطة", "جودة عالية", "10 XP للصورة")}
-        ${modelCard("فائق", "أعلى جودة للصور والفيديوهات", "أبطأ قليلًا", "جودة فائقة", "20 XP للصورة")}
-      </section>
-    `;
-  }
-
-  function modelCard(name, desc, speed, quality, cost) {
-    return `
-      <article class="neo-card neo-model-card">
-        <span>◇</span>
-        <h2>${name}</h2>
-        <p>${desc}</p>
-        <ul>
-          <li>${speed}</li>
-          <li>${quality}</li>
-          <li>${cost}</li>
-        </ul>
-      </article>
-    `;
-  }
-
-  function renderBilling() {
-    return `
-      <section class="neo-page-stack">
-        <div class="neo-stat-grid">
-          ${statCard("الباقة الحالية", state.key?.planName || "Pro", "نشطة", "◇")}
-          ${statCard("الرصيد المتبقي", formatNumber(totalCredits()), "رصيد", "▣")}
-          ${statCard("تاريخ انتهاء المفتاح", formatDate(state.key?.expiresAt) || "--", "صلاحية المفتاح", "◷")}
-        </div>
-        <section class="neo-panel">
-          <div class="neo-section-head">
-            <h2>سجل العمليات</h2>
-            <button type="button">شحن الرصيد</button>
-          </div>
-          <div class="neo-table">
-            <div><b>التاريخ</b><b>النوع</b><b>الرصيد</b><b>السبب</b></div>
-            <div><span>2026/06/03</span><span>خصم</span><span>-20</span><span>إنشاء صورة</span></div>
-            <div><span>2026/06/02</span><span>إضافة</span><span>+500</span><span>تفعيل مفتاح</span></div>
-          </div>
-        </section>
-      </section>
-    `;
-  }
-
-  function renderSupport() {
-    return `
-      <section class="neo-support-grid">
-        <article class="neo-panel">
-          <h2>أسئلة شائعة</h2>
-          <details open><summary>متى يتم خصم الرصيد؟</summary><p>يتم الخصم فقط بعد نجاح التوليد.</p></details>
-          <details><summary>هل أستطيع إعادة إنشاء نتيجة؟</summary><p>نعم من صفحة نتائجك.</p></details>
-          <a class="neo-gradient-button" href="https://wa.me/" target="_blank" rel="noreferrer">تواصل واتساب</a>
-        </article>
-        <form class="neo-panel">
-          <h2>فتح تذكرة</h2>
-          <input placeholder="العنوان" />
-          <select><option>نوع المشكلة</option><option>رصيد</option><option>توليد</option></select>
-          <textarea placeholder="اكتب رسالتك"></textarea>
-          <input type="file" />
-          <button class="neo-submit-button" type="button">إرسال التذكرة</button>
-        </form>
-      </section>
-    `;
-  }
-
-  function renderSettings() {
-    return `
-      <section class="neo-settings-grid">
-        <form class="neo-panel">
-          <h2>الملف الشخصي</h2>
-          <input placeholder="الاسم" value="${escapeHtml(state.key?.customerName || "")}" />
-          <input placeholder="البريد" value="${escapeHtml(state.key?.customerEmail || "")}" />
-          <button class="neo-submit-button" type="button">حفظ</button>
-        </form>
-        <form class="neo-panel">
-          <h2>إعدادات التوليد الافتراضية</h2>
-          <select><option>جودة عالية</option><option>عادية</option><option>فائقة</option></select>
-          <select><option>واقعي</option><option>سينمائي</option><option>إعلاني</option></select>
-          <select><option>عربي</option><option>English</option></select>
-          <button class="neo-submit-button" type="button">تحديث الإعدادات</button>
-        </form>
-      </section>
-    `;
-  }
-
-  function emptyState(text, icon, href, action) {
-    return `
-      <div class="neo-empty-state">
-        <span>${icon}</span>
-        <strong>${text}</strong>
-        ${href ? `<a href="${href}" data-spa-link>${action}</a>` : ""}
-      </div>
-    `;
-  }
-
-  function bindPageEvents() {
-    outlet.querySelectorAll("[data-type]").forEach((button) => {
-      button.addEventListener("click", () => {
-        state.type = button.dataset.type || "image";
-        renderPage();
-      });
+  function setType(type) {
+    state.type = type;
+    $$("[data-type-tab]").forEach((button) => button.classList.toggle("is-active", button.dataset.typeTab === type));
+    $$("[data-video-only]").forEach((node) => {
+      node.hidden = type !== "video";
     });
-
-    outlet.querySelectorAll("[data-chip-group]").forEach((group) => {
-      group.addEventListener("click", (event) => {
-        const button = event.target.closest("button[data-value]");
-        if (!button) return;
-        const name = group.dataset.chipGroup;
-        const value = button.dataset.value;
-        if (name === "duration") state.duration = Number(value);
-        else state[name] = value;
-        renderPage();
-      });
+    $$("[data-image-only]").forEach((node) => {
+      node.hidden = type !== "image";
     });
+    $("[data-prompt-label]").textContent =
+      type === "video" ? "اكتب وصف الفيديو الذي تريد إنشاءه..." : "اكتب وصف الصورة التي تريد إنشاءها...";
+    $("[data-prompt-input]").placeholder =
+      type === "video"
+        ? "مثال: لقطة سينمائية لروبوتات صفراء تتحرك في مدينة مستقبلية..."
+        : "مثال: رجل أعمال وسيم يرتدي بدلة فاخرة داخل مكتب حديث، إضاءة سينمائية...";
+    updateCost();
+  }
 
-    const prompt = outlet.querySelector("[data-prompt]");
-    prompt?.addEventListener("input", () => {
-      const count = outlet.querySelector("[data-prompt-count]");
-      if (count) count.textContent = prompt.value.length;
-    });
-
-    outlet.querySelector("[data-generate-form]")?.addEventListener("submit", handleGenerate);
-
-    outlet.querySelectorAll("[data-copy-result]").forEach((button) => {
-      button.addEventListener("click", async () => {
-        await navigator.clipboard.writeText(button.dataset.copyResult || "");
-        toast("تم نسخ الرابط بنجاح");
-      });
-    });
-
-    outlet.querySelectorAll("[data-favorite]").forEach((button) => {
-      button.addEventListener("click", () => {
-        const item = state.results.find((result) => result.id === button.dataset.favorite);
-        if (item) item.favorite = !item.favorite;
-        renderPage();
-      });
-    });
-
-    outlet.querySelectorAll("[data-delete-result]").forEach((button) => {
-      button.addEventListener("click", () => {
-        state.results = state.results.filter((result) => result.id !== button.dataset.deleteResult);
-        renderPage();
-      });
-    });
+  function setLoading(isLoading) {
+    state.loading = isLoading;
+    const button = $("[data-submit-button]");
+    button.disabled = isLoading;
+    button.textContent = isLoading
+      ? state.type === "video"
+        ? "جاري إنشاء الفيديو..."
+        : "جاري إنشاء الصورة..."
+      : "إنشاء الآن ✨";
   }
 
   async function handleGenerate(event) {
     event.preventDefault();
     if (state.loading) return;
 
-    const form = event.currentTarget;
-    const prompt = String(form.querySelector("[data-prompt]")?.value || "").trim();
-    const message = form.querySelector("[data-form-message]");
+    const promptInput = $("[data-prompt-input]");
+    const userPrompt = promptInput.value.trim();
+    if (userPrompt.length < 3) {
+      setMessage("اكتب وصفًا واضحًا أولًا.", "error");
+      promptInput.focus();
+      return;
+    }
+
     const requiredCredits = calculateCredits();
-    if (!prompt || prompt.length < 3) {
-      showMessage(message, "اكتب وصفًا واضحًا أولًا", "error");
+    if (keyCredits() < requiredCredits) {
+      setMessage("رصيدك غير كافٍ لإتمام هذا الطلب.", "error");
+      showToast("رصيدك غير كافٍ.", "error");
       return;
     }
 
-    if (totalCredits() < requiredCredits) {
-      showMessage(message, "رصيدك غير كافٍ لإتمام هذا الطلب.", "error");
-      return;
-    }
-
-    if (state.type === "image" && remainingImages() <= 0) {
-      showMessage(message, "لا يوجد رصيد صور كافٍ", "error");
-      return;
-    }
-
-    if (state.type === "video" && remainingVideos() <= 0) {
-      showMessage(message, "لا يوجد رصيد فيديو كافٍ", "error");
-      return;
-    }
-
-    const requestId = crypto.randomUUID?.() || `req-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const selectedType = state.type;
-    const selectedQuality = state.quality;
-    const selectedStyle = state.style;
-    const selectedAspect = state.aspect;
-    const selectedDuration = selectedType === "video" ? state.duration : undefined;
-    state.loading = true;
+    const requestId = crypto.randomUUID();
     state.activeRequestId = requestId;
-    state.currentResult = null;
-    form.querySelector("[data-submit-generate]").disabled = true;
-    form.querySelector("[data-submit-generate]").innerHTML =
-      state.type === "video" ? "جاري إنشاء الفيديو..." : "جاري إنشاء الصورة...";
-    renderLiveLoading(prompt);
+    state.latestResultUrl = "";
+    setMessage(
+      state.type === "video"
+        ? "جاري إنشاء الفيديو، قد يستغرق بعض الوقت..."
+        : "جاري إنشاء الصورة...",
+      "loading"
+    );
+    setLoading(true);
+
+    const payload = {
+      requestId,
+      type: state.type,
+      prompt: userPrompt,
+      quality: state.quality,
+      style: state.style,
+      aspectRatio: state.aspect,
+      aspect: state.aspect,
+      duration: state.type === "video" ? Number(state.duration) : undefined,
+      seed: Math.floor(Math.random() * 999999999),
+    };
+
+    console.log("REQUEST_ID:", requestId);
+    console.log("USER_PROMPT:", userPrompt);
+    console.log("GENERATION_PAYLOAD:", payload);
 
     try {
-      console.log("GENERATE_REQUEST", {
-        requestId,
-        userPrompt: prompt,
-        type: selectedType,
-        quality: selectedQuality,
-        style: selectedStyle,
-        aspect: selectedAspect,
-        duration: selectedDuration,
-      });
-
-      const payload = await requestJson("/api/generate", {
+      const data = await requestJson("/api/generate", {
         method: "POST",
-        body: JSON.stringify({
-          type: selectedType,
-          prompt,
-          requestId,
-          quality: selectedQuality,
-          style: selectedStyle,
-          aspect: selectedAspect,
-          duration: selectedDuration,
-        }),
+        body: JSON.stringify(payload),
       });
-      const responseRequestId = payload.requestId || payload.generation?.requestId || payload.generation?.request_id || "";
-      if (responseRequestId && responseRequestId !== requestId) {
-        console.warn("Ignoring stale generation response", { requestId, responseRequestId });
+
+      if (data.requestId && data.requestId !== state.activeRequestId) {
         return;
       }
 
-      const generation = payload.generation || {};
-      const resultUrl = generation.resultUrl || generation.result_url || payload.resultUrl || payload.url || "";
-      if (!resultUrl) {
-        throw new Error("فشل التوليد، لم يرجع الخادم رابط نتيجة صالح.");
-      }
-
-      if (state.activeRequestId !== requestId) {
-        return;
-      }
-
-      const generationId = generation.id || payload.generationId || `local-${Date.now()}`;
-      const item = {
-        id: generationId,
-        requestId: generation.requestId || generation.request_id || requestId,
-        type: generation.type || selectedType,
-        prompt: generation.userPrompt || generation.prompt || prompt,
-        quality: generation.quality || selectedQuality,
-        creditsUsed: generation.creditsUsed || generation.credits_used || payload.creditsUsed || calculateCredits(),
-        createdAt: generation.createdAt || generation.created_at || new Date().toISOString(),
-        favorite: Boolean(generation.favorite || generation.isFavorite),
-        resultUrl,
-      };
-      console.log("GENERATE_RESPONSE", {
+      const rawGeneration = data.generation || data.result || data;
+      const generation = normalizeGeneration({
+        ...rawGeneration,
         requestId,
-        responseRequestId: item.requestId,
-        generationId: item.id,
-        resultUrl: item.resultUrl,
-        userPrompt: item.prompt,
+        prompt: rawGeneration.userPrompt || rawGeneration.prompt || userPrompt,
+        type: rawGeneration.type || state.type,
+        quality: rawGeneration.quality || state.quality,
+        creditsUsed: rawGeneration.creditsUsed ?? requiredCredits,
       });
-      state.currentResult = item;
-      state.results = [
-        item,
-        ...state.results.filter((existing) => existing.id !== item.id && existing.requestId !== item.requestId),
-      ];
-      showMessage(message, "تم الإنشاء بنجاح", "success");
-      renderLiveResult(item);
-      await refreshKey();
+
+      if (!generation.resultUrl) {
+        throw new Error("تم إنشاء العملية لكن لم يصل رابط النتيجة من الخادم.");
+      }
+
+      state.results = [generation, ...state.results.filter((item) => item.id !== generation.id)];
+      state.latestResultUrl = generation.resultUrl;
+      setMessage("تم الإنشاء بنجاح.", "success");
+      showToast("تم الإنشاء بنجاح.");
+      promptInput.value = "";
+      $("[data-char-count]").textContent = "0";
+      openResult(generation);
+      renderAll();
+      await refreshKey({ silent: true });
+      await refreshGenerations({ silent: true });
     } catch (error) {
-      if (state.activeRequestId === requestId) {
-        showMessage(message, error.message || "فشل التوليد، لم يتم خصم أي رصيد.", "error");
-        renderLiveFailure(error.message || "فشل التوليد، لم يتم خصم أي رصيد.");
-      }
+      console.error("GENERATE ERROR:", error);
+      setMessage(error.message || "فشل التوليد، لم يتم خصم أي رصيد.", "error");
+      showToast(error.message || "فشل التوليد، لم يتم خصم أي رصيد.", "error");
     } finally {
-      if (state.activeRequestId === requestId) {
-        state.loading = false;
-        state.activeRequestId = null;
-      }
-      const submitButton = form.querySelector("[data-submit-generate]");
-      if (submitButton) {
-        submitButton.disabled = false;
-        submitButton.innerHTML = "إنشاء الآن ✨";
-      }
+      setLoading(false);
+      state.activeRequestId = null;
     }
   }
 
-  function renderLiveLoading(prompt) {
-    const target = outlet.querySelector("[data-live-result]");
-    if (!target) return;
-    target.innerHTML = `
-      <div class="neo-processing-card">
-        <div class="neo-spinner"></div>
-        <strong>${state.type === "video" ? "جاري إنشاء الفيديو" : "جاري إنشاء الصورة"}</strong>
-        <p>جاري معالجة طلبك: ${escapeHtml(prompt)}</p>
-      </div>
-    `;
+  function openResult(item) {
+    const modal = $("[data-result-modal]");
+    const preview = $("[data-result-preview]");
+    const url = item.resultUrl || "";
+    const urlWithCacheBust = url ? `${url}${url.includes("?") ? "&" : "?"}v=${encodeURIComponent(item.requestId || item.id)}` : "";
+
+    preview.innerHTML =
+      item.type === "video"
+        ? `<video src="${escapeHtml(urlWithCacheBust)}" controls playsinline></video>`
+        : `<img src="${escapeHtml(urlWithCacheBust)}" alt="${escapeHtml(item.prompt)}" />`;
+    $("[data-result-prompt]").textContent = item.prompt || "";
+    $("[data-result-download]").href = url;
+    $("[data-copy-result]").onclick = () => copyText(url);
+    modal.hidden = false;
   }
 
-  function renderLiveResult(item) {
-    const target = outlet.querySelector("[data-live-result]");
-    if (!target) return;
-    target.innerHTML = `
-      <article class="neo-live-result-card">
-        <strong>تم الإنشاء بنجاح</strong>
-        ${item.type === "video"
-          ? `<video src="${escapeHtml(cacheBustUrl(item.resultUrl, item.requestId || item.id))}" controls playsinline></video>`
-          : `<img src="${escapeHtml(cacheBustUrl(item.resultUrl, item.requestId || item.id))}" alt="${escapeHtml(item.prompt)}" />`}
-        <div class="neo-result-actions">
-          <a href="${escapeHtml(item.resultUrl)}" target="_blank" rel="noreferrer">تحميل</a>
-          <button type="button" data-copy-result="${escapeHtml(item.resultUrl)}">نسخ الرابط</button>
-          <a href="/results" data-spa-link>عرض النتائج</a>
-        </div>
-      </article>
-    `;
+  function closeResult() {
+    $("[data-result-modal]").hidden = true;
   }
 
-  function renderLiveFailure(text) {
-    const target = outlet.querySelector("[data-live-result]");
-    if (!target) return;
-    target.innerHTML = `
-      <div class="neo-empty-result is-error">
-        <span>!</span>
-        <strong>${escapeHtml(text)}</strong>
-        <p>لم يتم خصم أي رصيد من حسابك.</p>
-      </div>
-    `;
-  }
-
-  function showMessage(element, text, type) {
-    if (!element) return;
-    element.hidden = false;
-    element.textContent = text;
-    element.dataset.type = type;
-  }
-
-  async function refreshKey() {
+  async function copyText(value) {
+    if (!value) return;
     try {
-      state.key = await requestJson("/api/me/key");
-      updateShellData();
+      await navigator.clipboard.writeText(value);
+      showToast("تم النسخ بنجاح");
+    } catch {
+      showToast("تعذر النسخ تلقائيًا", "error");
+    }
+  }
+
+  async function refreshKey({ silent = false } = {}) {
+    try {
+      const data = await requestJson("/api/me/key");
+      state.key = normalizeKey(data);
+      updateKeyUi();
     } catch (error) {
-      if (error.status === 401) {
+      if (error.status === 401 || error.status === 403) {
         window.location.href = "/activate";
         return;
       }
-      state.key = {
-        status: "active",
-        codeMasked: "APRO-XXXX-XXXX-XXXX",
-        customerName: "محمد",
-        imagesLimit: 600,
-        imagesUsed: 0,
-        imagesRemaining: 600,
-        videosLimit: 200,
-        videosUsed: 0,
-        videosRemaining: 200,
-        balance: 2450,
-        expiresAt: "2026-10-11",
-      };
-      updateShellData();
+      if (!silent) {
+        console.warn("KEY LOAD WARNING:", error);
+      }
+      state.key = normalizeKey({});
+      updateKeyUi();
     }
   }
 
-  function normalizeGeneration(item) {
-    return {
-      id: item.id || item.generationId || `result-${Date.now()}`,
-      type: item.type === "video" ? "video" : "image",
-      prompt: item.prompt || item.description || "نتيجة بدون وصف",
-      quality: item.quality || "high",
-      creditsUsed: Number(item.creditsUsed || item.credits_used || 0),
-      createdAt: item.createdAt || item.created_at || new Date().toISOString(),
-      favorite: Boolean(item.isFavorite || item.favorite),
-      resultUrl: item.resultUrl || item.result_url || item.url || "",
-      requestId: item.requestId || item.request_id || item.id || "",
-    };
-  }
-
-  async function refreshGenerations() {
+  async function refreshGenerations({ silent = false } = {}) {
     try {
-      const payload = await requestJson("/api/generate");
-      const rows = Array.isArray(payload)
-        ? payload
-        : payload.generations || payload.items || payload.results || [];
-      const normalized = rows.map(normalizeGeneration).filter((item) => item.resultUrl);
-      state.results = normalized;
+      const data = await requestJson("/api/generate");
+      const list = data.generations || data.items || data.results || [];
+      state.results = list.map(normalizeGeneration).filter((item) => item.resultUrl);
+      renderAll();
     } catch (error) {
-      console.info("Generations API unavailable; keeping only live session results.", error.message);
+      if (!silent) {
+        console.warn("GENERATIONS LOAD WARNING:", error);
+      }
+      renderAll();
     }
   }
 
-  function toast(text) {
-    const toastEl = document.createElement("div");
-    toastEl.className = "neo-toast";
-    toastEl.textContent = text;
-    document.body.appendChild(toastEl);
-    setTimeout(() => toastEl.remove(), 2200);
-  }
-
-  async function logout() {
+  async function handleLogout() {
     try {
       await requestJson("/api/keys/logout", { method: "POST" });
-    } catch (error) {
+    } catch {
       try {
-        await fetch(`${API_BASE_URL}/api/logout`, {
-          method: "POST",
-          credentials: "include",
-          cache: "no-store",
-          headers: { "Content-Type": "application/json" },
-        });
-      } catch (fallbackError) {
-        console.info("Logout fallback failed; redirecting to activate.", fallbackError.message);
+        await requestJson("/api/logout", { method: "POST" });
+      } catch {
+        // Redirect anyway; the protected page will reject missing/expired sessions.
       }
-    }
-    try {
-      document.cookie = "key_session=; Path=/; Max-Age=0; SameSite=Lax";
-    } catch (error) {
-      // Browser cookie cleanup is best-effort; the server route remains authoritative.
     }
     window.location.href = "/activate";
   }
 
-  function navigate(path) {
-    state.route = normalizeRoute(path);
-    window.history.pushState({}, "", state.route);
-    renderPage();
+  function renderAll() {
+    updateKeyUi();
+    updateCost();
+    renderRecent();
+    renderTransactions();
+    updateUsageUi();
   }
 
-  document.addEventListener("click", (event) => {
-    const logoutButton = event.target.closest("[data-user-logout]");
-    if (logoutButton) {
-      event.preventDefault();
-      logout();
-      return;
-    }
+  function bindEvents() {
+    $("[data-create-form]").addEventListener("submit", handleGenerate);
+    $("[data-prompt-input]").addEventListener("input", (event) => {
+      $("[data-char-count]").textContent = event.target.value.length;
+    });
+    $$("[data-type-tab]").forEach((button) => {
+      button.addEventListener("click", () => setType(button.dataset.typeTab));
+    });
+    $$("[data-type-shortcut]").forEach((link) => {
+      link.addEventListener("click", (event) => {
+        event.preventDefault();
+        setType(link.dataset.typeShortcut);
+        $("#create").scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
+    $$("[data-local-nav]").forEach((link) => {
+      link.addEventListener("click", (event) => {
+        const hash = link.getAttribute("href");
+        if (!hash || !hash.startsWith("#")) return;
+        event.preventDefault();
+        $(hash)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
+    $("[data-focus-create]").addEventListener("click", () => {
+      $("#create").scrollIntoView({ behavior: "smooth", block: "start" });
+      $("[data-prompt-input]").focus();
+    });
+    $("[data-quality-select]").addEventListener("change", (event) => {
+      state.quality = event.target.value;
+      updateCost();
+    });
+    $("[data-style-select]").addEventListener("change", (event) => {
+      state.style = event.target.value;
+    });
+    $("[data-aspect-select]").addEventListener("change", (event) => {
+      state.aspect = event.target.value;
+    });
+    $("[data-duration-select]").addEventListener("change", (event) => {
+      state.duration = Number(event.target.value);
+      updateCost();
+    });
+    $$("[data-close-result]").forEach((button) => button.addEventListener("click", closeResult));
+    document.addEventListener("click", (event) => {
+      const copyButton = event.target.closest("[data-copy-url]");
+      if (copyButton) copyText(copyButton.dataset.copyUrl);
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") closeResult();
+    });
+  }
 
-    const spaLink = event.target.closest("a[data-spa-link], .neo-user-nav a");
-    if (!spaLink) return;
-    const url = new URL(spaLink.href);
-    if (!routes[normalizeRoute(url.pathname)]) return;
-    event.preventDefault();
-    navigate(url.pathname);
-  });
+  async function init() {
+    bindEvents();
+    setType("image");
+    renderAll();
+    await refreshKey();
+    await refreshGenerations({ silent: true });
+  }
 
-  document.querySelector("[data-sidebar-toggle]")?.addEventListener("click", () => {
-    document.body.classList.add("neo-sidebar-open");
-  });
-  document.querySelector("[data-sidebar-close]")?.addEventListener("click", () => {
-    document.body.classList.remove("neo-sidebar-open");
-  });
-
-  window.addEventListener("popstate", () => {
-    state.route = normalizeRoute(window.location.pathname);
-    renderPage();
-  });
-
-  state.route = normalizeRoute(window.location.pathname);
-  Promise.all([refreshKey(), refreshGenerations()]).finally(renderPage);
+  init();
 })();
