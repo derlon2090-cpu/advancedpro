@@ -10,6 +10,8 @@
     style: "realistic",
     aspect: "16:9",
     loading: false,
+    activeRequestId: null,
+    currentResult: null,
     results: [
       {
         id: "sample-1",
@@ -138,6 +140,20 @@
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return "--";
     return date.toLocaleDateString("ar-SA", { year: "numeric", month: "2-digit", day: "2-digit" });
+  }
+
+  function cacheBustUrl(url, requestId) {
+    const raw = String(url || "");
+    if (!raw || /^(data:|blob:)/i.test(raw) || !requestId) return raw;
+
+    try {
+      const parsed = new URL(raw, window.location.href);
+      parsed.searchParams.set("v", requestId);
+      return parsed.toString();
+    } catch (error) {
+      const separator = raw.includes("?") ? "&" : "?";
+      return `${raw}${separator}v=${encodeURIComponent(requestId)}`;
+    }
   }
 
   async function requestJson(path, options = {}) {
@@ -394,8 +410,8 @@
               <article class="neo-result-card" data-result-id="${escapeHtml(item.id)}">
                 ${
                   item.type === "video"
-                    ? `<video src="${escapeHtml(item.resultUrl)}" controls playsinline></video>`
-                    : `<img src="${escapeHtml(item.resultUrl)}" alt="${escapeHtml(item.prompt)}" />`
+                    ? `<video src="${escapeHtml(cacheBustUrl(item.resultUrl, item.requestId || item.id))}" controls playsinline></video>`
+                    : `<img src="${escapeHtml(cacheBustUrl(item.resultUrl, item.requestId || item.id))}" alt="${escapeHtml(item.prompt)}" />`
                 }
                 <div>
                   <span>${item.type === "video" ? "فيديو" : "صورة"}</span>
@@ -616,14 +632,16 @@
       return;
     }
 
+    const requestId = crypto.randomUUID?.() || `req-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     state.loading = true;
+    state.activeRequestId = requestId;
+    state.currentResult = null;
     form.querySelector("[data-submit-generate]").disabled = true;
     form.querySelector("[data-submit-generate]").innerHTML =
       state.type === "video" ? "جاري إنشاء الفيديو..." : "جاري إنشاء الصورة...";
     renderLiveLoading(prompt);
 
     try {
-      const requestId = crypto.randomUUID?.() || `req-${Date.now()}`;
       const payload = await requestJson("/api/generate", {
         method: "POST",
         body: JSON.stringify({
@@ -640,9 +658,15 @@
       if (!resultUrl) {
         throw new Error("فشل التوليد، لم يرجع الخادم رابط نتيجة صالح.");
       }
+
+      if (state.activeRequestId !== requestId) {
+        return;
+      }
+
       const generationId = payload.generationId || `local-${Date.now()}`;
       const item = {
         id: generationId,
+        requestId,
         type: state.type,
         prompt,
         quality: state.quality,
@@ -651,15 +675,21 @@
         favorite: false,
         resultUrl,
       };
+      state.currentResult = item;
       state.results.unshift(item);
       showMessage(message, "تم الإنشاء بنجاح", "success");
       renderLiveResult(item);
       await refreshKey();
     } catch (error) {
-      showMessage(message, error.message || "فشل التوليد، لم يتم خصم أي رصيد.", "error");
-      renderLiveFailure(error.message || "فشل التوليد، لم يتم خصم أي رصيد.");
+      if (state.activeRequestId === requestId) {
+        showMessage(message, error.message || "فشل التوليد، لم يتم خصم أي رصيد.", "error");
+        renderLiveFailure(error.message || "فشل التوليد، لم يتم خصم أي رصيد.");
+      }
     } finally {
-      state.loading = false;
+      if (state.activeRequestId === requestId) {
+        state.loading = false;
+        state.activeRequestId = null;
+      }
       const submitButton = form.querySelector("[data-submit-generate]");
       if (submitButton) {
         submitButton.disabled = false;
@@ -687,8 +717,8 @@
       <article class="neo-live-result-card">
         <strong>تم الإنشاء بنجاح</strong>
         ${item.type === "video"
-          ? `<video src="${escapeHtml(item.resultUrl)}" controls playsinline></video>`
-          : `<img src="${escapeHtml(item.resultUrl)}" alt="${escapeHtml(item.prompt)}" />`}
+          ? `<video src="${escapeHtml(cacheBustUrl(item.resultUrl, item.requestId || item.id))}" controls playsinline></video>`
+          : `<img src="${escapeHtml(cacheBustUrl(item.resultUrl, item.requestId || item.id))}" alt="${escapeHtml(item.prompt)}" />`}
         <div class="neo-result-actions">
           <a href="${escapeHtml(item.resultUrl)}" target="_blank" rel="noreferrer">تحميل</a>
           <button type="button" data-copy-result="${escapeHtml(item.resultUrl)}">نسخ الرابط</button>
@@ -753,6 +783,7 @@
       createdAt: item.createdAt || item.created_at || new Date().toISOString(),
       favorite: Boolean(item.isFavorite || item.favorite),
       resultUrl: item.resultUrl || item.result_url || item.url || "",
+      requestId: item.requestId || item.request_id || item.id || "",
     };
   }
 

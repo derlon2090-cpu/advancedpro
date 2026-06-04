@@ -399,7 +399,7 @@ router.post(
 
     try {
       if (type === "image") {
-        result = await generateFluxImage({ prompt, quality, style });
+        result = await generateFluxImage({ prompt, quality, style, requestId });
       } else {
         result = await generateWaveSpeedVideo({ prompt, duration, quality, style });
       }
@@ -410,6 +410,7 @@ router.post(
         type,
         provider: result?.provider,
         model: result?.model,
+        seed: result?.seed,
         finalPrompt: result?.finalPrompt || prompt,
         resultUrl: result?.resultUrl,
       });
@@ -462,6 +463,7 @@ router.post(
       type,
       creditsUsed,
       provider: result.provider,
+      seed: result.seed,
     });
 
     return res.json({

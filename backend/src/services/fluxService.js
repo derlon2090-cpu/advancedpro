@@ -23,6 +23,10 @@ function envFlag(name, fallback = false) {
   return ["1", "true", "yes", "on"].includes(String(raw).trim().toLowerCase());
 }
 
+function randomSeed() {
+  return Math.floor(Math.random() * 1_000_000_000);
+}
+
 const IMAGE_NEGATIVE_PROMPT = [
   "text",
   "words",
@@ -189,10 +193,11 @@ function getFluxModelConfig(quality) {
   };
 }
 
-async function postToBfl({ apiKey, prompt, quality, style }) {
+async function postToBfl({ apiKey, prompt, quality, style, requestId }) {
   const { endpoint, model } = getFluxModelConfig(quality);
   const finalPrompt = buildImagePrompt({ prompt, quality, style });
   const negativePrompt = IMAGE_NEGATIVE_PROMPT;
+  const seed = randomSeed();
   const payload = {
     prompt: finalPrompt,
     width: Number(process.env.BFL_IMAGE_WIDTH || 1024),
@@ -200,6 +205,7 @@ async function postToBfl({ apiKey, prompt, quality, style }) {
     output_format: process.env.BFL_OUTPUT_FORMAT || "jpeg",
     prompt_upsampling: envFlag("BFL_PROMPT_UPSAMPLING", false),
     safety_tolerance: Number(process.env.BFL_SAFETY_TOLERANCE || 2),
+    seed,
   };
 
   const negativePromptField = String(process.env.BFL_NEGATIVE_PROMPT_FIELD || "").trim();
@@ -211,6 +217,7 @@ async function postToBfl({ apiKey, prompt, quality, style }) {
   console.log("FINAL_PROMPT:", payload.prompt);
   console.log("NEGATIVE_PROMPT:", negativePrompt);
   console.log("MODEL:", model);
+  console.log("SEED:", seed);
   console.log(
     "API_BODY:",
     JSON.stringify({
@@ -226,7 +233,9 @@ async function postToBfl({ apiKey, prompt, quality, style }) {
     "[BFL_IMAGE_REQUEST]",
     JSON.stringify({
       model,
+      requestId,
       quality,
+      seed,
       width: payload.width,
       height: payload.height,
       originalPrompt: compactForLog(prompt),
@@ -237,9 +246,11 @@ async function postToBfl({ apiKey, prompt, quality, style }) {
 
   const response = await fetch(endpoint, {
     method: "POST",
+    cache: "no-store",
     headers: {
       accept: "application/json",
       "Content-Type": "application/json",
+      "Cache-Control": "no-store",
       "x-key": apiKey,
     },
     body: JSON.stringify(payload),
@@ -260,7 +271,7 @@ async function postToBfl({ apiKey, prompt, quality, style }) {
     throw serviceError(typeof message === "string" ? message : JSON.stringify(message), response.status >= 500 ? 502 : 400);
   }
 
-  return { data, model, finalPrompt: payload.prompt };
+  return { data, model, finalPrompt: payload.prompt, seed };
 }
 
 async function pollBflResult({ apiKey, initial }) {
@@ -305,15 +316,27 @@ async function pollBflResult({ apiKey, initial }) {
   throw serviceError("انتهت مهلة انتظار نتيجة الصورة.", 504);
 }
 
-export async function generateFluxImage({ prompt, quality = "normal", style = "" }) {
+export async function generateFluxImage({ prompt, quality = "normal", style = "", requestId = "" }) {
   const apiKey = requireApiKey();
-  const { data: initial, model, finalPrompt } = await postToBfl({ apiKey, prompt, quality, style });
+  const { data: initial, model, finalPrompt, seed } = await postToBfl({ apiKey, prompt, quality, style, requestId });
   const resultUrl = await pollBflResult({ apiKey, initial });
+
+  console.log(
+    "IMAGE_GENERATION_RESULT:",
+    JSON.stringify({
+      userPrompt: compactForLog(prompt),
+      finalPrompt: compactForLog(finalPrompt, 1400),
+      model,
+      seed,
+      resultUrl,
+    })
+  );
 
   return {
     provider: "bfl",
     model,
     finalPrompt,
+    seed,
     resultUrl,
     raw: initial,
   };
