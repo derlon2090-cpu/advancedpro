@@ -219,8 +219,19 @@
     if (progress) progress.style.width = `${Math.max(10, Math.min(100, Math.round((credit / 5000) * 100)))}%`;
     setText("[data-key-code]", key.codeMasked || key.code || "APRO-XXXX-XXXX-XXXX");
     setText("[data-key-expires]", formatDate(key.expiresAt) || "2026-05-25");
-    setText("[data-customer-name]", `مرحبًا، ${key.customerName || "محمد"}`);
+    setText("[data-customer-name]", `مرحبًا، ${key.customerName || key.ownerName || "محمد"}`);
     setText("[data-key-status-text]", key.status === "active" ? "عضو نشط" : "عضو نشط");
+    const avatar = document.querySelector("[data-customer-avatar]");
+    if (avatar) {
+      const customAvatar = key.customerAvatar || key.avatarUrl || key.imageUrl;
+      if (customAvatar) {
+        avatar.src = customAvatar;
+      } else {
+        const name = key.customerName || key.ownerName || key.customerEmail || "A";
+        avatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=6D35FF&color=fff&bold=true`;
+      }
+      avatar.alt = key.customerName || key.ownerName || "صورة المستخدم";
+    }
   }
 
   function setText(selector, value) {
@@ -855,6 +866,29 @@
     setTimeout(() => toastEl.remove(), 2200);
   }
 
+  async function logout() {
+    try {
+      await requestJson("/api/keys/logout", { method: "POST" });
+    } catch (error) {
+      try {
+        await fetch(`${API_BASE_URL}/api/logout`, {
+          method: "POST",
+          credentials: "include",
+          cache: "no-store",
+          headers: { "Content-Type": "application/json" },
+        });
+      } catch (fallbackError) {
+        console.info("Logout fallback failed; redirecting to activate.", fallbackError.message);
+      }
+    }
+    try {
+      document.cookie = "key_session=; Path=/; Max-Age=0; SameSite=Lax";
+    } catch (error) {
+      // Browser cookie cleanup is best-effort; the server route remains authoritative.
+    }
+    window.location.href = "/activate";
+  }
+
   function navigate(path) {
     state.route = normalizeRoute(path);
     window.history.pushState({}, "", state.route);
@@ -862,6 +896,13 @@
   }
 
   document.addEventListener("click", (event) => {
+    const logoutButton = event.target.closest("[data-user-logout]");
+    if (logoutButton) {
+      event.preventDefault();
+      logout();
+      return;
+    }
+
     const spaLink = event.target.closest("a[data-spa-link], .neo-user-nav a");
     if (!spaLink) return;
     const url = new URL(spaLink.href);

@@ -35,4 +35,15 @@ router.post(
   })
 );
 
+router.post("/logout", (_req, res) => {
+  const cookieSecure = process.env.COOKIE_SECURE === "true";
+  res.clearCookie("key_session", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: cookieSecure,
+    path: "/",
+  });
+  return res.json({ success: true });
+});
+
 export default router;

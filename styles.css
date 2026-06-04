@@ -991,7 +991,8 @@ html[data-theme="dark"] .btn-icon {
   gap: 10px;
 }
 
-.neo-user-nav a {
+.neo-user-nav a,
+.neo-user-logout {
   min-height: 58px;
   padding: 0 18px;
   display: flex;
@@ -1002,10 +1003,16 @@ html[data-theme="dark"] .btn-icon {
   color: #526079;
   text-decoration: none;
   font-weight: 900;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
   transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
 }
 
-.neo-user-nav a::after {
+.neo-user-nav a::after,
+.neo-user-logout::after {
   content: attr(data-icon);
   width: 34px;
   height: 34px;
@@ -1017,10 +1024,21 @@ html[data-theme="dark"] .btn-icon {
 }
 
 .neo-user-nav a:hover,
-.neo-user-nav a.is-active {
+.neo-user-nav a.is-active,
+.neo-user-logout:hover {
   color: #5b35f5;
   background: linear-gradient(135deg, #f2edff, #fff);
   transform: translateX(-3px);
+}
+
+.neo-user-logout {
+  margin-top: 8px;
+  color: #ef4444;
+}
+
+.neo-user-logout::after {
+  color: #ef4444;
+  background: #fff1f2;
 }
 
 .neo-user-nav a.is-active {

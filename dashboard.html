@@ -6,7 +6,7 @@
     <title>لوحة المستخدم | Advanced Pro</title>
     <meta
       name="description"
-      content="لوحة مستخدم Advanced Pro لإنشاء الصور والفيديو وإدارة النتائج والمشاريع والرصيد."
+      content="لوحة مستخدم Advanced Pro لإنشاء الصور والفيديو وإدارة المشاريع والرصيد."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -14,7 +14,7 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260603-user-neo-final" />
+    <link rel="stylesheet" href="/styles.css?v=20260604-user-menu-topbar" />
   </head>
   <body class="neo-user-app" data-page="dashboard">
     <aside class="neo-user-sidebar" data-sidebar>
@@ -27,14 +27,12 @@
 
       <nav class="neo-user-nav" aria-label="قائمة لوحة المستخدم">
         <a href="/dashboard" data-route="/dashboard" data-icon="⌂">الرئيسية</a>
-        <a href="/create" data-route="/create" data-icon="✦">إنشاء جديد</a>
-        <a href="/results" data-route="/results" data-icon="▧">نتائجك</a>
         <a href="/projects" data-route="/projects" data-icon="□">مشاريعي</a>
         <a href="/favorites" data-route="/favorites" data-icon="♡">المفضلة</a>
-        <a href="/models" data-route="/models" data-icon="◇">الموديلات</a>
         <a href="/billing" data-route="/billing" data-icon="▣">الاشتراك والفواتير</a>
-        <a href="/support" data-route="/support" data-icon="☊">الدعم والمساعدة</a>
+        <a href="/support" data-route="/support" data-icon="☏">الدعم والمساعدة</a>
         <a href="/settings" data-route="/settings" data-icon="⚙">الإعدادات</a>
+        <button class="neo-user-logout" type="button" data-user-logout data-icon="↪">تسجيل خروج</button>
       </nav>
 
       <section class="neo-upgrade-card">
@@ -51,17 +49,6 @@
       <header class="neo-user-topbar">
         <button class="neo-menu-button" type="button" data-sidebar-toggle aria-label="فتح القائمة">☰</button>
 
-        <div class="neo-profile">
-          <img
-            src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=96&q=80"
-            alt=""
-          />
-          <div>
-            <strong data-customer-name>مرحبًا، محمد</strong>
-            <span data-key-status-text>عضو نشط</span>
-          </div>
-        </div>
-
         <div class="neo-top-actions">
           <button type="button" aria-label="التنبيهات">🔔<b>3</b></button>
           <button type="button" aria-label="الرسائل">✉<b>2</b></button>
@@ -69,6 +56,18 @@
             <span>رصيدك الحالي</span>
             <strong data-total-credit>2,450</strong>
             <i>▣</i>
+          </div>
+        </div>
+
+        <div class="neo-profile">
+          <img
+            src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=96&q=80"
+            alt=""
+            data-customer-avatar
+          />
+          <div>
+            <strong data-customer-name>مرحبًا، محمد</strong>
+            <span data-key-status-text>عضو نشط</span>
           </div>
         </div>
       </header>
@@ -106,9 +105,9 @@
             </div>
             <div class="neo-quick-list">
               <a href="/support">دليل الاستخدام <span>□</span></a>
-              <a href="/models">نماذج وأمثلة جاهزة <span>▦</span></a>
-              <a href="/results">اختر الأفضل لك <span>☆</span></a>
-              <a href="/settings">تحديثات المنصة <span>☌</span></a>
+              <a href="/projects">مشاريعي <span>▦</span></a>
+              <a href="/favorites">المفضلة <span>☆</span></a>
+              <a href="/settings">تحديثات المنصة <span>⚌</span></a>
             </div>
           </section>
 
@@ -123,6 +122,6 @@
       </main>
     </section>
 
-    <script src="/dashboard-page.js?v=20260604-request-binding"></script>
+    <script src="/dashboard-page.js?v=20260604-user-menu-topbar"></script>
   </body>
 </html>
