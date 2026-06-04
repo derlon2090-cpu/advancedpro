@@ -12746,7 +12746,7 @@ html[data-theme="dark"] .create-chat-bubble__state {
   margin: 0;
 }
 
-/* PixiGenl topbar/logo refinements */
+/* PixiGen topbar/logo refinements */
 .user-dashboard-v3 .udv3-brand {
   direction: ltr;
   justify-content: flex-start;
@@ -12797,6 +12797,129 @@ html[data-theme="dark"] .create-chat-bubble__state {
   display: inline-grid;
   place-items: center;
   text-decoration: none;
+}
+
+.user-dashboard-v3 .udv3-coin-icon {
+  position: relative;
+  width: 30px;
+  height: 26px;
+  flex: 0 0 30px;
+  display: inline-block;
+  color: transparent;
+}
+
+.user-dashboard-v3 .udv3-coin-icon::before,
+.user-dashboard-v3 .udv3-coin-icon::after,
+.user-dashboard-v3 .udv3-stack-icon::before,
+.user-dashboard-v3 .udv3-stack-icon::after,
+.user-dashboard-v3 .udv3-stack-icon span {
+  content: "";
+  position: absolute;
+  left: 50%;
+  width: 28px;
+  height: 10px;
+  border-radius: 999px;
+  transform: translateX(-50%);
+  background:
+    radial-gradient(circle at 32% 32%, rgba(255, 255, 255, 0.85), transparent 26%),
+    linear-gradient(135deg, #8b5cf6 0%, #6d35ff 42%, #b832f6 100%);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: 0 8px 16px rgba(109, 53, 255, 0.18);
+}
+
+.user-dashboard-v3 .udv3-coin-icon::before {
+  top: 2px;
+}
+
+.user-dashboard-v3 .udv3-coin-icon::after {
+  top: 10px;
+  filter: brightness(0.94);
+}
+
+.user-dashboard-v3 .udv3-xp-pill .udv3-coin-icon + strong {
+  margin-inline-start: 2px;
+}
+
+.user-dashboard-v3 .udv3-stack-icon {
+  position: relative;
+  width: 86px;
+  height: 86px;
+  border: 0;
+  background:
+    radial-gradient(circle at 68% 25%, rgba(184, 50, 246, 0.24), transparent 30%),
+    radial-gradient(circle at 38% 70%, rgba(109, 53, 255, 0.16), transparent 34%);
+  box-shadow: none;
+  color: transparent;
+}
+
+.user-dashboard-v3 .udv3-stack-icon::before {
+  top: 24px;
+  width: 58px;
+  height: 20px;
+}
+
+.user-dashboard-v3 .udv3-stack-icon span {
+  top: 38px;
+  width: 64px;
+  height: 22px;
+  filter: brightness(0.98);
+}
+
+.user-dashboard-v3 .udv3-stack-icon::after {
+  top: 53px;
+  width: 58px;
+  height: 20px;
+  filter: brightness(0.9);
+}
+
+.user-dashboard-v3 .udv3-tips-card {
+  max-width: 1040px;
+  margin-inline: auto;
+  padding: 34px 30px 32px;
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(109, 53, 255, 0.045), transparent 42%),
+    rgba(255, 255, 255, 0.98);
+  box-shadow: 0 28px 70px rgba(30, 20, 80, 0.075);
+}
+
+.user-dashboard-v3 .udv3-tips-card h2 {
+  margin: 0 0 22px;
+  text-align: right;
+  color: #07124d;
+  font-size: clamp(27px, 3vw, 36px);
+  line-height: 1.15;
+  letter-spacing: -0.045em;
+}
+
+.user-dashboard-v3 .udv3-tips-card > div {
+  gap: 20px;
+}
+
+.user-dashboard-v3 .udv3-tips-card article {
+  min-height: 182px;
+  padding: 26px 22px;
+  border-radius: 18px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(248, 246, 255, 0.82));
+  border-color: #e4e8f5;
+  align-content: start;
+  gap: 15px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.user-dashboard-v3 .udv3-tips-card strong {
+  color: #07124d;
+  font-size: 20px;
+  line-height: 1.45;
+  letter-spacing: -0.03em;
+}
+
+.user-dashboard-v3 .udv3-tips-card span {
+  color: #667085;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.72;
 }
 
 @media (max-width: 1200px) {
