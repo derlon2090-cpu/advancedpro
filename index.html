@@ -6,188 +6,151 @@
     <title>تفعيل المفتاح | Advanced Pro</title>
     <meta
       name="description"
-      content="فعّل مفتاحك الرقمي في Advanced Pro واختر باقة XP المناسبة لاستخدامك."
+      content="أدخل مفتاح Advanced Pro الرقمي لتفعيل حسابك والوصول إلى جميع المميزات."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800;900&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260601-key-home" />
+    <link rel="stylesheet" href="/styles.css?v=20260604-activate-v2" />
   </head>
-  <body class="key-activation-page" data-page="key-activation">
-    <header class="key-header" aria-label="رأس الصفحة">
-      <div class="key-shell key-header__inner">
-        <a class="key-brand" href="/" aria-label="Advanced Pro - الرئيسية">
-          <img class="key-brand__mark" src="/ap-mark.svg" alt="" aria-hidden="true" />
-          <span class="key-brand__copy">
-            <strong>Advanced Pro</strong>
-            <span>المفاتيح الرقمية</span>
-          </span>
-        </a>
+  <body class="activate-page-v2" data-page="activate-key-v2">
+    <header class="activate-header">
+      <a class="activate-brand" href="/activate" aria-label="Advanced Pro">
+        <img src="/ap-mark.svg" alt="" aria-hidden="true" />
+        <span>
+          <strong>Advanced Pro</strong>
+          <small>المفاتيح الرقمية</small>
+        </span>
+      </a>
 
-        <a class="key-home-link" href="/">
-          <span>الرئيسية</span>
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="m3 11 9-8 9 8" />
-            <path d="M5 10v10h5v-6h4v6h5V10" />
-          </svg>
-        </a>
-      </div>
+      <a class="contact-button" href="mailto:support@advancedpro.com">
+        <span aria-hidden="true">☊</span>
+        تواصل معنا
+      </a>
     </header>
 
-    <main class="key-main">
-      <section class="key-hero key-shell" aria-labelledby="activate-title">
-        <div class="key-section-heading">
-          <span class="key-heading-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24">
-              <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.2 1.2 0 0 1 1.52 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z" />
-              <path d="m9 12 2 2 4-4" />
-            </svg>
-          </span>
-          <h1 id="activate-title">تفعيل المفتاح</h1>
-          <p>أدخل مفتاحك الرقمي لتفعيل حسابك والوصول إلى جميع الميزات</p>
+    <main class="activate-content">
+      <section class="activate-hero" aria-labelledby="activateTitle">
+        <div class="activate-hero-icon" aria-hidden="true">
+          <span>⚿</span>
+        </div>
+        <h1 id="activateTitle" class="activate-title">تفعيل المفتاح</h1>
+        <p class="activate-subtitle">أدخل مفتاحك الرقمي لتفعيل حسابك والوصول إلى جميع المميزات</p>
+      </section>
+
+      <section class="activation-card-v2" aria-label="تفعيل المفتاح الرقمي">
+        <div class="activation-visual" aria-hidden="true">
+          <div class="activation-visual-orbit">
+            <span class="orbit-dot orbit-dot-a"></span>
+            <span class="orbit-dot orbit-dot-b"></span>
+            <span class="orbit-dot orbit-dot-c"></span>
+          </div>
+          <div class="activation-shield">
+            <span class="shield-icon">⌘</span>
+            <span class="key-icon">⚿</span>
+          </div>
+          <span class="activation-check">✓</span>
         </div>
 
-        <section class="activation-card" aria-label="نموذج تفعيل المفتاح">
-          <form id="keyActivationForm" class="activation-form" novalidate>
-            <label for="keyCode">أدخل مفتاحك الرقمي</label>
+        <form id="keyActivationForm" class="activation-form-v2" novalidate>
+          <h2>أدخل مفتاحك الرقمي</h2>
+
+          <label class="key-input-wrap" for="keyCode">
+            <span aria-hidden="true">⚿</span>
             <input
               id="keyCode"
+              class="key-input"
               name="code"
               type="text"
               inputmode="latin"
               autocomplete="one-time-code"
               placeholder="APRO-XXXX-XXXX-XXXX"
+              maxlength="19"
               aria-describedby="keyActivationMessage"
               required
             />
-            <button class="key-gradient-button" type="submit">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="m15 7 2-2a3 3 0 1 1 4 4l-2 2" />
-                <path d="m9 13 6-6" />
-                <path d="M7 17h.01" />
-                <path d="M3 21l3.7-3.7" />
-                <path d="M7.5 16.5a3 3 0 1 1 4.24-4.24" />
-              </svg>
-              <span data-activation-label>تفعيل المفتاح</span>
-            </button>
-            <p id="keyActivationMessage" class="activation-message" aria-live="polite" hidden></p>
-          </form>
-        </section>
+          </label>
+
+          <button class="activate-button" type="submit" data-submit-button>
+            <span class="button-spinner" aria-hidden="true"></span>
+            <span data-activation-label>ابدأ تفعيل الكود الآن</span>
+          </button>
+
+          <p id="keyActivationMessage" class="activation-message-v2" aria-live="polite" hidden></p>
+
+          <p class="activate-note">
+            <span aria-hidden="true">♢</span>
+            يتم خصم الرصيد بعد الاستخدام الأول للمفتاح.
+          </p>
+        </form>
       </section>
 
-      <section class="pricing-section key-shell" aria-labelledby="pricing-title">
-        <div class="key-section-heading key-section-heading--compact">
-          <span class="sparkle" aria-hidden="true">✦</span>
-          <h2 id="pricing-title">اختر الباقة المناسبة لك</h2>
-          <p>باقات XP مرنة تناسب احتياجك، كل مفتاح يمنحك رصيدًا واضحًا للاستخدام داخل المنصة</p>
-        </div>
-
-        <div class="pricing-grid">
-          <article class="plan-card">
-            <span class="plan-badge">أساسية</span>
-            <h3>انطلاقة</h3>
-            <p>لبداية سهلة وفعالة</p>
-            <ul class="plan-features">
-              <li>
-                <span>300 XP</span>
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 15-5-5L5 21" /><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><circle cx="9" cy="9" r="2" /></svg>
-              </li>
-              <li>
-                <span>مناسبة للبداية والتجربة</span>
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 13 5 3V8l-5 3z" /><rect x="3" y="6" width="13" height="12" rx="2" /></svg>
-              </li>
-              <li>
-                <span>صلاحية 30 يومًا</span>
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2v4" /><path d="M16 2v4" /><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M3 10h18" /></svg>
-              </li>
-              <li>
-                <span>جودة عالية</span>
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.2 1.2 0 0 1 1.52 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z" /></svg>
-              </li>
-              <li>
-                <span>دعم فني أساسي</span>
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18v-6a9 9 0 0 1 18 0v6" /><path d="M21 19a2 2 0 0 1-2 2h-1v-7h3z" /><path d="M3 19a2 2 0 0 0 2 2h1v-7H3z" /></svg>
-              </li>
-            </ul>
-            <div class="plan-price"><strong>19</strong><span>ريال</span></div>
-            <a class="plan-button" href="#keyActivationForm">اختر الباقة</a>
-          </article>
-
-          <article class="plan-card plan-card--featured">
-            <span class="plan-ribbon">الأكثر اختيارًا</span>
-            <span class="plan-badge">احترافية</span>
-            <h3>إبداع</h3>
-            <p>لصناع المحتوى والمبدعين</p>
-            <ul class="plan-features">
-              <li>
-                <span>1200 XP</span>
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 15-5-5L5 21" /><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><circle cx="9" cy="9" r="2" /></svg>
-              </li>
-              <li>
-                <span>أفضل توازن للسعر والرصيد</span>
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 13 5 3V8l-5 3z" /><rect x="3" y="6" width="13" height="12" rx="2" /></svg>
-              </li>
-              <li>
-                <span>صلاحية 90 يومًا</span>
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2v4" /><path d="M16 2v4" /><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M3 10h18" /></svg>
-              </li>
-              <li>
-                <span>جودة عالية جدًا</span>
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.2 1.2 0 0 1 1.52 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z" /></svg>
-              </li>
-              <li>
-                <span>دعم فني متقدم</span>
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18v-6a9 9 0 0 1 18 0v6" /><path d="M21 19a2 2 0 0 1-2 2h-1v-7h3z" /><path d="M3 19a2 2 0 0 0 2 2h1v-7H3z" /></svg>
-              </li>
-            </ul>
-            <div class="plan-price"><strong>49</strong><span>ريال</span></div>
-            <a class="plan-button plan-button--featured" href="#keyActivationForm">اختر الباقة</a>
-          </article>
-
-          <article class="plan-card">
-            <span class="plan-badge">متقدمة</span>
-            <h3>تميّز</h3>
-            <p>للمحترفين بلا حدود</p>
-            <ul class="plan-features">
-              <li>
-                <span>5000 XP</span>
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 15-5-5L5 21" /><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><circle cx="9" cy="9" r="2" /></svg>
-              </li>
-              <li>
-                <span>رصيد أكبر للاستخدام المكثف</span>
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 13 5 3V8l-5 3z" /><rect x="3" y="6" width="13" height="12" rx="2" /></svg>
-              </li>
-              <li>
-                <span>صلاحية 180 يومًا</span>
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2v4" /><path d="M16 2v4" /><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M3 10h18" /></svg>
-              </li>
-              <li>
-                <span>جودة فائقة</span>
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.2 1.2 0 0 1 1.52 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z" /></svg>
-              </li>
-              <li>
-                <span>دعم VIP</span>
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18v-6a9 9 0 0 1 18 0v6" /><path d="M21 19a2 2 0 0 1-2 2h-1v-7h3z" /><path d="M3 19a2 2 0 0 0 2 2h1v-7H3z" /></svg>
-              </li>
-            </ul>
-            <div class="plan-price"><strong>89</strong><span>ريال</span></div>
-            <a class="plan-button" href="#keyActivationForm">اختر الباقة</a>
-          </article>
-        </div>
-      </section>
-
-      <section class="notice-box key-shell" aria-label="ملاحظة مهمة">
-        <span class="notice-box__icon" aria-hidden="true">i</span>
-        <div>
-          <h2>ملاحظة مهمة</h2>
-          <p>يتم خصم الرصيد عند كل عملية إنشاء. تأكد من وجود رصيد كافٍ، ولا يمكن استرجاع الرصيد بعد استخدامه.</p>
-        </div>
+      <section class="feature-grid" aria-label="مميزات تفعيل المفتاح">
+        <article class="feature-card">
+          <span class="feature-icon">◈</span>
+          <div>
+            <h3>آمن وموثوق</h3>
+            <p>تشفير وحماية متقدمة</p>
+          </div>
+          <b>✓</b>
+        </article>
+        <article class="feature-card">
+          <span class="feature-icon">☊</span>
+          <div>
+            <h3>دعم فني</h3>
+            <p>متوفر على مدار الساعة</p>
+          </div>
+          <b>✓</b>
+        </article>
+        <article class="feature-card">
+          <span class="feature-icon">ϟ</span>
+          <div>
+            <h3>تفعيل فوري</h3>
+            <p>استمتع بجميع المميزات فورًا</p>
+          </div>
+          <b>✓</b>
+        </article>
       </section>
     </main>
 
-    <script src="/key-activation-page.js?v=20260601-key-public"></script>
+    <footer class="activate-footer">
+      <span></span>
+      <strong>© 2026 Advanced Pro. جميع الحقوق محفوظة.</strong>
+      <span></span>
+    </footer>
+
+    <div class="activation-toast-stack" data-toast-stack aria-live="polite"></div>
+
+    <div class="activation-success-modal" data-success-modal hidden>
+      <section class="success-dialog" role="dialog" aria-modal="true" aria-labelledby="successTitle">
+        <div class="success-icon">✓</div>
+        <h2 id="successTitle">تم تفعيل المفتاح بنجاح 🎉</h2>
+        <p>تم تجهيز حسابك وسيتم تحويلك للوحة التحكم خلال لحظات.</p>
+        <div class="success-summary">
+          <article>
+            <span>الباقة</span>
+            <strong data-success-plan>إبداع</strong>
+          </article>
+          <article>
+            <span>الرصيد</span>
+            <strong data-success-xp>1200 XP</strong>
+          </article>
+          <article>
+            <span>تاريخ الانتهاء</span>
+            <strong data-success-expiry>90 يوم</strong>
+          </article>
+        </div>
+        <div class="success-actions">
+          <a href="/dashboard" data-dashboard-link>الدخول إلى لوحة التحكم</a>
+          <a href="/dashboard#create">إنشاء أول مشروع</a>
+        </div>
+      </section>
+    </div>
+
+    <script src="/config.js"></script>
+    <script src="/key-activation-page.js?v=20260604-activate-v2"></script>
   </body>
 </html>
