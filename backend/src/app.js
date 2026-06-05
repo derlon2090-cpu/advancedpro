@@ -10,6 +10,7 @@ import keyRoutes from "./routes/keys.js";
 import dashboardRoutes from "./routes/dashboard.js";
 import profileRoutes from "./routes/profile.js";
 import generateRoutes from "./routes/generate.js";
+import debugRoutes from "./routes/debug.js";
 import aiRoutes from "./routes/ai.js";
 import adminRoutes from "./routes/admin.js";
 import bootstrapRoutes from "./routes/bootstrap.js";
@@ -106,6 +107,7 @@ app.get("/api/health/db", async (_req, res) => {
 });
 
 app.use("/api", apiLimiter);
+app.use("/api/debug", debugRoutes);
 app.use("/api/public/keys", keyRoutes);
 app.use("/api/public", publicRoutes);
 app.use("/api/auth", authRoutes);

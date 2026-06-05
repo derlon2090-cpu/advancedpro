@@ -4,8 +4,10 @@ import {
   MAX_VIDEO_DURATION_BY_QUALITY,
   VIDEO_MODELS,
   WAVE_IMAGE_ENDPOINTS,
+  WAVE_IMAGE_MODEL_CANDIDATES,
   WAVE_IMAGE_MODELS,
   WAVE_VIDEO_ENDPOINTS,
+  WAVE_VIDEO_MODEL_CANDIDATES,
   WAVE_VIDEO_MODELS,
 } from "./wavespeedModels.js";
 
@@ -337,6 +339,213 @@ async function readJsonResponse(response) {
   }
 }
 
+function stringifyForLog(value) {
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch (error) {
+    return String(value);
+  }
+}
+
+function buildEndpointFromModelPath(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  if (/^https?:\/\//i.test(text)) return text;
+  return `https://api.wavespeed.ai/api/v3/${text.replace(/^\/+/, "")}`;
+}
+
+function normalizeWaveSpeedModelItem(item) {
+  if (!item) return null;
+
+  if (typeof item === "string") {
+    return {
+      id: item,
+      model: item,
+      name: item,
+      apiPath: item,
+      endpoint: buildEndpointFromModelPath(item),
+      kind: inferWaveSpeedModelKind(item),
+      raw: item,
+    };
+  }
+
+  if (typeof item !== "object") return null;
+
+  const id =
+    item.id ||
+    item.model ||
+    item.model_id ||
+    item.modelId ||
+    item.name ||
+    item.slug ||
+    item.path ||
+    item.api_path ||
+    item.apiPath;
+  const apiPath =
+    item.api_path ||
+    item.apiPath ||
+    item.path ||
+    item.endpoint ||
+    item.url ||
+    item.model ||
+    item.id ||
+    id;
+
+  if (!id && !apiPath) return null;
+
+  const text = stringifyForLog(item);
+  return {
+    id: String(id || apiPath),
+    model: String(id || apiPath),
+    name: String(item.name || item.title || id || apiPath),
+    apiPath: String(apiPath || id),
+    endpoint: buildEndpointFromModelPath(apiPath || id),
+    category: item.category || item.type || item.task || item.tags || null,
+    kind: inferWaveSpeedModelKind(text),
+    raw: item,
+  };
+}
+
+function collectWaveSpeedModels(value, result = []) {
+  if (!value) return result;
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const normalized = normalizeWaveSpeedModelItem(item);
+      if (normalized) result.push(normalized);
+      if (item && typeof item === "object") {
+        collectWaveSpeedModels(item.models || item.items || item.data || item.results, result);
+      }
+    }
+    return result;
+  }
+
+  if (typeof value === "object") {
+    const normalized = normalizeWaveSpeedModelItem(value);
+    if (normalized) result.push(normalized);
+    for (const key of ["models", "items", "data", "results", "list"]) {
+      collectWaveSpeedModels(value[key], result);
+    }
+  }
+
+  return result;
+}
+
+function inferWaveSpeedModelKind(value) {
+  const text = String(value || "").toLowerCase();
+  const hasVideo = /video|text-to-video|t2v|i2v|wan|kling|veo|seedance|animate/.test(text);
+  const hasImage = /image|text-to-image|t2i|z-image|seedream|banana|photo/.test(text);
+
+  if (hasImage && !hasVideo) return "image";
+  if (hasVideo && !hasImage) return "video";
+  if (hasVideo) return "video";
+  if (hasImage) return "image";
+  return "unknown";
+}
+
+function uniqueModels(models) {
+  const seen = new Set();
+  return models.filter((model) => {
+    const key = `${model.endpoint}|${model.model}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+export async function fetchWaveSpeedModels({ includeRaw = false } = {}) {
+  const apiKey = requireApiKey();
+  const endpoint = process.env.WAVESPEED_MODELS_URL || "https://api.wavespeed.ai/api/v3/models";
+  const response = await fetch(endpoint, {
+    cache: "no-store",
+    headers: {
+      Accept: "application/json",
+      "Cache-Control": "no-store",
+      Authorization: `Bearer ${apiKey}`,
+    },
+  });
+  const data = await readJsonResponse(response);
+
+  if (!response.ok) {
+    console.error("WAVESPEED MODELS ERROR:", stringifyForLog({ status: response.status, data }));
+    throw serviceError(
+      data?.message || data?.error || data?.detail || "تعذر جلب قائمة موديلات WaveSpeed.",
+      response.status >= 500 ? 502 : 400
+    );
+  }
+
+  const models = uniqueModels(collectWaveSpeedModels(data)).map(({ raw, ...model }) => model);
+  console.log("WAVESPEED MODELS COUNT:", models.length);
+  console.log("WAVESPEED MODELS:", stringifyForLog(models.slice(0, 100)));
+
+  return {
+    endpoint,
+    count: models.length,
+    models,
+    raw: includeRaw ? data : undefined,
+  };
+}
+
+function pickFirstAvailableModel(models, mediaType) {
+  const expectedKind = mediaType === "video" ? "video" : "image";
+  const candidates = models.filter((model) => model.kind === expectedKind && model.endpoint);
+
+  if (candidates.length === 0) return null;
+
+  const preferredPatterns =
+    mediaType === "video"
+      ? [/text-to-video/i, /t2v/i, /wan/i, /kling/i, /veo/i]
+      : [/text-to-image/i, /z-image/i, /seedream/i, /banana/i, /image/i];
+
+  for (const pattern of preferredPatterns) {
+    const found = candidates.find((model) => pattern.test(`${model.model} ${model.apiPath} ${model.endpoint}`));
+    if (found) return found;
+  }
+
+  return candidates[0];
+}
+
+function isModelNotFoundError(error) {
+  return /model\s+not\s+found|not\s+found.*model|invalid\s+model|bad\s+request/i.test(
+    `${error?.message || ""} ${stringifyForLog(error?.providerData || "")}`
+  );
+}
+
+function getConfiguredFallbackCandidates(mediaType, quality) {
+  const normalizedQuality = normalizeQuality(quality);
+  const source = mediaType === "video" ? WAVE_VIDEO_MODEL_CANDIDATES : WAVE_IMAGE_MODEL_CANDIDATES;
+  return source[normalizedQuality] || source.normal || [];
+}
+
+async function resolveWaveSpeedFallbackCandidates({ apiKey, mediaType, quality, failedEndpoint }) {
+  const configuredCandidates = getConfiguredFallbackCandidates(mediaType, quality).filter(
+    (candidate) => candidate.endpoint && candidate.endpoint !== failedEndpoint
+  );
+
+  const available = await fetchWaveSpeedModels({ includeRaw: false }).catch((error) => {
+    console.error("WAVESPEED MODEL LIST FALLBACK ERROR:", error?.message || error);
+    return null;
+  });
+
+  const picked = available ? pickFirstAvailableModel(available.models || [], mediaType) : null;
+  const modelListCandidate =
+    picked && picked.endpoint !== failedEndpoint
+      ? {
+          model: picked.model,
+          endpoint: picked.endpoint,
+        }
+      : null;
+
+  const candidates = [...configuredCandidates, modelListCandidate].filter(Boolean);
+  const seen = new Set();
+  return candidates.filter((candidate) => {
+    const key = `${candidate.endpoint}|${candidate.model}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 function resolveEndpoint(envNames, fallback) {
   for (const name of envNames) {
     const value = String(process.env[name] || "").trim();
@@ -399,6 +608,9 @@ function validateDuration(model, endpoint, duration) {
 }
 
 async function postWaveSpeed({ apiKey, endpoint, body }) {
+  console.log("WAVESPEED ENDPOINT:", endpoint);
+  console.log("WAVESPEED BODY:", stringifyForLog({ ...body, prompt: compactForLog(body?.prompt) }));
+
   const response = await fetch(endpoint, {
     method: "POST",
     cache: "no-store",
@@ -413,11 +625,79 @@ async function postWaveSpeed({ apiKey, endpoint, body }) {
 
   const data = await readJsonResponse(response);
   if (!response.ok) {
+    console.error(
+      "WAVESPEED ERROR:",
+      stringifyForLog({
+        status: response.status,
+        endpoint,
+        body: { ...body, prompt: compactForLog(body?.prompt) },
+        data,
+      })
+    );
     const message = data?.message || data?.error || data?.detail || "فشل طلب التوليد من WaveSpeed.";
-    throw serviceError(typeof message === "string" ? message : JSON.stringify(message), response.status >= 500 ? 502 : 400);
+    const error = serviceError(typeof message === "string" ? message : JSON.stringify(message), response.status >= 500 ? 502 : 400);
+    error.providerData = data;
+    error.providerStatus = response.status;
+    error.providerEndpoint = endpoint;
+    throw error;
   }
 
   return data;
+}
+
+async function postWaveSpeedWithFallback({ apiKey, endpoint, body, mediaType, quality, model }) {
+  try {
+    return {
+      initial: await postWaveSpeed({ apiKey, endpoint, body }),
+      endpoint,
+      model,
+      usedFallback: false,
+    };
+  } catch (error) {
+    if (!isModelNotFoundError(error)) {
+      throw error;
+    }
+
+    const fallbacks = await resolveWaveSpeedFallbackCandidates({
+      apiKey,
+      mediaType,
+      quality,
+      failedEndpoint: endpoint,
+    });
+
+    if (fallbacks.length === 0) {
+      throw error;
+    }
+
+    let lastError = error;
+    for (const fallback of fallbacks) {
+      try {
+        console.warn(
+          "WAVESPEED MODEL FALLBACK:",
+          stringifyForLog({
+            mediaType,
+            quality,
+            failedModel: model,
+            failedEndpoint: endpoint,
+            fallbackModel: fallback.model,
+            fallbackEndpoint: fallback.endpoint,
+          })
+        );
+        console.log("WAVESPEED MODEL:", fallback.model);
+
+        return {
+          initial: await postWaveSpeed({ apiKey, endpoint: fallback.endpoint, body }),
+          endpoint: fallback.endpoint,
+          model: fallback.model,
+          usedFallback: true,
+        };
+      } catch (fallbackError) {
+        lastError = fallbackError;
+      }
+    }
+
+    throw lastError;
+  }
 }
 
 function getPollingUrl(initial) {
@@ -519,23 +799,31 @@ export async function generateImageWithWaveSpeed({
   console.log("TYPE:", "image");
   console.log("QUALITY:", normalizedQuality);
   console.log("MODEL:", model);
+  console.log("WAVESPEED MODEL:", model);
   console.log("REQUEST_ID:", requestId);
   console.log("USER_PROMPT:", prompt);
   console.log("FINAL_PROMPT:", finalPrompt);
   console.log("WAVESPEED BODY SENT:", JSON.stringify({ ...body, prompt: compactForLog(body.prompt) }));
 
-  const initial = await postWaveSpeed({ apiKey, endpoint, body });
-  const resultUrl = await pollWaveSpeedResult({ apiKey, initial, mediaType: "image" });
+  const request = await postWaveSpeedWithFallback({
+    apiKey,
+    endpoint,
+    body,
+    mediaType: "image",
+    quality: normalizedQuality,
+    model,
+  });
+  const resultUrl = await pollWaveSpeedResult({ apiKey, initial: request.initial, mediaType: "image" });
 
   console.log("NEW RESULT URL:", resultUrl);
 
   return {
     provider: "wavespeed",
-    model,
+    model: request.model,
     finalPrompt,
     seed: safeSeed,
     resultUrl,
-    raw: initial,
+    raw: request.initial,
   };
 }
 
@@ -609,23 +897,31 @@ async function generateNativeVideoWithWaveSpeed({
   console.log("TYPE:", "video");
   console.log("QUALITY:", quality);
   console.log("MODEL:", model);
+  console.log("WAVESPEED MODEL:", model);
   console.log("REQUEST_ID:", requestId);
   console.log("USER_PROMPT:", prompt);
   console.log("FINAL_PROMPT:", finalPrompt);
   console.log("WAVESPEED BODY SENT:", JSON.stringify({ ...body, prompt: compactForLog(body.prompt) }));
 
-  const initial = await postWaveSpeed({ apiKey, endpoint, body });
-  const resultUrl = await pollWaveSpeedResult({ apiKey, initial, mediaType: "video" });
+  const request = await postWaveSpeedWithFallback({
+    apiKey,
+    endpoint,
+    body,
+    mediaType: "video",
+    quality,
+    model,
+  });
+  const resultUrl = await pollWaveSpeedResult({ apiKey, initial: request.initial, mediaType: "video" });
 
   console.log("NEW RESULT URL:", resultUrl);
 
   return {
     provider: "wavespeed",
-    model,
+    model: request.model,
     finalPrompt,
     seed: safeSeed,
     resultUrl,
-    raw: initial,
+    raw: request.initial,
   };
 }
 
