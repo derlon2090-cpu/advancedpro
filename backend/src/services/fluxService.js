@@ -288,7 +288,7 @@ async function postToBfl({ apiKey, prompt, quality, style, requestId, seed: requ
   console.log("REQUEST_ID:", requestId);
   console.log("SEED:", seed);
   console.log(
-    "API_BODY:",
+    "BFL BODY SENT:",
     JSON.stringify({
       ...payload,
       prompt: compactForLog(payload.prompt, 1400),

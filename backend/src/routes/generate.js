@@ -601,6 +601,9 @@ router.post(
       httpError("تم إنشاء النتيجة لكن تعذر حفظها. لم يتم خصم الرصيد، وتم تسجيل الخطأ للمراجعة.", 500);
     }
 
+    console.log("SAVED GENERATION ID:", generationId);
+    console.log("SAVED RESULT URL:", result.resultUrl);
+
     logInfo("GENERATION_COMPLETED", {
       keyId,
       generationId,
