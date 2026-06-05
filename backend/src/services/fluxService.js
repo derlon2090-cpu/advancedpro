@@ -239,8 +239,12 @@ async function readJsonResponse(response) {
 function getFluxModelConfig(quality) {
   if (quality === "ultra") {
     return {
-      endpoint: process.env.BFL_ULTRA_API_URL || process.env.BFL_API_URL || "https://api.bfl.ai/v1/flux-pro-1.1-ultra",
-      model: process.env.BFL_ULTRA_MODEL || "flux-pro-1.1-ultra",
+      endpoint:
+        process.env.BFL_ULTRA_API_URL ||
+        process.env.BFL_HIGH_API_URL ||
+        process.env.BFL_API_URL ||
+        "https://api.bfl.ai/v1/flux-pro-1.1",
+      model: process.env.BFL_ULTRA_MODEL || process.env.BFL_HIGH_MODEL || "flux-pro-1.1",
     };
   }
 

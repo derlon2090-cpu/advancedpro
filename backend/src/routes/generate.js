@@ -96,11 +96,44 @@ function serializeGeneration(row) {
     model: row.model,
     seed: row.seed,
     creditsUsed: Number(row.credits_used || 0),
+    xpCost: Number(row.credits_used || 0),
     status: row.status,
     resultUrl: row.result_url,
     createdAt: row.created_at,
     completedAt: row.completed_at,
   };
+}
+
+async function loadCompletedGenerationById({ keyId, generationId }) {
+  const rows = await withDbRetry(() =>
+    prisma.$queryRaw`
+      SELECT id,
+             request_id,
+             type,
+             prompt,
+             quality,
+             style,
+             aspect_ratio,
+             duration,
+             provider,
+             model,
+             seed,
+             final_prompt,
+             credits_used,
+             status,
+             result_url,
+             created_at,
+             completed_at
+      FROM generations
+      WHERE key_id = ${keyId}
+        AND id = ${generationId}
+        AND status = 'completed'
+        AND result_url IS NOT NULL
+      LIMIT 1
+    `
+  );
+
+  return rows[0] || null;
 }
 
 async function ensureGenerationTable() {
@@ -446,44 +479,18 @@ router.get(
 
     console.log("GET GENERATION ID:", generationId);
 
-    const rows = await withDbRetry(() =>
-      prisma.$queryRaw`
-        SELECT id,
-               request_id,
-               type,
-               prompt,
-               quality,
-               style,
-               aspect_ratio,
-               duration,
-               provider,
-               model,
-               seed,
-               final_prompt,
-               credits_used,
-               status,
-               result_url,
-               created_at,
-               completed_at
-        FROM generations
-        WHERE key_id = ${keyId}
-          AND id = ${generationId}
-          AND status = 'completed'
-          AND result_url IS NOT NULL
-        LIMIT 1
-      `
-    );
+    const generation = await loadCompletedGenerationById({ keyId, generationId });
 
-    if (!rows.length) {
+    if (!generation) {
       httpError("لم يتم العثور على النتيجة المطلوبة.", 404);
     }
 
-    console.log("GET GENERATION RESULT ID:", rows[0].id);
-    console.log("GET GENERATION RESULT URL:", rows[0].result_url);
+    console.log("GET GENERATION RESULT ID:", generation.id);
+    console.log("GET GENERATION RESULT URL:", generation.result_url);
 
     return res.json({
       success: true,
-      generation: serializeGeneration(rows[0]),
+      generation: serializeGeneration(generation),
     });
   })
 );
@@ -609,6 +616,14 @@ router.post(
     console.log("SAVED GENERATION ID:", generationId);
     console.log("SAVED RESULT URL:", result.resultUrl);
 
+    const savedGenerationRow = await loadCompletedGenerationById({ keyId, generationId });
+    if (!savedGenerationRow) {
+      httpError("تم إنشاء النتيجة لكن تعذر جلب السجل المحفوظ من قاعدة البيانات.", 500);
+    }
+
+    const savedGeneration = serializeGeneration(savedGenerationRow);
+    console.log("SAVED GENERATION:", JSON.stringify(savedGeneration));
+
     logInfo("GENERATION_COMPLETED", {
       keyId,
       generationId,
@@ -618,34 +633,14 @@ router.post(
       seed: result.seed,
     });
 
-    const responseGeneration = {
-      id: generationId,
-      requestId,
-      userPrompt: prompt,
-      prompt,
-      finalPrompt: result.finalPrompt || prompt,
-      resultUrl: result.resultUrl,
-      type,
-      quality,
-      style,
-      aspectRatio,
-      duration,
-      provider: result.provider,
-      model: result.model,
-      seed: result.seed,
-      creditsUsed,
-      status: "completed",
-      createdAt: new Date().toISOString(),
-    };
-
     console.log("GENERATION_RESPONSE_BINDING:", {
-      requestId,
-      generationId,
-      userPrompt: prompt,
-      finalPrompt: responseGeneration.finalPrompt,
-      resultUrl: result.resultUrl,
-      model: result.model,
-      seed: result.seed,
+      requestId: savedGeneration.requestId,
+      generationId: savedGeneration.id,
+      userPrompt: savedGeneration.userPrompt,
+      finalPrompt: savedGeneration.finalPrompt,
+      resultUrl: savedGeneration.resultUrl,
+      model: savedGeneration.model,
+      seed: savedGeneration.seed,
     });
 
     return res.json({
@@ -657,8 +652,9 @@ router.post(
       status: "completed",
       creditsUsed,
       creditsRemaining: Number(updatedKey.balance || 0),
+      newXpBalance: Number(updatedKey.balance || 0),
       accessCode: serializeKeyBalance(updatedKey),
-      generation: responseGeneration,
+      generation: savedGeneration,
     });
   })
 );

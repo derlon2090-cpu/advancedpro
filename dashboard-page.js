@@ -467,13 +467,14 @@
         return;
       }
 
-      const rawGeneration = data.generation || data.result || data;
-      const responseGenerationId = rawGeneration.id || data.generationId;
+      if (!data.generation?.id) {
+        throw new Error("لم يتم إنشاء معرف للنتيجة");
+      }
+
+      const rawGeneration = data.generation;
+      const responseGenerationId = rawGeneration.id;
       console.log("RESPONSE GENERATION ID:", responseGenerationId);
       console.log("RESPONSE REQUEST ID:", rawGeneration.requestId || data.requestId);
-      if (!responseGenerationId) {
-        throw new Error("تعذر فتح النتيجة لأن السيرفر لم يرجع معرف generation.id.");
-      }
 
       const generation = normalizeGeneration({
         ...rawGeneration,
@@ -504,6 +505,7 @@
       showToast(`تم الإنشاء بنجاح وتم خصم ${formatNumber(generation.creditsUsed)} XP.`);
       await refreshKey({ silent: true });
       console.log("OPEN GENERATION ROUTE ID:", generation.id);
+      console.log("REDIRECT GENERATION ID:", generation.id);
       window.location.href = `/generation?id=${encodeURIComponent(generation.id)}`;
     } catch (error) {
       if (error.name === "AbortError") {

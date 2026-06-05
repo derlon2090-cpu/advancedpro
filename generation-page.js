@@ -183,6 +183,32 @@
     };
   }
 
+  function normalizeServerGeneration(item) {
+    const generation = {
+      id: item?.id || item?.generationId || null,
+      requestId: item?.requestId || item?.request_id || null,
+      type: item?.type || "image",
+      prompt: item?.userPrompt || item?.prompt || "",
+      finalPrompt: item?.finalPrompt || item?.final_prompt || "",
+      quality: item?.quality || "normal",
+      style: item?.style || "realistic",
+      aspectRatio: item?.aspectRatio || item?.aspect_ratio || item?.aspect || "16:9",
+      duration: item?.duration || item?.durationSeconds || null,
+      model: item?.model || "",
+      seed: item?.seed || null,
+      creditsUsed: Number(item?.creditsUsed ?? item?.credits_used ?? item?.xpCost ?? item?.cost ?? 0),
+      createdAt: item?.createdAt || item?.created_at || null,
+      completedAt: item?.completedAt || item?.completed_at || null,
+      resultUrl: item?.resultUrl || item?.result_url || item?.url || item?.outputUrl || item?.imageUrl || item?.videoUrl || "",
+    };
+
+    if (!generation.id || !generation.resultUrl) {
+      throw new Error("بيانات النتيجة غير مكتملة من السيرفر.");
+    }
+
+    return generation;
+  }
+
   function keyCredits() {
     return Math.max(Number(state.key?.balance || 0), 0);
   }
@@ -333,6 +359,31 @@
     download.textContent = isVideo ? "تحميل الفيديو" : "تحميل الصورة";
   }
 
+  function renderResultError(message) {
+    state.result = null;
+    $("[data-success-title]").textContent = "تعذر العثور على النتيجة";
+    $("[data-success-copy]").textContent = message;
+    $("[data-details-title]").textContent = "تفاصيل النتيجة";
+    $("[data-detail-style]").textContent = "غير متاح";
+    $("[data-detail-aspect]").textContent = "غير متاح";
+    $("[data-detail-quality]").textContent = "غير متاح";
+    $("[data-detail-created]").textContent = "غير متاح";
+    $("[data-detail-model]").textContent = "غير متاح";
+    $("[data-detail-cost]").textContent = "غير متاح";
+    $("[data-detail-generation-id]").textContent = "غير متاح";
+    $("[data-detail-request-id]").textContent = "غير متاح";
+    $("[data-detail-seed]").textContent = "غير متاح";
+    $("[data-detail-prompt]").textContent = message;
+    $("[data-detail-result-url]").textContent = "غير متاح";
+    $("[data-result-badge]").textContent = "خطأ";
+    $("[data-result-media]").innerHTML =
+      `<div class="udv3-result-placeholder">${escapeHtml(message)}<br><a class="udv3-inline-link" href="/dashboard">العودة للوحة التحكم</a></div>`;
+
+    const download = $("[data-download-result]");
+    download.href = "#";
+    download.removeAttribute("download");
+  }
+
   async function refreshKey({ silent = false } = {}) {
     try {
       const data = await requestJson("/api/me/key");
@@ -375,9 +426,9 @@
 
   async function loadResult() {
     const id = getGenerationId();
+    console.log("PAGE QUERY ID:", id);
     if (!id) {
-      $("[data-result-media]").innerHTML =
-        '<div class="udv3-result-placeholder">لم يتم تحديد نتيجة للعرض. ارجع للوحة التحكم وافتح النتيجة من أحدث الإبداعات.</div>';
+      renderResultError("لم يتم العثور على معرف النتيجة.");
       return;
     }
 
@@ -385,16 +436,16 @@
       console.log("ROUTE GENERATION ID:", id);
       const data = await requestJson(`/api/generations/${encodeURIComponent(id)}`);
       console.log("SERVER GENERATION:", data.generation || data.result || data);
-      const result = normalizeGeneration(data.generation || data.result || data);
+      const result = normalizeServerGeneration(data.generation || data.result || data);
+      console.log("FETCHED GENERATION:", result);
       state.result = result;
       renderResult();
       renderTransactions();
     } catch (error) {
       console.warn("GENERATION LOAD WARNING:", error);
-      state.result = null;
-      $("[data-result-media]").innerHTML =
-        '<div class="udv3-result-placeholder">تعذر العثور على النتيجة. يرجى الرجوع للوحة التحكم.<br><a class="udv3-inline-link" href="/dashboard">العودة للوحة التحكم</a></div>';
-      showToast(error.message || "تعذر العثور على النتيجة.", "error");
+      const message = error.message || "تعذر العثور على النتيجة.";
+      renderResultError(message);
+      showToast(message, "error");
     }
   }
 
