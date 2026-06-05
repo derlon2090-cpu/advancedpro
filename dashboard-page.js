@@ -504,7 +504,7 @@
       showToast(`تم الإنشاء بنجاح وتم خصم ${formatNumber(generation.creditsUsed)} XP.`);
       await refreshKey({ silent: true });
       console.log("OPEN GENERATION ROUTE ID:", generation.id);
-      window.location.href = `/generations/${encodeURIComponent(generation.id)}`;
+      window.location.href = `/generation.html?id=${encodeURIComponent(generation.id)}`;
     } catch (error) {
       if (error.name === "AbortError") {
         setMessage("تم إلغاء الإنشاء. لم يتم خصم أي رصيد.", "info");
