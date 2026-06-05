@@ -175,6 +175,7 @@ app.use("/api/keys", keyRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/generate", generateRoutes);
+app.use("/api/generations", generateRoutes);
 app.use("/api/debug-generate-image", debugGenerateImageRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/usage", usageRoutes);

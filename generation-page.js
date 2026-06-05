@@ -333,37 +333,6 @@
     download.textContent = isVideo ? "تحميل الفيديو" : "تحميل الصورة";
   }
 
-  function loadCachedResult(id) {
-    if (!id) {
-      return null;
-    }
-
-    try {
-      const exact = sessionStorage.getItem(`generation:${id}`);
-      if (exact) return normalizeGeneration(JSON.parse(exact));
-
-      const latest = sessionStorage.getItem("pixigen:lastGeneration") || sessionStorage.getItem("latestGeneration");
-      if (latest) {
-        const parsed = normalizeGeneration(JSON.parse(latest));
-        if (String(parsed.id) === String(id)) return parsed;
-      }
-
-      const list = JSON.parse(sessionStorage.getItem("pixigen:generations") || "[]");
-      const found = list.find((item) => String(item.id) === String(id));
-      return found ? normalizeGeneration(found) : null;
-    } catch {
-      return null;
-    }
-  }
-
-  function cacheResults(list) {
-    try {
-      sessionStorage.setItem("pixigen:generations", JSON.stringify(list.slice(0, 30)));
-    } catch {
-      // Cache is only a convenience.
-    }
-  }
-
   async function refreshKey({ silent = false } = {}) {
     try {
       const data = await requestJson("/api/me/key");
@@ -397,14 +366,9 @@
         .map(normalizeGeneration)
         .filter((item) => item.resultUrl);
       state.results = list;
-      cacheResults(list);
     } catch (error) {
       if (!silent) console.warn("GENERATIONS LOAD WARNING:", error);
-      try {
-        state.results = JSON.parse(sessionStorage.getItem("pixigen:generations") || "[]").map(normalizeGeneration);
-      } catch {
-        state.results = [];
-      }
+      state.results = [];
     }
     renderRecent();
   }
@@ -418,30 +382,19 @@
     }
 
     try {
-      const data = await requestJson(`/api/generate/${encodeURIComponent(id)}`);
+      console.log("ROUTE GENERATION ID:", id);
+      const data = await requestJson(`/api/generations/${encodeURIComponent(id)}`);
+      console.log("SERVER GENERATION:", data.generation || data.result || data);
       const result = normalizeGeneration(data.generation || data.result || data);
       state.result = result;
-      try {
-        sessionStorage.setItem(`generation:${result.id}`, JSON.stringify(result));
-        sessionStorage.setItem("pixigen:lastGeneration", JSON.stringify(result));
-      } catch {
-        // Ignore storage failures.
-      }
       renderResult();
       renderTransactions();
     } catch (error) {
       console.warn("GENERATION LOAD WARNING:", error);
-      const cached = loadCachedResult(id);
-      if (cached) {
-        state.result = cached;
-        renderResult();
-        renderTransactions();
-        showToast("تعذر جلب النتيجة من السيرفر، تم عرض نسخة محفوظة مطابقة للمعرف.", "error");
-      } else {
-        $("[data-result-media]").innerHTML =
-          '<div class="udv3-result-placeholder">تعذر تحميل النتيجة. ارجع للوحة التحكم وحاول مرة أخرى.</div>';
-        showToast(error.message || "تعذر تحميل النتيجة.", "error");
-      }
+      state.result = null;
+      $("[data-result-media]").innerHTML =
+        '<div class="udv3-result-placeholder">تعذر العثور على النتيجة. يرجى الرجوع للوحة التحكم.<br><a class="udv3-inline-link" href="/dashboard">العودة للوحة التحكم</a></div>';
+      showToast(error.message || "تعذر العثور على النتيجة.", "error");
     }
   }
 
