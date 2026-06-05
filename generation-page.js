@@ -255,7 +255,7 @@
             : `<img src="${escapeHtml(mediaUrl)}" alt="${escapeHtml(result.prompt)}" loading="lazy" />`;
         return `
           <article class="udv3-creation-card">
-            <a class="udv3-creation-preview" href="/generation.html?id=${encodeURIComponent(result.id)}">
+            <a class="udv3-creation-preview" href="/generation?id=${encodeURIComponent(result.id)}">
               <span class="udv3-creation-media">${media}</span>
               <b>${typeLabel(result.type)}</b>
             </a>
