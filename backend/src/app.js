@@ -23,6 +23,7 @@ import { getAiKeyStatus } from "./services/aiProvider.js";
 import { getActivationCodeById } from "./services/activationCodes.js";
 import { asyncHandler } from "./utils/asyncHandler.js";
 import { logError } from "./utils/logger.js";
+import { serializeBigInt } from "./utils/serializeBigInt.js";
 
 const app = express();
 app.set("trust proxy", 1);
@@ -73,6 +74,11 @@ app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 app.use(cookieParser());
 app.use(morgan("dev"));
+app.use((_req, res, next) => {
+  const originalJson = res.json.bind(res);
+  res.json = (body) => originalJson(serializeBigInt(body));
+  next();
+});
 app.use((req, res, next) => {
   req.requestId = randomUUID();
   res.setHeader("X-Request-Id", req.requestId);
@@ -176,6 +182,7 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/generate", generateRoutes);
 app.use("/api/generations", generateRoutes);
+app.use("/api/results", generateRoutes);
 app.use("/api/debug-generate-image", debugGenerateImageRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/usage", usageRoutes);

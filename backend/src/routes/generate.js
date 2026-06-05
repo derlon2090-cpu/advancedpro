@@ -5,6 +5,7 @@ import { aiLimiter } from "../middleware/rateLimit.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { withDbRetry } from "../utils/dbRetry.js";
 import { logError, logInfo } from "../utils/logger.js";
+import { serializeBigInt } from "../utils/serializeBigInt.js";
 import { generateFluxImage } from "../services/fluxService.js";
 import { generateWaveSpeedVideo } from "../services/wavespeedService.js";
 import {
@@ -622,7 +623,7 @@ router.post(
     }
 
     const savedGeneration = serializeGeneration(savedGenerationRow);
-    console.log("SAVED GENERATION:", JSON.stringify(savedGeneration));
+    console.log("SAVED GENERATION:", JSON.stringify(serializeBigInt(savedGeneration)));
 
     logInfo("GENERATION_COMPLETED", {
       keyId,
