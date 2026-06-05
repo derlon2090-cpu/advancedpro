@@ -413,3 +413,60 @@ export async function generateFluxImage({ prompt, quality = "normal", style = ""
     raw: initial,
   };
 }
+
+export async function debugGenerateFixedFluxImage() {
+  const apiKey = requireApiKey();
+  const endpoint =
+    process.env.BFL_DEBUG_API_URL ||
+    process.env.BFL_API_URL ||
+    "https://api.bfl.ai/v1/flux-pro-1.1";
+  const model = process.env.BFL_DEBUG_MODEL || process.env.BFL_HIGH_MODEL || "flux-pro-1.1";
+  const body = {
+    prompt:
+      "Black cat sitting next to a black dog, realistic photo, full body animals, clean background, no humans, no food, no text, no watermark",
+    width: 1024,
+    height: 1024,
+    steps: 28,
+  };
+
+  console.log("BFL DEBUG MODEL:", model);
+  console.log("BFL BODY SENT:", JSON.stringify(body, null, 2));
+
+  const response = await fetch(endpoint, {
+    method: "POST",
+    cache: "no-store",
+    headers: {
+      accept: "application/json",
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store",
+      "x-key": apiKey,
+    },
+    body: JSON.stringify(body),
+  });
+
+  const data = await readJsonResponse(response);
+  console.log(
+    "BFL DEBUG RESPONSE:",
+    JSON.stringify({
+      ok: response.ok,
+      status: response.status,
+      responseKeys: data && typeof data === "object" ? Object.keys(data).slice(0, 12) : [],
+    })
+  );
+
+  if (!response.ok) {
+    const message = data?.detail || data?.message || data?.error || "فشل اختبار BFL المباشر.";
+    throw serviceError(typeof message === "string" ? message : JSON.stringify(message), response.status >= 500 ? 502 : 400);
+  }
+
+  const resultUrl = await pollBflResult({ apiKey, initial: data });
+  console.log("BFL DEBUG NEW RESULT URL:", resultUrl);
+
+  return {
+    provider: "bfl",
+    model,
+    prompt: body.prompt,
+    resultUrl,
+    raw: data,
+  };
+}
