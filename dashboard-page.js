@@ -429,6 +429,12 @@
     state.activeRequestId = requestId;
     state.abortController = controller;
     setMessage("", "info");
+    try {
+      sessionStorage.removeItem("latestGeneration");
+      sessionStorage.removeItem("pixigen:lastGeneration");
+    } catch {
+      // Start every generation without displaying a stale previous result.
+    }
     setLoading(true);
 
     const payload = {
@@ -440,6 +446,9 @@
       aspectRatio: state.aspect,
       aspect: state.aspect,
       duration: state.type === "video" ? Number(state.duration) : undefined,
+      referenceImage: null,
+      imagePrompt: null,
+      initImage: null,
       seed: Math.floor(Math.random() * 999999999),
     };
 

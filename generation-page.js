@@ -330,6 +330,10 @@
   }
 
   function loadCachedResult(id) {
+    if (!id) {
+      return null;
+    }
+
     try {
       const exact = sessionStorage.getItem(`generation:${id}`);
       if (exact) return normalizeGeneration(JSON.parse(exact));
@@ -337,7 +341,7 @@
       const latest = sessionStorage.getItem("pixigen:lastGeneration") || sessionStorage.getItem("latestGeneration");
       if (latest) {
         const parsed = normalizeGeneration(JSON.parse(latest));
-        if (!id || String(parsed.id) === String(id)) return parsed;
+        if (String(parsed.id) === String(id)) return parsed;
       }
 
       const list = JSON.parse(sessionStorage.getItem("pixigen:generations") || "[]");

@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { randomUUID } from "node:crypto";
 import { prisma } from "../lib/prisma.js";
 import { aiLimiter } from "../middleware/rateLimit.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -495,11 +496,14 @@ router.post(
     const style = String(req.body.style || "").trim();
     const aspectRatio = String(req.body.aspectRatio || req.body.aspect || "").trim();
     const prompt = assertValidPrompt(req.body.prompt);
-    const requestId = String(req.body.requestId || "").trim().slice(0, 80) || `server-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const requestId = String(req.body.requestId || "").trim().slice(0, 80) || randomUUID();
+    const providedSeed = Number(req.body.seed);
+    const seed = Number.isFinite(providedSeed) ? providedSeed : Math.floor(Math.random() * 999999999);
     const creditsUsed = calculateRequiredCredits(type, quality, duration || 5);
 
-    console.log("REQUEST ID:", requestId);
-    console.log("PROMPT SENT:", prompt);
+    console.log("USER_PROMPT:", prompt);
+    console.log("REQUEST_ID:", requestId);
+    console.log("SEED:", seed);
     console.log("SELECTED TYPE:", type);
     console.log("SELECTED QUALITY:", quality);
     console.log("CREDITS USED:", creditsUsed);
@@ -512,6 +516,7 @@ router.post(
       creditsUsed,
       prompt,
       requestId,
+      seed,
     });
 
     await assertNoRunningGeneration(keyId);
@@ -534,10 +539,13 @@ router.post(
 
     try {
       if (type === "image") {
-        result = await generateFluxImage({ prompt, quality, style, requestId });
+        result = await generateFluxImage({ prompt, quality, style, requestId, seed });
       } else {
         result = await generateWaveSpeedVideo({ prompt, duration, quality, style });
       }
+
+      console.log("RESULT_URL:", result?.resultUrl || "");
+      console.log("GENERATION_ID:", generationId);
 
       logInfo("GENERATION_PROVIDER_RESULT", {
         keyId,
@@ -559,8 +567,6 @@ router.post(
     if (!result?.resultUrl) {
       await markGenerationFailed({ generationId, message: "لم يرجع مزود التوليد رابط نتيجة." });
       httpError("فشل التوليد، لم يتم خصم أي رصيد. السبب: لم يرجع مزود التوليد رابط نتيجة.", 502);
-      await markGenerationFailed({ generationId, message: "لم يرجع المزود رابط نتيجة." });
-      httpError("فشل التوليد، لم يتم خصم أي رصيد.", 502);
     }
 
     let updatedKey;

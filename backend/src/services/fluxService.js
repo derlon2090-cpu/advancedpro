@@ -27,7 +27,7 @@ function randomSeed() {
   return Math.floor(Math.random() * 1_000_000_000);
 }
 
-const IMAGE_NEGATIVE_PROMPT = [
+const BASE_IMAGE_NEGATIVE_PROMPT = [
   "text",
   "words",
   "letters",
@@ -45,13 +45,68 @@ const IMAGE_NEGATIVE_PROMPT = [
   "distorted face",
   "extra fingers",
   "deformed hands",
-  "random woman",
-  "random man",
-  "food",
-  "animals",
-  "rabbit",
-  "pet",
+  "wrong subject",
+  "previous image",
+  "old prompt",
+  "cached result",
 ].join(", ");
+
+function includesAny(text, terms) {
+  return terms.some((term) => text.includes(term));
+}
+
+function promptRequestsHuman(userPrompt) {
+  const text = String(userPrompt || "").toLowerCase();
+  return (
+    /\b(human|person|people|man|woman|male|female|boy|girl|businessman|portrait)\b/i.test(text) ||
+    includesAny(text, [
+      "رجل",
+      "امرأة",
+      "مرأه",
+      "شخص",
+      "إنسان",
+      "انسان",
+      "بشر",
+      "شاب",
+      "فتاة",
+      "بنت",
+      "سيدة",
+      "وجه",
+      "بورتريه",
+    ])
+  );
+}
+
+function promptRequestsAnimal(userPrompt) {
+  const text = String(userPrompt || "").toLowerCase();
+  return (
+    /\b(animal|animals|rabbit|cat|dog|pet|horse|bird)\b/i.test(text) ||
+    includesAny(text, ["حيوان", "حيوانات", "أرنب", "ارنب", "قط", "كلب", "حصان", "طائر"])
+  );
+}
+
+function promptRequestsFood(userPrompt) {
+  const text = String(userPrompt || "").toLowerCase();
+  return /\b(food|meal|burger|pizza|fries)\b/i.test(text) || includesAny(text, ["طعام", "اكل", "أكل", "وجبة"]);
+}
+
+function buildNegativePrompt(userPrompt) {
+  const subjectBlocks = [];
+
+  if (!promptRequestsHuman(userPrompt)) {
+    subjectBlocks.push("human", "humans", "person", "people", "man", "woman", "businessman", "suit", "office", "portrait");
+  }
+
+  if (!promptRequestsAnimal(userPrompt)) {
+    subjectBlocks.push("animals", "animal", "rabbit", "pet", "cat", "dog");
+  }
+
+  if (!promptRequestsFood(userPrompt)) {
+    subjectBlocks.push("food", "meal", "fries", "burger");
+  }
+
+  return [...new Set([...subjectBlocks, ...BASE_IMAGE_NEGATIVE_PROMPT.split(", ")])].join(", ");
+}
 
 function arabicPromptHints(userPrompt) {
   const text = String(userPrompt || "").toLowerCase();
@@ -67,7 +122,12 @@ function arabicPromptHints(userPrompt) {
   addIf([/وسيم/, /handsome/], "handsome");
   addIf([/بدلة/, /بذلة/, /suit/], "formal suit");
   addIf([/مكتب\s*حديث/, /مكتب/, /office/], "modern luxury office");
-  addIf([/روبوت/, /robot/], "friendly robot assistant");
+  addIf([/روبوتات|روبوت/, /robot|robots/], "robots, full-body mechanical robots, no humans");
+  addIf([/القمر|قمر/, /moon|lunar/], "moon surface, lunar landscape");
+  addIf([/أصفر|اصفر/, /yellow/], "yellow color");
+  addIf([/أحمر|احمر/, /red/], "red color");
+  addIf([/أزرق|ازرق/, /blue/], "blue color");
+  addIf([/أخضر|اخضر/, /green/], "green color");
   addIf([/سيارة/, /car/], "car");
   addIf([/منزل/, /بيت/, /house/, /villa/], "modern house");
   addIf([/أنمي/, /انمي/, /anime/], "anime style character");
@@ -86,6 +146,7 @@ function buildImagePrompt({ prompt, quality, style }) {
   const userPrompt = String(prompt || "").trim();
   const styleText = String(style || "").trim();
   const hints = arabicPromptHints(userPrompt);
+  const negativePrompt = buildNegativePrompt(userPrompt);
   const qualityHints = {
     normal: "clean composition, clear subject, good lighting",
     high: "high quality, realistic details, sharp focus, professional lighting",
@@ -104,7 +165,10 @@ function buildImagePrompt({ prompt, quality, style }) {
     "- If the request says رجل, generate a male person only.",
     "- If the request says امرأة, generate a female person only.",
     "- If the request mentions businessman or رجل أعمال, create a male businessman wearing a formal suit.",
-    "- Do not create random women, food, animals, rabbits, pets, landscapes, or unrelated scenes unless explicitly requested.",
+    "- Do not reuse previous subjects, previous prompts, cached results, or old reference images.",
+    "- Do not create random people, food, animals, rabbits, pets, landscapes, or unrelated scenes unless explicitly requested.",
+    "- If the user asks for robots, generate robots only and do not generate humans.",
+    "- If the user asks for the moon, show the moon surface or lunar environment clearly.",
     "- Do not add any written text inside the image.",
     "- Do not add Arabic letters, captions, subtitles, watermarks, logos, grid lines, UI overlays, or frames.",
     "- Avoid blurry output, distorted faces, extra fingers, and deformed hands.",
@@ -112,7 +176,7 @@ function buildImagePrompt({ prompt, quality, style }) {
     "Professional realistic photography, clean composition, cinematic professional lighting.",
     `Quality direction: ${qualityHints[quality] || qualityHints.normal}.`,
     styleText ? `Visual style: ${styleText}.` : "",
-    `Negative prompt guidance: ${IMAGE_NEGATIVE_PROMPT}.`,
+    `Negative prompt guidance: ${negativePrompt}.`,
   ]
     .filter(Boolean)
     .join("\n");
@@ -193,11 +257,11 @@ function getFluxModelConfig(quality) {
   };
 }
 
-async function postToBfl({ apiKey, prompt, quality, style, requestId }) {
+async function postToBfl({ apiKey, prompt, quality, style, requestId, seed: requestedSeed }) {
   const { endpoint, model } = getFluxModelConfig(quality);
   const finalPrompt = buildImagePrompt({ prompt, quality, style });
-  const negativePrompt = IMAGE_NEGATIVE_PROMPT;
-  const seed = randomSeed();
+  const negativePrompt = buildNegativePrompt(prompt);
+  const seed = Number.isFinite(Number(requestedSeed)) ? Number(requestedSeed) : randomSeed();
   const payload = {
     prompt: finalPrompt,
     width: Number(process.env.BFL_IMAGE_WIDTH || 1024),
@@ -217,6 +281,7 @@ async function postToBfl({ apiKey, prompt, quality, style, requestId }) {
   console.log("FINAL_PROMPT:", payload.prompt);
   console.log("NEGATIVE_PROMPT:", negativePrompt);
   console.log("MODEL:", model);
+  console.log("REQUEST_ID:", requestId);
   console.log("SEED:", seed);
   console.log(
     "API_BODY:",
@@ -316,9 +381,16 @@ async function pollBflResult({ apiKey, initial }) {
   throw serviceError("انتهت مهلة انتظار نتيجة الصورة.", 504);
 }
 
-export async function generateFluxImage({ prompt, quality = "normal", style = "", requestId = "" }) {
+export async function generateFluxImage({ prompt, quality = "normal", style = "", requestId = "", seed }) {
   const apiKey = requireApiKey();
-  const { data: initial, model, finalPrompt, seed } = await postToBfl({ apiKey, prompt, quality, style, requestId });
+  const { data: initial, model, finalPrompt, seed: finalSeed } = await postToBfl({
+    apiKey,
+    prompt,
+    quality,
+    style,
+    requestId,
+    seed,
+  });
   const resultUrl = await pollBflResult({ apiKey, initial });
 
   console.log(
@@ -327,7 +399,7 @@ export async function generateFluxImage({ prompt, quality = "normal", style = ""
       userPrompt: compactForLog(prompt),
       finalPrompt: compactForLog(finalPrompt, 1400),
       model,
-      seed,
+      seed: finalSeed,
       resultUrl,
     })
   );
@@ -336,7 +408,7 @@ export async function generateFluxImage({ prompt, quality = "normal", style = ""
     provider: "bfl",
     model,
     finalPrompt,
-    seed,
+    seed: finalSeed,
     resultUrl,
     raw: initial,
   };
