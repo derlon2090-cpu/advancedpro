@@ -1,4 +1,8 @@
 import {
+  ALLOWED_NATIVE_DURATIONS_BY_MODEL,
+  IMAGE_MODELS,
+  MAX_VIDEO_DURATION_BY_QUALITY,
+  VIDEO_MODELS,
   WAVE_IMAGE_ENDPOINTS,
   WAVE_IMAGE_MODELS,
   WAVE_VIDEO_ENDPOINTS,
@@ -18,14 +22,6 @@ const STYLE_LABELS = {
   "three-d": "3D rendered style",
   "3d": "3D rendered style",
   commercial: "premium commercial advertising style",
-};
-
-const ALLOWED_DURATIONS_BY_MODEL = {
-  "wan-2.2-ultra-fast": [5, 8],
-  "wan-2.7": [5, 8],
-  "kling-3.0": [5, 8],
-  "kling-v3.0": [5, 8],
-  "veo-3.1-fast": [5, 8],
 };
 
 function wait(ms) {
@@ -352,11 +348,12 @@ function resolveEndpoint(envNames, fallback) {
 function getImageConfig(quality) {
   const normalizedQuality = normalizeQuality(quality);
   const envPrefix = `WAVESPEED_IMAGE_${normalizedQuality.toUpperCase()}`;
+  const defaults = IMAGE_MODELS[normalizedQuality] || IMAGE_MODELS.normal;
   return {
-    model: process.env[`${envPrefix}_MODEL`] || WAVE_IMAGE_MODELS[normalizedQuality],
+    model: process.env[`${envPrefix}_MODEL`] || defaults.model || WAVE_IMAGE_MODELS[normalizedQuality],
     endpoint: resolveEndpoint(
       [`${envPrefix}_API_URL`, `${envPrefix}_ENDPOINT`, "WAVESPEED_IMAGE_API_URL"],
-      WAVE_IMAGE_ENDPOINTS[normalizedQuality]
+      defaults.endpoint || WAVE_IMAGE_ENDPOINTS[normalizedQuality]
     ),
   };
 }
@@ -364,19 +361,32 @@ function getImageConfig(quality) {
 function getVideoConfig(quality) {
   const normalizedQuality = normalizeQuality(quality);
   const envPrefix = `WAVESPEED_VIDEO_${normalizedQuality.toUpperCase()}`;
+  const defaults = VIDEO_MODELS[normalizedQuality] || VIDEO_MODELS.normal;
   return {
-    model: process.env[`${envPrefix}_MODEL`] || WAVE_VIDEO_MODELS[normalizedQuality],
+    model: process.env[`${envPrefix}_MODEL`] || defaults.model || WAVE_VIDEO_MODELS[normalizedQuality],
     endpoint: resolveEndpoint(
       [`${envPrefix}_API_URL`, `${envPrefix}_ENDPOINT`, "WAVESPEED_VIDEO_API_URL", "WAVESPEED_API_URL"],
-      WAVE_VIDEO_ENDPOINTS[normalizedQuality]
+      defaults.endpoint || WAVE_VIDEO_ENDPOINTS[normalizedQuality]
     ),
   };
 }
 
 function allowedDurationsForModel(model, endpoint) {
   const haystack = `${model || ""} ${endpoint || ""}`.toLowerCase();
-  const match = Object.entries(ALLOWED_DURATIONS_BY_MODEL).find(([name]) => haystack.includes(name));
+  const match = Object.entries(ALLOWED_NATIVE_DURATIONS_BY_MODEL).find(([name]) => haystack.includes(name));
   return match?.[1] || [5, 8];
+}
+
+function assertRequestedVideoDurationAllowed(quality, duration) {
+  const normalizedQuality = normalizeQuality(quality);
+  const requestedDuration = Number(duration || 5);
+  const maxDuration = MAX_VIDEO_DURATION_BY_QUALITY[normalizedQuality] || MAX_VIDEO_DURATION_BY_QUALITY.normal;
+
+  if (requestedDuration > maxDuration) {
+    throw serviceError("هذه المدة غير متاحة للجودة المختارة. اختر جودة أقل أو مدة أقصر.", 400);
+  }
+
+  return requestedDuration;
 }
 
 function validateDuration(model, endpoint, duration) {
@@ -541,8 +551,52 @@ export async function generateVideoWithWaveSpeed({
   const apiKey = requireApiKey();
   const normalizedQuality = normalizeQuality(quality);
   const { endpoint, model } = getVideoConfig(normalizedQuality);
+  const requestedDuration = assertRequestedVideoDurationAllowed(normalizedQuality, duration);
+  const nativeDurations = allowedDurationsForModel(model, endpoint);
+
+  if (!nativeDurations.includes(requestedDuration)) {
+    return generateLongVideoWithWaveSpeed({
+      prompt,
+      quality: normalizedQuality,
+      duration: requestedDuration,
+      aspectRatio,
+      style,
+      requestId,
+      seed,
+      apiKey,
+      config: { endpoint, model },
+      nativeDurations,
+    });
+  }
+
+  return generateNativeVideoWithWaveSpeed({
+    apiKey,
+    endpoint,
+    model,
+    prompt,
+    duration: requestedDuration,
+    quality: normalizedQuality,
+    aspectRatio,
+    style,
+    requestId,
+    seed,
+  });
+}
+
+async function generateNativeVideoWithWaveSpeed({
+  apiKey,
+  endpoint,
+  model,
+  prompt,
+  duration,
+  quality,
+  aspectRatio,
+  style,
+  requestId,
+  seed,
+}) {
   const safeDuration = validateDuration(model, endpoint, duration);
-  const finalPrompt = buildFinalPrompt({ userPrompt: prompt, quality: normalizedQuality, style, type: "video" });
+  const finalPrompt = buildFinalPrompt({ userPrompt: prompt, quality, style, type: "video" });
   const safeSeed = randomSeed(seed);
   const body = {
     prompt: finalPrompt,
@@ -553,7 +607,7 @@ export async function generateVideoWithWaveSpeed({
 
   console.log("PROVIDER:", "wavespeed");
   console.log("TYPE:", "video");
-  console.log("QUALITY:", normalizedQuality);
+  console.log("QUALITY:", quality);
   console.log("MODEL:", model);
   console.log("REQUEST_ID:", requestId);
   console.log("USER_PROMPT:", prompt);
@@ -573,6 +627,119 @@ export async function generateVideoWithWaveSpeed({
     resultUrl,
     raw: initial,
   };
+}
+
+export async function generateLongVideoWithWaveSpeed({
+  prompt,
+  duration,
+  quality = "normal",
+  aspectRatio = "16:9",
+  style = "",
+  requestId = "",
+  seed,
+  apiKey = null,
+  config = null,
+  nativeDurations = null,
+}) {
+  const normalizedQuality = normalizeQuality(quality);
+  const requestedDuration = assertRequestedVideoDurationAllowed(normalizedQuality, duration);
+  const resolvedApiKey = apiKey || requireApiKey();
+  const resolvedConfig = config || getVideoConfig(normalizedQuality);
+  const allowedNativeDurations = nativeDurations || allowedDurationsForModel(resolvedConfig.model, resolvedConfig.endpoint);
+  const chunkDuration = allowedNativeDurations.includes(8) ? 8 : allowedNativeDurations[0] || 5;
+  const clipsNeeded = Math.ceil(requestedDuration / chunkDuration);
+
+  console.log("PROVIDER:", "wavespeed");
+  console.log("TYPE:", "video");
+  console.log("QUALITY:", normalizedQuality);
+  console.log("MODEL:", resolvedConfig.model);
+  console.log("REQUEST_ID:", requestId);
+  console.log("LONG_VIDEO_REQUEST:", JSON.stringify({ requestedDuration, chunkDuration, clipsNeeded }));
+
+  if (process.env.WAVESPEED_ENABLE_LONG_VIDEO_MERGE !== "true") {
+    throw serviceError(
+      "الفيديو الطويل يحتاج تفعيل دمج المقاطع في الخادم. اختر 5 أو 8 ثواني حاليًا، أو فعّل WAVESPEED_ENABLE_LONG_VIDEO_MERGE.",
+      400
+    );
+  }
+
+  if (!String(process.env.WAVESPEED_LONG_VIDEO_MERGE_URL || "").trim()) {
+    throw serviceError(
+      "دمج الفيديو الطويل غير مفعّل في الخادم. أضف WAVESPEED_LONG_VIDEO_MERGE_URL قبل السماح بمدد أطول من 8 ثواني.",
+      400
+    );
+  }
+
+  const clipUrls = [];
+  for (let index = 0; index < clipsNeeded; index += 1) {
+    const clipSeed = randomSeed(Number(seed) + index || undefined);
+    const clipPrompt = `${prompt}\nContinuous shot, part ${index + 1} of ${clipsNeeded}. Keep the same subject, style, colors, and scene continuity.`;
+    const clip = await generateNativeVideoWithWaveSpeed({
+      apiKey: resolvedApiKey,
+      endpoint: resolvedConfig.endpoint,
+      model: resolvedConfig.model,
+      prompt: clipPrompt,
+      duration: chunkDuration,
+      quality: normalizedQuality,
+      aspectRatio,
+      style,
+      requestId: `${requestId || "long-video"}-part-${index + 1}`,
+      seed: clipSeed,
+    });
+    clipUrls.push(clip.resultUrl);
+  }
+
+  const resultUrl = await mergeVideoClipsWithFfmpeg({
+    clipUrls,
+    targetDuration: requestedDuration,
+  });
+
+  return {
+    provider: "wavespeed",
+    model: `${resolvedConfig.model}+merged`,
+    finalPrompt: buildFinalPrompt({ userPrompt: prompt, quality: normalizedQuality, style, type: "video" }),
+    seed,
+    resultUrl,
+    raw: { clipUrls, requestedDuration, chunkDuration, clipsNeeded },
+  };
+}
+
+export async function mergeVideoClipsWithFfmpeg({ clipUrls, targetDuration }) {
+  if (!Array.isArray(clipUrls) || clipUrls.length === 0) {
+    throw serviceError("لا توجد مقاطع صالحة للدمج.", 500);
+  }
+
+  const mergeEndpoint = String(process.env.WAVESPEED_LONG_VIDEO_MERGE_URL || "").trim();
+  if (!mergeEndpoint) {
+    throw serviceError(
+      "تم إنشاء المقاطع لكن دمج الفيديو النهائي غير مفعّل. أضف WAVESPEED_LONG_VIDEO_MERGE_URL أو عطّل الفيديو الطويل مؤقتًا.",
+      500
+    );
+  }
+
+  const response = await fetch(mergeEndpoint, {
+    method: "POST",
+    cache: "no-store",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store",
+    },
+    body: JSON.stringify({ clipUrls, targetDuration }),
+  });
+  const data = await readJsonResponse(response);
+
+  if (!response.ok) {
+    const message = data?.message || data?.error || "فشل دمج الفيديو النهائي.";
+    throw serviceError(typeof message === "string" ? message : JSON.stringify(message), response.status >= 500 ? 502 : 400);
+  }
+
+  const resultUrl = firstMediaUrlFrom(data?.result || data?.output || data?.data || data, "video");
+  if (!resultUrl) {
+    throw serviceError("لم يرجع مزود الدمج رابط الفيديو النهائي.", 502);
+  }
+
+  return resultUrl;
 }
 
 export const generateWaveSpeedVideo = generateVideoWithWaveSpeed;

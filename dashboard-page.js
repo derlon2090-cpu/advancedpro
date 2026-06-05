@@ -14,6 +14,12 @@
     results: [],
   };
 
+  const IMAGE_XP_COST = { normal: 5, high: 12, ultra: 35 };
+  const VIDEO_XP_PER_SECOND = { normal: 10, high: 25, ultra: 60 };
+  const VIDEO_MINIMUM_XP = { normal: 50, high: 120, ultra: 250 };
+  const VIDEO_DURATIONS = [5, 8, 10, 15, 20, 30, 45, 60, 90, 100];
+  const MAX_VIDEO_DURATION_BY_QUALITY = { normal: 100, high: 60, ultra: 30 };
+
   const fallbackResults = [
     {
       id: "demo-business-video",
@@ -34,7 +40,7 @@
       quality: "high",
       style: "realistic",
       aspectRatio: "16:9",
-      creditsUsed: 10,
+      creditsUsed: 12,
       createdAt: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
       resultUrl:
         "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=85",
@@ -46,7 +52,7 @@
       quality: "high",
       style: "realistic",
       aspectRatio: "16:9",
-      creditsUsed: 10,
+      creditsUsed: 12,
       createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
       resultUrl:
         "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=900&q=85",
@@ -70,7 +76,7 @@
       quality: "high",
       style: "realistic",
       aspectRatio: "16:9",
-      creditsUsed: 10,
+      creditsUsed: 12,
       createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
       resultUrl:
         "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=900&q=85",
@@ -172,15 +178,11 @@
 
   function calculateCredits(type = state.type, quality = state.quality, duration = state.duration) {
     if (type === "image") {
-      return { normal: 8, high: 15, ultra: 35 }[quality] || 15;
+      return IMAGE_XP_COST[quality] || IMAGE_XP_COST.high;
     }
 
-    const table = {
-      5: { normal: 50, high: 100, ultra: 200 },
-      8: { normal: 80, high: 160, ultra: 320 },
-    };
-
-    return table[Number(duration)]?.[quality] || 50;
+    const normalizedDuration = Number(duration || 5);
+    return Math.max(VIDEO_MINIMUM_XP[quality], normalizedDuration * VIDEO_XP_PER_SECOND[quality]);
   }
 
   function qualityLabel(value = state.quality) {
@@ -250,6 +252,24 @@
     const suffix = state.type === "video" ? `فيديو ${state.duration} ثواني` : "صورة";
     $("[data-cost-value]").textContent = `${formatNumber(cost)} XP`;
     $("[data-cost-label]").textContent = `${suffix} ${qualityLabel()}`;
+  }
+
+  function updateDurationOptions() {
+    const select = $("[data-duration-select]");
+    if (!select) return;
+
+    const maxDuration = MAX_VIDEO_DURATION_BY_QUALITY[state.quality] || MAX_VIDEO_DURATION_BY_QUALITY.normal;
+    select.innerHTML = VIDEO_DURATIONS.map((duration) => {
+      const disabled = duration > maxDuration ? " disabled" : "";
+      return `<option value="${duration}"${disabled}>${duration} ثانية</option>`;
+    }).join("");
+
+    if (state.duration > maxDuration) {
+      state.duration = maxDuration;
+      setMessage("هذه المدة غير متاحة للجودة المختارة. تم اختيار أقرب مدة مسموحة.", "info");
+    }
+
+    select.value = String(state.duration);
   }
 
   function updateKeyUi() {
@@ -325,6 +345,7 @@
       type === "video"
         ? "مثال: لقطة سينمائية لروبوتات صفراء تتحرك في مدينة مستقبلية..."
         : "مثال: رجل أعمال وسيم يرتدي بدلة فاخرة داخل مكتب حديث، إضاءة سينمائية...";
+    updateDurationOptions();
     updateCost();
   }
 
@@ -588,6 +609,7 @@
     });
     $("[data-quality-select]").addEventListener("change", (event) => {
       state.quality = event.target.value;
+      updateDurationOptions();
       updateCost();
     });
     $("[data-style-select]").addEventListener("change", (event) => {

@@ -1,29 +1,36 @@
 const IMAGE_CREDIT_COST = {
-  normal: 8,
-  high: 15,
+  normal: 5,
+  high: 12,
   ultra: 35,
 };
 
-const VIDEO_BASE_CREDIT_COST = {
-  5: 50,
-  8: 80,
+const VIDEO_XP_PER_SECOND = {
+  normal: 10,
+  high: 25,
+  ultra: 60,
 };
 
-const VIDEO_QUALITY_MULTIPLIER = {
-  normal: 1,
-  high: 2,
-  ultra: 4,
+const VIDEO_MINIMUM_XP = {
+  normal: 50,
+  high: 120,
+  ultra: 250,
 };
 
-export const SUPPORTED_VIDEO_DURATIONS = [5, 8];
+export const SUPPORTED_VIDEO_DURATIONS = [5, 8, 10, 15, 20, 30, 45, 60, 90, 100];
+
+export const MAX_VIDEO_DURATION_BY_QUALITY = {
+  normal: 100,
+  high: 60,
+  ultra: 30,
+};
 
 const QUALITY_ALIASES = {
   normal: "normal",
-  عادية: "normal",
+  "\u0639\u0627\u062f\u064a\u0629": "normal",
   high: "high",
-  عالية: "high",
+  "\u0639\u0627\u0644\u064a\u0629": "high",
   ultra: "ultra",
-  فائقة: "ultra",
+  "\u0641\u0627\u0626\u0642\u0629": "ultra",
 };
 
 export function normalizeGenerationType(value) {
@@ -46,9 +53,34 @@ export function normalizeDuration(value) {
   if (SUPPORTED_VIDEO_DURATIONS.includes(duration)) {
     return duration;
   }
-  const error = new Error("مدة الفيديو غير مدعومة لهذا النموذج. اختر: 5 أو 8 ثواني.");
+  const error = new Error("مدة الفيديو غير مدعومة. اختر مدة من الخيارات المتاحة.");
   error.statusCode = 400;
   throw error;
+}
+
+export function assertDurationAllowedForQuality(qualityValue, durationValue) {
+  const quality = normalizeQuality(qualityValue);
+  const duration = normalizeDuration(durationValue);
+  const maxDuration = MAX_VIDEO_DURATION_BY_QUALITY[quality] || MAX_VIDEO_DURATION_BY_QUALITY.normal;
+
+  if (duration > maxDuration) {
+    const error = new Error("هذه المدة غير متاحة للجودة المختارة. اختر جودة أقل أو مدة أقصر.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  return duration;
+}
+
+export function calculateImageXp(qualityValue = "normal") {
+  const quality = normalizeQuality(qualityValue);
+  return IMAGE_CREDIT_COST[quality];
+}
+
+export function calculateVideoXp(qualityValue = "normal", durationValue = 5) {
+  const quality = normalizeQuality(qualityValue);
+  const duration = assertDurationAllowedForQuality(quality, durationValue);
+  return Math.max(VIDEO_MINIMUM_XP[quality], duration * VIDEO_XP_PER_SECOND[quality]);
 }
 
 export function calculateRequiredCredits(typeValue, qualityValue = "normal", durationValue = 5) {
@@ -56,13 +88,10 @@ export function calculateRequiredCredits(typeValue, qualityValue = "normal", dur
   const quality = normalizeQuality(qualityValue);
 
   if (type === "image") {
-    return IMAGE_CREDIT_COST[quality];
+    return calculateImageXp(quality);
   }
 
-  const duration = normalizeDuration(durationValue);
-  const base = VIDEO_BASE_CREDIT_COST[duration];
-  const multiplier = VIDEO_QUALITY_MULTIPLIER[quality];
-  return Math.ceil(base * multiplier);
+  return calculateVideoXp(quality, durationValue);
 }
 
 export function calculateCredits(typeValue, qualityValue = "normal", durationValue = 5) {
@@ -72,9 +101,7 @@ export function calculateCredits(typeValue, qualityValue = "normal", durationVal
 export function calculateDefaultKeyCredits({ imageLimit = 0, videoLimit = 0 } = {}) {
   const images = Math.max(Number(imageLimit || 0), 0);
   const videos = Math.max(Number(videoLimit || 0), 0);
-
-  // Give every image/video slot enough credits for the most expensive allowed option.
-  return images * IMAGE_CREDIT_COST.ultra + videos * calculateCredits("video", "ultra", 8);
+  return images * IMAGE_CREDIT_COST.ultra + videos * calculateCredits("video", "ultra", 30);
 }
 
 export function assertValidPrompt(prompt) {
@@ -97,6 +124,7 @@ export function assertValidPrompt(prompt) {
 
 export const CREDIT_RULES = {
   IMAGE_CREDIT_COST,
-  VIDEO_BASE_CREDIT_COST,
-  VIDEO_QUALITY_MULTIPLIER,
+  VIDEO_XP_PER_SECOND,
+  VIDEO_MINIMUM_XP,
+  MAX_VIDEO_DURATION_BY_QUALITY,
 };
