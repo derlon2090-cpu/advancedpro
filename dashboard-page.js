@@ -468,8 +468,16 @@
       }
 
       const rawGeneration = data.generation || data.result || data;
+      const responseGenerationId = rawGeneration.id || data.generationId;
+      console.log("RESPONSE GENERATION ID:", responseGenerationId);
+      console.log("RESPONSE REQUEST ID:", rawGeneration.requestId || data.requestId);
+      if (!responseGenerationId) {
+        throw new Error("تعذر فتح النتيجة لأن السيرفر لم يرجع معرف generation.id.");
+      }
+
       const generation = normalizeGeneration({
         ...rawGeneration,
+        id: responseGenerationId,
         requestId,
         prompt: rawGeneration.userPrompt || rawGeneration.prompt || userPrompt,
         type: rawGeneration.type || state.type,
@@ -495,7 +503,8 @@
       renderAll();
       showToast(`تم الإنشاء بنجاح وتم خصم ${formatNumber(generation.creditsUsed)} XP.`);
       await refreshKey({ silent: true });
-      window.location.href = `/generation.html?id=${encodeURIComponent(generation.id)}`;
+      console.log("OPEN GENERATION ROUTE ID:", generation.id);
+      window.location.href = `/generations/${encodeURIComponent(generation.id)}`;
     } catch (error) {
       if (error.name === "AbortError") {
         setMessage("تم إلغاء الإنشاء. لم يتم خصم أي رصيد.", "info");

@@ -444,6 +444,8 @@ router.get(
       httpError("معرف النتيجة غير صالح.", 400);
     }
 
+    console.log("GET GENERATION ID:", generationId);
+
     const rows = await withDbRetry(() =>
       prisma.$queryRaw`
         SELECT id,
@@ -475,6 +477,9 @@ router.get(
     if (!rows.length) {
       httpError("لم يتم العثور على النتيجة المطلوبة.", 404);
     }
+
+    console.log("GET GENERATION RESULT ID:", rows[0].id);
+    console.log("GET GENERATION RESULT URL:", rows[0].result_url);
 
     return res.json({
       success: true,
