@@ -411,14 +411,11 @@
 
   async function loadResult() {
     const id = getGenerationId();
-    const cached = loadCachedResult(id);
-    if (cached) {
-      state.result = cached;
-      renderResult();
-      renderTransactions();
+    if (!id) {
+      $("[data-result-media]").innerHTML =
+        '<div class="udv3-result-placeholder">لم يتم تحديد نتيجة للعرض. ارجع للوحة التحكم وافتح النتيجة من أحدث الإبداعات.</div>';
+      return;
     }
-
-    if (!id) return;
 
     try {
       const data = await requestJson(`/api/generate/${encodeURIComponent(id)}`);
@@ -434,7 +431,13 @@
       renderTransactions();
     } catch (error) {
       console.warn("GENERATION LOAD WARNING:", error);
-      if (!state.result) {
+      const cached = loadCachedResult(id);
+      if (cached) {
+        state.result = cached;
+        renderResult();
+        renderTransactions();
+        showToast("تعذر جلب النتيجة من السيرفر، تم عرض نسخة محفوظة مطابقة للمعرف.", "error");
+      } else {
         $("[data-result-media]").innerHTML =
           '<div class="udv3-result-placeholder">تعذر تحميل النتيجة. ارجع للوحة التحكم وحاول مرة أخرى.</div>';
         showToast(error.message || "تعذر تحميل النتيجة.", "error");
