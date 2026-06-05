@@ -6,8 +6,10 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { withDbRetry } from "../utils/dbRetry.js";
 import { logError, logInfo } from "../utils/logger.js";
 import { serializeBigInt } from "../utils/serializeBigInt.js";
-import { generateFluxImage } from "../services/fluxService.js";
-import { generateWaveSpeedVideo } from "../services/wavespeedService.js";
+import {
+  generateImageWithWaveSpeed,
+  generateVideoWithWaveSpeed,
+} from "../services/wavespeedService.js";
 import {
   assertValidPrompt,
   calculateRequiredCredits,
@@ -32,14 +34,12 @@ function providerFailureMessage(error, type) {
     return fallback;
   }
 
-  if (raw.includes("BFL_API_KEY") || raw.includes("WAVESPEED_API_KEY")) {
+  if (raw.includes("WAVESPEED_API_KEY")) {
     return raw;
   }
 
   if (/unauthorized|invalid api|invalid key|api key|forbidden|401|403/i.test(raw)) {
-    return type === "video"
-      ? "مفتاح WaveSpeed غير صحيح أو غير مفعل في Render. لم يتم خصم أي رصيد."
-      : "مفتاح BFL غير صحيح أو غير مفعل في Render. لم يتم خصم أي رصيد.";
+    return "مفتاح WaveSpeed غير صحيح أو غير مفعل في Render. لم يتم خصم أي رصيد.";
   }
 
   if (error?.statusCode && error.statusCode < 500) {
@@ -552,9 +552,24 @@ router.post(
 
     try {
       if (type === "image") {
-        result = await generateFluxImage({ prompt, quality, style, requestId, seed });
+        result = await generateImageWithWaveSpeed({
+          prompt,
+          quality,
+          aspectRatio,
+          style,
+          requestId,
+          seed,
+        });
       } else {
-        result = await generateWaveSpeedVideo({ prompt, duration, quality, style });
+        result = await generateVideoWithWaveSpeed({
+          prompt,
+          duration,
+          quality,
+          aspectRatio,
+          style,
+          requestId,
+          seed,
+        });
       }
 
       console.log("RESULT_URL:", result?.resultUrl || "");

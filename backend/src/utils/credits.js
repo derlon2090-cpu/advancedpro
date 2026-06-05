@@ -1,7 +1,7 @@
 const IMAGE_CREDIT_COST = {
-  normal: 5,
-  high: 10,
-  ultra: 20,
+  normal: 8,
+  high: 15,
+  ultra: 35,
 };
 
 const VIDEO_BASE_CREDIT_COST = {

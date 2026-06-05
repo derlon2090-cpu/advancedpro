@@ -172,7 +172,7 @@
 
   function calculateCredits(type = state.type, quality = state.quality, duration = state.duration) {
     if (type === "image") {
-      return { normal: 5, high: 10, ultra: 20 }[quality] || 10;
+      return { normal: 8, high: 15, ultra: 35 }[quality] || 15;
     }
 
     const table = {
