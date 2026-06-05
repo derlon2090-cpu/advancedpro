@@ -124,6 +124,9 @@ function arabicPromptHints(userPrompt) {
   addIf([/مكتب\s*حديث/, /مكتب/, /office/], "modern luxury office");
   addIf([/روبوتات|روبوت/, /robot|robots/], "robots, full-body mechanical robots, no humans");
   addIf([/القمر|قمر/, /moon|lunar/], "moon surface, lunar landscape");
+  addIf([/قطة|قطه|قط/, /cat|kitten/], "black cat, full-body cat, animal only");
+  addIf([/كلب/, /dog|puppy/], "black dog, full-body dog, animal only");
+  addIf([/أسود|اسود|سوداء|سودا|لونهم أسود|لونهم اسود/, /black/], "black color");
   addIf([/أصفر|اصفر/, /yellow/], "yellow color");
   addIf([/أحمر|احمر/, /red/], "red color");
   addIf([/أزرق|ازرق/, /blue/], "blue color");
@@ -167,6 +170,7 @@ function buildImagePrompt({ prompt, quality, style }) {
     "- If the request mentions businessman or رجل أعمال, create a male businessman wearing a formal suit.",
     "- Do not reuse previous subjects, previous prompts, cached results, or old reference images.",
     "- Do not create random people, food, animals, rabbits, pets, landscapes, or unrelated scenes unless explicitly requested.",
+    "- If the user asks for a cat and dog, generate the cat and dog clearly as the main subjects, and do not generate people or food.",
     "- If the user asks for robots, generate robots only and do not generate humans.",
     "- If the user asks for the moon, show the moon surface or lunar environment clearly.",
     "- Do not add any written text inside the image.",

@@ -319,7 +319,11 @@
     $("[data-detail-created]").textContent = relativeTime(result.createdAt);
     $("[data-detail-model]").textContent = result.model || "PixiGen Pro v2";
     $("[data-detail-cost]").textContent = `${formatNumber(result.creditsUsed)} XP`;
+    $("[data-detail-generation-id]").textContent = result.id || "-";
+    $("[data-detail-request-id]").textContent = result.requestId || "-";
+    $("[data-detail-seed]").textContent = result.seed || "-";
     $("[data-detail-prompt]").textContent = result.prompt;
+    $("[data-detail-result-url]").textContent = result.resultUrl || "-";
     $("[data-result-badge]").textContent = qualityLabel(result.quality);
     $("[data-result-media]").innerHTML = renderMedia(result);
 

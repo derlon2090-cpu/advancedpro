@@ -545,6 +545,7 @@ router.post(
       }
 
       console.log("RESULT_URL:", result?.resultUrl || "");
+      console.log("NEW RESULT URL:", result?.resultUrl || "");
       console.log("GENERATION_ID:", generationId);
 
       logInfo("GENERATION_PROVIDER_RESULT", {
