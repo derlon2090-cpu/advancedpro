@@ -12768,7 +12768,7 @@ html[data-theme="dark"] .create-chat-bubble__state {
 
 .user-dashboard-v3 .udv3-brand strong {
   color: #050816;
-  font-size: 34px;
+  font-size: 32px;
   font-weight: 900;
   letter-spacing: -0.045em;
 }
@@ -13819,5 +13819,89 @@ html[data-theme="dark"] .create-chat-bubble__state {
   .success-summary,
   .success-actions {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Final activation layout overrides - keep after all responsive rules */
+.activate-page-v2 .activate-header {
+  width: 100%;
+  margin: 0;
+  min-height: 144px;
+  height: 144px;
+  padding: 0 clamp(28px, 4vw, 64px);
+  border-top: 0;
+  border-inline: 0;
+  border-radius: 0 0 30px 30px;
+  direction: ltr;
+  justify-content: space-between;
+  background:
+    radial-gradient(circle at 82% 110%, rgba(184, 50, 246, 0.1), transparent 28%),
+    rgba(255, 255, 255, 0.96);
+}
+
+.activate-page-v2 .activate-brand {
+  order: 1;
+  direction: ltr;
+}
+
+.activate-page-v2 .contact-button {
+  order: 2;
+  margin-inline-start: auto;
+  min-width: 238px;
+  border-radius: 20px;
+  color: #07124d;
+  border-color: rgba(109, 53, 255, 0.22);
+}
+
+.activate-page-v2 .activation-card-v2 {
+  direction: ltr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.06fr);
+  max-width: 1320px;
+}
+
+.activate-page-v2 .activation-visual {
+  order: 1;
+  min-height: 460px;
+  border-left: 0;
+  border-right: 1px solid #e8eaf3;
+}
+
+.activate-page-v2 .activation-form-v2 {
+  order: 2;
+  direction: rtl;
+  padding: clamp(42px, 4.2vw, 68px);
+}
+
+@media (max-width: 900px) {
+  .activate-page-v2 .activate-header {
+    min-height: 112px;
+    height: auto;
+    flex-wrap: wrap;
+    padding: 18px;
+    border-radius: 0 0 24px 24px;
+  }
+
+  .activate-page-v2 .activation-card-v2 {
+    grid-template-columns: 1fr;
+  }
+
+  .activate-page-v2 .activation-visual {
+    border-right: 0;
+    border-bottom: 1px solid #e8eaf3;
+  }
+
+  .activate-page-v2 .activation-form-v2 {
+    padding: 28px;
+  }
+}
+
+@media (max-width: 560px) {
+  .activate-page-v2 .activate-header {
+    justify-content: center;
+  }
+
+  .activate-page-v2 .contact-button {
+    min-width: 0;
+    margin-inline-start: 0;
   }
 }

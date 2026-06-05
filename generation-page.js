@@ -445,7 +445,7 @@
       if (!state.result?.resultUrl) return;
       if (navigator.share) {
         await navigator.share({
-          title: "PixiGen",
+          title: "PixiGenl",
           text: state.result.prompt,
           url: state.result.resultUrl,
         }).catch(() => {});
