@@ -12,7 +12,15 @@ import {
   generateVideoWithWaveSpeed,
 } from "../services/wavespeedService.js";
 import { getSetting } from "../services/settings.js";
+import { getModelMonitorDecision } from "../services/modelMonitor.js";
 import { IMAGE_MODELS, VIDEO_MODELS } from "../services/wavespeedModels.js";
+import {
+  ensureGenerationFeedbackInfrastructure,
+  getFeedbackRoutingDecision,
+  getModelFeedbackStats,
+  upsertGenerationFeedback,
+  upsertPromptAnalytics,
+} from "../services/generationFeedback.js";
 import {
   assertValidPrompt,
   calculateRequiredCredits,
@@ -169,6 +177,17 @@ async function resolveQualityForPrompt({ type, quality, prompt }) {
     }
 
     const model = modelForQuality(type, quality);
+    const monitorDecision = await getModelMonitorDecision(type, model);
+    if (monitorDecision.disabled) {
+      return {
+        quality,
+        routed: false,
+        blocked: true,
+        reason: "model_disabled_by_monitor",
+        model,
+        decision: monitorDecision,
+      };
+    }
     const decision = await getModelQualityDecision(type, model);
     if (modelDecisionAllowsPrompt(decision, false)) {
       return { quality, routed: false, reason: "approved_simple_model", model, decision };
@@ -188,8 +207,31 @@ async function resolveQualityForPrompt({ type, quality, prompt }) {
   const startIndex = Math.max(order.indexOf(quality), 0);
   for (const candidateQuality of order.slice(startIndex)) {
     const model = modelForQuality(type, candidateQuality);
+    const monitorDecision = await getModelMonitorDecision(type, model);
+    if (monitorDecision.disabled) {
+      console.log("MODEL_MONITOR_AUTO_ROUTING_SKIP:", {
+        type,
+        quality: candidateQuality,
+        model,
+        reason: monitorDecision.reason,
+        checkedAt: monitorDecision.checkedAt,
+      });
+      continue;
+    }
     const decision = await getModelQualityDecision(type, model);
     if (decision?.complexPromptsAllowed === true || modelDecisionAllowsPrompt(decision, true)) {
+      const feedbackDecision = await getFeedbackRoutingDecision(model);
+      if (!feedbackDecision.allowed) {
+        console.log("MODEL_FEEDBACK_AUTO_ROUTING_SKIP:", {
+          type,
+          quality: candidateQuality,
+          model,
+          reason: feedbackDecision.reason,
+          stats: feedbackDecision.stats,
+        });
+        continue;
+      }
+
       return {
         quality: candidateQuality,
         routed: candidateQuality !== quality,
@@ -207,6 +249,20 @@ async function resolveQualityForPrompt({ type, quality, prompt }) {
       blocked: true,
       reason: "no_approved_model_for_complex_prompt",
     };
+  }
+
+  for (const candidateQuality of order.slice(startIndex)) {
+    const model = modelForQuality(type, candidateQuality);
+    const monitorDecision = await getModelMonitorDecision(type, model);
+    if (!monitorDecision.disabled) {
+      return {
+        quality: candidateQuality,
+        routed: candidateQuality !== quality,
+        reason: candidateQuality === quality ? "no_approved_model_record" : "monitor_safe_fallback",
+        model,
+        decision: monitorDecision,
+      };
+    }
   }
 
   return { quality, routed: false, reason: "no_approved_model_record" };
@@ -258,6 +314,8 @@ function serializeGeneration(row) {
     userPrompt: row.prompt,
     prompt: row.prompt,
     finalPrompt: row.final_prompt,
+    enhancedPrompt: row.enhanced_prompt,
+    negativePrompt: row.negative_prompt,
     type: row.type,
     quality: row.quality,
     style: row.style,
@@ -272,6 +330,10 @@ function serializeGeneration(row) {
     resultUrl: row.result_url,
     createdAt: row.created_at,
     completedAt: row.completed_at,
+    generationTimeMs:
+      row.generation_time_ms == null ? null : Math.max(0, Math.round(Number(row.generation_time_ms))),
+    userRating: row.user_rating || null,
+    qualityScore: row.quality_score == null ? null : Number(row.quality_score),
   };
 }
 
@@ -290,12 +352,18 @@ async function loadCompletedGenerationById({ keyId, generationId }) {
              model,
              seed,
              final_prompt,
+             enhanced_prompt,
+             negative_prompt,
              credits_used,
              status,
              result_url,
              created_at,
-             completed_at
+             completed_at,
+             EXTRACT(EPOCH FROM (completed_at - created_at)) * 1000 AS generation_time_ms,
+             gf.rating AS user_rating,
+             gf.score AS quality_score
       FROM generations
+      LEFT JOIN generation_feedback gf ON gf.generation_id = generations.id
       WHERE key_id = ${keyId}
         AND id = ${generationId}
         AND status = 'completed'
@@ -340,6 +408,8 @@ async function ensureGenerationTable() {
     `ALTER TABLE generations ADD COLUMN IF NOT EXISTS style VARCHAR(64)`,
     `ALTER TABLE generations ADD COLUMN IF NOT EXISTS aspect_ratio VARCHAR(32)`,
     `ALTER TABLE generations ADD COLUMN IF NOT EXISTS seed BIGINT`,
+    `ALTER TABLE generations ADD COLUMN IF NOT EXISTS enhanced_prompt TEXT`,
+    `ALTER TABLE generations ADD COLUMN IF NOT EXISTS negative_prompt TEXT`,
     `ALTER TABLE generations ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP(3)`,
   ];
 
@@ -426,6 +496,8 @@ async function createGenerationRecord({
   provider = null,
   model = null,
   finalPrompt = null,
+  enhancedPrompt = null,
+  negativePrompt = null,
   requestId = null,
   style = null,
   aspectRatio = null,
@@ -438,6 +510,17 @@ async function createGenerationRecord({
       RETURNING id
     `
   );
+
+  if (enhancedPrompt || negativePrompt) {
+    await withDbRetry(() =>
+      prisma.$executeRaw`
+        UPDATE generations
+        SET enhanced_prompt = ${enhancedPrompt || null},
+            negative_prompt = ${negativePrompt || null}
+        WHERE id = ${Number(rows?.[0]?.id)}
+      `
+    );
+  }
 
   return Number(rows?.[0]?.id);
 }
@@ -469,6 +552,8 @@ async function completeGenerationAndDeduct({
   provider,
   model,
   finalPrompt,
+  enhancedPrompt,
+  negativePrompt,
   aspectRatio,
   seed,
 }) {
@@ -541,6 +626,8 @@ async function completeGenerationAndDeduct({
             provider = ${provider},
             model = ${model},
             final_prompt = ${finalPrompt || prompt},
+            enhanced_prompt = ${enhancedPrompt || null},
+            negative_prompt = ${negativePrompt || null},
             style = ${style || null},
             aspect_ratio = ${aspectRatio || null},
             seed = ${seed ?? null},
@@ -599,6 +686,7 @@ router.get(
   "/",
   asyncHandler(async (req, res) => {
     await ensureGenerationTable();
+    await ensureGenerationFeedbackInfrastructure();
 
     const keyId = getKeyId(req);
     const rows = await withDbRetry(() =>
@@ -615,12 +703,18 @@ router.get(
                model,
                seed,
                final_prompt,
+               enhanced_prompt,
+               negative_prompt,
                credits_used,
                status,
                result_url,
                created_at,
-               completed_at
+               completed_at,
+               EXTRACT(EPOCH FROM (completed_at - created_at)) * 1000 AS generation_time_ms,
+               gf.rating AS user_rating,
+               gf.score AS quality_score
         FROM generations
+        LEFT JOIN generation_feedback gf ON gf.generation_id = generations.id
         WHERE key_id = ${keyId}
           AND status = 'completed'
           AND result_url IS NOT NULL
@@ -637,9 +731,63 @@ router.get(
 );
 
 router.get(
+  "/feedback/stats",
+  asyncHandler(async (_req, res) => {
+    const stats = await getModelFeedbackStats({ limit: 100 });
+    return res.json({
+      success: true,
+      stats,
+    });
+  })
+);
+
+router.post(
+  "/:id/rating",
+  asyncHandler(async (req, res) => {
+    await ensureGenerationTable();
+    await ensureGenerationFeedbackInfrastructure();
+
+    const keyId = getKeyId(req);
+    const generationId = Number(req.params.id);
+    if (!Number.isFinite(generationId)) {
+      httpError("معرف النتيجة غير صالح.", 400);
+    }
+
+    const generation = await loadCompletedGenerationById({ keyId, generationId });
+    if (!generation) {
+      httpError("لم يتم العثور على النتيجة المطلوبة.", 404);
+    }
+
+    const feedback = await upsertGenerationFeedback({
+      generationId,
+      keyId,
+      model: generation.model,
+      prompt: generation.prompt,
+      rating: req.body?.rating,
+    });
+    const stats = await getModelFeedbackStats({ model: generation.model, limit: 1 });
+
+    console.log("GENERATION_USER_RATING:", {
+      generationId,
+      requestId: generation.request_id,
+      model: generation.model,
+      rating: feedback.rating,
+      score: feedback.score,
+    });
+
+    return res.json({
+      success: true,
+      feedback,
+      modelStats: stats[0] || null,
+    });
+  })
+);
+
+router.get(
   "/:id",
   asyncHandler(async (req, res) => {
     await ensureGenerationTable();
+    await ensureGenerationFeedbackInfrastructure();
 
     const keyId = getKeyId(req);
     const generationId = Number(req.params.id);
@@ -671,6 +819,7 @@ router.post(
   aiLimiter,
   asyncHandler(async (req, res) => {
     await ensureGenerationTable();
+    await ensureGenerationFeedbackInfrastructure();
 
     const keyId = getKeyId(req);
     const type = normalizeGenerationType(req.body.type || "image");
@@ -704,8 +853,17 @@ router.post(
       quality = routing.quality;
     }
     const creditsUsed = calculateRequiredCredits(type, quality, duration || 5);
+    const promptDiagnostics = buildSmartPromptEnhancement({
+      userPrompt: prompt,
+      type,
+      quality,
+      style,
+    });
 
     console.log("USER_PROMPT:", prompt);
+    console.log("ENHANCED_PROMPT:", promptDiagnostics.enhancedPrompt || "");
+    console.log("FINAL_PROMPT_PREVIEW:", promptDiagnostics.finalPrompt || "");
+    console.log("NEGATIVE_PROMPT:", promptDiagnostics.negativePrompt || "");
     console.log("REQUEST_ID:", requestId);
     console.log("SEED:", seed);
     console.log("SELECTED TYPE:", type);
@@ -733,7 +891,9 @@ router.post(
       quality,
       duration,
       creditsUsed,
-      finalPrompt: prompt,
+      finalPrompt: promptDiagnostics.finalPrompt || prompt,
+      enhancedPrompt: promptDiagnostics.enhancedPrompt || null,
+      negativePrompt: promptDiagnostics.negativePrompt || null,
       requestId,
       style,
       aspectRatio,
@@ -779,6 +939,17 @@ router.post(
       });
     } catch (error) {
       await markGenerationFailed({ generationId, message: error.message });
+      await upsertPromptAnalytics({
+        generationId,
+        prompt,
+        enhancedPrompt: promptDiagnostics.enhancedPrompt || null,
+        finalPrompt: promptDiagnostics.finalPrompt || prompt,
+        negativePrompt: promptDiagnostics.negativePrompt || null,
+        model: modelForQuality(type, quality),
+        success: false,
+      }).catch((analyticsError) => {
+        logError(analyticsError, { scope: "upsertPromptAnalyticsFailedGeneration", generationId });
+      });
       logError(error, { scope: "generateProvider", keyId, generationId, type });
       httpError(providerFailureMessage(error, type), error.statusCode || 502);
       httpError("فشل التوليد، لم يتم خصم أي رصيد.", error.statusCode || 502);
@@ -805,6 +976,8 @@ router.post(
         provider: result.provider,
         model: result.model,
         finalPrompt: result.finalPrompt || prompt,
+        enhancedPrompt: promptDiagnostics.enhancedPrompt || null,
+        negativePrompt: promptDiagnostics.negativePrompt || null,
         seed: result.seed,
       });
     } catch (error) {
@@ -822,6 +995,18 @@ router.post(
 
     console.log("SAVED GENERATION ID:", generationId);
     console.log("SAVED RESULT URL:", result.resultUrl);
+
+    await upsertPromptAnalytics({
+      generationId,
+      prompt,
+      enhancedPrompt: promptDiagnostics.enhancedPrompt || null,
+      finalPrompt: result.finalPrompt || promptDiagnostics.finalPrompt || prompt,
+      negativePrompt: promptDiagnostics.negativePrompt || null,
+      model: result.model,
+      success: true,
+    }).catch((error) => {
+      logError(error, { scope: "upsertPromptAnalytics", generationId });
+    });
 
     const savedGenerationRow = await loadCompletedGenerationById({ keyId, generationId });
     if (!savedGenerationRow) {

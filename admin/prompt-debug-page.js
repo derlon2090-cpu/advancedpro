@@ -78,12 +78,14 @@
     showToast(`تم نسخ ${label}.`);
   }
 
-  function renderStats(summary = {}) {
+  function renderStats(summary = {}, modelFeedback = []) {
+    const bestModel = (modelFeedback || []).find((item) => Number(item.total || 0) > 0);
     const stats = [
       ["العمليات المكتملة", summary.completed || 0, "✓"],
       ["العمليات الفاشلة", summary.failed || 0, "×"],
       ["قيد المعالجة", summary.processing || 0, "◷"],
       ["في الانتظار", summary.queued || 0, "…"],
+      ["User Satisfaction", bestModel ? `${bestModel.userSatisfaction}%` : 0, "★"],
     ];
 
     $("[data-prompt-debug-stats]").innerHTML = stats
@@ -143,6 +145,22 @@
               <pre>${escapeHtml(item.finalPrompt || "لا يوجد برومبت نهائي محفوظ.")}</pre>
             </div>
 
+            <div class="admin-prompt-debug-field">
+              <div>
+                <b>ENHANCED_PROMPT</b>
+                <button type="button" data-copy-value="${escapeHtml(item.enhancedPrompt)}" data-copy-label="الوصف المحسن">نسخ</button>
+              </div>
+              <p dir="auto">${escapeHtml(item.enhancedPrompt || "لا يوجد وصف محسن محفوظ.")}</p>
+            </div>
+
+            <div class="admin-prompt-debug-field">
+              <div>
+                <b>NEGATIVE_PROMPT</b>
+                <button type="button" data-copy-value="${escapeHtml(item.negativePrompt)}" data-copy-label="Negative Prompt">نسخ</button>
+              </div>
+              <p dir="auto">${escapeHtml(item.negativePrompt || "لا يوجد Negative Prompt محفوظ.")}</p>
+            </div>
+
             ${item.errorMessage ? `<p class="admin-prompt-debug-error">${escapeHtml(item.errorMessage)}</p>` : ""}
           </section>
 
@@ -154,6 +172,9 @@
               <div><dt>REQUEST ID</dt><dd>${escapeHtml(item.requestId || "-")}</dd></div>
               <div><dt>PROVIDER</dt><dd>${escapeHtml(item.provider || "-")}</dd></div>
               <div><dt>XP</dt><dd>${nf.format(item.creditsUsed || 0)}</dd></div>
+              <div><dt>GENERATION_TIME</dt><dd>${item.generationTimeMs == null ? "-" : `${nf.format(item.generationTimeMs)} ms`}</dd></div>
+              <div><dt>USER_RATING</dt><dd>${escapeHtml(item.userRating || "-")}</dd></div>
+              <div><dt>QUALITY_SCORE</dt><dd>${item.qualityScore == null ? "-" : nf.format(item.qualityScore)}</dd></div>
             </dl>
             <button
               type="button"
@@ -204,7 +225,7 @@
     list.setAttribute("aria-busy", "true");
     try {
       const payload = await requestJson(`/api/admin/prompt-debug?${queryString()}`);
-      renderStats(payload.summary);
+      renderStats(payload.summary, payload.modelFeedback || []);
       renderList(payload.generations || []);
       $("[data-prompt-debug-total]").textContent = `${nf.format(payload.total || 0)} عملية مطابقة`;
     } catch (error) {

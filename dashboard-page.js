@@ -13,14 +13,17 @@
     abortController: null,
     enhancedFinalPrompt: "",
     enhancedPromptDebug: null,
+    upgradeRecommendationDismissed: false,
     results: [],
   };
 
-  const IMAGE_XP_COST = { normal: 5, high: 12, ultra: 35 };
-  const VIDEO_XP_PER_SECOND = { normal: 10, high: 25, ultra: 60 };
-  const VIDEO_MINIMUM_XP = { normal: 50, high: 120, ultra: 250 };
-  const VIDEO_DURATIONS = [5, 8, 10, 15, 20, 30, 45, 60, 90, 100];
-  const MAX_VIDEO_DURATION_BY_QUALITY = { normal: 100, high: 60, ultra: 30 };
+  const IMAGE_XP_COST = { normal: 5, high: 10, ultra: 20 };
+  const VIDEO_XP_COST = {
+    5: { normal: 50, high: 100, ultra: 200 },
+    8: { normal: 80, high: 160, ultra: 320 },
+  };
+  const VIDEO_DURATIONS = [5, 8];
+  const MAX_VIDEO_DURATION_BY_QUALITY = { normal: 8, high: 8, ultra: 8 };
 
   const fallbackResults = [
     {
@@ -183,8 +186,105 @@
       return IMAGE_XP_COST[quality] || IMAGE_XP_COST.high;
     }
 
-    const normalizedDuration = Number(duration || 5);
-    return Math.max(VIDEO_MINIMUM_XP[quality], normalizedDuration * VIDEO_XP_PER_SECOND[quality]);
+    const normalizedDuration = VIDEO_DURATIONS.includes(Number(duration)) ? Number(duration) : 5;
+    return VIDEO_XP_COST[normalizedDuration]?.[quality] || VIDEO_XP_COST[5][quality];
+  }
+
+  function estimatePromptComplexity(prompt) {
+    const text = String(prompt || "").trim().toLowerCase();
+    if (!text) return 0;
+
+    const words = text.split(/\s+/).filter(Boolean);
+    const relationWords = [
+      "بجانب",
+      "معه",
+      "فوق",
+      "داخل",
+      "خلف",
+      "أمام",
+      "امام",
+      "بين",
+      "يمسك",
+      "يجلس",
+      "يرتدي",
+      "يقود",
+      "يطير",
+      "راكب",
+      "next to",
+      "inside",
+      "behind",
+      "in front",
+      "wearing",
+      "driving",
+    ];
+    const colorWords = [
+      "أسود",
+      "اسود",
+      "أبيض",
+      "ابيض",
+      "أحمر",
+      "احمر",
+      "أخضر",
+      "اخضر",
+      "أصفر",
+      "اصفر",
+      "أزرق",
+      "ازرق",
+      "black",
+      "white",
+      "red",
+      "green",
+      "yellow",
+      "blue",
+    ];
+    const subjectWords = [
+      "رجل",
+      "امرأة",
+      "شخص",
+      "طفل",
+      "كلب",
+      "قط",
+      "قطة",
+      "روبوت",
+      "سيارة",
+      "فراري",
+      "منزل",
+      "بيت",
+      "قمر",
+      "man",
+      "woman",
+      "person",
+      "dog",
+      "cat",
+      "robot",
+      "car",
+      "house",
+      "moon",
+    ];
+    const countMatches = (items) => items.reduce((total, item) => total + (text.includes(item) ? 1 : 0), 0);
+    const relationScore = countMatches(relationWords) * 3;
+    const colorScore = countMatches(colorWords) * 1.5;
+    const subjectScore = Math.max(0, countMatches(subjectWords) - 1) * 2;
+    const lengthScore = words.length > 18 ? 3 : words.length > 10 ? 1.5 : 0;
+    const numberScore = /(^|\s)(\d+|اثنين|ثلاثة|ثلاث|أربعة|اربعة|خمسة|ستة|سبعة|ثمانية|تسعة|عشرة)\s/.test(text)
+      ? 2
+      : 0;
+
+    return Math.min(12, Math.round((relationScore + colorScore + subjectScore + lengthScore + numberScore) * 10) / 10);
+  }
+
+  function shouldRecommendQualityUpgrade() {
+    if (state.type !== "image" || state.quality !== "normal" || state.upgradeRecommendationDismissed) {
+      return false;
+    }
+    const promptInput = $("[data-prompt-input]");
+    return estimatePromptComplexity(promptInput?.value || "") >= 8;
+  }
+
+  function updateUpgradeRecommendation() {
+    const card = $("[data-upgrade-recommendation]");
+    if (!card) return;
+    card.hidden = !shouldRecommendQualityUpgrade();
   }
 
   function qualityLabel(value = state.quality) {
@@ -336,6 +436,7 @@
 
   function setType(type) {
     state.type = type;
+    state.upgradeRecommendationDismissed = false;
     resetEnhancedPromptState();
     $$("[data-type-tab]").forEach((button) => button.classList.toggle("is-active", button.dataset.typeTab === type));
     $$("[data-video-only]").forEach((node) => {
@@ -352,6 +453,7 @@
         : "مثال: رجل أعمال وسيم يرتدي بدلة فاخرة داخل مكتب حديث، إضاءة سينمائية...";
     updateDurationOptions();
     updateCost();
+    updateUpgradeRecommendation();
   }
 
   function renderRecent() {
@@ -585,6 +687,7 @@
       const enhancedPrompt = String(data.enhancedPrompt || "").trim() || smartEnhancePrompt(currentPrompt);
       promptInput.value = enhancedPrompt;
       $("[data-char-count]").textContent = enhancedPrompt.length;
+      state.upgradeRecommendationDismissed = false;
       state.enhancedFinalPrompt = data.finalPrompt || "";
       state.enhancedPromptDebug = {
         enhancedPrompt,
@@ -599,6 +702,7 @@
 
       setMessage("تم تحسين الوصف بدقة مع تثبيت العناصر والعلاقات.", "info");
       showToast("تم تحسين الوصف ذكيًا.");
+      updateUpgradeRecommendation();
       promptInput.focus();
     } catch (error) {
       console.error("SMART ENHANCE ERROR:", error);
@@ -764,6 +868,7 @@
   function renderAll() {
     updateKeyUi();
     updateCost();
+    updateUpgradeRecommendation();
     renderRecent();
     renderTransactions();
     updateUsageUi();
@@ -774,7 +879,9 @@
     $("[data-smart-enhance]")?.addEventListener("click", handleSmartEnhance);
     $("[data-prompt-input]").addEventListener("input", (event) => {
       $("[data-char-count]").textContent = event.target.value.length;
+      state.upgradeRecommendationDismissed = false;
       resetEnhancedPromptState();
+      updateUpgradeRecommendation();
     });
     $$("[data-type-tab]").forEach((button) => {
       button.addEventListener("click", () => setType(button.dataset.typeTab));
@@ -800,28 +907,44 @@
     });
     $("[data-quality-select]").addEventListener("change", (event) => {
       state.quality = event.target.value;
+      state.upgradeRecommendationDismissed = false;
       resetEnhancedPromptState();
       updateDurationOptions();
       updateCost();
+      updateUpgradeRecommendation();
     });
     $("[data-style-select]").addEventListener("change", (event) => {
       state.style = event.target.value;
       resetEnhancedPromptState();
+      updateUpgradeRecommendation();
     });
     $("[data-aspect-select]").addEventListener("change", (event) => {
       state.aspect = event.target.value;
       resetEnhancedPromptState();
+      updateUpgradeRecommendation();
     });
     $("[data-duration-select]").addEventListener("change", (event) => {
       state.duration = Number(event.target.value);
       resetEnhancedPromptState();
       updateCost();
+      updateUpgradeRecommendation();
     });
     $("[data-cancel-generation]").addEventListener("click", () => {
       state.abortController?.abort();
       setLoading(false);
     });
     $("[data-show-enhanced-prompt]")?.addEventListener("click", openEnhancedPromptModal);
+    $("[data-accept-quality-upgrade]")?.addEventListener("click", () => {
+      const qualitySelect = $("[data-quality-select]");
+      state.quality = "high";
+      state.upgradeRecommendationDismissed = true;
+      if (qualitySelect) qualitySelect.value = "high";
+      resetEnhancedPromptState();
+      updateDurationOptions();
+      updateCost();
+      updateUpgradeRecommendation();
+      showToast("تم اختيار الجودة العالية لهذا الوصف المركب.");
+    });
     $("[data-close-enhanced-prompt]")?.addEventListener("click", closeEnhancedPromptModal);
     $("[data-enhanced-prompt-modal]")?.addEventListener("click", (event) => {
       if (event.target === event.currentTarget) closeEnhancedPromptModal();

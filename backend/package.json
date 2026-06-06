@@ -9,6 +9,7 @@
     "postinstall": "prisma generate",
     "build": "npm run prisma:generate",
     "model:smoke": "node src/scripts/modelSmokeTest.js",
+    "model:monitor": "node src/scripts/modelMonitor.js",
     "render:build": "npm run build && node -e \"if (process.env.REQUIRE_MODEL_SMOKE_TEST === 'true') { require('child_process').execSync('npm run model:smoke', { stdio: 'inherit' }); } else { console.log('Skipping model smoke test. Set REQUIRE_MODEL_SMOKE_TEST=true to block deploys without approved models.'); }\"",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",

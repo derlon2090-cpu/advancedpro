@@ -30,6 +30,12 @@ import {
   MODEL_QUALITY_VIDEO_MODELS as POLICY_VIDEO_MODELS,
   MODEL_QUALITY_VIDEO_TESTS as POLICY_VIDEO_TESTS,
 } from "../services/modelQualityPolicy.js";
+import {
+  ensureGenerationFeedbackInfrastructure,
+  getModelFeedbackStats,
+  getPromptAnalyticsStats,
+} from "../services/generationFeedback.js";
+import { runModelMonitor } from "../services/modelMonitor.js";
 
 const router = Router();
 
@@ -834,6 +840,8 @@ router.get(
 router.get(
   "/prompt-debug",
   asyncHandler(async (req, res) => {
+    await ensureGenerationFeedbackInfrastructure();
+
     const search = String(req.query.search || "").trim();
     const requestedStatus = String(req.query.status || "all").trim().toLowerCase();
     const allowedStatuses = new Set(["all", "queued", "processing", "completed", "failed"]);
@@ -845,17 +853,19 @@ router.get(
       const pattern = `%${search}%`;
       conditions.push(
         Prisma.sql`(
-          prompt ILIKE ${pattern}
-          OR COALESCE(final_prompt, '') ILIKE ${pattern}
-          OR COALESCE(model, '') ILIKE ${pattern}
-          OR COALESCE(request_id, '') ILIKE ${pattern}
-          OR CAST(id AS TEXT) ILIKE ${pattern}
+          g.prompt ILIKE ${pattern}
+          OR COALESCE(g.final_prompt, '') ILIKE ${pattern}
+          OR COALESCE(g.enhanced_prompt, '') ILIKE ${pattern}
+          OR COALESCE(g.negative_prompt, '') ILIKE ${pattern}
+          OR COALESCE(g.model, '') ILIKE ${pattern}
+          OR COALESCE(g.request_id, '') ILIKE ${pattern}
+          OR CAST(g.id AS TEXT) ILIKE ${pattern}
         )`
       );
     }
 
     if (status !== "all") {
-      conditions.push(Prisma.sql`status = ${status}`);
+      conditions.push(Prisma.sql`g.status = ${status}`);
     }
 
     const whereClause = conditions.length
@@ -866,32 +876,38 @@ router.get(
       prisma.$queryRaw(
         Prisma.sql`
           SELECT
-            id,
-            request_id,
-            prompt AS user_prompt,
-            final_prompt,
-            provider,
-            model,
-            seed,
-            type,
-            quality,
-            duration,
-            credits_used,
-            status,
-            result_url,
-            error_message,
-            created_at,
-            completed_at
-          FROM generations
+            g.id,
+            g.request_id,
+            g.prompt AS user_prompt,
+            g.enhanced_prompt,
+            g.final_prompt,
+            g.negative_prompt,
+            g.provider,
+            g.model,
+            g.seed,
+            g.type,
+            g.quality,
+            g.duration,
+            g.credits_used,
+            g.status,
+            g.result_url,
+            g.error_message,
+            g.created_at,
+            g.completed_at,
+            EXTRACT(EPOCH FROM (g.completed_at - g.created_at)) * 1000 AS generation_time_ms,
+            gf.rating AS user_rating,
+            gf.score AS quality_score
+          FROM generations g
+          LEFT JOIN generation_feedback gf ON gf.generation_id = g.id
           ${whereClause}
-          ORDER BY created_at DESC
+          ORDER BY g.created_at DESC
           LIMIT ${limit}
         `
       ),
       prisma.$queryRaw(
         Prisma.sql`
           SELECT COUNT(*)::int AS total
-          FROM generations
+          FROM generations g
           ${whereClause}
         `
       ),
@@ -901,7 +917,9 @@ router.get(
       id: Number(row.id),
       requestId: row.request_id || null,
       userPrompt: row.user_prompt || "",
+      enhancedPrompt: row.enhanced_prompt || "",
       finalPrompt: row.final_prompt || "",
+      negativePrompt: row.negative_prompt || "",
       provider: row.provider || null,
       model: row.model || null,
       seed: row.seed == null ? null : String(row.seed),
@@ -914,6 +932,10 @@ router.get(
       errorMessage: row.error_message || null,
       createdAt: row.created_at,
       completedAt: row.completed_at,
+      generationTimeMs:
+        row.generation_time_ms == null ? null : Math.max(0, Math.round(Number(row.generation_time_ms))),
+      userRating: row.user_rating || null,
+      qualityScore: row.quality_score == null ? null : Number(row.quality_score),
     }));
 
     const summary = generations.reduce(
@@ -933,6 +955,63 @@ router.get(
       generations,
       total: Number(countRows[0]?.total || 0),
       summary,
+      modelFeedback: await getModelFeedbackStats({ limit: 20 }),
+    });
+  })
+);
+
+router.get(
+  "/prompt-analytics",
+  asyncHandler(async (req, res) => {
+    const limit = Math.min(Math.max(Number(req.query.limit) || 40, 1), 250);
+    const prompts = await getPromptAnalyticsStats({ limit });
+    const modelFeedback = await getModelFeedbackStats({ limit: 50 });
+
+    return res.json({
+      success: true,
+      prompts,
+      modelFeedback,
+      summary: {
+        totalPrompts: prompts.length,
+        lowScorePrompts: prompts.filter((item) => item.averageScore < 60).length,
+        lowSatisfactionModels: modelFeedback.filter(
+          (item) => item.total >= 100 && item.userSatisfaction < 65
+        ).length,
+      },
+    });
+  })
+);
+
+router.get(
+  "/model-monitor/status",
+  asyncHandler(async (_req, res) => {
+    const rawReport = await getSetting("model_monitor:last_report", null);
+    let report = null;
+    if (rawReport) {
+      try {
+        report = JSON.parse(rawReport);
+      } catch (_error) {
+        report = null;
+      }
+    }
+
+    return res.json({
+      success: true,
+      report,
+      message: report
+        ? "Model monitor status loaded."
+        : "Model monitor has not run yet. Run npm run model:monitor or POST this endpoint.",
+    });
+  })
+);
+
+router.post(
+  "/model-monitor/run",
+  asyncHandler(async (_req, res) => {
+    const report = await runModelMonitor(prisma);
+    return res.json({
+      success: true,
+      report,
     });
   })
 );

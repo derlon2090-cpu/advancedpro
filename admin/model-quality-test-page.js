@@ -8,6 +8,7 @@
     tests: [],
     summary: null,
     registry: [],
+    monitor: null,
     search: "",
     running: false,
   };
@@ -304,6 +305,50 @@
     }
   }
 
+  async function loadMonitorStatus() {
+    const target = $("[data-model-monitor-alert]");
+    if (!target) return;
+
+    try {
+      const payload = await requestJson("/api/admin/model-monitor/status");
+      state.monitor = payload.report || null;
+      const disabled = (state.monitor?.monitored || []).filter((item) => item.disabled);
+
+      if (!state.monitor) {
+        target.hidden = false;
+        target.innerHTML = `
+          <strong>مراقبة الموديلات لم تعمل بعد</strong>
+          <p>شغّل npm run model:monitor أو استخدم endpoint المراقبة حتى يتم تعطيل الموديلات الضعيفة تلقائيًا من Auto Routing.</p>
+        `;
+        return;
+      }
+
+      target.hidden = false;
+      target.dataset.kind = disabled.length ? "warning" : "success";
+      target.innerHTML = `
+        <strong>${disabled.length ? "تنبيه مراقبة الموديلات" : "المراقبة سليمة"}</strong>
+        <p>
+          آخر فحص: ${escapeHtml(formatDate(state.monitor.checkedAt))}
+          · المعطلة من Auto Routing: ${escapeHtml(disabled.length)}
+        </p>
+        ${
+          disabled.length
+            ? `<div>${disabled
+                .map((item) => `<span>${escapeHtml(item.label || item.model)} - ${escapeHtml(item.reason)}</span>`)
+                .join("")}</div>`
+            : ""
+        }
+      `;
+    } catch (error) {
+      target.hidden = false;
+      target.dataset.kind = "warning";
+      target.innerHTML = `
+        <strong>تعذر تحميل حالة مراقبة الموديلات</strong>
+        <p>${escapeHtml(error.message || "حاول مرة أخرى لاحقًا.")}</p>
+      `;
+    }
+  }
+
   async function loadResults() {
     const list = $("[data-model-quality-list]");
     list.setAttribute("aria-busy", "true");
@@ -319,6 +364,7 @@
       renderSummary(state.summary);
       renderTests();
       await loadRegistry();
+      await loadMonitorStatus();
     } catch (error) {
       if (error.status === 401 || error.status === 403) {
         window.location.href = error.redirectTo || loginPath();
@@ -355,6 +401,7 @@
       state.summary = payload.summary || {};
       renderSummary(state.summary);
       renderTests();
+      await loadMonitorStatus();
       showToast(payload.message || "اكتملت اختبارات الموديل.");
     } catch (error) {
       showToast(error.message, "error");
@@ -377,6 +424,7 @@
       state.summary = payload.summary || state.summary;
       renderSummary(state.summary);
       renderTests();
+      await loadMonitorStatus();
       showToast("تم حفظ تقييم الاختبار.");
     } catch (error) {
       showToast(error.message, "error");

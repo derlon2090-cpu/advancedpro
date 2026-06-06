@@ -11191,6 +11191,54 @@ html[data-theme="dark"] .create-chat-bubble__state {
   font-weight: 800;
 }
 
+.udv3-upgrade-recommendation {
+  border: 1px solid rgba(109, 53, 255, 0.22);
+  border-radius: 18px;
+  padding: 16px;
+  background:
+    radial-gradient(circle at 12% 20%, rgba(109, 53, 255, 0.13), transparent 28%),
+    linear-gradient(135deg, #ffffff, #f5edff);
+  box-shadow: 0 14px 34px rgba(30, 20, 80, 0.055);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.udv3-upgrade-recommendation[hidden] {
+  display: none;
+}
+
+.udv3-upgrade-recommendation div {
+  display: grid;
+  gap: 6px;
+}
+
+.udv3-upgrade-recommendation strong {
+  color: var(--udv3-text);
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.udv3-upgrade-recommendation span {
+  color: var(--udv3-muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.udv3-upgrade-recommendation button {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 14px;
+  color: #fff;
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--udv3-primary), var(--udv3-secondary));
+  box-shadow: 0 12px 24px rgba(109, 53, 255, 0.18);
+  font-weight: 900;
+}
+
 .udv3-prompt-debug-modal {
   position: fixed;
   inset: 0;
@@ -12332,6 +12380,15 @@ html[data-theme="dark"] .create-chat-bubble__state {
 
   .udv3-prompt-actions button,
   .udv3-prompt-actions span {
+    width: 100%;
+  }
+
+  .udv3-upgrade-recommendation {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .udv3-upgrade-recommendation button {
     width: 100%;
   }
 
@@ -14706,6 +14763,57 @@ html[data-theme="dark"] .create-chat-bubble__state {
   font-weight: 800;
 }
 
+.admin-model-quality-monitor {
+  border: 1px solid #ddd6ff;
+  border-radius: 22px;
+  padding: 18px 20px;
+  background: linear-gradient(135deg, #ffffff, #f8f4ff);
+  box-shadow: 0 14px 35px rgba(30, 20, 80, 0.05);
+}
+
+.admin-model-quality-monitor[hidden] {
+  display: none;
+}
+
+.admin-model-quality-monitor[data-kind="warning"] {
+  border-color: #fedf89;
+  background: linear-gradient(135deg, #fff, #fff8eb);
+}
+
+.admin-model-quality-monitor[data-kind="success"] {
+  border-color: #bdebd2;
+  background: linear-gradient(135deg, #fff, #effcf5);
+}
+
+.admin-model-quality-monitor strong {
+  display: block;
+  color: #0f174a;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.admin-model-quality-monitor p {
+  margin: 8px 0 0;
+  color: #667085;
+  font-weight: 700;
+}
+
+.admin-model-quality-monitor div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.admin-model-quality-monitor span {
+  border-radius: 999px;
+  padding: 7px 12px;
+  color: #b54708;
+  background: #fff3dd;
+  font-size: 13px;
+  font-weight: 900;
+}
+
 .admin-model-quality-registry {
   background: #fff;
   border: 1px solid #e8ecf8;
@@ -15093,5 +15201,76 @@ html[data-theme="dark"] .create-chat-bubble__state {
 
   .admin-model-quality-card footer button {
     flex: 1 1 120px;
+  }
+}
+
+.udv3-feedback-card {
+  background: #fff;
+  border: 1px solid #e8eaf3;
+  border-radius: 24px;
+  box-shadow: 0 16px 45px rgba(30, 20, 80, 0.06);
+  margin-top: 18px;
+  padding: 22px;
+}
+
+.udv3-feedback-card > div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.udv3-feedback-card h2 {
+  color: #07124d;
+  font-size: 22px;
+  font-weight: 900;
+  margin: 0;
+}
+
+.udv3-feedback-card p,
+.udv3-feedback-card small {
+  color: #667085;
+  font-weight: 700;
+  margin: 0;
+}
+
+.udv3-feedback-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.udv3-feedback-actions button {
+  background: #fff;
+  border: 1px solid #e2e5f0;
+  border-radius: 18px;
+  color: #07124d;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 900;
+  min-height: 54px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.udv3-feedback-actions button:hover,
+.udv3-feedback-actions button.is-active {
+  border-color: #7c3cff;
+  box-shadow: 0 14px 32px rgba(109, 53, 255, 0.14);
+  transform: translateY(-1px);
+}
+
+.udv3-feedback-actions button[disabled] {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.udv3-feedback-card small {
+  display: block;
+  margin-top: 12px;
+}
+
+@media (max-width: 720px) {
+  .udv3-feedback-actions {
+    grid-template-columns: 1fr;
   }
 }

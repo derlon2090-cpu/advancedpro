@@ -8,13 +8,13 @@ export const IMAGE_MODELS = {
   high: {
     provider: "wavespeed",
     model: "bytedance/seedream-v4.5",
-    xpCost: 12,
+    xpCost: 10,
     endpoint: "https://api.wavespeed.ai/api/v3/bytedance/seedream-v4.5",
   },
   ultra: {
     provider: "wavespeed",
     model: "google/nano-banana-pro",
-    xpCost: 35,
+    xpCost: 20,
     endpoint: "https://api.wavespeed.ai/api/v3/google/nano-banana-pro/text-to-image",
   },
 };
@@ -30,25 +30,25 @@ export const VIDEO_MODELS = {
   high: {
     provider: "wavespeed",
     model: "wavespeed-ai/wan-2.2-animate/text-to-video",
-    xpPerSecond: 25,
-    minXp: 120,
+    xpPerSecond: 20,
+    minXp: 100,
     endpoint: "https://api.wavespeed.ai/api/v3/wavespeed-ai/wan-2.2-animate/text-to-video",
   },
   ultra: {
     provider: "wavespeed",
     model: "kwaivgi/kling-v3.0-std/text-to-video",
-    xpPerSecond: 60,
-    minXp: 250,
+    xpPerSecond: 40,
+    minXp: 200,
     endpoint: "https://api.wavespeed.ai/api/v3/kwaivgi/kling-v3.0-std/text-to-video",
   },
 };
 
-export const VIDEO_DURATIONS = [5, 8, 10, 15, 20, 30, 45, 60, 90, 100];
+export const VIDEO_DURATIONS = [5, 8];
 
 export const MAX_VIDEO_DURATION_BY_QUALITY = {
-  normal: 100,
-  high: 60,
-  ultra: 30,
+  normal: 8,
+  high: 8,
+  ultra: 8,
 };
 
 export const ALLOWED_NATIVE_DURATIONS_BY_MODEL = {

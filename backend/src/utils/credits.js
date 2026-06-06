@@ -1,27 +1,28 @@
 const IMAGE_CREDIT_COST = {
   normal: 5,
-  high: 12,
-  ultra: 35,
+  high: 10,
+  ultra: 20,
 };
 
-const VIDEO_XP_PER_SECOND = {
-  normal: 10,
-  high: 25,
-  ultra: 60,
+const VIDEO_CREDIT_COST = {
+  5: {
+    normal: 50,
+    high: 100,
+    ultra: 200,
+  },
+  8: {
+    normal: 80,
+    high: 160,
+    ultra: 320,
+  },
 };
 
-const VIDEO_MINIMUM_XP = {
-  normal: 50,
-  high: 120,
-  ultra: 250,
-};
-
-export const SUPPORTED_VIDEO_DURATIONS = [5, 8, 10, 15, 20, 30, 45, 60, 90, 100];
+export const SUPPORTED_VIDEO_DURATIONS = [5, 8];
 
 export const MAX_VIDEO_DURATION_BY_QUALITY = {
-  normal: 100,
-  high: 60,
-  ultra: 30,
+  normal: 8,
+  high: 8,
+  ultra: 8,
 };
 
 const QUALITY_ALIASES = {
@@ -80,7 +81,7 @@ export function calculateImageXp(qualityValue = "normal") {
 export function calculateVideoXp(qualityValue = "normal", durationValue = 5) {
   const quality = normalizeQuality(qualityValue);
   const duration = assertDurationAllowedForQuality(quality, durationValue);
-  return Math.max(VIDEO_MINIMUM_XP[quality], duration * VIDEO_XP_PER_SECOND[quality]);
+  return VIDEO_CREDIT_COST[duration]?.[quality] || VIDEO_CREDIT_COST[5][quality];
 }
 
 export function calculateRequiredCredits(typeValue, qualityValue = "normal", durationValue = 5) {
@@ -101,7 +102,7 @@ export function calculateCredits(typeValue, qualityValue = "normal", durationVal
 export function calculateDefaultKeyCredits({ imageLimit = 0, videoLimit = 0 } = {}) {
   const images = Math.max(Number(imageLimit || 0), 0);
   const videos = Math.max(Number(videoLimit || 0), 0);
-  return images * IMAGE_CREDIT_COST.ultra + videos * calculateCredits("video", "ultra", 30);
+  return images * IMAGE_CREDIT_COST.ultra + videos * calculateCredits("video", "ultra", 8);
 }
 
 export function assertValidPrompt(prompt) {
@@ -124,7 +125,6 @@ export function assertValidPrompt(prompt) {
 
 export const CREDIT_RULES = {
   IMAGE_CREDIT_COST,
-  VIDEO_XP_PER_SECOND,
-  VIDEO_MINIMUM_XP,
+  VIDEO_CREDIT_COST,
   MAX_VIDEO_DURATION_BY_QUALITY,
 };

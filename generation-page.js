@@ -65,10 +65,16 @@
     return `${API_BASE_URL}${path}`;
   }
 
-  async function requestJson(path) {
+  async function requestJson(path, options = {}) {
     const response = await fetch(apiUrl(path), {
       credentials: "include",
       cache: "no-store",
+      ...options,
+      headers: {
+        Accept: "application/json",
+        ...(options.body ? { "Content-Type": "application/json" } : {}),
+        ...(options.headers || {}),
+      },
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok || data.success === false) {
@@ -200,6 +206,9 @@
       createdAt: item?.createdAt || item?.created_at || null,
       completedAt: item?.completedAt || item?.completed_at || null,
       resultUrl: item?.resultUrl || item?.result_url || item?.url || item?.outputUrl || item?.imageUrl || item?.videoUrl || "",
+      userRating: item?.userRating || item?.user_rating || null,
+      qualityScore: item?.qualityScore ?? item?.quality_score ?? null,
+      generationTimeMs: item?.generationTimeMs ?? item?.generation_time_ms ?? null,
     };
 
     if (!generation.id || !generation.resultUrl) {
@@ -352,11 +361,52 @@
     $("[data-detail-result-url]").textContent = result.resultUrl || "-";
     $("[data-result-badge]").textContent = qualityLabel(result.quality);
     $("[data-result-media]").innerHTML = renderMedia(result);
+    updateRatingUi(result.userRating);
 
     const download = $("[data-download-result]");
     download.href = result.resultUrl || "#";
     download.download = "";
     download.textContent = isVideo ? "تحميل الفيديو" : "تحميل الصورة";
+  }
+
+  function updateRatingUi(rating) {
+    $$("[data-rating-button]").forEach((button) => {
+      button.classList.toggle("is-active", Boolean(rating && button.dataset.ratingButton === rating));
+    });
+    const message = $("[data-rating-message]");
+    if (message) {
+      message.textContent = rating ? "تم حفظ تقييمك لهذه النتيجة." : "";
+    }
+  }
+
+  async function submitRating(rating) {
+    if (!state.result?.id) {
+      showToast("لا توجد نتيجة محفوظة لتقييمها.", "error");
+      return;
+    }
+
+    const buttons = $$("[data-rating-button]");
+    buttons.forEach((button) => {
+      button.disabled = true;
+    });
+
+    try {
+      const payload = await requestJson(`/api/generations/${encodeURIComponent(state.result.id)}/rating`, {
+        method: "POST",
+        body: JSON.stringify({ rating }),
+      });
+      state.result.userRating = payload.feedback?.rating || rating;
+      state.result.qualityScore = payload.feedback?.score ?? state.result.qualityScore;
+      updateRatingUi(state.result.userRating);
+      showToast("تم حفظ تقييمك وشكرًا لأنك تساعدنا نحسن النتائج.");
+    } catch (error) {
+      console.error("RATING ERROR:", error);
+      showToast(error.message || "تعذر حفظ التقييم الآن.", "error");
+    } finally {
+      buttons.forEach((button) => {
+        button.disabled = false;
+      });
+    }
   }
 
   function renderResultError(message) {
@@ -472,6 +522,10 @@
 
     $("[data-delete-result]").addEventListener("click", () => {
       showToast("تم إخفاء النتيجة من هذه الصفحة فقط.", "error");
+    });
+
+    $$("[data-rating-button]").forEach((button) => {
+      button.addEventListener("click", () => submitRating(button.dataset.ratingButton));
     });
   }
 
