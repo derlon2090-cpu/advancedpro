@@ -93,6 +93,141 @@ const ENTITY_TERMS = {
   garden: ["\u062d\u062f\u064a\u0642\u0629", "garden"],
 };
 
+const PROFESSION_TERMS = {
+  businessman: ["\u0631\u062c\u0644 \u0623\u0639\u0645\u0627\u0644", "\u0631\u062c\u0644 \u0627\u0639\u0645\u0627\u0644", "businessman"],
+  doctor: ["\u0637\u0628\u064a\u0628", "\u0637\u0628\u064a\u0628\u0629", "doctor"],
+  engineer: ["\u0645\u0647\u0646\u062f\u0633", "\u0645\u0647\u0646\u062f\u0633\u0629", "engineer"],
+  teacher: ["\u0645\u0639\u0644\u0645", "\u0645\u0639\u0644\u0645\u0629", "\u0645\u062f\u0631\u0633", "\u0645\u062f\u0631\u0633\u0629", "teacher"],
+  "police officer": ["\u0634\u0631\u0637\u064a", "\u0634\u0631\u0637\u064a\u0629", "\u0636\u0627\u0628\u0637 \u0634\u0631\u0637\u0629", "police officer"],
+  astronaut: ["\u0631\u0627\u0626\u062f \u0641\u0636\u0627\u0621", "\u0631\u0627\u0626\u062f\u0629 \u0641\u0636\u0627\u0621", "astronaut"],
+};
+
+const PROFESSION_ATTIRE = {
+  businessman: "wearing an elegant formal business suit",
+  doctor: "wearing a clean professional medical coat",
+  engineer: "wearing professional engineering attire",
+  teacher: "wearing neat professional teaching attire",
+  "police officer": "wearing a proper police uniform",
+  astronaut: "wearing a complete astronaut space suit",
+};
+
+const COUNTABLE_ENTITIES = [
+  {
+    singular: "robot",
+    plural: "robots",
+    terms: ["\u0631\u0648\u0628\u0648\u062a\u0627\u062a", "\u0631\u0648\u0628\u0648\u062a", "robots", "robot"],
+    dualTerms: ["\u0631\u0648\u0628\u0648\u062a\u0627\u0646", "\u0631\u0648\u0628\u0648\u062a\u064a\u0646"],
+  },
+  {
+    singular: "cat",
+    plural: "cats",
+    terms: ["\u0642\u0637\u0637", "\u0642\u0637\u0629", "\u0642\u0637", "cats", "cat"],
+    dualTerms: ["\u0642\u0637\u062a\u0627\u0646", "\u0642\u0637\u062a\u064a\u0646"],
+  },
+  {
+    singular: "dog",
+    plural: "dogs",
+    terms: ["\u0643\u0644\u0627\u0628", "\u0643\u0644\u0628", "dogs", "dog"],
+    dualTerms: ["\u0643\u0644\u0628\u0627\u0646", "\u0643\u0644\u0628\u064a\u0646"],
+  },
+  {
+    singular: "person",
+    plural: "people",
+    terms: ["\u0623\u0634\u062e\u0627\u0635", "\u0627\u0634\u062e\u0627\u0635", "\u0634\u062e\u0635", "people", "persons", "person"],
+    dualTerms: ["\u0634\u062e\u0635\u0627\u0646", "\u0634\u062e\u0635\u064a\u0646"],
+  },
+];
+
+const COUNT_WORDS = [
+  { count: 10, terms: ["\u0639\u0634\u0631\u0629", "\u0639\u0634\u0631", "ten"] },
+  { count: 9, terms: ["\u062a\u0633\u0639\u0629", "\u062a\u0633\u0639", "nine"] },
+  { count: 8, terms: ["\u062b\u0645\u0627\u0646\u064a\u0629", "\u062b\u0645\u0627\u0646", "eight"] },
+  { count: 7, terms: ["\u0633\u0628\u0639\u0629", "\u0633\u0628\u0639", "seven"] },
+  { count: 6, terms: ["\u0633\u062a\u0629", "\u0633\u062a", "six"] },
+  { count: 5, terms: ["\u062e\u0645\u0633\u0629", "\u062e\u0645\u0633", "five"] },
+  { count: 4, terms: ["\u0623\u0631\u0628\u0639\u0629", "\u0627\u0631\u0628\u0639\u0629", "\u0623\u0631\u0628\u0639", "\u0627\u0631\u0628\u0639", "four"] },
+  { count: 3, terms: ["\u062b\u0644\u0627\u062b\u0629", "\u062b\u0644\u0627\u062b", "three"] },
+  { count: 2, terms: ["\u0627\u062b\u0646\u0627\u0646", "\u0625\u062b\u0646\u0627\u0646", "\u0627\u062b\u0646\u064a\u0646", "\u0625\u062b\u0646\u064a\u0646", "two"] },
+  { count: 1, terms: ["\u0648\u0627\u062d\u062f\u0629", "\u0648\u0627\u062d\u062f", "one"] },
+];
+
+const COUNT_LABELS = {
+  1: "one",
+  2: "two",
+  3: "three",
+  4: "four",
+  5: "five",
+  6: "six",
+  7: "seven",
+  8: "eight",
+  9: "nine",
+  10: "ten",
+};
+
+function detectProfession(text) {
+  for (const [profession, terms] of Object.entries(PROFESSION_TERMS)) {
+    if (includesAny(text, terms)) return profession;
+  }
+  return null;
+}
+
+function normalizeArabicDigits(value) {
+  return String(value || "")
+    .replace(/[\u0660-\u0669]/g, (digit) => String(digit.charCodeAt(0) - 0x0660))
+    .replace(/[\u06f0-\u06f9]/g, (digit) => String(digit.charCodeAt(0) - 0x06f0));
+}
+
+function detectRequestedCount(userPrompt) {
+  const text = normalizeArabicDigits(userPrompt).toLowerCase();
+
+  for (const entity of COUNTABLE_ENTITIES) {
+    if (entity.dualTerms.some((term) => text.includes(term))) {
+      return { count: 2, singular: entity.singular, plural: entity.plural };
+    }
+
+    for (const term of entity.terms) {
+      const entityIndex = text.indexOf(term);
+      if (entityIndex === -1) continue;
+
+      const before = text.slice(Math.max(0, entityIndex - 24), entityIndex).trim();
+      const digitMatch = before.match(/(\d{1,2})\s*$/);
+      if (digitMatch) {
+        const count = Number(digitMatch[1]);
+        if (count > 0 && count <= 20) {
+          return { count, singular: entity.singular, plural: entity.plural };
+        }
+      }
+
+      for (const number of COUNT_WORDS) {
+        if (number.terms.some((word) => before.endsWith(word))) {
+          return { count: number.count, singular: entity.singular, plural: entity.plural };
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
+function buildCountRules(userPrompt) {
+  const requested = detectRequestedCount(userPrompt);
+  if (!requested) return [];
+
+  const countLabel = COUNT_LABELS[requested.count] || String(requested.count);
+  const entityLabel = requested.count === 1 ? requested.singular : requested.plural;
+  const visibility =
+    requested.count === 2
+      ? `Both ${requested.plural} must be fully visible.`
+      : `All ${countLabel} ${requested.plural} must be fully visible.`;
+
+  return [
+    `Exactly ${countLabel} ${entityLabel}.`,
+    visibility,
+    `Do not add or remove any ${requested.singular}.`,
+    "Do not duplicate any subject.",
+  ];
+}
+
 function detectColorForEntity(text, entityKey) {
   const entityTerms = ENTITY_TERMS[entityKey] || [];
   if (!includesAny(text, entityTerms)) return null;
@@ -151,12 +286,10 @@ function analyzePromptV3(userPrompt) {
   const hasYellow = includesAny(lower, COLOR_TERMS.yellow);
   const hasGreen = includesAny(lower, COLOR_TERMS.green);
   const hasBeside = includesAny(lower, ["\u0628\u062c\u0627\u0646\u0628", "\u0645\u0639", "next to", "beside"]);
-  const hasBusinessman = includesAny(lower, [
-    "\u0631\u062c\u0644 \u0623\u0639\u0645\u0627\u0644",
-    "\u0631\u062c\u0644 \u0627\u0639\u0645\u0627\u0644",
-    "businessman",
-  ]);
+  const profession = detectProfession(lower);
+  const hasMan = includesAny(lower, ["\u0631\u062c\u0644", "\u0634\u0627\u0628", "man", "male"]);
   const hasSuit = includesAny(lower, ["\u0628\u062f\u0644\u0629", "suit"]);
+  const hasWearing = includesAny(lower, ["\u064a\u0631\u062a\u062f\u064a", "\u062a\u0631\u062a\u062f\u064a", "\u0644\u0627\u0628\u0633", "\u0644\u0627\u0628\u0633\u0629", "wearing", "wears"]);
   const hasOffice = includesAny(lower, ["\u0645\u0643\u062a\u0628", "office"]);
   const hasHandsome = includesAny(lower, ["\u0648\u0633\u064a\u0645", "handsome"]);
   const hasCar = includesAny(lower, ["\u0633\u064a\u0627\u0631\u0629", "car"]);
@@ -166,6 +299,7 @@ function analyzePromptV3(userPrompt) {
   const hasHouse = includesAny(lower, ENTITY_TERMS.house);
   const hasTop = includesAny(lower, ["\u0641\u0648\u0642", "\u0639\u0644\u0649 \u0633\u0637\u062d", "\u0633\u0637\u062d", "on top", "above", "roof"]);
   const hasInFront = includesAny(lower, ["\u0623\u0645\u0627\u0645", "\u0627\u0645\u0627\u0645", "in front"]);
+  const hasInside = includesAny(lower, ["\u062f\u0627\u062e\u0644", "\u0641\u064a \u062f\u0627\u062e\u0644", "inside"]);
   const catColor = detectColorForEntity(lower, "cat") || (hasCat ? firstDetectedColor(lower) : null);
   const dogColor = detectColorForEntity(lower, "dog") || (hasDog ? firstDetectedColor(lower) : null);
   const houseColor = detectColorForEntity(lower, "house") || (hasHouse && hasYellow ? "yellow" : null);
@@ -211,6 +345,63 @@ function analyzePromptV3(userPrompt) {
     };
   }
 
+  if (hasDog && hasCar && hasInside) {
+    return {
+      subject: "dog",
+      subjectColor: dogColor,
+      object: "car",
+      objectColor: null,
+      relation: "sitting inside",
+      finalPrompt: [
+        `A realistic ${dogColor ? `${dogColor} ` : ""}dog sitting inside a car.`,
+        "The dog must be clearly visible through the car interior.",
+        "The dog is inside the car, not beside it and not on top of it.",
+        "Show enough of the car to make the spatial relationship unmistakable.",
+        "No extra animals, no people, no text, no watermark.",
+      ].join(" "),
+    };
+  }
+
+  if (profession) {
+    const appearance = hasHandsome ? "handsome " : "";
+    const clothing = hasSuit ? "wearing an elegant formal suit" : PROFESSION_ATTIRE[profession];
+    const place = hasOffice ? "inside a modern office" : "in an environment appropriate for the profession";
+    const translatedRequest = translateArabicToEnglish(userPrompt);
+    return {
+      subject: profession,
+      subjectColor: null,
+      object: hasOffice ? "office" : null,
+      objectColor: null,
+      relation: hasOffice ? "inside" : null,
+      finalPrompt: [
+        `User request: ${translatedRequest}.`,
+        `A ${appearance}${profession} ${clothing} ${place}.`,
+        `The main subject must clearly look like a ${profession}.`,
+        "Preserve every requested object, action, color, and spatial relationship from the user request.",
+        "Realistic professional portrait, confident expression, clean composition, cinematic lighting.",
+      ].join(" "),
+    };
+  }
+
+  if (hasMan && hasWearing && hasSuit) {
+    const translatedRequest = translateArabicToEnglish(userPrompt);
+    return {
+      subject: "man",
+      subjectColor: null,
+      object: "business suit",
+      objectColor: null,
+      relation: "wearing",
+      finalPrompt: [
+        `User request: ${translatedRequest}.`,
+        "A man wearing a formal business suit.",
+        "The suit must be clearly visible on the man.",
+        "Preserve every requested object, action, color, and spatial relationship from the user request.",
+        "Realistic professional photography, full upper body visible, clean composition.",
+        "No extra people, no text, no watermark.",
+      ].join(" "),
+    };
+  }
+
   if (hasRobot) {
     if (hasGreen && hasYellow && hasBeside) {
       return {
@@ -244,20 +435,6 @@ function analyzePromptV3(userPrompt) {
     };
   }
 
-  if (hasBusinessman) {
-    const appearance = hasHandsome ? "handsome male " : "male ";
-    const clothing = hasSuit ? "wearing an elegant formal suit" : "wearing professional business attire";
-    const place = hasOffice ? "inside a modern luxury office" : "in a modern corporate environment";
-    return {
-      subject: "businessman",
-      subjectColor: null,
-      object: hasOffice ? "office" : null,
-      objectColor: null,
-      relation: "inside",
-      finalPrompt: `A ${appearance}businessman ${clothing} ${place}, realistic professional portrait, confident expression, clean corporate background, cinematic lighting.`,
-    };
-  }
-
   if (hasCar) {
     const color = hasBlack ? "black " : "";
     const type = hasSports ? "sports car" : "car";
@@ -279,42 +456,86 @@ function analyzePromptV3(userPrompt) {
 function translateArabicToEnglish(userPrompt) {
   const text = String(userPrompt || "").trim();
 
-  const analyzed = analyzePromptV3(text);
-  if (analyzed?.finalPrompt) {
-    return analyzed.finalPrompt;
-  }
-
   if (!hasArabicText(text)) {
     return text;
   }
 
   const dictionary = [
+    ["\u0631\u062c\u0644 \u0623\u0639\u0645\u0627\u0644", "businessman"],
+    ["\u0631\u062c\u0644 \u0627\u0639\u0645\u0627\u0644", "businessman"],
+    ["\u0636\u0627\u0628\u0637 \u0634\u0631\u0637\u0629", "police officer"],
+    ["\u0631\u0627\u0626\u062f\u0629 \u0641\u0636\u0627\u0621", "astronaut"],
+    ["\u0631\u0627\u0626\u062f \u0641\u0636\u0627\u0621", "astronaut"],
+    ["\u064a\u0637\u064a\u0631 \u0641\u0648\u0642", "flying above"],
+    ["\u062a\u0637\u064a\u0631 \u0641\u0648\u0642", "flying above"],
+    ["\u064a\u062c\u0644\u0633 \u0639\u0644\u0649", "sitting on"],
+    ["\u062a\u062c\u0644\u0633 \u0639\u0644\u0649", "sitting on"],
+    ["\u064a\u0646\u0638\u0631 \u0625\u0644\u0649", "looking at"],
+    ["\u064a\u0646\u0638\u0631 \u0627\u0644\u0649", "looking at"],
+    ["\u062a\u0646\u0638\u0631 \u0625\u0644\u0649", "looking at"],
+    ["\u062a\u0646\u0638\u0631 \u0627\u0644\u0649", "looking at"],
+    ["\u0641\u064a \u062f\u0627\u062e\u0644", "inside"],
+    ["\u0639\u0644\u0649 \u0633\u0637\u062d", "on top of the roof of"],
+    ["\u0645\u0643\u062a\u0628 \u062d\u062f\u064a\u062b", "modern office"],
+    ["\u0631\u0648\u0628\u0648\u062a\u0627\u062a", "robots"],
+    ["\u0642\u0637\u062a\u0627\u0646", "two cats"],
+    ["\u0642\u0637\u062a\u064a\u0646", "two cats"],
+    ["\u0631\u0648\u0628\u0648\u062a\u0627\u0646", "two robots"],
+    ["\u0631\u0648\u0628\u0648\u062a\u064a\u0646", "two robots"],
+    ["\u0628\u062c\u0627\u0646\u0628", "next to"],
+    ["\u0623\u0645\u0627\u0645", "in front of"],
+    ["\u0627\u0645\u0627\u0645", "in front of"],
+    ["\u062e\u0644\u0641", "behind"],
+    ["\u0628\u064a\u0646", "between"],
+    ["\u062f\u0627\u062e\u0644", "inside"],
+    ["\u064a\u0645\u0633\u0643", "holding"],
+    ["\u062a\u0645\u0633\u0643", "holding"],
+    ["\u064a\u0642\u0648\u062f", "driving"],
+    ["\u062a\u0642\u0648\u062f", "driving"],
+    ["\u064a\u0631\u062a\u062f\u064a", "wearing"],
+    ["\u062a\u0631\u062a\u062f\u064a", "wearing"],
+    ["\u0637\u0628\u064a\u0628\u0629", "doctor"],
+    ["\u0637\u0628\u064a\u0628", "doctor"],
+    ["\u0645\u0647\u0646\u062f\u0633\u0629", "engineer"],
+    ["\u0645\u0647\u0646\u062f\u0633", "engineer"],
+    ["\u0645\u0639\u0644\u0645\u0629", "teacher"],
+    ["\u0645\u0639\u0644\u0645", "teacher"],
+    ["\u0645\u062f\u0631\u0633\u0629", "teacher"],
+    ["\u0645\u062f\u0631\u0633", "teacher"],
+    ["\u0634\u0631\u0637\u064a\u0629", "police officer"],
+    ["\u0634\u0631\u0637\u064a", "police officer"],
+    ["\u0633\u0648\u062f\u0627\u0621", "black"],
+    ["\u0628\u064a\u0636\u0627\u0621", "white"],
+    ["\u0635\u0641\u0631\u0627\u0621", "yellow"],
+    ["\u062e\u0636\u0631\u0627\u0621", "green"],
+    ["\u062d\u0645\u0631\u0627\u0621", "red"],
+    ["\u0632\u0631\u0642\u0627\u0621", "blue"],
+    ["\u0642\u0637\u0629", "cat"],
     ["\u0642\u0637", "cat"],
     ["\u0643\u0644\u0628", "dog"],
     ["\u0623\u0633\u0648\u062f", "black"],
     ["\u0627\u0633\u0648\u062f", "black"],
-    ["\u0633\u0648\u062f\u0627\u0621", "black"],
-    ["\u0642\u0637\u0629", "cat"],
+    ["\u0623\u0628\u064a\u0636", "white"],
+    ["\u0627\u0628\u064a\u0636", "white"],
     ["\u0628\u064a\u062a", "house"],
     ["\u0645\u0646\u0632\u0644", "house"],
     ["\u0633\u0637\u062d", "roof"],
     ["\u0641\u0648\u0642", "on top of"],
-    ["\u0631\u0648\u0628\u0648\u062a\u0627\u062a", "robots"],
     ["\u0631\u0648\u0628\u0648\u062a", "robot"],
     ["\u0623\u0635\u0641\u0631", "yellow"],
     ["\u0627\u0635\u0641\u0631", "yellow"],
-    ["\u0635\u0641\u0631\u0627\u0621", "yellow"],
     ["\u0623\u062e\u0636\u0631", "green"],
     ["\u0627\u062e\u0636\u0631", "green"],
+    ["\u0623\u062d\u0645\u0631", "red"],
+    ["\u0627\u062d\u0645\u0631", "red"],
+    ["\u0623\u0632\u0631\u0642", "blue"],
+    ["\u0627\u0632\u0631\u0642", "blue"],
     ["\u0627\u0644\u0642\u0645\u0631", "moon"],
     ["\u0642\u0645\u0631", "moon"],
     ["\u062d\u062f\u064a\u0642\u0629", "garden"],
-    ["\u0628\u062c\u0627\u0646\u0628", "next to"],
-    ["\u0631\u062c\u0644 \u0623\u0639\u0645\u0627\u0644", "businessman"],
-    ["\u0631\u062c\u0644 \u0627\u0639\u0645\u0627\u0644", "businessman"],
+    ["\u0631\u062c\u0644", "man"],
     ["\u0648\u0633\u064a\u0645", "handsome"],
     ["\u0628\u062f\u0644\u0629", "formal suit"],
-    ["\u0645\u0643\u062a\u0628 \u062d\u062f\u064a\u062b", "modern office"],
     ["\u0645\u0643\u062a\u0628", "office"],
     ["\u0633\u064a\u0627\u0631\u0629", "car"],
     ["\u0631\u064a\u0627\u0636\u064a\u0629", "sports"],
@@ -339,33 +560,55 @@ function translateArabicToEnglish(userPrompt) {
 
 function buildNegativeRules(userPrompt) {
   const lower = String(userPrompt || "").toLowerCase();
-  const asksForHuman = includesAny(lower, [
-    "\u0631\u062c\u0644",
-    "\u0627\u0645\u0631\u0623\u0629",
-    "\u0627\u0646\u0633\u0627\u0646",
-    "\u0625\u0646\u0633\u0627\u0646",
-    "\u0634\u062e\u0635",
-    "man",
-    "woman",
-    "human",
-    "person",
-    "businessman",
-  ]);
+  const asksForHuman =
+    Boolean(detectProfession(lower)) ||
+    includesAny(lower, [
+      "\u0631\u062c\u0644",
+      "\u0627\u0645\u0631\u0623\u0629",
+      "\u0627\u0646\u0633\u0627\u0646",
+      "\u0625\u0646\u0633\u0627\u0646",
+      "\u0634\u062e\u0635",
+      "man",
+      "woman",
+      "human",
+      "person",
+      "businessman",
+    ]);
   const asksForAnimal = includesAny(lower, ["\u0642\u0637", "\u0643\u0644\u0628", "cat", "dog", "animal"]);
   const asksForRobot = includesAny(lower, ["\u0631\u0648\u0628\u0648\u062a", "robot"]);
+  const asksForCar = includesAny(lower, ["\u0633\u064a\u0627\u0631\u0629", "car", "vehicle"]);
+  const asksForOffice = includesAny(lower, ["\u0645\u0643\u062a\u0628", "office"]);
+  const asksForFood = includesAny(lower, ["\u0637\u0639\u0627\u0645", "\u0623\u0643\u0644", "\u0627\u0643\u0644", "food", "meal"]);
 
-  const rules = ["text", "letters", "watermark", "logo", "grid lines", "captions", "subtitles"];
+  const rules = [
+    "text",
+    "letters",
+    "watermark",
+    "logo",
+    "grid lines",
+    "captions",
+    "subtitles",
+    "duplicate subjects",
+    "cropped subjects",
+    "unrequested extra subjects",
+  ];
 
   if (!asksForHuman) {
     rules.push("humans", "men", "women", "faces", "businessman", "suit", "portrait");
   }
 
   if (asksForAnimal) {
-    rules.push("robots", "cars", "office", "restaurant", "food");
+    if (!asksForRobot) rules.push("robots");
+    if (!asksForCar) rules.push("cars");
+    if (!asksForOffice) rules.push("office");
+    if (!asksForFood) rules.push("restaurant", "food");
   }
 
   if (asksForRobot) {
-    rules.push("humans", "animals", "cat", "dog", "food", "office");
+    if (!asksForHuman) rules.push("humans");
+    if (!asksForAnimal) rules.push("animals", "cat", "dog");
+    if (!asksForFood) rules.push("food");
+    if (!asksForOffice) rules.push("office");
   }
 
   return [...new Set(rules)];
@@ -392,6 +635,78 @@ function buildColorRules(userPrompt, analysis) {
 
 function buildRelationshipExactness(userPrompt) {
   const lower = String(userPrompt || "").toLowerCase();
+
+  if (includesAny(lower, ["\u064a\u0637\u064a\u0631 \u0641\u0648\u0642", "\u062a\u0637\u064a\u0631 \u0641\u0648\u0642", "flying above", "flying over"])) {
+    return [
+      "The requested subject is flying above the requested object.",
+      "Show visible air space between the flying subject and the object below.",
+      "Both subjects must be visible and spatially separated.",
+    ].join(" ");
+  }
+
+  if (includesAny(lower, ["\u064a\u062c\u0644\u0633 \u0639\u0644\u0649", "\u062a\u062c\u0644\u0633 \u0639\u0644\u0649", "\u062c\u0627\u0644\u0633 \u0639\u0644\u0649", "sitting on", "sits on"])) {
+    return [
+      "The requested subject is sitting directly on the requested object.",
+      "The supporting object must remain visible underneath the subject.",
+      "Do not move the subject beside or behind the object.",
+    ].join(" ");
+  }
+
+  if (includesAny(lower, ["\u0641\u064a \u062f\u0627\u062e\u0644", "\u062f\u0627\u062e\u0644", "inside"])) {
+    return [
+      "The requested subject is inside the requested object or place.",
+      "Show enough of the surrounding object or interior to make the inside relation unmistakable.",
+      "Do not place the subject outside or beside it.",
+    ].join(" ");
+  }
+
+  if (includesAny(lower, ["\u062e\u0644\u0641", "behind"])) {
+    return [
+      "The requested subject is behind the requested object.",
+      "Use clear depth and partial overlap while keeping both subjects visible.",
+      "Do not swap the foreground and background positions.",
+    ].join(" ");
+  }
+
+  if (includesAny(lower, ["\u0628\u064a\u0646", "between"])) {
+    return [
+      "The main subject is positioned between the requested surrounding subjects or objects.",
+      "Show the left, center, and right positions clearly.",
+      "Keep every requested subject visible.",
+    ].join(" ");
+  }
+
+  if (includesAny(lower, ["\u064a\u0645\u0633\u0643", "\u062a\u0645\u0633\u0643", "\u0645\u0645\u0633\u0643", "holding", "holds"])) {
+    return [
+      "The requested subject is physically holding the requested object.",
+      "Show the hand or grip clearly connected to the held object.",
+      "Do not place the object floating or elsewhere in the scene.",
+    ].join(" ");
+  }
+
+  if (includesAny(lower, ["\u064a\u0642\u0648\u062f", "\u062a\u0642\u0648\u062f", "driving", "drives"])) {
+    return [
+      "The requested subject is driving the requested vehicle.",
+      "Show the subject in the driver's position with hands controlling the vehicle.",
+      "Do not place the subject merely beside the vehicle.",
+    ].join(" ");
+  }
+
+  if (includesAny(lower, ["\u064a\u0631\u062a\u062f\u064a", "\u062a\u0631\u062a\u062f\u064a", "\u0644\u0627\u0628\u0633", "\u0644\u0627\u0628\u0633\u0629", "wearing", "wears"])) {
+    return [
+      "The requested clothing or accessory is being worn by the subject.",
+      "Make the worn item clearly visible on the subject.",
+      "Do not place the item beside the subject.",
+    ].join(" ");
+  }
+
+  if (includesAny(lower, ["\u064a\u0646\u0638\u0631 \u0625\u0644\u0649", "\u064a\u0646\u0638\u0631 \u0627\u0644\u0649", "\u062a\u0646\u0638\u0631 \u0625\u0644\u0649", "\u062a\u0646\u0638\u0631 \u0627\u0644\u0649", "looking at", "looks at"])) {
+    return [
+      "The subject is looking directly at the requested target.",
+      "The gaze direction must clearly point toward the target.",
+      "Keep both the subject and target visible.",
+    ].join(" ");
+  }
 
   if (includesAny(lower, ["\u0641\u0648\u0642", "\u0639\u0644\u0649 \u0633\u0637\u062d", "\u0633\u0637\u062d", "on top", "above", "roof"])) {
     return [
@@ -427,6 +742,7 @@ function buildFinalPrompt({ userPrompt, quality = "normal", style = "", type = "
   const styleText = STYLE_LABELS[style] || STYLE_LABELS.realistic;
   const negativeRules = buildNegativeRules(userPrompt).join(", ");
   const colorRules = buildColorRules(userPrompt, analysis);
+  const countRules = buildCountRules(userPrompt);
   const exactness = buildRelationshipExactness(userPrompt);
 
   if (analysis) {
@@ -448,8 +764,11 @@ function buildFinalPrompt({ userPrompt, quality = "normal", style = "", type = "
     "Strict rules:",
     "- Follow the subject exactly.",
     `- ${exactness}`,
+    ...countRules.map((rule) => `- ${rule}`),
     ...colorRules.map((rule) => `- ${rule}`),
     "- Do not add unrelated people, food, city, office, restaurant, animals, robots, or objects unless explicitly requested.",
+    "- Do not add extra animals or people beyond the requested count.",
+    "- Keep every requested subject fully inside the frame. Do not crop or duplicate subjects.",
     "- No text, no watermark, no logo, no UI overlay, no grid lines.",
     `- Avoid: ${negativeRules}.`,
     `- Style: ${styleText}.`,

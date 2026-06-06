@@ -818,6 +818,112 @@ router.get(
 );
 
 router.get(
+  "/prompt-debug",
+  asyncHandler(async (req, res) => {
+    const search = String(req.query.search || "").trim();
+    const requestedStatus = String(req.query.status || "all").trim().toLowerCase();
+    const allowedStatuses = new Set(["all", "queued", "processing", "completed", "failed"]);
+    const status = allowedStatuses.has(requestedStatus) ? requestedStatus : "all";
+    const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 100);
+    const conditions = [];
+
+    if (search) {
+      const pattern = `%${search}%`;
+      conditions.push(
+        Prisma.sql`(
+          prompt ILIKE ${pattern}
+          OR COALESCE(final_prompt, '') ILIKE ${pattern}
+          OR COALESCE(model, '') ILIKE ${pattern}
+          OR COALESCE(request_id, '') ILIKE ${pattern}
+          OR CAST(id AS TEXT) ILIKE ${pattern}
+        )`
+      );
+    }
+
+    if (status !== "all") {
+      conditions.push(Prisma.sql`status = ${status}`);
+    }
+
+    const whereClause = conditions.length
+      ? Prisma.sql`WHERE ${Prisma.join(conditions, " AND ")}`
+      : Prisma.empty;
+
+    const [rows, countRows] = await Promise.all([
+      prisma.$queryRaw(
+        Prisma.sql`
+          SELECT
+            id,
+            request_id,
+            prompt AS user_prompt,
+            final_prompt,
+            provider,
+            model,
+            seed,
+            type,
+            quality,
+            duration,
+            credits_used,
+            status,
+            result_url,
+            error_message,
+            created_at,
+            completed_at
+          FROM generations
+          ${whereClause}
+          ORDER BY created_at DESC
+          LIMIT ${limit}
+        `
+      ),
+      prisma.$queryRaw(
+        Prisma.sql`
+          SELECT COUNT(*)::int AS total
+          FROM generations
+          ${whereClause}
+        `
+      ),
+    ]);
+
+    const generations = rows.map((row) => ({
+      id: Number(row.id),
+      requestId: row.request_id || null,
+      userPrompt: row.user_prompt || "",
+      finalPrompt: row.final_prompt || "",
+      provider: row.provider || null,
+      model: row.model || null,
+      seed: row.seed == null ? null : String(row.seed),
+      type: row.type,
+      quality: row.quality || null,
+      duration: row.duration == null ? null : Number(row.duration),
+      creditsUsed: Number(row.credits_used || 0),
+      status: row.status,
+      resultUrl: row.result_url || null,
+      errorMessage: row.error_message || null,
+      createdAt: row.created_at,
+      completedAt: row.completed_at,
+    }));
+
+    const summary = generations.reduce(
+      (result, item) => {
+        result[item.status] = (result[item.status] || 0) + 1;
+        return result;
+      },
+      {
+        completed: 0,
+        failed: 0,
+        processing: 0,
+        queued: 0,
+      }
+    );
+
+    return res.json({
+      generations,
+      total: Number(countRows[0]?.total || 0),
+      summary,
+    });
+  })
+);
+
+router.get(
   "/plans",
   asyncHandler(async (_req, res) => {
     const plans = await getAdminPlans();

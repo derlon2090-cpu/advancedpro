@@ -26,6 +26,10 @@
       "destination": "/admin/customer-detail.html?id=:id"
     },
     {
+      "source": "/admin/prompt-debug",
+      "destination": "/admin/prompt-debug.html"
+    },
+    {
       "source": "/dashboard",
       "destination": "/dashboard.html"
     },

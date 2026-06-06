@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>تشخيص البرومبت | Advanced Pro</title>
+    <meta name="robots" content="noindex,nofollow" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css?v=20260606-prompt-debug" />
+  </head>
+  <body class="admin-v2-page" data-page="admin-prompt-debug" data-requires-admin="true" data-skip-site-footer="true">
+    <main class="admin-v2-shell">
+      <aside class="admin-v2-sidebar" id="adminSidebar">
+        <div class="admin-v2-brand">
+          <img src="/ap-mark.svg" alt="" aria-hidden="true" />
+          <div>
+            <strong>Advanced Pro</strong>
+            <span>لوحة تحكم الأدمن</span>
+          </div>
+        </div>
+
+        <nav class="admin-v2-nav" aria-label="قائمة لوحة الأدمن">
+          <a href="/admin/dashboard" data-icon="⌂">لوحة التحكم</a>
+          <a href="/admin/keys" data-icon="⚿">المفاتيح</a>
+          <a href="/admin/plans" data-icon="◇">الباقات</a>
+          <a href="/admin/customers" data-icon="♙">العملاء</a>
+          <a href="/admin/reports" data-icon="▥">الإحصائيات</a>
+          <a href="/admin/settings" data-icon="⚙">الإعدادات</a>
+          <a href="/admin/activity" data-icon="◷">سجل النشاط</a>
+          <a href="/admin/backup" data-icon="◎">النسخ الاحتياطي</a>
+        </nav>
+
+        <button class="admin-v2-logout" type="button" data-logout>
+          <span>↪</span>
+          تسجيل الخروج
+        </button>
+      </aside>
+
+      <section class="admin-v2-main">
+        <header class="admin-v2-header">
+          <button class="admin-v2-menu" type="button" data-admin-drawer-toggle aria-label="فتح القائمة">☰</button>
+          <div class="admin-v2-profile" data-admin-profile>
+            <span class="admin-v2-avatar">A</span>
+            <div>
+              <strong>مرحبًا</strong>
+              <small>Owner</small>
+            </div>
+          </div>
+          <div class="admin-v2-actions">
+            <a href="/admin/activity" aria-label="سجل النشاط">◷</a>
+            <a href="/admin/settings" aria-label="الإعدادات">⚙</a>
+          </div>
+          <label class="admin-v2-search">
+            <span>⌕</span>
+            <input data-prompt-debug-search type="search" placeholder="ابحث بالوصف أو الموديل أو Request ID..." />
+          </label>
+        </header>
+
+        <main class="admin-prompt-debug-page">
+          <section class="admin-prompt-debug-hero">
+            <div>
+              <span class="admin-prompt-debug-icon">⌁</span>
+              <p>أداة داخلية للمشرف</p>
+              <h1>تشخيص البرومبت</h1>
+              <span>قارن وصف المستخدم بالبرومبت النهائي والموديل والنتيجة لكل عملية توليد.</span>
+            </div>
+            <button type="button" data-prompt-debug-refresh>↻ تحديث البيانات</button>
+          </section>
+
+          <section class="admin-prompt-debug-tools">
+            <select data-prompt-debug-status aria-label="فلترة الحالة">
+              <option value="all">جميع الحالات</option>
+              <option value="completed">مكتمل</option>
+              <option value="failed">فشل</option>
+              <option value="processing">قيد المعالجة</option>
+              <option value="queued">في الانتظار</option>
+            </select>
+            <select data-prompt-debug-limit aria-label="عدد النتائج">
+              <option value="25">آخر 25 عملية</option>
+              <option value="50" selected>آخر 50 عملية</option>
+              <option value="100">آخر 100 عملية</option>
+            </select>
+            <span data-prompt-debug-total>جارٍ التحميل...</span>
+          </section>
+
+          <section class="admin-prompt-debug-stats" data-prompt-debug-stats>
+            <article class="admin-v2-skeleton"></article>
+            <article class="admin-v2-skeleton"></article>
+            <article class="admin-v2-skeleton"></article>
+            <article class="admin-v2-skeleton"></article>
+          </section>
+
+          <section class="admin-prompt-debug-list" data-prompt-debug-list>
+            <div class="admin-v2-empty">جارٍ تحميل بيانات التشخيص...</div>
+          </section>
+        </main>
+      </section>
+    </main>
+
+    <div class="admin-prompt-debug-toast" data-prompt-debug-toast hidden></div>
+    <script src="/admin/prompt-debug-page.js?v=20260606-prompt-debug"></script>
+  </body>
+</html>
