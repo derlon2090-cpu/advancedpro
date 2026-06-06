@@ -148,6 +148,7 @@
 
               <div class="udv3-prompt-actions">
                 <button type="button" data-smart-enhance>✨ تحسين ذكي</button>
+                <button type="button" data-show-enhanced-prompt hidden>عرض البرومبت المحسن</button>
                 <span>يرتب الوصف ويحافظ على الألوان والعلاقات قبل الإرسال.</span>
               </div>
 
@@ -302,7 +303,16 @@
 
     <div class="udv3-toast" data-toast hidden></div>
 
+    <div class="udv3-prompt-debug-modal" data-enhanced-prompt-modal hidden>
+      <section role="dialog" aria-modal="true" aria-labelledby="enhanced-prompt-title">
+        <button type="button" data-close-enhanced-prompt aria-label="إغلاق">×</button>
+        <h2 id="enhanced-prompt-title">البرومبت المحسن</h2>
+        <p>هذا العرض للمشرف فقط لمراجعة البرومبت النهائي قبل الإرسال.</p>
+        <pre data-enhanced-prompt-preview></pre>
+      </section>
+    </div>
+
     <script src="/config.js"></script>
-    <script src="/dashboard-page.js?v=20260605-prompt-v3"></script>
+    <script src="/dashboard-page.js?v=20260606-prompt-v4"></script>
   </body>
 </html>

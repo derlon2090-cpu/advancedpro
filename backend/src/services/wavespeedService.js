@@ -89,6 +89,7 @@ const ENTITY_TERMS = {
   dog: ["\u0643\u0644\u0628", "dog"],
   house: ["\u0628\u064a\u062a", "\u0645\u0646\u0632\u0644", "house", "home"],
   robot: ["\u0631\u0648\u0628\u0648\u062a", "robot"],
+  ferrari: ["\u0641\u0631\u0627\u0631\u064a", "\u0641\u064a\u0631\u0627\u0631\u064a", "ferrari"],
   moon: ["\u0627\u0644\u0642\u0645\u0631", "\u0642\u0645\u0631", "moon"],
   garden: ["\u062d\u062f\u064a\u0642\u0629", "garden"],
 };
@@ -109,6 +110,15 @@ const PROFESSION_ATTIRE = {
   teacher: "wearing neat professional teaching attire",
   "police officer": "wearing a proper police uniform",
   astronaut: "wearing a complete astronaut space suit",
+};
+
+const V4_ENTITY_TERMS = {
+  businessman: ["\u0631\u062c\u0644 \u0623\u0639\u0645\u0627\u0644", "\u0631\u062c\u0644 \u0627\u0639\u0645\u0627\u0644", "\u0631\u062c\u0644 \u0631\u0633\u0645\u064a", "businessman"],
+  ferrari: ["\u0641\u0631\u0627\u0631\u064a", "\u0641\u064a\u0631\u0627\u0631\u064a", "ferrari"],
+  blackDog: ["\u0643\u0644\u0628 \u0623\u0633\u0648\u062f", "\u0643\u0644\u0628 \u0627\u0633\u0648\u062f", "black dog"],
+  car: ["\u0633\u064a\u0627\u0631\u0629", "\u0639\u0631\u0628\u0629", "car"],
+  inside: ["\u062f\u0627\u062e\u0644", "\u0631\u0627\u0643\u0628", "\u064a\u0642\u0648\u062f", "inside", "riding", "driving"],
+  nextTo: ["\u0628\u062c\u0627\u0646\u0628\u0647", "\u0628\u062c\u0627\u0646\u0628", "\u0645\u0639\u0647", "next to", "beside", "with him"],
 };
 
 const COUNTABLE_ENTITIES = [
@@ -272,9 +282,86 @@ function firstDetectedColor(text) {
   return null;
 }
 
+function analyzePromptV4(userPrompt) {
+  const text = String(userPrompt || "").trim();
+  const lower = text.toLowerCase();
+  const hasBusinessman = includesAny(lower, V4_ENTITY_TERMS.businessman);
+  const hasFerrari = includesAny(lower, V4_ENTITY_TERMS.ferrari);
+  const hasBlackDog = includesAny(lower, V4_ENTITY_TERMS.blackDog);
+  const hasCar = includesAny(lower, V4_ENTITY_TERMS.car);
+  const hasInside = includesAny(lower, V4_ENTITY_TERMS.inside);
+  const hasNextTo = includesAny(lower, V4_ENTITY_TERMS.nextTo);
+  const hasRealistic = includesAny(lower, ["\u0648\u0627\u0642\u0639\u064a", "\u0648\u0627\u0642\u0639\u064a\u0629", "realistic"]);
+
+  if (hasBusinessman && hasFerrari && hasBlackDog) {
+    const ferrariColor = includesAny(lower, COLOR_TERMS.black)
+      ? "black Ferrari"
+      : includesAny(lower, COLOR_TERMS.white)
+        ? "white Ferrari"
+        : includesAny(lower, COLOR_TERMS.blue)
+          ? "blue Ferrari"
+          : "red Ferrari";
+    const dogRelation = hasNextTo ? "next to him" : "with him";
+
+    return {
+      subject: "businessman",
+      subjectColor: null,
+      object: "Ferrari car",
+      objectColor: ferrariColor,
+      relation: `sitting inside, black dog ${dogRelation}`,
+      enhancedPrompt: [
+        "صورة واقعية عالية الجودة لرجل أعمال أنيق يرتدي بدلة رسمية،",
+        `يجلس داخل سيارة فراري فاخرة${ferrariColor === "red Ferrari" ? " حمراء" : ""}،`,
+        "وبجانبه كلب أسود واضح داخل الإطار.",
+        "يجب أن تظهر سيارة الفراري بوضوح، ويظهر الرجل والكلب الأسود معًا في نفس الصورة، بدون حذف أي عنصر.",
+      ].join(" "),
+      finalPrompt: [
+        "A realistic high-quality photo of an elegant businessman wearing a formal suit, sitting inside a luxury Ferrari car.",
+        `The Ferrari must be a clearly visible ${ferrariColor} sports car.`,
+        "A black dog is clearly sitting next to him.",
+        "The Ferrari car, the businessman, and the black dog must all be clearly visible in the same frame.",
+        "The businessman is sitting inside / riding in the Ferrari car, not in an office.",
+        "The black dog is next to him, side by side, both visible in the same frame.",
+        "Do not remove any subject.",
+        "Do not replace the Ferrari with an office, desk, meeting room, restaurant, or food scene.",
+        "Do not change the black dog color.",
+        "No extra people, no text, no watermark.",
+      ].join(" "),
+      negativeRules: [
+        "office",
+        "desk",
+        "meeting room",
+        "restaurant",
+        "food",
+        "woman",
+        "extra people",
+        "wrong car",
+        "missing dog",
+        "white dog",
+        "brown dog",
+        "text",
+        "watermark",
+        "logo",
+      ],
+      debug: {
+        subjects: ["businessman", "Ferrari car", "black dog"],
+        relations: hasInside || hasCar
+          ? ["businessman sitting inside the Ferrari car", "black dog next to him"]
+          : ["businessman with Ferrari car", "black dog next to him"],
+        scene: "inside a luxury Ferrari car",
+        style: hasRealistic ? "realistic photo" : "high-quality realistic photo",
+      },
+    };
+  }
+
+  return null;
+}
+
 function analyzePromptV3(userPrompt) {
   const text = String(userPrompt || "").trim();
   const lower = text.toLowerCase();
+  const v4 = analyzePromptV4(text);
+  if (v4) return v4;
 
   const hasCat = includesAny(lower, ["\u0642\u0637", "cat"]);
   const hasDog = includesAny(lower, ["\u0643\u0644\u0628", "dog"]);
@@ -319,6 +406,7 @@ function analyzePromptV3(userPrompt) {
         subjectColor !== "clearly visible" ? `The cat must be ${subjectColor}.` : "The cat must be clearly visible.",
         objectColor !== "clearly visible" ? `The house must be ${objectColor}.` : "The house must be clearly visible.",
         "The entire house must be visible in the frame.",
+        "The black cat and the yellow house are both visible in the same frame.",
         "The cat is standing on the roof of the house, not beside it and not floating.",
         "Do not change the cat color.",
         "Do not remove the house.",
@@ -411,11 +499,12 @@ function analyzePromptV3(userPrompt) {
         objectColor: "yellow",
         relation: "standing next to",
         finalPrompt: [
-        "Two robots standing side by side on the surface of the moon.",
-        "Robot number one is bright green.",
-        "Robot number two is bright yellow.",
-        "Both robots are fully visible.",
-        "Exactly two robots.",
+        "Exactly two robots standing side by side on the moon surface.",
+        "The first subject is a bright green robot.",
+        "The second subject is a bright yellow robot.",
+        "The green robot and the yellow robot must both be fully visible.",
+        "Both robots are on the moon surface with a clear lunar landscape.",
+        "Exactly two robots, no more and no fewer.",
         "Realistic sci-fi scene.",
         "No humans, no animals, no text, no watermark.",
         ].join(" "),
@@ -463,6 +552,7 @@ function translateArabicToEnglish(userPrompt) {
   const dictionary = [
     ["\u0631\u062c\u0644 \u0623\u0639\u0645\u0627\u0644", "businessman"],
     ["\u0631\u062c\u0644 \u0627\u0639\u0645\u0627\u0644", "businessman"],
+    ["\u0631\u062c\u0644 \u0631\u0633\u0645\u064a", "formal businessman"],
     ["\u0636\u0627\u0628\u0637 \u0634\u0631\u0637\u0629", "police officer"],
     ["\u0631\u0627\u0626\u062f\u0629 \u0641\u0636\u0627\u0621", "astronaut"],
     ["\u0631\u0627\u0626\u062f \u0641\u0636\u0627\u0621", "astronaut"],
@@ -490,6 +580,7 @@ function translateArabicToEnglish(userPrompt) {
     ["\u062f\u0627\u062e\u0644", "inside"],
     ["\u064a\u0645\u0633\u0643", "holding"],
     ["\u062a\u0645\u0633\u0643", "holding"],
+    ["\u0631\u0627\u0643\u0628", "sitting inside"],
     ["\u064a\u0642\u0648\u062f", "driving"],
     ["\u062a\u0642\u0648\u062f", "driving"],
     ["\u064a\u0631\u062a\u062f\u064a", "wearing"],
@@ -537,7 +628,10 @@ function translateArabicToEnglish(userPrompt) {
     ["\u0648\u0633\u064a\u0645", "handsome"],
     ["\u0628\u062f\u0644\u0629", "formal suit"],
     ["\u0645\u0643\u062a\u0628", "office"],
+    ["\u0641\u064a\u0631\u0627\u0631\u064a", "Ferrari"],
+    ["\u0641\u0631\u0627\u0631\u064a", "Ferrari"],
     ["\u0633\u064a\u0627\u0631\u0629", "car"],
+    ["\u0639\u0631\u0628\u0629", "car"],
     ["\u0631\u064a\u0627\u0636\u064a\u0629", "sports"],
     ["\u0634\u0627\u0631\u0639", "street"],
     ["\u0645\u0636\u0627\u0621", "well-lit"],
@@ -577,8 +671,10 @@ function buildNegativeRules(userPrompt) {
   const asksForAnimal = includesAny(lower, ["\u0642\u0637", "\u0643\u0644\u0628", "cat", "dog", "animal"]);
   const asksForRobot = includesAny(lower, ["\u0631\u0648\u0628\u0648\u062a", "robot"]);
   const asksForCar = includesAny(lower, ["\u0633\u064a\u0627\u0631\u0629", "car", "vehicle"]);
+  const asksForFerrari = includesAny(lower, V4_ENTITY_TERMS.ferrari);
   const asksForOffice = includesAny(lower, ["\u0645\u0643\u062a\u0628", "office"]);
   const asksForFood = includesAny(lower, ["\u0637\u0639\u0627\u0645", "\u0623\u0643\u0644", "\u0627\u0643\u0644", "food", "meal"]);
+  const asksForBlackDog = includesAny(lower, V4_ENTITY_TERMS.blackDog);
 
   const rules = [
     "text",
@@ -609,6 +705,14 @@ function buildNegativeRules(userPrompt) {
     if (!asksForAnimal) rules.push("animals", "cat", "dog");
     if (!asksForFood) rules.push("food");
     if (!asksForOffice) rules.push("office");
+  }
+
+  if (asksForFerrari) {
+    rules.push("wrong car", "office", "desk", "meeting room", "restaurant", "food");
+  }
+
+  if (asksForBlackDog) {
+    rules.push("missing dog", "white dog", "brown dog");
   }
 
   return [...new Set(rules)];
@@ -692,6 +796,14 @@ function buildRelationshipExactness(userPrompt) {
     ].join(" ");
   }
 
+  if (includesAny(lower, ["\u0631\u0627\u0643\u0628", "riding", "sitting inside"])) {
+    return [
+      "The requested subject is sitting inside / riding in the requested vehicle.",
+      "The vehicle must be clearly visible.",
+      "Do not move the subject into an office or unrelated indoor scene.",
+    ].join(" ");
+  }
+
   if (includesAny(lower, ["\u064a\u0631\u062a\u062f\u064a", "\u062a\u0631\u062a\u062f\u064a", "\u0644\u0627\u0628\u0633", "\u0644\u0627\u0628\u0633\u0629", "wearing", "wears"])) {
     return [
       "The requested clothing or accessory is being worn by the subject.",
@@ -766,6 +878,12 @@ function buildFinalPrompt({ userPrompt, quality = "normal", style = "", type = "
     `- ${exactness}`,
     ...countRules.map((rule) => `- ${rule}`),
     ...colorRules.map((rule) => `- ${rule}`),
+    "Mandatory composition rules:",
+    "- All requested subjects must appear.",
+    "- Do not remove any requested subject.",
+    "- Do not replace the scene with an office unless the user asks for an office.",
+    "- Keep all requested colors accurate.",
+    "- The main subjects must be centered and fully visible.",
     "- Do not add unrelated people, food, city, office, restaurant, animals, robots, or objects unless explicitly requested.",
     "- Do not add extra animals or people beyond the requested count.",
     "- Keep every requested subject fully inside the frame. Do not crop or duplicate subjects.",
@@ -778,6 +896,28 @@ function buildFinalPrompt({ userPrompt, quality = "normal", style = "", type = "
 
 export function buildWaveSpeedPrompt(options) {
   return buildFinalPrompt(options);
+}
+
+export function buildSmartPromptEnhancement({ userPrompt, quality = "normal", style = "", type = "image" }) {
+  const prompt = String(userPrompt || "").trim();
+  const analysis = analyzePromptV3(prompt);
+  const enhancedPrompt =
+    analysis?.enhancedPrompt ||
+    [
+      `صورة واقعية عالية الجودة لـ ${prompt}.`,
+      "يجب أن تظهر جميع العناصر المطلوبة بوضوح داخل الإطار.",
+      "حافظ على الألوان والعلاقات المذكورة بدقة، ولا تحذف أي عنصر مطلوب.",
+      "لا تضف عناصر عشوائية أو نصوصًا أو شعارات.",
+    ].join(" ");
+  const finalPrompt = buildFinalPrompt({ userPrompt: enhancedPrompt, quality, style, type });
+  const negativePrompt = buildNegativeRules(enhancedPrompt).join(", ");
+
+  return {
+    enhancedPrompt,
+    finalPrompt,
+    negativePrompt,
+    debug: analysis?.debug || null,
+  };
 }
 
 function isHttpUrl(value) {

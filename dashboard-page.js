@@ -11,6 +11,8 @@
     loading: false,
     activeRequestId: null,
     abortController: null,
+    enhancedFinalPrompt: "",
+    enhancedPromptDebug: null,
     results: [],
   };
 
@@ -334,6 +336,7 @@
 
   function setType(type) {
     state.type = type;
+    resetEnhancedPromptState();
     $$("[data-type-tab]").forEach((button) => button.classList.toggle("is-active", button.dataset.typeTab === type));
     $$("[data-video-only]").forEach((node) => {
       node.hidden = type !== "video";
@@ -433,6 +436,50 @@
     return terms.some((term) => text.includes(term));
   }
 
+  function isPromptDebugEnabled() {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("promptDebug") === "1" || localStorage.getItem("pixigen:promptDebug") === "1";
+    } catch {
+      return false;
+    }
+  }
+
+  function resetEnhancedPromptState() {
+    state.enhancedFinalPrompt = "";
+    state.enhancedPromptDebug = null;
+    const debugButton = $("[data-show-enhanced-prompt]");
+    if (debugButton) debugButton.hidden = true;
+  }
+
+  function updateEnhancedPromptPreview() {
+    const preview = $("[data-enhanced-prompt-preview]");
+    if (!preview) return;
+
+    const data = state.enhancedPromptDebug || {};
+    preview.textContent = [
+      "FINAL_PROMPT:",
+      data.finalPrompt || state.enhancedFinalPrompt || "-",
+      "",
+      "NEGATIVE_PROMPT:",
+      data.negativePrompt || "-",
+      "",
+      "DEBUG:",
+      JSON.stringify(data.debug || {}, null, 2),
+    ].join("\n");
+  }
+
+  function openEnhancedPromptModal() {
+    updateEnhancedPromptPreview();
+    const modal = $("[data-enhanced-prompt-modal]");
+    if (modal) modal.hidden = false;
+  }
+
+  function closeEnhancedPromptModal() {
+    const modal = $("[data-enhanced-prompt-modal]");
+    if (modal) modal.hidden = true;
+  }
+
   function smartEnhancePrompt(prompt) {
     const text = String(prompt || "").trim();
     const lower = text.toLowerCase();
@@ -506,8 +553,10 @@
     ].join(" ");
   }
 
-  function handleSmartEnhance() {
+  async function handleSmartEnhance() {
     const promptInput = $("[data-prompt-input]");
+    const enhanceButton = $("[data-smart-enhance]");
+    const debugButton = $("[data-show-enhanced-prompt]");
     const currentPrompt = promptInput.value.trim();
 
     if (currentPrompt.length < 3) {
@@ -516,12 +565,52 @@
       return;
     }
 
-    const enhancedPrompt = smartEnhancePrompt(currentPrompt);
-    promptInput.value = enhancedPrompt;
-    $("[data-char-count]").textContent = enhancedPrompt.length;
-    setMessage("تم تحسين الوصف ذكيًا مع تثبيت الألوان والعلاقات.", "info");
-    showToast("تم تحسين الوصف ذكيًا.");
-    promptInput.focus();
+    const originalText = enhanceButton?.textContent || "✨ تحسين ذكي";
+    if (enhanceButton) {
+      enhanceButton.disabled = true;
+      enhanceButton.textContent = "جاري تحسين الوصف...";
+    }
+
+    try {
+      const data = await requestJson("/api/generate/enhance", {
+        method: "POST",
+        body: JSON.stringify({
+          prompt: currentPrompt,
+          type: state.type,
+          quality: state.quality,
+          style: state.style,
+        }),
+      });
+
+      const enhancedPrompt = String(data.enhancedPrompt || "").trim() || smartEnhancePrompt(currentPrompt);
+      promptInput.value = enhancedPrompt;
+      $("[data-char-count]").textContent = enhancedPrompt.length;
+      state.enhancedFinalPrompt = data.finalPrompt || "";
+      state.enhancedPromptDebug = {
+        enhancedPrompt,
+        finalPrompt: data.finalPrompt || "",
+        negativePrompt: data.negativePrompt || "",
+        debug: data.debug || null,
+      };
+
+      if (debugButton) {
+        debugButton.hidden = !isPromptDebugEnabled() || !state.enhancedFinalPrompt;
+      }
+
+      setMessage("تم تحسين الوصف بدقة مع تثبيت العناصر والعلاقات.", "info");
+      showToast("تم تحسين الوصف ذكيًا.");
+      promptInput.focus();
+    } catch (error) {
+      console.error("SMART ENHANCE ERROR:", error);
+      resetEnhancedPromptState();
+      setMessage(error.message || "تعذر تحسين الوصف الآن.", "error");
+      showToast(error.message || "تعذر تحسين الوصف الآن.", "error");
+    } finally {
+      if (enhanceButton) {
+        enhanceButton.disabled = state.loading;
+        enhanceButton.textContent = originalText;
+      }
+    }
   }
 
   async function handleGenerate(event) {
@@ -562,6 +651,7 @@
       prompt: userPrompt,
       quality: state.quality,
       style: state.style,
+      enhancedFinalPrompt: state.enhancedFinalPrompt || undefined,
       aspectRatio: state.aspect,
       aspect: state.aspect,
       duration: state.type === "video" ? Number(state.duration) : undefined,
@@ -620,6 +710,7 @@
       }
       promptInput.value = "";
       $("[data-char-count]").textContent = "0";
+      resetEnhancedPromptState();
       renderAll();
       showToast(`تم الإنشاء بنجاح وتم خصم ${formatNumber(generation.creditsUsed)} XP.`);
       await refreshKey({ silent: true });
@@ -683,6 +774,7 @@
     $("[data-smart-enhance]")?.addEventListener("click", handleSmartEnhance);
     $("[data-prompt-input]").addEventListener("input", (event) => {
       $("[data-char-count]").textContent = event.target.value.length;
+      resetEnhancedPromptState();
     });
     $$("[data-type-tab]").forEach((button) => {
       button.addEventListener("click", () => setType(button.dataset.typeTab));
@@ -708,22 +800,31 @@
     });
     $("[data-quality-select]").addEventListener("change", (event) => {
       state.quality = event.target.value;
+      resetEnhancedPromptState();
       updateDurationOptions();
       updateCost();
     });
     $("[data-style-select]").addEventListener("change", (event) => {
       state.style = event.target.value;
+      resetEnhancedPromptState();
     });
     $("[data-aspect-select]").addEventListener("change", (event) => {
       state.aspect = event.target.value;
+      resetEnhancedPromptState();
     });
     $("[data-duration-select]").addEventListener("change", (event) => {
       state.duration = Number(event.target.value);
+      resetEnhancedPromptState();
       updateCost();
     });
     $("[data-cancel-generation]").addEventListener("click", () => {
       state.abortController?.abort();
       setLoading(false);
+    });
+    $("[data-show-enhanced-prompt]")?.addEventListener("click", openEnhancedPromptModal);
+    $("[data-close-enhanced-prompt]")?.addEventListener("click", closeEnhancedPromptModal);
+    $("[data-enhanced-prompt-modal]")?.addEventListener("click", (event) => {
+      if (event.target === event.currentTarget) closeEnhancedPromptModal();
     });
   }
 

@@ -11191,6 +11191,76 @@ html[data-theme="dark"] .create-chat-bubble__state {
   font-weight: 800;
 }
 
+.udv3-prompt-debug-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background: rgba(15, 23, 74, 0.42);
+  backdrop-filter: blur(12px);
+}
+
+.udv3-prompt-debug-modal[hidden] {
+  display: none;
+}
+
+.udv3-prompt-debug-modal section {
+  position: relative;
+  width: min(760px, 100%);
+  max-height: min(760px, 90vh);
+  overflow: auto;
+  padding: 28px;
+  border: 1px solid var(--udv3-border);
+  border-radius: 26px;
+  background: #fff;
+  box-shadow: 0 26px 70px rgba(30, 20, 80, 0.18);
+}
+
+.udv3-prompt-debug-modal section > button {
+  position: absolute;
+  top: 16px;
+  inset-inline-start: 16px;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--udv3-border);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--udv3-text);
+  cursor: pointer;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.udv3-prompt-debug-modal h2 {
+  margin: 0;
+  color: var(--udv3-text);
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.udv3-prompt-debug-modal p {
+  margin: 8px 0 18px;
+  color: var(--udv3-muted);
+  font-weight: 800;
+}
+
+.udv3-prompt-debug-modal pre {
+  margin: 0;
+  min-height: 260px;
+  padding: 18px;
+  border: 1px solid #ddd6ff;
+  border-radius: 18px;
+  background: #fbfaff;
+  color: #152052;
+  direction: ltr;
+  text-align: left;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font: 700 13px/1.7 ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+}
+
 .udv3-cost-card {
   border-radius: 18px;
   border: 1px solid var(--udv3-border);

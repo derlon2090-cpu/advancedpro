@@ -7,6 +7,7 @@ import { withDbRetry } from "../utils/dbRetry.js";
 import { logError, logInfo } from "../utils/logger.js";
 import { serializeBigInt } from "../utils/serializeBigInt.js";
 import {
+  buildSmartPromptEnhancement,
   generateImageWithWaveSpeed,
   generateVideoWithWaveSpeed,
 } from "../services/wavespeedService.js";
@@ -66,6 +67,31 @@ function getRemainingSlots(key, type) {
   const used = type === "video" ? Number(key.videoUsed || 0) : Number(key.imageUsed || 0);
   return Math.max(limit - used, 0);
 }
+
+router.post(
+  "/enhance",
+  aiLimiter,
+  asyncHandler(async (req, res) => {
+    const prompt = assertValidPrompt(req.body.prompt);
+    const type = normalizeGenerationType(req.body.type || "image");
+    const quality = normalizeQuality(req.body.quality || "normal");
+    const style = String(req.body.style || "").trim();
+    const result = buildSmartPromptEnhancement({
+      userPrompt: prompt,
+      type,
+      quality,
+      style,
+    });
+
+    console.log("SMART_ENHANCE_USER_PROMPT:", prompt);
+    console.log("SMART_ENHANCE_FINAL_PROMPT:", result.finalPrompt);
+
+    return res.json({
+      success: true,
+      ...result,
+    });
+  })
+);
 
 function serializeKeyBalance(key) {
   return {
