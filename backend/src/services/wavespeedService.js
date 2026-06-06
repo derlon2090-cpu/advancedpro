@@ -1453,10 +1453,15 @@ export async function generateImageWithWaveSpeed({
   style = "",
   requestId = "",
   seed,
+  modelOverride = "",
+  endpointOverride = "",
+  allowFallback = true,
 }) {
   const apiKey = requireApiKey();
   const normalizedQuality = normalizeQuality(quality);
-  const { endpoint, model } = getImageConfig(normalizedQuality);
+  const baseConfig = getImageConfig(normalizedQuality);
+  const model = String(modelOverride || baseConfig.model || "").trim();
+  const endpoint = String(endpointOverride || (modelOverride ? buildEndpointFromModelPath(modelOverride) : baseConfig.endpoint) || "").trim();
   const finalPrompt = buildFinalImagePrompt(prompt, normalizedQuality, style);
   const safeSeed = randomSeed(seed);
   const body = {
@@ -1476,14 +1481,21 @@ export async function generateImageWithWaveSpeed({
   console.log("FINAL_PROMPT:", finalPrompt);
   console.log("WAVESPEED BODY SENT:", JSON.stringify({ ...body, prompt: compactForLog(body.prompt) }));
 
-  const request = await postWaveSpeedWithFallback({
-    apiKey,
-    endpoint,
-    body,
-    mediaType: "image",
-    quality: normalizedQuality,
-    model,
-  });
+  const request = allowFallback
+    ? await postWaveSpeedWithFallback({
+        apiKey,
+        endpoint,
+        body,
+        mediaType: "image",
+        quality: normalizedQuality,
+        model,
+      })
+    : {
+        initial: await postWaveSpeed({ apiKey, endpoint, body }),
+        endpoint,
+        model,
+        usedFallback: false,
+      };
   const resultUrl = await pollWaveSpeedResult({ apiKey, initial: request.initial, mediaType: "image" });
 
   console.log("NEW RESULT URL:", resultUrl);
@@ -1506,10 +1518,15 @@ export async function generateVideoWithWaveSpeed({
   style = "",
   requestId = "",
   seed,
+  modelOverride = "",
+  endpointOverride = "",
+  allowFallback = true,
 }) {
   const apiKey = requireApiKey();
   const normalizedQuality = normalizeQuality(quality);
-  const { endpoint, model } = getVideoConfig(normalizedQuality);
+  const baseConfig = getVideoConfig(normalizedQuality);
+  const model = String(modelOverride || baseConfig.model || "").trim();
+  const endpoint = String(endpointOverride || (modelOverride ? buildEndpointFromModelPath(modelOverride) : baseConfig.endpoint) || "").trim();
   const requestedDuration = assertRequestedVideoDurationAllowed(normalizedQuality, duration);
   const nativeDurations = allowedDurationsForModel(model, endpoint);
 
@@ -1525,6 +1542,7 @@ export async function generateVideoWithWaveSpeed({
       apiKey,
       config: { endpoint, model },
       nativeDurations,
+      allowFallback,
     });
   }
 
@@ -1539,6 +1557,7 @@ export async function generateVideoWithWaveSpeed({
     style,
     requestId,
     seed,
+    allowFallback,
   });
 }
 
@@ -1553,6 +1572,7 @@ async function generateNativeVideoWithWaveSpeed({
   style,
   requestId,
   seed,
+  allowFallback = true,
 }) {
   const safeDuration = validateDuration(model, endpoint, duration);
   const finalPrompt = buildFinalPrompt({ userPrompt: prompt, quality, style, type: "video" });
@@ -1574,14 +1594,21 @@ async function generateNativeVideoWithWaveSpeed({
   console.log("FINAL_PROMPT:", finalPrompt);
   console.log("WAVESPEED BODY SENT:", JSON.stringify({ ...body, prompt: compactForLog(body.prompt) }));
 
-  const request = await postWaveSpeedWithFallback({
-    apiKey,
-    endpoint,
-    body,
-    mediaType: "video",
-    quality,
-    model,
-  });
+  const request = allowFallback
+    ? await postWaveSpeedWithFallback({
+        apiKey,
+        endpoint,
+        body,
+        mediaType: "video",
+        quality,
+        model,
+      })
+    : {
+        initial: await postWaveSpeed({ apiKey, endpoint, body }),
+        endpoint,
+        model,
+        usedFallback: false,
+      };
   const resultUrl = await pollWaveSpeedResult({ apiKey, initial: request.initial, mediaType: "video" });
 
   console.log("NEW RESULT URL:", resultUrl);
@@ -1607,6 +1634,7 @@ export async function generateLongVideoWithWaveSpeed({
   apiKey = null,
   config = null,
   nativeDurations = null,
+  allowFallback = true,
 }) {
   const normalizedQuality = normalizeQuality(quality);
   const requestedDuration = assertRequestedVideoDurationAllowed(normalizedQuality, duration);
@@ -1652,6 +1680,7 @@ export async function generateLongVideoWithWaveSpeed({
       style,
       requestId: `${requestId || "long-video"}-part-${index + 1}`,
       seed: clipSeed,
+      allowFallback,
     });
     clipUrls.push(clip.resultUrl);
   }

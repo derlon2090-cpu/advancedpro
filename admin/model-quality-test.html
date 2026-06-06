@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>اختبار جودة الموديلات | Advanced Pro</title>
+    <meta name="robots" content="noindex,nofollow" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css?v=20260606-model-quality-test" />
+  </head>
+  <body class="admin-v2-page" data-page="admin-model-quality-test" data-requires-admin="true" data-skip-site-footer="true">
+    <main class="admin-v2-shell">
+      <aside class="admin-v2-sidebar" id="adminSidebar">
+        <div class="admin-v2-brand">
+          <img src="/ap-mark.svg" alt="" aria-hidden="true" />
+          <div>
+            <strong>Advanced Pro</strong>
+            <span>لوحة تحكم الأدمن</span>
+          </div>
+        </div>
+
+        <nav class="admin-v2-nav" aria-label="قائمة لوحة الأدمن">
+          <a href="/admin/dashboard" data-icon="⌂">لوحة التحكم</a>
+          <a href="/admin/keys" data-icon="⚿">المفاتيح</a>
+          <a href="/admin/plans" data-icon="◇">الباقات</a>
+          <a href="/admin/customers" data-icon="♙">العملاء</a>
+          <a href="/admin/reports" data-icon="▥">الإحصائيات</a>
+          <a href="/admin/model-quality-test" class="is-active" data-icon="✦">اختبار الموديلات</a>
+          <a href="/admin/settings" data-icon="⚙">الإعدادات</a>
+          <a href="/admin/activity" data-icon="◷">سجل النشاط</a>
+          <a href="/admin/backup" data-icon="◉">النسخ الاحتياطي</a>
+        </nav>
+
+        <button class="admin-v2-logout" type="button" data-logout>
+          <span>↩</span>
+          تسجيل الخروج
+        </button>
+      </aside>
+
+      <section class="admin-v2-main">
+        <header class="admin-v2-header">
+          <button class="admin-v2-menu" type="button" data-admin-drawer-toggle aria-label="فتح القائمة">☰</button>
+          <div class="admin-v2-profile" data-admin-profile>
+            <span class="admin-v2-avatar">A</span>
+            <div>
+              <strong>مرحبًا</strong>
+              <small>Owner</small>
+            </div>
+          </div>
+          <div class="admin-v2-actions">
+            <a href="/admin/activity" aria-label="سجل النشاط">◷</a>
+            <a href="/admin/settings" aria-label="الإعدادات">⚙</a>
+          </div>
+          <label class="admin-v2-search">
+            <span>⌕</span>
+            <input data-model-quality-search type="search" placeholder="ابحث بالموديل أو الوصف أو العنصر المتوقع..." />
+          </label>
+        </header>
+
+        <main class="admin-model-quality-page">
+          <section class="admin-model-quality-hero">
+            <div>
+              <span class="admin-model-quality-icon">✦</span>
+              <p>اختبار داخلي إجباري قبل اعتماد أي موديل</p>
+              <h1>اختبار جودة الموديلات</h1>
+              <span>شغّل 5 اختبارات مختلفة لكل موديل، راجع النتائج بصريًا، ثم قرر هل يعتمد للعادي أو العالي أو الفائق.</span>
+            </div>
+            <button type="button" data-model-quality-refresh>↻ تحديث النتائج</button>
+          </section>
+
+          <section class="admin-model-quality-controls" aria-label="تشغيل اختبار جودة موديل">
+            <label>
+              <span>نوع التوليد</span>
+              <select data-model-quality-type>
+                <option value="image">صورة</option>
+                <option value="video">فيديو</option>
+              </select>
+            </label>
+            <label>
+              <span>الموديل</span>
+              <select data-model-quality-model></select>
+            </label>
+            <button type="button" data-model-quality-run>تشغيل الاختبارات الخمسة</button>
+          </section>
+
+          <section class="admin-model-quality-summary" data-model-quality-summary>
+            <article class="admin-v2-skeleton"></article>
+            <article class="admin-v2-skeleton"></article>
+            <article class="admin-v2-skeleton"></article>
+            <article class="admin-v2-skeleton"></article>
+          </section>
+
+          <section class="admin-model-quality-report" data-model-quality-report>
+            <strong>التقرير</strong>
+            <p>اختر موديلًا ثم شغّل الاختبارات أو حمّل النتائج المحفوظة.</p>
+          </section>
+
+          <section class="admin-model-quality-test-list" data-model-quality-list>
+            <div class="admin-v2-empty">جاري تحميل نتائج اختبارات الموديلات...</div>
+          </section>
+        </main>
+      </section>
+    </main>
+
+    <div class="admin-model-quality-toast" data-model-quality-toast hidden></div>
+    <script src="/admin/model-quality-test-page.js?v=20260606-model-quality-test"></script>
+  </body>
+</html>

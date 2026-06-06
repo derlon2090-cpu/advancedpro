@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { randomUUID } from "crypto";
 import bcrypt from "bcryptjs";
 import { Prisma } from "@prisma/client";
 import { z } from "zod";
@@ -16,6 +17,11 @@ import {
   listActivationCodes,
   updateActivationCode,
 } from "../services/activationCodes.js";
+import {
+  buildSmartPromptEnhancement,
+  generateImageWithWaveSpeed,
+  generateVideoWithWaveSpeed,
+} from "../services/wavespeedService.js";
 
 const router = Router();
 
@@ -920,6 +926,479 @@ router.get(
       total: Number(countRows[0]?.total || 0),
       summary,
     });
+  })
+);
+
+const MODEL_QUALITY_IMAGE_MODELS = [
+  {
+    id: "wavespeed-ai/z-image/turbo",
+    label: "Z Image Turbo",
+    quality: "normal",
+    endpoint: "https://api.wavespeed.ai/api/v3/wavespeed-ai/z-image/turbo",
+  },
+  {
+    id: "bytedance/seedream-v4.5",
+    label: "Seedream 4.5",
+    quality: "high",
+    endpoint: "https://api.wavespeed.ai/api/v3/bytedance/seedream-v4.5",
+  },
+  {
+    id: "google/nano-banana-pro",
+    label: "Nano Banana Pro",
+    quality: "ultra",
+    endpoint: "https://api.wavespeed.ai/api/v3/google/nano-banana-pro/text-to-image",
+  },
+];
+
+const MODEL_QUALITY_VIDEO_MODELS = [
+  {
+    id: "wavespeed-ai/wan-2.2/t2v-480p-ultra-fast",
+    label: "Wan 2.2 Ultra Fast",
+    quality: "normal",
+    endpoint: "https://api.wavespeed.ai/api/v3/wavespeed-ai/wan-2.2/t2v-480p-ultra-fast",
+  },
+  {
+    id: "wavespeed-ai/wan-2.2-animate/text-to-video",
+    label: "Wan 2.2 Animate",
+    quality: "high",
+    endpoint: "https://api.wavespeed.ai/api/v3/wavespeed-ai/wan-2.2-animate/text-to-video",
+  },
+  {
+    id: "kwaivgi/kling-v3.0-std/text-to-video",
+    label: "Kling 3.0 Standard",
+    quality: "ultra",
+    endpoint: "https://api.wavespeed.ai/api/v3/kwaivgi/kling-v3.0-std/text-to-video",
+  },
+  {
+    id: "wavespeed-ai/wan-2.7/text-to-video",
+    label: "Wan 2.7",
+    quality: "high",
+    endpoint: "https://api.wavespeed.ai/api/v3/wavespeed-ai/wan-2.7/text-to-video",
+  },
+];
+
+const MODEL_QUALITY_IMAGE_TESTS = [
+  {
+    id: "image-chicken-farm",
+    prompt: "دجاجة بيضاء واقفة في مزرعة خضراء",
+    expectedItems: ["white chicken", "farm", "green environment", "no humans"],
+  },
+  {
+    id: "image-black-cat-dog",
+    prompt: "قط أسود بجانب كلب أسود داخل حديقة",
+    expectedItems: ["black cat", "black dog", "garden", "both visible"],
+  },
+  {
+    id: "image-two-robots-moon",
+    prompt: "روبوت أخضر بجانب روبوت أصفر على سطح القمر",
+    expectedItems: ["green robot", "yellow robot", "moon surface", "exactly two robots"],
+  },
+  {
+    id: "image-businessman-ferrari-dog",
+    prompt: "رجل أعمال يرتدي بدلة سوداء داخل سيارة فراري حمراء ومعه كلب أسود بجانبه",
+    expectedItems: ["businessman", "black suit", "red Ferrari", "black dog", "inside car"],
+  },
+  {
+    id: "image-glass-house-lake",
+    prompt: "منزل زجاجي حديث بجانب بحيرة وقت الغروب",
+    expectedItems: ["modern glass house", "lake", "sunset", "no people"],
+  },
+];
+
+const MODEL_QUALITY_VIDEO_TESTS = [
+  {
+    id: "video-black-sports-car",
+    prompt: "سيارة رياضية سوداء تسير في شارع مضاء ليلًا، حركة كاميرا سينمائية",
+    expectedItems: ["black sports car", "night street", "cinematic movement"],
+  },
+  {
+    id: "video-yellow-robot-moon",
+    prompt: "روبوت أصفر يمشي على سطح القمر ببطء",
+    expectedItems: ["yellow robot", "walking", "moon surface"],
+  },
+  {
+    id: "video-black-cat-dog",
+    prompt: "قطة سوداء تجلس بجانب كلب أسود في حديقة، حركة بسيطة وطبيعية",
+    expectedItems: ["black cat", "black dog", "garden", "both visible"],
+  },
+  {
+    id: "video-businessman-office",
+    prompt: "رجل أعمال يرتدي بدلة سوداء يمشي داخل مكتب حديث",
+    expectedItems: ["businessman", "black suit", "modern office", "walking"],
+  },
+  {
+    id: "video-sea-waves-birds",
+    prompt: "موج البحر عند الغروب مع طيور تطير في السماء",
+    expectedItems: ["sea waves", "sunset", "birds flying"],
+  },
+];
+
+function modelOptionsForType(type) {
+  return type === "video" ? MODEL_QUALITY_VIDEO_MODELS : MODEL_QUALITY_IMAGE_MODELS;
+}
+
+function testsForType(type) {
+  return type === "video" ? MODEL_QUALITY_VIDEO_TESTS : MODEL_QUALITY_IMAGE_TESTS;
+}
+
+function findModelQualityOption(type, model) {
+  const normalized = String(model || "").trim();
+  return modelOptionsForType(type).find((item) => item.id === normalized || item.label === normalized);
+}
+
+function parseExpectedItems(value) {
+  if (Array.isArray(value)) return value;
+  if (!value) return [];
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (_error) {
+      return [];
+    }
+  }
+  return Array.isArray(value?.items) ? value.items : [];
+}
+
+function serializeModelQualityRow(row) {
+  return {
+    id: Number(row.id),
+    type: row.type,
+    model: row.model,
+    prompt: row.prompt,
+    finalPrompt: row.final_prompt || "",
+    resultUrl: row.result_url || "",
+    expectedItems: parseExpectedItems(row.expected_items),
+    score: Number(row.score || 0),
+    status: row.status || "review",
+    notes: row.notes || "",
+    createdAt: row.created_at,
+  };
+}
+
+function summarizeModelQualityRows(rows, type, model) {
+  const latestByPrompt = new Map();
+  for (const row of rows) {
+    const key = row.prompt;
+    if (!latestByPrompt.has(key)) latestByPrompt.set(key, row);
+  }
+
+  const latestRows = Array.from(latestByPrompt.values()).slice(0, 5);
+  const passed = latestRows.filter((row) => row.status === "passed").length;
+  const failed = latestRows.filter((row) => row.status === "failed").length;
+  const review = latestRows.filter((row) => row.status === "review").length;
+  const total = latestRows.length;
+
+  let recommendation = "بانتظار اكتمال الاختبارات والتقييم اليدوي.";
+  let usage = "review";
+  if (total >= 5) {
+    if (passed === 5) {
+      recommendation = "ممتاز، يعتمد للجودة الفائقة والأوصاف المركبة.";
+      usage = "ultra";
+    } else if (passed === 4) {
+      recommendation = "جيد، يعتمد للجودة المناسبة مع مراقبة الحالات المركبة.";
+      usage = "high";
+    } else if (passed === 3) {
+      recommendation = "متوسط، يستخدم فقط للجودة العادية والأوصاف البسيطة.";
+      usage = "normal";
+    } else {
+      recommendation = "لا يعتمد حاليًا، نتائجه أقل من الحد المطلوب.";
+      usage = "disabled";
+    }
+  }
+
+  return {
+    type,
+    model,
+    total,
+    passed,
+    failed,
+    review,
+    recommendation,
+    usage,
+    complexPromptsAllowed: passed >= 4,
+  };
+}
+
+async function ensureModelQualityTestsTable() {
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS model_quality_tests (
+      id SERIAL PRIMARY KEY,
+      type VARCHAR(24) NOT NULL,
+      model VARCHAR(180) NOT NULL,
+      prompt TEXT NOT NULL,
+      final_prompt TEXT,
+      result_url TEXT,
+      expected_items JSONB,
+      score INTEGER NOT NULL DEFAULT 0,
+      status VARCHAR(24) NOT NULL DEFAULT 'review',
+      notes TEXT,
+      created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  await prisma.$executeRawUnsafe(`
+    CREATE INDEX IF NOT EXISTS model_quality_tests_type_model_idx
+    ON model_quality_tests(type, model, created_at DESC)
+  `);
+}
+
+async function insertModelQualityTestRow({
+  type,
+  model,
+  prompt,
+  finalPrompt,
+  resultUrl,
+  expectedItems,
+  score,
+  status,
+  notes,
+}) {
+  const rows = await prisma.$queryRaw(
+    Prisma.sql`
+      INSERT INTO model_quality_tests (
+        type,
+        model,
+        prompt,
+        final_prompt,
+        result_url,
+        expected_items,
+        score,
+        status,
+        notes
+      )
+      VALUES (
+        ${type},
+        ${model},
+        ${prompt},
+        ${finalPrompt || ""},
+        ${resultUrl || ""},
+        CAST(${JSON.stringify(expectedItems || [])} AS JSONB),
+        ${Number(score || 0)},
+        ${status},
+        ${notes || ""}
+      )
+      RETURNING id, type, model, prompt, final_prompt, result_url, expected_items, score, status, notes, created_at
+    `
+  );
+
+  return serializeModelQualityRow(rows[0]);
+}
+
+async function loadModelQualityRows({ type = "image", model = "", limit = 100 } = {}) {
+  await ensureModelQualityTestsTable();
+  const conditions = [Prisma.sql`type = ${type}`];
+  if (model) {
+    conditions.push(Prisma.sql`model = ${model}`);
+  }
+  const whereClause = Prisma.sql`WHERE ${Prisma.join(conditions, " AND ")}`;
+  const rows = await prisma.$queryRaw(
+    Prisma.sql`
+      SELECT id, type, model, prompt, final_prompt, result_url, expected_items, score, status, notes, created_at
+      FROM model_quality_tests
+      ${whereClause}
+      ORDER BY created_at DESC
+      LIMIT ${Math.min(Math.max(Number(limit) || 100, 1), 250)}
+    `
+  );
+  return rows.map(serializeModelQualityRow);
+}
+
+async function updateModelQualityRoutingSetting(type, model, summary) {
+  if (!model || !summary || summary.total < 5) return;
+  const key = `model_quality:${type}:${model}`;
+  await setSetting(
+    key,
+    JSON.stringify({
+      type,
+      model,
+      usage: summary.usage,
+      passed: summary.passed,
+      total: summary.total,
+      complexPromptsAllowed: summary.complexPromptsAllowed,
+      recommendation: summary.recommendation,
+      updatedAt: new Date().toISOString(),
+    })
+  );
+}
+
+router.get(
+  "/model-quality-test/config",
+  asyncHandler(async (_req, res) => {
+    return res.json({
+      imageModels: MODEL_QUALITY_IMAGE_MODELS,
+      videoModels: MODEL_QUALITY_VIDEO_MODELS,
+      imageTests: MODEL_QUALITY_IMAGE_TESTS,
+      videoTests: MODEL_QUALITY_VIDEO_TESTS,
+    });
+  })
+);
+
+router.get(
+  "/model-quality-test/results",
+  asyncHandler(async (req, res) => {
+    const type = String(req.query.type || "image").trim() === "video" ? "video" : "image";
+    const model = String(req.query.model || "").trim();
+    const rows = await loadModelQualityRows({ type, model, limit: req.query.limit || 100 });
+    const summary = summarizeModelQualityRows(rows, type, model);
+    return res.json({ tests: rows, summary });
+  })
+);
+
+router.post(
+  "/model-quality-test/run",
+  asyncHandler(async (req, res) => {
+    await ensureModelQualityTestsTable();
+
+    const type = String(req.body?.type || "image").trim() === "video" ? "video" : "image";
+    const requestedModel = String(req.body?.model || "").trim();
+    const modelOption = findModelQualityOption(type, requestedModel);
+    if (!modelOption) {
+      return res.status(400).json({
+        message: "اختر موديلًا صالحًا قبل تشغيل الاختبارات.",
+      });
+    }
+
+    const tests = testsForType(type);
+    const savedRows = [];
+
+    for (const test of tests) {
+      const requestId = randomUUID();
+      const seed = Math.floor(Math.random() * 999_999_999);
+      const enhancement = buildSmartPromptEnhancement({
+        userPrompt: test.prompt,
+        quality: modelOption.quality || "high",
+        style: "realistic",
+        type,
+      });
+
+      console.log("MODEL_TEST_START");
+      console.log("TYPE", type);
+      console.log("MODEL", modelOption.id);
+      console.log("USER_PROMPT", test.prompt);
+      console.log("FINAL_PROMPT", enhancement.finalPrompt);
+      console.log("EXPECTED_ITEMS", JSON.stringify(test.expectedItems));
+
+      try {
+        const output =
+          type === "video"
+            ? await generateVideoWithWaveSpeed({
+                prompt: test.prompt,
+                quality: modelOption.quality || "normal",
+                duration: 5,
+                aspectRatio: "16:9",
+                style: "realistic",
+                requestId,
+                seed,
+                modelOverride: modelOption.id,
+                endpointOverride: modelOption.endpoint,
+                allowFallback: false,
+              })
+            : await generateImageWithWaveSpeed({
+                prompt: test.prompt,
+                quality: modelOption.quality || "high",
+                aspectRatio: "1:1",
+                style: "realistic",
+                requestId,
+                seed,
+                modelOverride: modelOption.id,
+                endpointOverride: modelOption.endpoint,
+                allowFallback: false,
+              });
+
+        console.log("RESULT_URL", output.resultUrl);
+        const row = await insertModelQualityTestRow({
+          type,
+          model: modelOption.id,
+          prompt: test.prompt,
+          finalPrompt: output.finalPrompt || enhancement.finalPrompt,
+          resultUrl: output.resultUrl,
+          expectedItems: test.expectedItems,
+          score: 50,
+          status: "review",
+          notes: "بانتظار تقييم المشرف البصري.",
+        });
+        savedRows.push(row);
+      } catch (error) {
+        console.error("MODEL_QUALITY_TEST_ERROR", {
+          type,
+          model: modelOption.id,
+          prompt: test.prompt,
+          message: error?.message || error,
+          statusCode: error?.statusCode,
+        });
+        const row = await insertModelQualityTestRow({
+          type,
+          model: modelOption.id,
+          prompt: test.prompt,
+          finalPrompt: enhancement.finalPrompt,
+          resultUrl: "",
+          expectedItems: test.expectedItems,
+          score: 0,
+          status: "failed",
+          notes: error?.message || "فشل الاختبار من المزود.",
+        });
+        savedRows.push(row);
+      } finally {
+        console.log("MODEL_TEST_END");
+      }
+    }
+
+    const allRows = await loadModelQualityRows({ type, model: modelOption.id, limit: 100 });
+    const summary = summarizeModelQualityRows(allRows, type, modelOption.id);
+    await updateModelQualityRoutingSetting(type, modelOption.id, summary);
+
+    return res.json({
+      message: "اكتملت الاختبارات الخمسة. راجع النتائج بصريًا قبل اعتماد الموديل.",
+      tests: savedRows,
+      summary,
+    });
+  })
+);
+
+router.patch(
+  "/model-quality-test/:id",
+  asyncHandler(async (req, res) => {
+    await ensureModelQualityTestsTable();
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ message: "معرف الاختبار غير صالح." });
+    }
+
+    const allowedStatuses = new Set(["passed", "failed", "review"]);
+    const status = String(req.body?.status || "review").trim();
+    if (!allowedStatuses.has(status)) {
+      return res.status(400).json({ message: "حالة الاختبار غير صالحة." });
+    }
+
+    const score =
+      req.body?.score == null
+        ? status === "passed"
+          ? 100
+          : status === "failed"
+            ? 0
+            : 60
+        : Math.min(Math.max(Number(req.body.score) || 0, 0), 100);
+    const notes = String(req.body?.notes || "").trim();
+
+    const rows = await prisma.$queryRaw(
+      Prisma.sql`
+        UPDATE model_quality_tests
+        SET status = ${status}, score = ${score}, notes = ${notes}
+        WHERE id = ${id}
+        RETURNING id, type, model, prompt, final_prompt, result_url, expected_items, score, status, notes, created_at
+      `
+    );
+
+    if (!rows.length) {
+      return res.status(404).json({ message: "لم يتم العثور على الاختبار." });
+    }
+
+    const row = serializeModelQualityRow(rows[0]);
+    const relatedRows = await loadModelQualityRows({ type: row.type, model: row.model, limit: 100 });
+    const summary = summarizeModelQualityRows(relatedRows, row.type, row.model);
+    await updateModelQualityRoutingSetting(row.type, row.model, summary);
+
+    return res.json({ test: row, summary });
   })
 );
 

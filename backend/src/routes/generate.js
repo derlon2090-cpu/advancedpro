@@ -11,6 +11,8 @@ import {
   generateImageWithWaveSpeed,
   generateVideoWithWaveSpeed,
 } from "../services/wavespeedService.js";
+import { getSetting } from "../services/settings.js";
+import { IMAGE_MODELS, VIDEO_MODELS } from "../services/wavespeedModels.js";
 import {
   assertValidPrompt,
   calculateRequiredCredits,
@@ -66,6 +68,111 @@ function getRemainingSlots(key, type) {
   const limit = type === "video" ? Number(key.videoLimit || 0) : Number(key.imageLimit || 0);
   const used = type === "video" ? Number(key.videoUsed || 0) : Number(key.imageUsed || 0);
   return Math.max(limit - used, 0);
+}
+
+function isComplexGenerationPrompt(prompt) {
+  const text = String(prompt || "").toLowerCase();
+  const relationWords = [
+    "بجانب",
+    "فوق",
+    "داخل",
+    "يمسك",
+    "يرتدي",
+    "يقود",
+    "with",
+    "next to",
+    "inside",
+    "wearing",
+    "driving",
+  ];
+  const colorWords = [
+    "أسود",
+    "اسود",
+    "أبيض",
+    "ابيض",
+    "أحمر",
+    "احمر",
+    "أخضر",
+    "اخضر",
+    "أصفر",
+    "اصفر",
+    "أزرق",
+    "ازرق",
+    "black",
+    "white",
+    "red",
+    "green",
+    "yellow",
+    "blue",
+  ];
+  const subjectWords = [
+    "رجل",
+    "امرأة",
+    "شخص",
+    "كلب",
+    "قط",
+    "قطة",
+    "روبوت",
+    "سيارة",
+    "منزل",
+    "قمر",
+    "man",
+    "woman",
+    "dog",
+    "cat",
+    "robot",
+    "car",
+    "house",
+    "moon",
+  ];
+
+  const relations = relationWords.filter((word) => text.includes(word)).length;
+  const colors = colorWords.filter((word) => text.includes(word)).length;
+  const subjects = subjectWords.filter((word) => text.includes(word)).length;
+  const hasPersonAndAnimal = /(رجل|امرأة|شخص|man|woman|person)/.test(text) && /(كلب|قط|قطة|dog|cat)/.test(text);
+  const hasRobotFantasy = /(روبوت|robot)/.test(text) && /(قمر|فضاء|moon|space)/.test(text);
+
+  return subjects > 2 || relations > 0 || colors > 1 || hasPersonAndAnimal || hasRobotFantasy;
+}
+
+function modelForQuality(type, quality) {
+  const source = type === "video" ? VIDEO_MODELS : IMAGE_MODELS;
+  return source?.[quality]?.model || null;
+}
+
+async function getModelQualityDecision(type, model) {
+  if (!model) return null;
+  const raw = await getSetting(`model_quality:${type}:${model}`, null).catch(() => null);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch (_error) {
+    return null;
+  }
+}
+
+async function resolveQualityForPrompt({ type, quality, prompt }) {
+  if (!isComplexGenerationPrompt(prompt)) {
+    return { quality, routed: false, reason: "simple_prompt" };
+  }
+
+  const order = ["normal", "high", "ultra"];
+  const startIndex = Math.max(order.indexOf(quality), 0);
+  for (const candidateQuality of order.slice(startIndex)) {
+    const model = modelForQuality(type, candidateQuality);
+    const decision = await getModelQualityDecision(type, model);
+    if (decision?.complexPromptsAllowed === true || Number(decision?.passed || 0) >= 4) {
+      return {
+        quality: candidateQuality,
+        routed: candidateQuality !== quality,
+        reason: "approved_complex_model",
+        model,
+        decision,
+      };
+    }
+  }
+
+  return { quality, routed: false, reason: "no_approved_model_record" };
 }
 
 router.post(
@@ -530,7 +637,7 @@ router.post(
 
     const keyId = getKeyId(req);
     const type = normalizeGenerationType(req.body.type || "image");
-    const quality = normalizeQuality(req.body.quality || "normal");
+    let quality = normalizeQuality(req.body.quality || "normal");
     const duration = type === "video" ? normalizeDuration(req.body.durationSeconds || req.body.duration || 5) : null;
     const style = String(req.body.style || "").trim();
     const aspectRatio = String(req.body.aspectRatio || req.body.aspect || "").trim();
@@ -538,6 +645,17 @@ router.post(
     const requestId = String(req.body.requestId || "").trim().slice(0, 80) || randomUUID();
     const providedSeed = Number(req.body.seed);
     const seed = Number.isFinite(providedSeed) ? providedSeed : Math.floor(Math.random() * 999999999);
+    const routing = await resolveQualityForPrompt({ type, quality, prompt });
+    if (routing.routed) {
+      console.log("MODEL_QUALITY_SMART_ROUTING:", {
+        type,
+        fromQuality: quality,
+        toQuality: routing.quality,
+        model: routing.model,
+        reason: routing.reason,
+      });
+      quality = routing.quality;
+    }
     const creditsUsed = calculateRequiredCredits(type, quality, duration || 5);
 
     console.log("USER_PROMPT:", prompt);
