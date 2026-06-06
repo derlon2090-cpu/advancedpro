@@ -11153,6 +11153,44 @@ html[data-theme="dark"] .create-chat-bubble__state {
   font-weight: 900;
 }
 
+.udv3-prompt-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: -4px;
+}
+
+.udv3-prompt-actions button {
+  min-height: 42px;
+  border: 1px solid rgba(109, 53, 255, 0.22);
+  border-radius: 14px;
+  padding: 0 18px;
+  background: linear-gradient(135deg, #ffffff, #f4edff);
+  color: var(--udv3-primary);
+  box-shadow: 0 10px 22px rgba(109, 53, 255, 0.08);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 900;
+}
+
+.udv3-prompt-actions button:hover {
+  border-color: rgba(109, 53, 255, 0.38);
+  transform: translateY(-1px);
+}
+
+.udv3-prompt-actions button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+  transform: none;
+}
+
+.udv3-prompt-actions span {
+  color: var(--udv3-muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
 .udv3-cost-card {
   border-radius: 18px;
   border: 1px solid var(--udv3-border);
@@ -12216,6 +12254,15 @@ html[data-theme="dark"] .create-chat-bubble__state {
   .udv3-form-grid,
   .udv3-progress-steps {
     grid-template-columns: 1fr;
+  }
+
+  .udv3-prompt-actions {
+    align-items: stretch;
+  }
+
+  .udv3-prompt-actions button,
+  .udv3-prompt-actions span {
+    width: 100%;
   }
 
   .udv3-creations-grid {

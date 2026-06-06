@@ -75,19 +75,81 @@ function includesAny(value, terms) {
   return terms.some((term) => text.includes(term));
 }
 
-function translateArabicToEnglish(userPrompt) {
+const COLOR_TERMS = {
+  black: ["\u0623\u0633\u0648\u062f", "\u0627\u0633\u0648\u062f", "\u0633\u0648\u062f\u0627\u0621", "black"],
+  white: ["\u0623\u0628\u064a\u0636", "\u0627\u0628\u064a\u0636", "\u0628\u064a\u0636\u0627\u0621", "white"],
+  yellow: ["\u0623\u0635\u0641\u0631", "\u0627\u0635\u0641\u0631", "\u0635\u0641\u0631\u0627\u0621", "yellow"],
+  green: ["\u0623\u062e\u0636\u0631", "\u0627\u062e\u0636\u0631", "\u062e\u0636\u0631\u0627\u0621", "green"],
+  red: ["\u0623\u062d\u0645\u0631", "\u0627\u062d\u0645\u0631", "\u062d\u0645\u0631\u0627\u0621", "red"],
+  blue: ["\u0623\u0632\u0631\u0642", "\u0627\u0632\u0631\u0642", "\u0632\u0631\u0642\u0627\u0621", "blue"],
+};
+
+const ENTITY_TERMS = {
+  cat: ["\u0642\u0637\u0629", "\u0642\u0637", "cat"],
+  dog: ["\u0643\u0644\u0628", "dog"],
+  house: ["\u0628\u064a\u062a", "\u0645\u0646\u0632\u0644", "house", "home"],
+  robot: ["\u0631\u0648\u0628\u0648\u062a", "robot"],
+  moon: ["\u0627\u0644\u0642\u0645\u0631", "\u0642\u0645\u0631", "moon"],
+  garden: ["\u062d\u062f\u064a\u0642\u0629", "garden"],
+};
+
+function detectColorForEntity(text, entityKey) {
+  const entityTerms = ENTITY_TERMS[entityKey] || [];
+  if (!includesAny(text, entityTerms)) return null;
+
+  const normalizedText = String(text || "").toLowerCase();
+  const entityMatches = [];
+  for (const term of entityTerms) {
+    let startIndex = normalizedText.indexOf(term);
+    while (startIndex !== -1) {
+      entityMatches.push({
+        start: startIndex,
+        center: startIndex + term.length / 2,
+      });
+      startIndex = normalizedText.indexOf(term, startIndex + term.length);
+    }
+  }
+
+  let closest = null;
+  for (const [color, terms] of Object.entries(COLOR_TERMS)) {
+    for (const term of terms) {
+      let startIndex = normalizedText.indexOf(term);
+      while (startIndex !== -1) {
+        const colorCenter = startIndex + term.length / 2;
+        for (const entityMatch of entityMatches) {
+          const distance = Math.abs(colorCenter - entityMatch.center);
+          if (distance <= 32 && (!closest || distance < closest.distance)) {
+            closest = { color, distance };
+          }
+        }
+        startIndex = normalizedText.indexOf(term, startIndex + term.length);
+      }
+    }
+  }
+
+  return closest?.color || null;
+}
+
+function firstDetectedColor(text) {
+  for (const [color, terms] of Object.entries(COLOR_TERMS)) {
+    if (includesAny(text, terms)) return color;
+  }
+  return null;
+}
+
+function analyzePromptV3(userPrompt) {
   const text = String(userPrompt || "").trim();
   const lower = text.toLowerCase();
 
   const hasCat = includesAny(lower, ["\u0642\u0637", "cat"]);
   const hasDog = includesAny(lower, ["\u0643\u0644\u0628", "dog"]);
-  const hasBlack = includesAny(lower, ["\u0623\u0633\u0648\u062f", "\u0627\u0633\u0648\u062f", "black"]);
+  const hasBlack = includesAny(lower, COLOR_TERMS.black);
   const hasGarden = includesAny(lower, ["\u062d\u062f\u064a\u0642\u0629", "garden"]);
   const hasMoon = includesAny(lower, ["\u0627\u0644\u0642\u0645\u0631", "\u0642\u0645\u0631", "moon"]);
   const hasRobot = includesAny(lower, ["\u0631\u0648\u0628\u0648\u062a", "robot"]);
   const hasRobots = includesAny(lower, ["\u0631\u0648\u0628\u0648\u062a\u0627\u062a", "robots"]);
-  const hasYellow = includesAny(lower, ["\u0623\u0635\u0641\u0631", "\u0627\u0635\u0641\u0631", "yellow"]);
-  const hasGreen = includesAny(lower, ["\u0623\u062e\u0636\u0631", "\u0627\u062e\u0636\u0631", "green"]);
+  const hasYellow = includesAny(lower, COLOR_TERMS.yellow);
+  const hasGreen = includesAny(lower, COLOR_TERMS.green);
   const hasBeside = includesAny(lower, ["\u0628\u062c\u0627\u0646\u0628", "\u0645\u0639", "next to", "beside"]);
   const hasBusinessman = includesAny(lower, [
     "\u0631\u062c\u0644 \u0623\u0639\u0645\u0627\u0644",
@@ -101,36 +163,99 @@ function translateArabicToEnglish(userPrompt) {
   const hasSports = includesAny(lower, ["\u0631\u064a\u0627\u0636\u064a\u0629", "sports"]);
   const hasNight = includesAny(lower, ["\u0644\u064a\u0644", "\u0644\u064a\u0644\u0627", "night"]);
   const hasStreet = includesAny(lower, ["\u0634\u0627\u0631\u0639", "street"]);
+  const hasHouse = includesAny(lower, ENTITY_TERMS.house);
+  const hasTop = includesAny(lower, ["\u0641\u0648\u0642", "\u0639\u0644\u0649 \u0633\u0637\u062d", "\u0633\u0637\u062d", "on top", "above", "roof"]);
+  const hasInFront = includesAny(lower, ["\u0623\u0645\u0627\u0645", "\u0627\u0645\u0627\u0645", "in front"]);
+  const catColor = detectColorForEntity(lower, "cat") || (hasCat ? firstDetectedColor(lower) : null);
+  const dogColor = detectColorForEntity(lower, "dog") || (hasDog ? firstDetectedColor(lower) : null);
+  const houseColor = detectColorForEntity(lower, "house") || (hasHouse && hasYellow ? "yellow" : null);
+
+  if (hasCat && hasHouse && hasTop) {
+    const subjectColor = catColor || "clearly visible";
+    const objectColor = houseColor || "clearly visible";
+
+    return {
+      subject: "cat",
+      subjectColor,
+      object: "house",
+      objectColor,
+      relation: "standing on top of",
+      finalPrompt: [
+        `A realistic ${subjectColor} cat standing on top of the roof of a ${objectColor} house.`,
+        subjectColor !== "clearly visible" ? `The cat must be ${subjectColor}.` : "The cat must be clearly visible.",
+        objectColor !== "clearly visible" ? `The house must be ${objectColor}.` : "The house must be clearly visible.",
+        "The entire house must be visible in the frame.",
+        "The cat is standing on the roof of the house, not beside it and not floating.",
+        "Do not change the cat color.",
+        "Do not remove the house.",
+        "No additional animals, no people, no text, no watermark.",
+        "Photorealistic composition, natural lighting, sharp details.",
+      ].join(" "),
+    };
+  }
 
   if (hasCat && hasDog) {
     const color = hasBlack ? "black " : "";
     const place = hasGarden ? "inside a garden" : "in a clean natural setting";
-    return `A realistic photo of a ${color}cat next to a ${color}dog ${place}. Both animals are fully visible, side by side, clean background.`;
+    return {
+      subject: "cat",
+      subjectColor: catColor || (hasBlack ? "black" : null),
+      object: "dog",
+      objectColor: dogColor || (hasBlack ? "black" : null),
+      relation: "standing next to",
+      finalPrompt: [
+        `A realistic photo of a ${color}cat standing next to a ${color}dog ${place}.`,
+        "Both animals must be fully visible, side by side, with the correct colors clearly visible.",
+        "Do not add people, food, extra animals, text, watermark, or logos.",
+      ].join(" "),
+    };
   }
 
   if (hasRobot) {
     if (hasGreen && hasYellow && hasBeside) {
-      return [
+      return {
+        subject: "robot",
+        subjectColor: "green",
+        object: "robot",
+        objectColor: "yellow",
+        relation: "standing next to",
+        finalPrompt: [
         "Two robots standing side by side on the surface of the moon.",
         "Robot number one is bright green.",
         "Robot number two is bright yellow.",
         "Both robots are fully visible.",
         "Exactly two robots.",
         "Realistic sci-fi scene.",
-      ].join(" ");
+        "No humans, no animals, no text, no watermark.",
+        ].join(" "),
+      };
     }
 
     const color = hasYellow ? "bright yellow " : hasGreen ? "bright green " : "";
     const count = hasRobots ? "a group of futuristic robots" : `one ${color}futuristic robot`;
     const place = hasMoon ? "standing on the surface of the moon" : "in a clean futuristic scene";
-    return `${count} ${place}, full body visible, realistic sci-fi image, cinematic lighting.`;
+    return {
+      subject: hasRobots ? "robots" : "robot",
+      subjectColor: hasYellow ? "yellow" : hasGreen ? "green" : null,
+      object: hasMoon ? "moon" : null,
+      objectColor: null,
+      relation: hasMoon ? "standing on" : null,
+      finalPrompt: `${count} ${place}, full body visible, realistic sci-fi image, cinematic lighting. No humans, no animals, no text, no watermark.`,
+    };
   }
 
   if (hasBusinessman) {
     const appearance = hasHandsome ? "handsome male " : "male ";
     const clothing = hasSuit ? "wearing an elegant formal suit" : "wearing professional business attire";
     const place = hasOffice ? "inside a modern luxury office" : "in a modern corporate environment";
-    return `A ${appearance}businessman ${clothing} ${place}, realistic professional portrait, confident expression, clean corporate background, cinematic lighting.`;
+    return {
+      subject: "businessman",
+      subjectColor: null,
+      object: hasOffice ? "office" : null,
+      objectColor: null,
+      relation: "inside",
+      finalPrompt: `A ${appearance}businessman ${clothing} ${place}, realistic professional portrait, confident expression, clean corporate background, cinematic lighting.`,
+    };
   }
 
   if (hasCar) {
@@ -138,7 +263,25 @@ function translateArabicToEnglish(userPrompt) {
     const type = hasSports ? "sports car" : "car";
     const place = hasStreet ? "on a well-lit street" : "in a clean urban environment";
     const time = hasNight ? "at night" : "";
-    return `A ${color}${type} ${place} ${time}, realistic automotive photography, sharp details, cinematic lighting.`;
+    return {
+      subject: type,
+      subjectColor: hasBlack ? "black" : null,
+      object: hasStreet ? "street" : null,
+      objectColor: null,
+      relation: "on",
+      finalPrompt: `A ${color}${type} ${place} ${time}, realistic automotive photography, sharp details, cinematic lighting.`,
+    };
+  }
+
+  return null;
+}
+
+function translateArabicToEnglish(userPrompt) {
+  const text = String(userPrompt || "").trim();
+
+  const analyzed = analyzePromptV3(text);
+  if (analyzed?.finalPrompt) {
+    return analyzed.finalPrompt;
   }
 
   if (!hasArabicText(text)) {
@@ -150,10 +293,17 @@ function translateArabicToEnglish(userPrompt) {
     ["\u0643\u0644\u0628", "dog"],
     ["\u0623\u0633\u0648\u062f", "black"],
     ["\u0627\u0633\u0648\u062f", "black"],
+    ["\u0633\u0648\u062f\u0627\u0621", "black"],
+    ["\u0642\u0637\u0629", "cat"],
+    ["\u0628\u064a\u062a", "house"],
+    ["\u0645\u0646\u0632\u0644", "house"],
+    ["\u0633\u0637\u062d", "roof"],
+    ["\u0641\u0648\u0642", "on top of"],
     ["\u0631\u0648\u0628\u0648\u062a\u0627\u062a", "robots"],
     ["\u0631\u0648\u0628\u0648\u062a", "robot"],
     ["\u0623\u0635\u0641\u0631", "yellow"],
     ["\u0627\u0635\u0641\u0631", "yellow"],
+    ["\u0635\u0641\u0631\u0627\u0621", "yellow"],
     ["\u0623\u062e\u0636\u0631", "green"],
     ["\u0627\u062e\u0636\u0631", "green"],
     ["\u0627\u0644\u0642\u0645\u0631", "moon"],
@@ -221,16 +371,73 @@ function buildNegativeRules(userPrompt) {
   return [...new Set(rules)];
 }
 
+function buildColorRules(userPrompt, analysis) {
+  const lower = String(userPrompt || "").toLowerCase();
+  const rules = [];
+
+  if (Object.values(COLOR_TERMS).some((terms) => includesAny(lower, terms))) {
+    rules.push("The requested colors must be clearly visible. Do not change any requested color.");
+  }
+
+  if (analysis?.subject && analysis?.subjectColor) {
+    rules.push(`Keep the ${analysis.subject} ${analysis.subjectColor}.`);
+  }
+
+  if (analysis?.object && analysis?.objectColor) {
+    rules.push(`Keep the ${analysis.object} ${analysis.objectColor}.`);
+  }
+
+  return [...new Set(rules)];
+}
+
+function buildRelationshipExactness(userPrompt) {
+  const lower = String(userPrompt || "").toLowerCase();
+
+  if (includesAny(lower, ["\u0641\u0648\u0642", "\u0639\u0644\u0649 \u0633\u0637\u062d", "\u0633\u0637\u062d", "on top", "above", "roof"])) {
+    return [
+      "The relation is standing on top of the requested object.",
+      "The object underneath must be visible.",
+      "Do not place the subject beside the object or remove the object.",
+    ].join(" ");
+  }
+
+  if (includesAny(lower, ["\u0623\u0645\u0627\u0645", "\u0627\u0645\u0627\u0645", "in front"])) {
+    return [
+      "The relation is in front of the requested object.",
+      "Both the foreground subject and the background object must be visible.",
+      "Do not hide or remove either subject.",
+    ].join(" ");
+  }
+
+  if (includesAny(lower, ["\u0628\u062c\u0627\u0646\u0628", "next to", "beside", "\u0645\u0639"])) {
+    return [
+      "If multiple subjects are requested, show every subject clearly, side by side.",
+      "Both subjects must be visible in the frame.",
+      "Do not remove any subject.",
+    ].join(" ");
+  }
+
+  return "Follow the subject exactly and do not reuse previous subjects.";
+}
+
 function buildFinalPrompt({ userPrompt, quality = "normal", style = "", type = "image" }) {
-  const translatedPrompt = translateArabicToEnglish(userPrompt);
+  const analysis = analyzePromptV3(userPrompt);
+  const translatedPrompt = analysis?.finalPrompt || translateArabicToEnglish(userPrompt);
   const qualityText = QUALITY_LABELS[normalizeQuality(quality)] || QUALITY_LABELS.normal;
   const styleText = STYLE_LABELS[style] || STYLE_LABELS.realistic;
   const negativeRules = buildNegativeRules(userPrompt).join(", ");
+  const colorRules = buildColorRules(userPrompt, analysis);
+  const exactness = buildRelationshipExactness(userPrompt);
 
-  const exactness =
-    includesAny(String(userPrompt || "").toLowerCase(), ["\u0628\u062c\u0627\u0646\u0628", "next to", "beside", "\u0645\u0639"])
-      ? "If multiple subjects are requested, show every subject clearly, side by side, and do not remove any subject."
-      : "Follow the subject exactly and do not reuse previous subjects.";
+  if (analysis) {
+    console.log("PROMPT_V3_STRUCTURE:", JSON.stringify({
+      subject: analysis.subject,
+      subjectColor: analysis.subjectColor,
+      object: analysis.object,
+      objectColor: analysis.objectColor,
+      relation: analysis.relation,
+    }));
+  }
 
   return [
     type === "video"
@@ -241,12 +448,17 @@ function buildFinalPrompt({ userPrompt, quality = "normal", style = "", type = "
     "Strict rules:",
     "- Follow the subject exactly.",
     `- ${exactness}`,
+    ...colorRules.map((rule) => `- ${rule}`),
     "- Do not add unrelated people, food, city, office, restaurant, animals, robots, or objects unless explicitly requested.",
     "- No text, no watermark, no logo, no UI overlay, no grid lines.",
     `- Avoid: ${negativeRules}.`,
     `- Style: ${styleText}.`,
     `- Quality: ${qualityText}, clean composition, professional lighting, main subject clearly visible.`,
   ].join("\n");
+}
+
+export function buildWaveSpeedPrompt(options) {
+  return buildFinalPrompt(options);
 }
 
 function isHttpUrl(value) {

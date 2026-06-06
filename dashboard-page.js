@@ -321,7 +321,9 @@
   function setLoading(isLoading) {
     state.loading = isLoading;
     const button = $("[data-submit-button]");
+    const enhanceButton = $("[data-smart-enhance]");
     button.disabled = isLoading;
+    if (enhanceButton) enhanceButton.disabled = isLoading;
     button.textContent = isLoading
       ? state.type === "video"
         ? "جاري إنشاء الفيديو..."
@@ -424,6 +426,102 @@
     } catch {
       // Session storage is only a client-side convenience for static routing.
     }
+  }
+
+  function promptHasAny(value, terms) {
+    const text = String(value || "").toLowerCase();
+    return terms.some((term) => text.includes(term));
+  }
+
+  function smartEnhancePrompt(prompt) {
+    const text = String(prompt || "").trim();
+    const lower = text.toLowerCase();
+
+    const hasCat = promptHasAny(lower, ["قطة", "قط", "cat"]);
+    const hasDog = promptHasAny(lower, ["كلب", "dog"]);
+    const hasHouse = promptHasAny(lower, ["بيت", "منزل", "house", "home"]);
+    const hasRobot = promptHasAny(lower, ["روبوت", "robot"]);
+    const hasRobots = promptHasAny(lower, ["روبوتات", "robots"]);
+    const hasMoon = promptHasAny(lower, ["القمر", "قمر", "moon"]);
+    const hasBlack = promptHasAny(lower, ["أسود", "اسود", "سوداء", "black"]);
+    const hasYellow = promptHasAny(lower, ["أصفر", "اصفر", "صفراء", "yellow"]);
+    const hasGreen = promptHasAny(lower, ["أخضر", "اخضر", "خضراء", "green"]);
+    const hasBeside = promptHasAny(lower, ["بجانب", "مع", "next to", "beside"]);
+    const hasTop = promptHasAny(lower, ["فوق", "على سطح", "سطح", "on top", "roof"]);
+    const hasFront = promptHasAny(lower, ["أمام", "امام", "in front"]);
+
+    if (hasCat && hasHouse && hasTop) {
+      const catColor = hasBlack ? "سوداء" : "واضحة اللون";
+      const houseColor = hasYellow ? "أصفر" : "واضح اللون";
+      return [
+        `صورة واقعية لقطة ${catColor} تقف فوق سطح منزل ${houseColor} كامل الظهور.`,
+        "يجب أن تظهر القطة والمنزل بالكامل داخل الإطار.",
+        "حافظ بدقة على لون القطة ولون المنزل كما هو مكتوب.",
+        "لا تضف حيوانات أخرى أو أشخاص أو نصوص أو شعارات.",
+      ].join(" ");
+    }
+
+    if (hasCat && hasDog) {
+      const catColor = hasBlack ? "سوداء" : "واضحة";
+      const dogColor = hasBlack ? "أسود" : "واضح";
+      return [
+        `صورة واقعية لقطة ${catColor} بجانب كلب ${dogColor}.`,
+        "يجب أن يظهر الحيوانان بالكامل جنبًا إلى جنب داخل الإطار.",
+        "حافظ على الألوان المطلوبة ولا تضف طعامًا أو أشخاصًا أو نصوصًا.",
+      ].join(" ");
+    }
+
+    if (hasRobot) {
+      if (hasGreen && hasYellow && (hasBeside || hasRobots)) {
+        return [
+          "صورة خيال علمي واقعية لروبوت أخضر وروبوت أصفر يقفان جنبًا إلى جنب.",
+          hasMoon ? "اجعلهما على سطح القمر مع ظهور أرض قمرية واضحة." : "اجعل الروبوتين كاملَي الظهور داخل الإطار.",
+          "حافظ على اللون الأخضر للروبوت الأول واللون الأصفر للروبوت الثاني.",
+          "لا تضف بشرًا أو حيوانات أو نصوصًا أو شعارات.",
+        ].join(" ");
+      }
+
+      return [
+        `صورة واقعية لـ ${text}.`,
+        "اجعل الروبوت أو الروبوتات كاملة الظهور وواضحة داخل الإطار.",
+        "حافظ على الألوان المذكورة ولا تضف بشرًا أو نصوصًا أو شعارات.",
+      ].join(" ");
+    }
+
+    if (hasBeside || hasTop || hasFront || hasBlack || hasYellow || hasGreen) {
+      return [
+        `صورة واقعية لـ ${text}.`,
+        hasBeside ? "أظهر كل العناصر جنبًا إلى جنب بوضوح داخل الإطار." : "",
+        hasTop ? "أظهر العنصر فوق العنصر الآخر مع ظهور العنصر السفلي بالكامل." : "",
+        hasFront ? "أظهر العنصر الأمامي والعنصر الخلفي بوضوح." : "",
+        "حافظ على الألوان والعلاقات المذكورة بدقة.",
+        "لا تضف عناصر عشوائية أو نصوصًا أو شعارات.",
+      ].filter(Boolean).join(" ");
+    }
+
+    return [
+      `صورة واقعية لـ ${text}.`,
+      "أظهر الموضوع الرئيسي بوضوح داخل الإطار.",
+      "حافظ على التفاصيل المطلوبة ولا تضف عناصر غير مذكورة أو نصوصًا أو شعارات.",
+    ].join(" ");
+  }
+
+  function handleSmartEnhance() {
+    const promptInput = $("[data-prompt-input]");
+    const currentPrompt = promptInput.value.trim();
+
+    if (currentPrompt.length < 3) {
+      setMessage("اكتب وصفًا قصيرًا أولًا ثم اضغط تحسين ذكي.", "error");
+      promptInput.focus();
+      return;
+    }
+
+    const enhancedPrompt = smartEnhancePrompt(currentPrompt);
+    promptInput.value = enhancedPrompt;
+    $("[data-char-count]").textContent = enhancedPrompt.length;
+    setMessage("تم تحسين الوصف ذكيًا مع تثبيت الألوان والعلاقات.", "info");
+    showToast("تم تحسين الوصف ذكيًا.");
+    promptInput.focus();
   }
 
   async function handleGenerate(event) {
@@ -582,6 +680,7 @@
 
   function bindEvents() {
     $("[data-create-form]").addEventListener("submit", handleGenerate);
+    $("[data-smart-enhance]")?.addEventListener("click", handleSmartEnhance);
     $("[data-prompt-input]").addEventListener("input", (event) => {
       $("[data-char-count]").textContent = event.target.value.length;
     });
