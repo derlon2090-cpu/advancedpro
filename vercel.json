@@ -30,6 +30,14 @@
       "destination": "/admin/prompt-debug.html"
     },
     {
+      "source": "/admin/generation-debug",
+      "destination": "/admin/prompt-debug.html"
+    },
+    {
+      "source": "/admin/model-quality-test",
+      "destination": "/admin/model-quality-test.html"
+    },
+    {
       "source": "/dashboard",
       "destination": "/dashboard.html"
     },

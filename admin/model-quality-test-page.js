@@ -7,6 +7,7 @@
     config: null,
     tests: [],
     summary: null,
+    registry: [],
     search: "",
     running: false,
   };
@@ -143,6 +144,53 @@
     `;
   }
 
+  function registryStatusLabel(item) {
+    if (item.releaseReady) return "جاهز للإصدار";
+    if ((item.total || 0) < 5) return "ينقصه اختبارات";
+    if ((item.passed || 0) < 4) return "غير معتمد";
+    return "قيد المراجعة";
+  }
+
+  function renderRegistry() {
+    const target = $("[data-model-quality-registry]");
+    if (!target) return;
+    const items = state.registry || [];
+    if (!items.length) {
+      target.innerHTML = `<div class="admin-v2-empty">لا يوجد تصنيف موديلات محفوظ حتى الآن.</div>`;
+      return;
+    }
+
+    target.innerHTML = `
+      <div class="admin-model-quality-registry__head">
+        <div>
+          <strong>تصنيف الموديلات الرسمي</strong>
+          <p>يعتمد التوجيه الذكي وSmoke Test على هذا الجدول بعد التقييم اليدوي.</p>
+        </div>
+        <a href="/admin/generation-debug">فتح تشخيص التوليد</a>
+      </div>
+      <div class="admin-model-quality-registry__grid">
+        ${items
+          .map(
+            (item) => `
+              <article class="admin-model-quality-registry__card ${
+                item.releaseReady ? "is-ready" : "is-blocked"
+              }">
+                <span>${escapeHtml(item.type === "video" ? "فيديو" : "صورة")}</span>
+                <strong>${escapeHtml(item.label || item.model)}</strong>
+                <small>${escapeHtml(item.model)}</small>
+                <p>${escapeHtml(item.useLabel || item.intendedUse || "غير محدد")}</p>
+                <div>
+                  <b>${escapeHtml(item.passed || 0)}/5</b>
+                  <em>${escapeHtml(registryStatusLabel(item))}</em>
+                </div>
+              </article>
+            `
+          )
+          .join("")}
+      </div>
+    `;
+  }
+
   function renderPreview(item) {
     if (!item.resultUrl) {
       return `<div class="admin-model-quality-no-preview">لا توجد نتيجة محفوظة لهذا الاختبار</div>`;
@@ -243,6 +291,19 @@
     renderModelOptions();
   }
 
+  async function loadRegistry() {
+    const target = $("[data-model-quality-registry]");
+    try {
+      const payload = await requestJson("/api/admin/model-quality-test/registry");
+      state.registry = payload.registry || [];
+      renderRegistry();
+    } catch (error) {
+      if (target) {
+        target.innerHTML = `<div class="admin-v2-empty admin-model-quality-error">${escapeHtml(error.message)}</div>`;
+      }
+    }
+  }
+
   async function loadResults() {
     const list = $("[data-model-quality-list]");
     list.setAttribute("aria-busy", "true");
@@ -257,6 +318,7 @@
       state.summary = payload.summary || {};
       renderSummary(state.summary);
       renderTests();
+      await loadRegistry();
     } catch (error) {
       if (error.status === 401 || error.status === 403) {
         window.location.href = error.redirectTo || loginPath();
@@ -364,6 +426,7 @@
     try {
       await loadAdminSession();
       await loadConfig();
+      await loadRegistry();
       await loadResults();
     } catch (error) {
       window.location.href = error.redirectTo || loginPath();

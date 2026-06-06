@@ -151,9 +151,37 @@ async function getModelQualityDecision(type, model) {
   }
 }
 
+function modelDecisionAllowsPrompt(decision, complexPrompt) {
+  if (!decision) return false;
+  const passed = Number(decision.passed || 0);
+  const total = Number(decision.total || 0);
+  if (total < 5) return false;
+  return complexPrompt ? passed >= 4 : passed >= 3;
+}
+
 async function resolveQualityForPrompt({ type, quality, prompt }) {
-  if (!isComplexGenerationPrompt(prompt)) {
-    return { quality, routed: false, reason: "simple_prompt" };
+  const requireApprovedModels = process.env.REQUIRE_APPROVED_MODELS === "true";
+  const complexPrompt = isComplexGenerationPrompt(prompt);
+
+  if (!complexPrompt) {
+    if (!requireApprovedModels) {
+      return { quality, routed: false, reason: "simple_prompt" };
+    }
+
+    const model = modelForQuality(type, quality);
+    const decision = await getModelQualityDecision(type, model);
+    if (modelDecisionAllowsPrompt(decision, false)) {
+      return { quality, routed: false, reason: "approved_simple_model", model, decision };
+    }
+
+    return {
+      quality,
+      routed: false,
+      blocked: true,
+      reason: "model_not_approved_for_simple_prompt",
+      model,
+      decision,
+    };
   }
 
   const order = ["normal", "high", "ultra"];
@@ -161,7 +189,7 @@ async function resolveQualityForPrompt({ type, quality, prompt }) {
   for (const candidateQuality of order.slice(startIndex)) {
     const model = modelForQuality(type, candidateQuality);
     const decision = await getModelQualityDecision(type, model);
-    if (decision?.complexPromptsAllowed === true || Number(decision?.passed || 0) >= 4) {
+    if (decision?.complexPromptsAllowed === true || modelDecisionAllowsPrompt(decision, true)) {
       return {
         quality: candidateQuality,
         routed: candidateQuality !== quality,
@@ -170,6 +198,15 @@ async function resolveQualityForPrompt({ type, quality, prompt }) {
         decision,
       };
     }
+  }
+
+  if (requireApprovedModels) {
+    return {
+      quality,
+      routed: false,
+      blocked: true,
+      reason: "no_approved_model_for_complex_prompt",
+    };
   }
 
   return { quality, routed: false, reason: "no_approved_model_record" };
@@ -646,6 +683,16 @@ router.post(
     const providedSeed = Number(req.body.seed);
     const seed = Number.isFinite(providedSeed) ? providedSeed : Math.floor(Math.random() * 999999999);
     const routing = await resolveQualityForPrompt({ type, quality, prompt });
+    if (routing.blocked) {
+      console.log("MODEL_QUALITY_BLOCKED:", {
+        type,
+        quality,
+        prompt,
+        reason: routing.reason,
+        model: routing.model,
+      });
+      httpError("هذا الموديل لم يجتز اختبارات الجودة المطلوبة بعد. شغّل اختبارات الموديلات من لوحة الأدمن أو عطّل وضع الاعتماد الصارم مؤقتًا.", 503);
+    }
     if (routing.routed) {
       console.log("MODEL_QUALITY_SMART_ROUTING:", {
         type,

@@ -4,8 +4,9 @@
   "description": "Root package.json to proxy Render commands to backend",
   "scripts": {
     "build": "node -e \"console.log('Static frontend build: no build step required')\"",
-    "render:build": "npm --prefix backend install && npm --prefix backend run build",
+    "render:build": "npm --prefix backend install && npm --prefix backend run render:build",
     "postinstall": "node -e \"if (process.env.VERCEL) { console.log('Skipping backend install on Vercel static deploy'); } else { require('child_process').execSync('npm --prefix backend install', { stdio: 'inherit' }); }\"",
-    "start": "npm --prefix backend start"
+    "start": "npm --prefix backend start",
+    "model:smoke": "npm --prefix backend run model:smoke"
   }
 }

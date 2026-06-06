@@ -22,6 +22,14 @@ import {
   generateImageWithWaveSpeed,
   generateVideoWithWaveSpeed,
 } from "../services/wavespeedService.js";
+import {
+  getModelQualityRegistry,
+  getReleaseSmokeReport,
+  MODEL_QUALITY_IMAGE_MODELS as POLICY_IMAGE_MODELS,
+  MODEL_QUALITY_IMAGE_TESTS as POLICY_IMAGE_TESTS,
+  MODEL_QUALITY_VIDEO_MODELS as POLICY_VIDEO_MODELS,
+  MODEL_QUALITY_VIDEO_TESTS as POLICY_VIDEO_TESTS,
+} from "../services/modelQualityPolicy.js";
 
 const router = Router();
 
@@ -1034,11 +1042,11 @@ const MODEL_QUALITY_VIDEO_TESTS = [
 ];
 
 function modelOptionsForType(type) {
-  return type === "video" ? MODEL_QUALITY_VIDEO_MODELS : MODEL_QUALITY_IMAGE_MODELS;
+  return type === "video" ? POLICY_VIDEO_MODELS : POLICY_IMAGE_MODELS;
 }
 
 function testsForType(type) {
-  return type === "video" ? MODEL_QUALITY_VIDEO_TESTS : MODEL_QUALITY_IMAGE_TESTS;
+  return type === "video" ? POLICY_VIDEO_TESTS : POLICY_IMAGE_TESTS;
 }
 
 function findModelQualityOption(type, model) {
@@ -1225,11 +1233,34 @@ router.get(
   "/model-quality-test/config",
   asyncHandler(async (_req, res) => {
     return res.json({
-      imageModels: MODEL_QUALITY_IMAGE_MODELS,
-      videoModels: MODEL_QUALITY_VIDEO_MODELS,
-      imageTests: MODEL_QUALITY_IMAGE_TESTS,
-      videoTests: MODEL_QUALITY_VIDEO_TESTS,
+      imageModels: POLICY_IMAGE_MODELS,
+      videoModels: POLICY_VIDEO_MODELS,
+      imageTests: POLICY_IMAGE_TESTS,
+      videoTests: POLICY_VIDEO_TESTS,
     });
+  })
+);
+
+router.get(
+  "/model-quality-test/registry",
+  asyncHandler(async (_req, res) => {
+    const registry = await getModelQualityRegistry(prisma);
+    return res.json({
+      registry,
+      policy: {
+        simplePrompts: "normal models are allowed only after at least 3/5 passed tests.",
+        complexPrompts: "complex prompts require a model with at least 4/5 passed tests.",
+        releaseReady: "release is blocked until every production model has five tests and at least four passed.",
+      },
+    });
+  })
+);
+
+router.get(
+  "/release-smoke-test",
+  asyncHandler(async (_req, res) => {
+    const report = await getReleaseSmokeReport(prisma);
+    return res.status(report.passed ? 200 : 412).json(report);
   })
 );
 
