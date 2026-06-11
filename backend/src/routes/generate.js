@@ -340,34 +340,34 @@ function serializeGeneration(row) {
 async function loadCompletedGenerationById({ keyId, generationId }) {
   const rows = await withDbRetry(() =>
     prisma.$queryRaw`
-      SELECT id,
-             request_id,
-             type,
-             prompt,
-             quality,
-             style,
-             aspect_ratio,
-             duration,
-             provider,
-             model,
-             seed,
-             final_prompt,
-             enhanced_prompt,
-             negative_prompt,
-             credits_used,
-             status,
-             result_url,
-             created_at,
-             completed_at,
-             EXTRACT(EPOCH FROM (completed_at - created_at)) * 1000 AS generation_time_ms,
+      SELECT g.id,
+             g.request_id,
+             g.type,
+             g.prompt,
+             g.quality,
+             g.style,
+             g.aspect_ratio,
+             g.duration,
+             g.provider,
+             g.model,
+             g.seed,
+             g.final_prompt,
+             g.enhanced_prompt,
+             g.negative_prompt,
+             g.credits_used,
+             g.status,
+             g.result_url,
+             g.created_at,
+             g.completed_at,
+             EXTRACT(EPOCH FROM (g.completed_at - g.created_at)) * 1000 AS generation_time_ms,
              gf.rating AS user_rating,
              gf.score AS quality_score
-      FROM generations
-      LEFT JOIN generation_feedback gf ON gf.generation_id = generations.id
-      WHERE key_id = ${keyId}
-        AND id = ${generationId}
-        AND status = 'completed'
-        AND result_url IS NOT NULL
+      FROM generations g
+      LEFT JOIN generation_feedback gf ON gf.generation_id = g.id
+      WHERE g.key_id = ${keyId}
+        AND g.id = ${generationId}
+        AND g.status = 'completed'
+        AND g.result_url IS NOT NULL
       LIMIT 1
     `
   );
@@ -691,34 +691,34 @@ router.get(
     const keyId = getKeyId(req);
     const rows = await withDbRetry(() =>
       prisma.$queryRaw`
-        SELECT id,
-               request_id,
-               type,
-               prompt,
-               quality,
-               style,
-               aspect_ratio,
-               duration,
-               provider,
-               model,
-               seed,
-               final_prompt,
-               enhanced_prompt,
-               negative_prompt,
-               credits_used,
-               status,
-               result_url,
-               created_at,
-               completed_at,
-               EXTRACT(EPOCH FROM (completed_at - created_at)) * 1000 AS generation_time_ms,
+        SELECT g.id,
+               g.request_id,
+               g.type,
+               g.prompt,
+               g.quality,
+               g.style,
+               g.aspect_ratio,
+               g.duration,
+               g.provider,
+               g.model,
+               g.seed,
+               g.final_prompt,
+               g.enhanced_prompt,
+               g.negative_prompt,
+               g.credits_used,
+               g.status,
+               g.result_url,
+               g.created_at,
+               g.completed_at,
+               EXTRACT(EPOCH FROM (g.completed_at - g.created_at)) * 1000 AS generation_time_ms,
                gf.rating AS user_rating,
                gf.score AS quality_score
-        FROM generations
-        LEFT JOIN generation_feedback gf ON gf.generation_id = generations.id
-        WHERE key_id = ${keyId}
-          AND status = 'completed'
-          AND result_url IS NOT NULL
-        ORDER BY created_at DESC
+        FROM generations g
+        LEFT JOIN generation_feedback gf ON gf.generation_id = g.id
+        WHERE g.key_id = ${keyId}
+          AND g.status = 'completed'
+          AND g.result_url IS NOT NULL
+        ORDER BY g.created_at DESC
         LIMIT 60
       `
     );
