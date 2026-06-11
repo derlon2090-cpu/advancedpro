@@ -51,3 +51,24 @@ test("businessman Ferrari prompt keeps the dog color separate from the car color
   assert.match(result.finalPrompt, /sitting inside|riding in/i);
   assert.match(result.finalPrompt, /next to him/i);
 });
+
+test("common robot misspelling in space never falls back to a businessman scene", () => {
+  build("رجل أعمال داخل مكتب حديث");
+  const result = build("اعمل لي صورة ربوت على الفضاء");
+
+  assert.match(result.finalPrompt, /robot/i);
+  assert.match(result.finalPrompt, /outer space/i);
+  assert.match(result.finalPrompt, /stars|planets/i);
+  assert.doesNotMatch(result.finalPrompt, /A clean realistic image based/i);
+  assert.match(result.negativePrompt, /businessman/i);
+  assert.match(result.negativePrompt, /meeting room/i);
+  assert.match(result.negativePrompt, /office/i);
+});
+
+test("unknown Arabic prompt is preserved instead of becoming a generic cached-looking prompt", () => {
+  const result = build("مشهد خيالي غير مألوف");
+
+  assert.match(result.finalPrompt, /Interpret this Arabic request exactly/i);
+  assert.match(result.finalPrompt, /مشهد خيالي غير مألوف/);
+  assert.doesNotMatch(result.finalPrompt, /A clean realistic image based/i);
+});

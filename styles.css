@@ -11435,6 +11435,25 @@ html[data-theme="dark"] .create-chat-bubble__state {
   gap: 14px;
 }
 
+.udv3-empty-state {
+  grid-column: 1 / -1;
+  min-height: 150px;
+  padding: 28px;
+  border: 1px dashed #d9ccff;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  color: var(--udv3-muted);
+  background: linear-gradient(135deg, #fff, #faf7ff);
+  font-weight: 900;
+}
+
+.udv3-empty-state.is-compact {
+  min-height: 92px;
+  padding: 18px;
+}
+
 .udv3-creation-card {
   min-width: 0;
   display: grid;

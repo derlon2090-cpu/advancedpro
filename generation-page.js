@@ -7,57 +7,6 @@
     results: [],
   };
 
-  const fallbackResults = [
-    {
-      id: "demo-villa",
-      type: "image",
-      prompt: "منزل عصري فاخر",
-      quality: "high",
-      style: "realistic",
-      aspectRatio: "16:9",
-      creditsUsed: 10,
-      createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-      resultUrl:
-        "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=85",
-    },
-    {
-      id: "demo-car",
-      type: "image",
-      prompt: "سيارة رياضية في المدينة",
-      quality: "high",
-      style: "realistic",
-      aspectRatio: "16:9",
-      creditsUsed: 10,
-      createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
-      resultUrl:
-        "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=900&q=85",
-    },
-    {
-      id: "demo-robot",
-      type: "image",
-      prompt: "روبوت مستقبلي",
-      quality: "normal",
-      style: "three-d",
-      aspectRatio: "1:1",
-      creditsUsed: 5,
-      createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-      resultUrl:
-        "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=900&q=85",
-    },
-    {
-      id: "demo-room",
-      type: "image",
-      prompt: "غرفة معيشة أنيقة",
-      quality: "high",
-      style: "realistic",
-      aspectRatio: "16:9",
-      creditsUsed: 10,
-      createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-      resultUrl:
-        "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=900&q=85",
-    },
-  ];
-
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
@@ -277,9 +226,13 @@
 
   function renderRecent() {
     const grid = $("[data-recent-grid]");
-    const list = (state.results.length ? state.results : fallbackResults)
+    const list = state.results
       .filter((item) => String(item.id) !== String(state.result?.id))
       .slice(0, 5);
+    if (!list.length) {
+      grid.innerHTML = `<div class="udv3-empty-state">لا توجد نتائج أخرى حتى الآن.</div>`;
+      return;
+    }
     grid.innerHTML = list
       .map((item) => {
         const result = normalizeGeneration(item);

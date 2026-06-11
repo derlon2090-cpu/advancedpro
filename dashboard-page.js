@@ -25,69 +25,6 @@
   const VIDEO_DURATIONS = [5, 8];
   const MAX_VIDEO_DURATION_BY_QUALITY = { normal: 8, high: 8, ultra: 8 };
 
-  const fallbackResults = [
-    {
-      id: "demo-business-video",
-      type: "video",
-      prompt: "رجل أعمال داخل سيارة فاخرة",
-      quality: "high",
-      style: "realistic",
-      aspectRatio: "16:9",
-      creditsUsed: 100,
-      createdAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-      resultUrl:
-        "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=900&q=85",
-    },
-    {
-      id: "demo-villa",
-      type: "image",
-      prompt: "منزل عصري فاخر",
-      quality: "high",
-      style: "realistic",
-      aspectRatio: "16:9",
-      creditsUsed: 12,
-      createdAt: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
-      resultUrl:
-        "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=900&q=85",
-    },
-    {
-      id: "demo-car",
-      type: "image",
-      prompt: "سيارة رياضية في المدينة",
-      quality: "high",
-      style: "realistic",
-      aspectRatio: "16:9",
-      creditsUsed: 12,
-      createdAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
-      resultUrl:
-        "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=900&q=85",
-    },
-    {
-      id: "demo-robot",
-      type: "image",
-      prompt: "روبوت مستقبلي",
-      quality: "normal",
-      style: "three-d",
-      aspectRatio: "1:1",
-      creditsUsed: 5,
-      createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-      resultUrl:
-        "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=900&q=85",
-    },
-    {
-      id: "demo-room",
-      type: "image",
-      prompt: "غرفة معيشة أنيقة",
-      quality: "high",
-      style: "realistic",
-      aspectRatio: "16:9",
-      creditsUsed: 12,
-      createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-      resultUrl:
-        "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?auto=format&fit=crop&w=900&q=85",
-    },
-  ];
-
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
@@ -458,8 +395,10 @@
 
   function renderRecent() {
     const grid = $("[data-recent-grid]");
-    const list = (state.results.length ? state.results : fallbackResults).slice(0, 5);
-    grid.innerHTML = list.map(renderCreationCard).join("");
+    const list = state.results.slice(0, 5);
+    grid.innerHTML = list.length
+      ? list.map(renderCreationCard).join("")
+      : `<div class="udv3-empty-state">لم تنشئ أي محتوى بعد. ابدأ الآن بإنشاء أول صورة أو فيديو.</div>`;
   }
 
   function renderCreationCard(item) {
@@ -493,44 +432,33 @@
       positive: false,
     }));
 
-    const list = [
-      ...recent,
-      { label: "شحن باقة إبداع", time: "منذ يومين", amount: "+1,200 XP", positive: true },
-    ].slice(0, 3);
+    const list = recent.slice(0, 3);
 
-    $("[data-transactions-list]").innerHTML = list
-      .map(
-        (item) => `
+    $("[data-transactions-list]").innerHTML = list.length
+      ? list
+          .map(
+            (item) => `
           <article>
             <span>${escapeHtml(item.label)}<small>${escapeHtml(item.time)}</small></span>
             <b class="${item.positive ? "is-positive" : ""}">${escapeHtml(item.amount)}</b>
           </article>
         `
-      )
-      .join("");
+          )
+          .join("")
+      : `<div class="udv3-empty-state is-compact">لا توجد معاملات توليد حتى الآن.</div>`;
   }
 
   function updateUsageUi() {
-    const images = state.results.filter((item) => item.type === "image").length + 18;
-    const videos = state.results.filter((item) => item.type === "video").length + 4;
-    $("[data-images-count]").textContent = `${images} / 240`;
-    $("[data-videos-count]").textContent = `${videos} / 24`;
-  }
+    const key = state.key || {};
+    const generatedImages = state.results.filter((item) => item.type === "image").length;
+    const generatedVideos = state.results.filter((item) => item.type === "video").length;
+    const imagesUsed = Number(key.imagesUsed ?? key.imageUsed ?? generatedImages);
+    const videosUsed = Number(key.videosUsed ?? key.videoUsed ?? generatedVideos);
+    const imagesLimit = Number(key.imagesLimit ?? key.imageLimit ?? Math.max(imagesUsed, generatedImages));
+    const videosLimit = Number(key.videosLimit ?? key.videoLimit ?? Math.max(videosUsed, generatedVideos));
 
-  function persistGeneration(generation) {
-    try {
-      sessionStorage.setItem(`generation:${generation.id}`, JSON.stringify(generation));
-      sessionStorage.setItem("latestGeneration", JSON.stringify(generation));
-      sessionStorage.setItem("pixigen:lastGeneration", JSON.stringify(generation));
-      const stored = JSON.parse(sessionStorage.getItem("pixigen:generations") || "[]");
-      const merged = [
-        generation,
-        ...stored.filter((item) => String(item.id) !== String(generation.id)),
-      ].slice(0, 30);
-      sessionStorage.setItem("pixigen:generations", JSON.stringify(merged));
-    } catch {
-      // Session storage is only a client-side convenience for static routing.
-    }
+    $("[data-images-count]").textContent = `${imagesUsed} / ${imagesLimit}`;
+    $("[data-videos-count]").textContent = `${videosUsed} / ${videosLimit}`;
   }
 
   function promptHasAny(value, terms) {
@@ -741,12 +669,6 @@
     state.activeRequestId = requestId;
     state.abortController = controller;
     setMessage("", "info");
-    try {
-      sessionStorage.removeItem("latestGeneration");
-      sessionStorage.removeItem("pixigen:lastGeneration");
-    } catch {
-      // Start every generation without displaying a stale previous result.
-    }
     setLoading(true);
 
     const payload = {
@@ -806,7 +728,6 @@
       }
 
       state.results = [generation, ...state.results.filter((item) => String(item.id) !== String(generation.id))];
-      persistGeneration(generation);
       try {
         sessionStorage.setItem("pixigen:key", JSON.stringify(state.key || {}));
       } catch {

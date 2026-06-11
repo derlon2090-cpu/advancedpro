@@ -89,9 +89,10 @@ const ENTITY_TERMS = {
   dog: ["\u0643\u0644\u0628", "dog"],
   chicken: ["\u062f\u062c\u0627\u062c\u0629", "\u062f\u062c\u0627\u062c", "\u0641\u0631\u062e\u0629", "\u0643\u062a\u0643\u0648\u062a", "chicken", "hen", "rooster", "chick"],
   house: ["\u0628\u064a\u062a", "\u0645\u0646\u0632\u0644", "house", "home"],
-  robot: ["\u0631\u0648\u0628\u0648\u062a", "robot"],
+  robot: ["\u0631\u0648\u0628\u0648\u062a", "\u0631\u0628\u0648\u062a", "\u0631\u064a\u0628\u0648\u062a", "\u0631\u0648\u0628\u0637", "robot"],
   ferrari: ["\u0641\u0631\u0627\u0631\u064a", "\u0641\u064a\u0631\u0627\u0631\u064a", "ferrari"],
   moon: ["\u0627\u0644\u0642\u0645\u0631", "\u0642\u0645\u0631", "moon"],
+  space: ["\u0627\u0644\u0641\u0636\u0627\u0621", "\u0641\u0636\u0627\u0621", "\u0641\u0636\u0627\u0626\u064a", "\u0641\u0636\u0627\u0626\u064a\u0629", "outer space", "space"],
   garden: ["\u062d\u062f\u064a\u0642\u0629", "garden"],
 };
 
@@ -126,8 +127,8 @@ const COUNTABLE_ENTITIES = [
   {
     singular: "robot",
     plural: "robots",
-    terms: ["\u0631\u0648\u0628\u0648\u062a\u0627\u062a", "\u0631\u0648\u0628\u0648\u062a", "robots", "robot"],
-    dualTerms: ["\u0631\u0648\u0628\u0648\u062a\u0627\u0646", "\u0631\u0648\u0628\u0648\u062a\u064a\u0646"],
+    terms: ["\u0631\u0648\u0628\u0648\u062a\u0627\u062a", "\u0631\u0628\u0648\u062a\u0627\u062a", "\u0631\u0648\u0628\u0648\u062a", "\u0631\u0628\u0648\u062a", "\u0631\u064a\u0628\u0648\u062a", "\u0631\u0648\u0628\u0637", "robots", "robot"],
+    dualTerms: ["\u0631\u0648\u0628\u0648\u062a\u0627\u0646", "\u0631\u0648\u0628\u0648\u062a\u064a\u0646", "\u0631\u0628\u0648\u062a\u0627\u0646", "\u0631\u0628\u0648\u062a\u064a\u0646"],
   },
   {
     singular: "cat",
@@ -400,9 +401,10 @@ function analyzePromptV3(userPrompt) {
   const hasBlack = includesAny(lower, COLOR_TERMS.black);
   const hasWhite = includesAny(lower, COLOR_TERMS.white);
   const hasGarden = includesAny(lower, ["\u062d\u062f\u064a\u0642\u0629", "garden"]);
-  const hasMoon = includesAny(lower, ["\u0627\u0644\u0642\u0645\u0631", "\u0642\u0645\u0631", "moon"]);
-  const hasRobot = includesAny(lower, ["\u0631\u0648\u0628\u0648\u062a", "robot"]);
-  const hasRobots = includesAny(lower, ["\u0631\u0648\u0628\u0648\u062a\u0627\u062a", "robots"]);
+  const hasMoon = includesAny(lower, ENTITY_TERMS.moon);
+  const hasSpace = includesAny(lower, ENTITY_TERMS.space);
+  const hasRobot = includesAny(lower, ENTITY_TERMS.robot);
+  const hasRobots = includesAny(lower, ["\u0631\u0648\u0628\u0648\u062a\u0627\u062a", "\u0631\u0628\u0648\u062a\u0627\u062a", "robots"]);
   const hasYellow = includesAny(lower, COLOR_TERMS.yellow);
   const hasGreen = includesAny(lower, COLOR_TERMS.green);
   const hasBeside = includesAny(lower, ["\u0628\u062c\u0627\u0646\u0628", "\u0645\u0639", "next to", "beside"]);
@@ -595,14 +597,25 @@ function analyzePromptV3(userPrompt) {
 
     const color = hasYellow ? "bright yellow " : hasGreen ? "bright green " : "";
     const count = hasRobots ? "a group of futuristic robots" : `one ${color}futuristic robot`;
-    const place = hasMoon ? "standing on the surface of the moon" : "in a clean futuristic scene";
+    const place = hasMoon
+      ? "standing on the surface of the moon"
+      : hasSpace
+        ? "floating in outer space with stars and distant planets clearly visible"
+        : "in a clean futuristic scene";
     return {
       subject: hasRobots ? "robots" : "robot",
       subjectColor: hasYellow ? "yellow" : hasGreen ? "green" : null,
-      object: hasMoon ? "moon" : null,
+      object: hasMoon ? "moon" : hasSpace ? "outer space" : null,
       objectColor: null,
-      relation: hasMoon ? "standing on" : null,
-      finalPrompt: `${count} ${place}, full body visible, realistic sci-fi image, cinematic lighting. No humans, no animals, no text, no watermark.`,
+      relation: hasMoon ? "standing on" : hasSpace ? "floating in" : null,
+      finalPrompt: [
+        `${count} ${place}.`,
+        "The robot is the only main subject and must be fully visible.",
+        "Create a realistic science-fiction scene with cinematic lighting and sharp mechanical details.",
+        "Do not generate humans, businessmen, suits, portraits, offices, desks, meetings, conference rooms, restaurants, or food.",
+        "Do not reuse any subject or scene from a previous request.",
+        "No animals, no text, no watermark, no logo, no grid lines.",
+      ].join(" "),
     };
   }
 
@@ -650,6 +663,13 @@ function translateArabicToEnglish(userPrompt) {
     ["\u0639\u0644\u0649 \u0633\u0637\u062d", "on top of the roof of"],
     ["\u0645\u0643\u062a\u0628 \u062d\u062f\u064a\u062b", "modern office"],
     ["\u0631\u0648\u0628\u0648\u062a\u0627\u062a", "robots"],
+    ["\u0631\u0628\u0648\u062a\u0627\u062a", "robots"],
+    ["\u0631\u0648\u0628\u0648\u062a", "robot"],
+    ["\u0631\u064a\u0628\u0648\u062a", "robot"],
+    ["\u0631\u0648\u0628\u0637", "robot"],
+    ["\u0631\u0628\u0648\u062a", "robot"],
+    ["\u0627\u0644\u0641\u0636\u0627\u0621", "outer space"],
+    ["\u0641\u0636\u0627\u0621", "outer space"],
     ["\u062f\u062c\u0627\u062c\u0627\u062a", "chickens"],
     ["\u062f\u062c\u0627\u062c\u0629", "chicken"],
     ["\u062f\u062c\u0627\u062c", "chicken"],
@@ -699,7 +719,6 @@ function translateArabicToEnglish(userPrompt) {
     ["\u0645\u0646\u0632\u0644", "house"],
     ["\u0633\u0637\u062d", "roof"],
     ["\u0641\u0648\u0642", "on top of"],
-    ["\u0631\u0648\u0628\u0648\u062a", "robot"],
     ["\u0623\u0635\u0641\u0631", "yellow"],
     ["\u0627\u0635\u0641\u0631", "yellow"],
     ["\u0623\u062e\u0636\u0631", "green"],
@@ -736,7 +755,14 @@ function translateArabicToEnglish(userPrompt) {
     .replace(/\s+/g, " ")
     .trim();
 
-  return translated || "A clean realistic image based on the user's request.";
+  return (
+    translated ||
+    [
+      `Interpret this Arabic request exactly: "${text}".`,
+      "Preserve every requested subject, action, color, count, and location.",
+      "Do not replace it with a generic person, businessman, office, meeting, restaurant, or food scene.",
+    ].join(" ")
+  );
 }
 
 function buildNegativeRules(userPrompt) {
@@ -770,7 +796,7 @@ function buildNegativeRules(userPrompt) {
     "chick",
     "animal",
   ]);
-  const asksForRobot = includesAny(lower, ["\u0631\u0648\u0628\u0648\u062a", "robot"]);
+  const asksForRobot = includesAny(lower, ENTITY_TERMS.robot);
   const asksForCar = includesAny(lower, ["\u0633\u064a\u0627\u0631\u0629", "car", "vehicle"]);
   const asksForFerrari = includesAny(lower, V4_ENTITY_TERMS.ferrari);
   const asksForOffice = includesAny(lower, ["\u0645\u0643\u062a\u0628", "office"]);
@@ -807,6 +833,7 @@ function buildNegativeRules(userPrompt) {
     if (!asksForAnimal) rules.push("animals", "cat", "dog");
     if (!asksForFood) rules.push("food");
     if (!asksForOffice) rules.push("office");
+    rules.push("businessman", "business suit", "desk", "employees", "business meeting", "meeting room", "conference room", "corporate scene");
   }
 
   if (asksForFerrari) {
