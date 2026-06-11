@@ -110,6 +110,22 @@
         : `<img src="${escapeHtml(item.resultUrl)}" alt="" loading="lazy" />`
       : `<div class="admin-prompt-debug-no-result">لا توجد نتيجة محفوظة</div>`;
 
+    const diagnosticJson = JSON.stringify(
+      {
+        userPrompt: item.userPrompt || "",
+        enhancedPrompt: item.enhancedPrompt || "",
+        finalPrompt: item.finalPrompt || "",
+        negativePrompt: item.negativePrompt || "",
+        model: item.model || "",
+        generationId: item.id || "",
+        requestId: item.requestId || "",
+        seed: item.seed || "",
+        resultUrl: item.resultUrl || "",
+      },
+      null,
+      2
+    );
+
     return `
       <article class="admin-prompt-debug-card">
         <header>
@@ -159,6 +175,14 @@
                 <button type="button" data-copy-value="${escapeHtml(item.negativePrompt)}" data-copy-label="Negative Prompt">نسخ</button>
               </div>
               <p dir="auto">${escapeHtml(item.negativePrompt || "لا يوجد Negative Prompt محفوظ.")}</p>
+            </div>
+
+            <div class="admin-prompt-debug-field admin-prompt-debug-field--final">
+              <div>
+                <b>DIAGNOSTIC_JSON</b>
+                <button type="button" data-copy-value="${escapeHtml(diagnosticJson)}" data-copy-label="Diagnostic JSON">نسخ</button>
+              </div>
+              <pre>${escapeHtml(diagnosticJson)}</pre>
             </div>
 
             ${item.errorMessage ? `<p class="admin-prompt-debug-error">${escapeHtml(item.errorMessage)}</p>` : ""}

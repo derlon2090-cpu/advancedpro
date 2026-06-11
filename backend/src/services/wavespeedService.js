@@ -87,6 +87,7 @@ const COLOR_TERMS = {
 const ENTITY_TERMS = {
   cat: ["\u0642\u0637\u0629", "\u0642\u0637", "cat"],
   dog: ["\u0643\u0644\u0628", "dog"],
+  chicken: ["\u062f\u062c\u0627\u062c\u0629", "\u062f\u062c\u0627\u062c", "\u0641\u0631\u062e\u0629", "\u0643\u062a\u0643\u0648\u062a", "chicken", "hen", "rooster", "chick"],
   house: ["\u0628\u064a\u062a", "\u0645\u0646\u0632\u0644", "house", "home"],
   robot: ["\u0631\u0648\u0628\u0648\u062a", "robot"],
   ferrari: ["\u0641\u0631\u0627\u0631\u064a", "\u0641\u064a\u0631\u0627\u0631\u064a", "ferrari"],
@@ -139,6 +140,12 @@ const COUNTABLE_ENTITIES = [
     plural: "dogs",
     terms: ["\u0643\u0644\u0627\u0628", "\u0643\u0644\u0628", "dogs", "dog"],
     dualTerms: ["\u0643\u0644\u0628\u0627\u0646", "\u0643\u0644\u0628\u064a\u0646"],
+  },
+  {
+    singular: "chicken",
+    plural: "chickens",
+    terms: ["\u062f\u062c\u0627\u062c\u0627\u062a", "\u062f\u062c\u0627\u062c", "\u062f\u062c\u0627\u062c\u0629", "\u0641\u0631\u062e\u0627\u062a", "\u0641\u0631\u062e\u0629", "\u0643\u062a\u0627\u0643\u064a\u062a", "\u0643\u062a\u0643\u0648\u062a", "chickens", "chicken", "hens", "hen", "roosters", "rooster", "chicks", "chick"],
+    dualTerms: ["\u062f\u062c\u0627\u062c\u062a\u0627\u0646", "\u062f\u062c\u0627\u062c\u062a\u064a\u0646", "\u0641\u0631\u062e\u062a\u0627\u0646", "\u0641\u0631\u062e\u062a\u064a\u0646", "\u0643\u062a\u0643\u0648\u062a\u0627\u0646", "\u0643\u062a\u0643\u0648\u062a\u064a\u0646"],
   },
   {
     singular: "person",
@@ -294,11 +301,35 @@ function analyzePromptV4(userPrompt) {
   const hasRealistic = includesAny(lower, ["\u0648\u0627\u0642\u0639\u064a", "\u0648\u0627\u0642\u0639\u064a\u0629", "realistic"]);
 
   if (hasBusinessman && hasFerrari && hasBlackDog) {
-    const ferrariColor = includesAny(lower, COLOR_TERMS.black)
+    const ferrariColor = includesAny(lower, [
+      "\u0641\u0631\u0627\u0631\u064a \u0633\u0648\u062f\u0627\u0621",
+      "\u0641\u0631\u0627\u0631\u064a \u0627\u0633\u0648\u062f",
+      "\u0641\u0631\u0627\u0631\u064a \u0623\u0633\u0648\u062f",
+      "\u0641\u064a\u0631\u0627\u0631\u064a \u0633\u0648\u062f\u0627\u0621",
+      "\u0641\u064a\u0631\u0627\u0631\u064a \u0627\u0633\u0648\u062f",
+      "\u0641\u064a\u0631\u0627\u0631\u064a \u0623\u0633\u0648\u062f",
+      "black ferrari",
+    ])
       ? "black Ferrari"
-      : includesAny(lower, COLOR_TERMS.white)
+      : includesAny(lower, [
+            "\u0641\u0631\u0627\u0631\u064a \u0628\u064a\u0636\u0627\u0621",
+            "\u0641\u0631\u0627\u0631\u064a \u0627\u0628\u064a\u0636",
+            "\u0641\u0631\u0627\u0631\u064a \u0623\u0628\u064a\u0636",
+            "\u0641\u064a\u0631\u0627\u0631\u064a \u0628\u064a\u0636\u0627\u0621",
+            "\u0641\u064a\u0631\u0627\u0631\u064a \u0627\u0628\u064a\u0636",
+            "\u0641\u064a\u0631\u0627\u0631\u064a \u0623\u0628\u064a\u0636",
+            "white ferrari",
+          ])
         ? "white Ferrari"
-        : includesAny(lower, COLOR_TERMS.blue)
+        : includesAny(lower, [
+              "\u0641\u0631\u0627\u0631\u064a \u0632\u0631\u0642\u0627\u0621",
+              "\u0641\u0631\u0627\u0631\u064a \u0627\u0632\u0631\u0642",
+              "\u0641\u0631\u0627\u0631\u064a \u0623\u0632\u0631\u0642",
+              "\u0641\u064a\u0631\u0627\u0631\u064a \u0632\u0631\u0642\u0627\u0621",
+              "\u0641\u064a\u0631\u0627\u0631\u064a \u0627\u0632\u0631\u0642",
+              "\u0641\u064a\u0631\u0627\u0631\u064a \u0623\u0632\u0631\u0642",
+              "blue ferrari",
+            ])
           ? "blue Ferrari"
           : "red Ferrari";
     const dogRelation = hasNextTo ? "next to him" : "with him";
@@ -365,7 +396,9 @@ function analyzePromptV3(userPrompt) {
 
   const hasCat = includesAny(lower, ["\u0642\u0637", "cat"]);
   const hasDog = includesAny(lower, ["\u0643\u0644\u0628", "dog"]);
+  const hasChicken = includesAny(lower, ENTITY_TERMS.chicken);
   const hasBlack = includesAny(lower, COLOR_TERMS.black);
+  const hasWhite = includesAny(lower, COLOR_TERMS.white);
   const hasGarden = includesAny(lower, ["\u062d\u062f\u064a\u0642\u0629", "garden"]);
   const hasMoon = includesAny(lower, ["\u0627\u0644\u0642\u0645\u0631", "\u0642\u0645\u0631", "moon"]);
   const hasRobot = includesAny(lower, ["\u0631\u0648\u0628\u0648\u062a", "robot"]);
@@ -389,7 +422,56 @@ function analyzePromptV3(userPrompt) {
   const hasInside = includesAny(lower, ["\u062f\u0627\u062e\u0644", "\u0641\u064a \u062f\u0627\u062e\u0644", "inside"]);
   const catColor = detectColorForEntity(lower, "cat") || (hasCat ? firstDetectedColor(lower) : null);
   const dogColor = detectColorForEntity(lower, "dog") || (hasDog ? firstDetectedColor(lower) : null);
+  const chickenColor =
+    detectColorForEntity(lower, "chicken") || (hasChicken && hasWhite ? "white" : hasChicken ? firstDetectedColor(lower) : null);
   const houseColor = detectColorForEntity(lower, "house") || (hasHouse && hasYellow ? "yellow" : null);
+
+  if (hasChicken) {
+    const subjectColor = chickenColor || "clearly visible";
+    const place = hasGarden ? "inside a garden" : "standing on a simple farm background";
+
+    return {
+      subject: "chicken",
+      subjectColor,
+      object: hasGarden ? "garden" : "farm background",
+      objectColor: null,
+      relation: "standing on",
+      enhancedPrompt: [
+        `صورة واقعية لدجاجة${subjectColor === "white" ? " بيضاء" : ""} كاملة الظهور.`,
+        hasGarden ? "تظهر الدجاجة داخل حديقة واضحة." : "تظهر الدجاجة في بيئة مزرعة بسيطة وواضحة.",
+        "يجب أن تكون الدجاجة هي العنصر الرئيسي داخل الإطار، بدون أشخاص أو غرفة اجتماعات أو مكتب.",
+      ].join(" "),
+      finalPrompt: [
+        `A realistic photo of a ${subjectColor === "clearly visible" ? "" : `${subjectColor} `}chicken ${place}.`,
+        subjectColor !== "clearly visible" ? `The chicken must be ${subjectColor}.` : "The chicken must be clearly visible.",
+        "The chicken is the main subject and must be fully visible in the frame.",
+        "Do not generate people, employees, meetings, offices, conference rooms, restaurants, food plates, or business scenes.",
+        "No extra animals unless requested, no text, no watermark, no logo, no grid lines.",
+        "Natural lighting, realistic photography, clean composition.",
+      ].join(" "),
+      negativeRules: [
+        "humans",
+        "people",
+        "employees",
+        "business meeting",
+        "meeting room",
+        "office",
+        "conference room",
+        "corporate",
+        "restaurant",
+        "food plate",
+        "text",
+        "watermark",
+        "logo",
+      ],
+      debug: {
+        subjects: ["chicken"],
+        relations: [place],
+        scene: hasGarden ? "garden" : "farm background",
+        style: "realistic photo",
+      },
+    };
+  }
 
   if (hasCat && hasHouse && hasTop) {
     const subjectColor = catColor || "clearly visible";
@@ -568,6 +650,11 @@ function translateArabicToEnglish(userPrompt) {
     ["\u0639\u0644\u0649 \u0633\u0637\u062d", "on top of the roof of"],
     ["\u0645\u0643\u062a\u0628 \u062d\u062f\u064a\u062b", "modern office"],
     ["\u0631\u0648\u0628\u0648\u062a\u0627\u062a", "robots"],
+    ["\u062f\u062c\u0627\u062c\u0627\u062a", "chickens"],
+    ["\u062f\u062c\u0627\u062c\u0629", "chicken"],
+    ["\u062f\u062c\u0627\u062c", "chicken"],
+    ["\u0641\u0631\u062e\u0629", "chicken"],
+    ["\u0643\u062a\u0643\u0648\u062a", "chick"],
     ["\u0642\u0637\u062a\u0627\u0646", "two cats"],
     ["\u0642\u0637\u062a\u064a\u0646", "two cats"],
     ["\u0631\u0648\u0628\u0648\u062a\u0627\u0646", "two robots"],
@@ -668,7 +755,21 @@ function buildNegativeRules(userPrompt) {
       "person",
       "businessman",
     ]);
-  const asksForAnimal = includesAny(lower, ["\u0642\u0637", "\u0643\u0644\u0628", "cat", "dog", "animal"]);
+  const asksForAnimal = includesAny(lower, [
+    "\u0642\u0637",
+    "\u0643\u0644\u0628",
+    "\u062f\u062c\u0627\u062c",
+    "\u062f\u062c\u0627\u062c\u0629",
+    "\u0641\u0631\u062e\u0629",
+    "\u0643\u062a\u0643\u0648\u062a",
+    "cat",
+    "dog",
+    "chicken",
+    "hen",
+    "rooster",
+    "chick",
+    "animal",
+  ]);
   const asksForRobot = includesAny(lower, ["\u0631\u0648\u0628\u0648\u062a", "robot"]);
   const asksForCar = includesAny(lower, ["\u0633\u064a\u0627\u0631\u0629", "car", "vehicle"]);
   const asksForFerrari = includesAny(lower, V4_ENTITY_TERMS.ferrari);
@@ -694,6 +795,7 @@ function buildNegativeRules(userPrompt) {
   }
 
   if (asksForAnimal) {
+    rules.push("employees", "business meeting", "meeting room", "conference room", "corporate scene");
     if (!asksForRobot) rules.push("robots");
     if (!asksForCar) rules.push("cars");
     if (!asksForOffice) rules.push("office");
@@ -909,8 +1011,8 @@ export function buildSmartPromptEnhancement({ userPrompt, quality = "normal", st
       "حافظ على الألوان والعلاقات المذكورة بدقة، ولا تحذف أي عنصر مطلوب.",
       "لا تضف عناصر عشوائية أو نصوصًا أو شعارات.",
     ].join(" ");
-  const finalPrompt = buildFinalPrompt({ userPrompt: enhancedPrompt, quality, style, type });
-  const negativePrompt = buildNegativeRules(enhancedPrompt).join(", ");
+  const finalPrompt = buildFinalPrompt({ userPrompt: prompt, quality, style, type });
+  const negativePrompt = buildNegativeRules(prompt).join(", ");
 
   return {
     enhancedPrompt,
@@ -1444,6 +1546,51 @@ async function pollWaveSpeedResult({ apiKey, initial, mediaType }) {
 
 export function buildFinalImagePrompt(userPrompt, quality = "normal", style = "") {
   return buildFinalPrompt({ userPrompt, quality, style, type: "image" });
+}
+
+export async function generateRawImageWithWaveSpeed({
+  prompt = "A white chicken standing on a farm. No humans.",
+  model = "wavespeed-ai/z-image/turbo",
+  endpoint = "https://api.wavespeed.ai/api/v3/wavespeed-ai/z-image/turbo",
+  aspectRatio = "1:1",
+  seed,
+} = {}) {
+  const apiKey = requireApiKey();
+  const safeSeed = randomSeed(seed);
+  const body = {
+    prompt: String(prompt || "").trim(),
+    width: 1024,
+    height: 1024,
+    steps: 28,
+    aspect_ratio: normalizeAspectRatio(aspectRatio),
+    seed: safeSeed,
+    enable_base64_output: false,
+  };
+
+  console.log("RAW_IMAGE_DEBUG_PROVIDER:", "wavespeed");
+  console.log("RAW_IMAGE_DEBUG_MODEL:", model);
+  console.log("RAW_IMAGE_DEBUG_ENDPOINT:", endpoint);
+  console.log("RAW_IMAGE_DEBUG_SEED:", safeSeed);
+  console.log("RAW WAVESPEED BODY SENT:", JSON.stringify(body, null, 2));
+
+  const initial = await postWaveSpeed({
+    apiKey,
+    endpoint,
+    body,
+  });
+  const resultUrl = await pollWaveSpeedResult({ apiKey, initial, mediaType: "image" });
+
+  console.log("RAW_IMAGE_DEBUG_RESULT_URL:", resultUrl);
+
+  return {
+    provider: "wavespeed",
+    model,
+    endpoint,
+    prompt: body.prompt,
+    seed: safeSeed,
+    resultUrl,
+    raw: initial,
+  };
 }
 
 export async function generateImageWithWaveSpeed({

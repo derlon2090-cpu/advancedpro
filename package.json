@@ -8,6 +8,7 @@
     "postinstall": "node -e \"if (process.env.VERCEL) { console.log('Skipping backend install on Vercel static deploy'); } else { require('child_process').execSync('npm --prefix backend install', { stdio: 'inherit' }); }\"",
     "start": "npm --prefix backend start",
     "model:smoke": "npm --prefix backend run model:smoke",
-    "model:monitor": "npm --prefix backend run model:monitor"
+    "model:monitor": "npm --prefix backend run model:monitor",
+    "test:prompt": "node --test backend/tests/prompt-pipeline.test.js"
   }
 }

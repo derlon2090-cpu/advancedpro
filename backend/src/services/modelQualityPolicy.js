@@ -100,7 +100,7 @@ export const MODEL_QUALITY_IMAGE_TESTS = [
 export const MODEL_QUALITY_VIDEO_TESTS = [
   {
     id: "video-black-sports-car",
-    prompt: "سيارة رياضية سوداء تسير في شارع مضاء ليلا، حركة كاميرا سينمائية",
+    prompt: "سيارة رياضية سوداء تسير في شارع مضاء ليلًا، حركة كاميرا سينمائية",
     expectedItems: ["black sports car", "night street", "cinematic movement"],
   },
   {
