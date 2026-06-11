@@ -88,12 +88,14 @@ const ENTITY_TERMS = {
   cat: ["\u0642\u0637\u0629", "\u0642\u0637", "cat"],
   dog: ["\u0643\u0644\u0628", "dog"],
   chicken: ["\u062f\u062c\u0627\u062c\u0629", "\u062f\u062c\u0627\u062c", "\u0641\u0631\u062e\u0629", "\u0643\u062a\u0643\u0648\u062a", "chicken", "hen", "rooster", "chick"],
+  turtle: ["\u0633\u0644\u062d\u0641\u0627\u0629", "\u0633\u0644\u062d\u0641\u0627\u0647", "\u0633\u0644\u062d\u0641\u0627\u062a", "turtle", "turtles"],
   house: ["\u0628\u064a\u062a", "\u0645\u0646\u0632\u0644", "house", "home"],
   robot: ["\u0631\u0648\u0628\u0648\u062a", "\u0631\u0628\u0648\u062a", "\u0631\u064a\u0628\u0648\u062a", "\u0631\u0648\u0628\u0637", "robot"],
   ferrari: ["\u0641\u0631\u0627\u0631\u064a", "\u0641\u064a\u0631\u0627\u0631\u064a", "ferrari"],
   moon: ["\u0627\u0644\u0642\u0645\u0631", "\u0642\u0645\u0631", "moon"],
   space: ["\u0627\u0644\u0641\u0636\u0627\u0621", "\u0641\u0636\u0627\u0621", "\u0641\u0636\u0627\u0626\u064a", "\u0641\u0636\u0627\u0626\u064a\u0629", "outer space", "space"],
   garden: ["\u062d\u062f\u064a\u0642\u0629", "garden"],
+  beach: ["\u0627\u0644\u0634\u0627\u0637\u0626", "\u0634\u0627\u0637\u0626", "\u0634\u0627\u0637\u064a", "\u0627\u0644\u0628\u062d\u0631", "\u0628\u062d\u0631", "beach", "seashore"],
 };
 
 const PROFESSION_TERMS = {
@@ -398,6 +400,25 @@ function analyzePromptV3(userPrompt) {
   const hasCat = includesAny(lower, ["\u0642\u0637", "cat"]);
   const hasDog = includesAny(lower, ["\u0643\u0644\u0628", "dog"]);
   const hasChicken = includesAny(lower, ENTITY_TERMS.chicken);
+  const hasTurtle = includesAny(lower, ENTITY_TERMS.turtle);
+  const hasTurtleBabies = includesAny(lower, [
+    "\u0639\u064a\u0627\u0644\u0647\u0627",
+    "\u0635\u063a\u0627\u0631\u0647\u0627",
+    "\u0623\u0637\u0641\u0627\u0644\u0647\u0627",
+    "\u0627\u0637\u0641\u0627\u0644\u0647\u0627",
+    "\u0635\u063a\u0627\u0631 \u0627\u0644\u0633\u0644\u062d\u0641\u0627\u0629",
+    "baby turtles",
+    "turtle hatchlings",
+  ]);
+  const hasBeach = includesAny(lower, ENTITY_TERMS.beach);
+  const hasLargeSize = includesAny(lower, [
+    "\u0643\u0628\u064a\u0631\u0629 \u0627\u0644\u062d\u062c\u0645",
+    "\u0643\u0628\u064a\u0631 \u0627\u0644\u062d\u062c\u0645",
+    "\u0636\u062e\u0645\u0629",
+    "\u0636\u062e\u0645",
+    "large",
+    "giant",
+  ]);
   const hasBlack = includesAny(lower, COLOR_TERMS.black);
   const hasWhite = includesAny(lower, COLOR_TERMS.white);
   const hasGarden = includesAny(lower, ["\u062d\u062f\u064a\u0642\u0629", "garden"]);
@@ -427,6 +448,64 @@ function analyzePromptV3(userPrompt) {
   const chickenColor =
     detectColorForEntity(lower, "chicken") || (hasChicken && hasWhite ? "white" : hasChicken ? firstDetectedColor(lower) : null);
   const houseColor = detectColorForEntity(lower, "house") || (hasHouse && hasYellow ? "yellow" : null);
+
+  if (hasTurtle) {
+    const subject = hasTurtleBabies ? "adult sea turtle with baby turtles" : "turtle";
+    const scene = hasBeach ? "on a natural sandy beach beside the sea" : "in a clean natural habitat";
+    const size = hasLargeSize ? "large, full-body " : "";
+
+    return {
+      subject,
+      subjectColor: null,
+      object: hasBeach ? "sandy beach and sea" : "natural habitat",
+      objectColor: null,
+      relation: hasTurtleBabies ? "together with her babies" : "standing",
+      enhancedPrompt: [
+        hasTurtleBabies
+          ? "صورة واقعية لسلحفاة بحرية بالغة مع صغارها، وتظهر جميع السلاحف بوضوح داخل الإطار."
+          : `صورة واقعية لسلحفاة ${hasLargeSize ? "كبيرة الحجم " : ""}كاملة الظهور داخل الإطار.`,
+        hasBeach ? "توجد السلحفاة وصغارها على شاطئ رملي طبيعي بجوار البحر." : "توجد السلحفاة في بيئة طبيعية واضحة.",
+        "لا تضف أشخاصًا أو موظفين أو اجتماعات أو ورودًا أو طعامًا أو عناصر غير مطلوبة.",
+      ].join(" "),
+      finalPrompt: [
+        `A realistic high-quality photo of a ${size}${subject} ${scene}.`,
+        hasTurtleBabies
+          ? "Show one adult mother sea turtle together with multiple baby turtles. The adult turtle and every baby turtle must be clearly visible in the same frame."
+          : "The turtle is the only main subject and its complete body and shell must be clearly visible.",
+        hasBeach
+          ? "The sandy beach, shoreline, and sea must be clearly visible around the turtles."
+          : "Use a natural environment appropriate for a real turtle.",
+        "The requested animal must unmistakably be a turtle with a visible turtle shell, head, and legs.",
+        "Do not replace the turtle with a flower, rose, plant, person, business team, office, meeting, food, or another animal.",
+        "No humans, no employees, no business suits, no conference room, no text, no watermark, no logo, no grid lines.",
+        "Natural lighting, wildlife photography, sharp details, clean composition.",
+      ].join(" "),
+      negativeRules: [
+        "humans",
+        "people",
+        "employees",
+        "business team",
+        "business suits",
+        "office",
+        "meeting",
+        "conference room",
+        "flower",
+        "rose",
+        "plant close-up",
+        "food",
+        "wrong animal",
+        "text",
+        "watermark",
+        "logo",
+      ],
+      debug: {
+        subjects: hasTurtleBabies ? ["adult sea turtle", "baby turtles"] : ["large turtle"],
+        relations: hasTurtleBabies ? ["adult turtle together with her babies"] : ["single turtle"],
+        scene: hasBeach ? "sandy beach beside the sea" : "natural turtle habitat",
+        style: "realistic wildlife photo",
+      },
+    };
+  }
 
   if (hasChicken) {
     const subjectColor = chickenColor || "clearly visible";
@@ -668,6 +747,18 @@ function translateArabicToEnglish(userPrompt) {
     ["\u0631\u064a\u0628\u0648\u062a", "robot"],
     ["\u0631\u0648\u0628\u0637", "robot"],
     ["\u0631\u0628\u0648\u062a", "robot"],
+    ["\u0633\u0644\u062d\u0641\u0627\u062a", "turtles"],
+    ["\u0633\u0644\u062d\u0641\u0627\u0629", "turtle"],
+    ["\u0633\u0644\u062d\u0641\u0627\u0647", "turtle"],
+    ["\u0639\u064a\u0627\u0644\u0647\u0627", "her baby turtles"],
+    ["\u0635\u063a\u0627\u0631\u0647\u0627", "her babies"],
+    ["\u0623\u0637\u0641\u0627\u0644\u0647\u0627", "her babies"],
+    ["\u0627\u0637\u0641\u0627\u0644\u0647\u0627", "her babies"],
+    ["\u0627\u0644\u0634\u0627\u0637\u0626", "the beach"],
+    ["\u0634\u0627\u0637\u0626", "beach"],
+    ["\u0634\u0627\u0637\u064a", "beach"],
+    ["\u0643\u0628\u064a\u0631\u0629 \u0627\u0644\u062d\u062c\u0645", "large"],
+    ["\u0643\u0628\u064a\u0631 \u0627\u0644\u062d\u062c\u0645", "large"],
     ["\u0627\u0644\u0641\u0636\u0627\u0621", "outer space"],
     ["\u0641\u0636\u0627\u0621", "outer space"],
     ["\u062f\u062c\u0627\u062c\u0627\u062a", "chickens"],
@@ -765,6 +856,111 @@ function translateArabicToEnglish(userPrompt) {
   );
 }
 
+function getPromptTranslationKey() {
+  const aliases = [
+    "PROMPT_TRANSLATION_API_KEY",
+    "GEMINI_API_KEY",
+    "GOOGLE_API_KEY",
+    "GOOGLE_GENERATIVE_AI_API_KEY",
+    "GENAI_API_KEY",
+  ];
+
+  for (const name of aliases) {
+    const value = String(process.env[name] || "").trim();
+    if (value) return value;
+  }
+
+  return "";
+}
+
+function extractTranslatedPrompt(payload) {
+  const candidates = Array.isArray(payload?.candidates) ? payload.candidates : [];
+  for (const candidate of candidates) {
+    const parts = Array.isArray(candidate?.content?.parts) ? candidate.content.parts : [];
+    const text = parts
+      .map((part) => String(part?.text || "").trim())
+      .filter(Boolean)
+      .join(" ")
+      .replace(/^```(?:text)?\s*/i, "")
+      .replace(/\s*```$/i, "")
+      .trim();
+    if (text) return text;
+  }
+  return "";
+}
+
+async function translateArabicPromptForGeneration(userPrompt) {
+  const text = String(userPrompt || "").trim();
+  if (!hasArabicText(text) || analyzePromptV3(text)) return "";
+
+  const apiKey = getPromptTranslationKey();
+  if (!apiKey) {
+    console.warn("PROMPT_TRANSLATION_FALLBACK:", "No server translation key; using the local Arabic prompt dictionary.");
+    return "";
+  }
+
+  const model = String(process.env.PROMPT_TRANSLATION_MODEL || "gemini-3.1-flash-lite").trim();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10_000);
+
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+      {
+        method: "POST",
+        cache: "no-store",
+        signal: controller.signal,
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-store",
+          "x-goog-api-key": apiKey,
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: [
+                    "Translate the following Arabic visual-generation request into one precise English prompt.",
+                    "Preserve every subject, count, color, action, spatial relationship, size, and location.",
+                    "Do not add people, business scenes, offices, meetings, flowers, food, or any unrequested object.",
+                    "Return only the English visual prompt with no explanation and no markdown.",
+                    `Arabic request: ${text}`,
+                  ].join("\n"),
+                },
+              ],
+            },
+          ],
+          generationConfig: {
+            temperature: 0,
+            maxOutputTokens: 350,
+          },
+        }),
+      }
+    );
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      console.warn("PROMPT_TRANSLATION_ERROR:", response.status, payload?.error?.message || payload?.message || "unknown");
+      return "";
+    }
+
+    const translated = extractTranslatedPrompt(payload);
+    if (!translated || hasArabicText(translated)) {
+      console.warn("PROMPT_TRANSLATION_INVALID:", compactForLog(translated || "empty"));
+      return "";
+    }
+
+    console.log("PROMPT_TRANSLATION_MODE:", "server");
+    console.log("TRANSLATED_PROMPT:", compactForLog(translated));
+    return translated;
+  } catch (error) {
+    console.warn("PROMPT_TRANSLATION_ERROR:", error?.name || "error", error?.message || error);
+    return "";
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 function buildNegativeRules(userPrompt) {
   const lower = String(userPrompt || "").toLowerCase();
   const asksForHuman =
@@ -788,12 +984,17 @@ function buildNegativeRules(userPrompt) {
     "\u062f\u062c\u0627\u062c\u0629",
     "\u0641\u0631\u062e\u0629",
     "\u0643\u062a\u0643\u0648\u062a",
+    "\u0633\u0644\u062d\u0641\u0627\u0629",
+    "\u0633\u0644\u062d\u0641\u0627\u0647",
+    "\u0633\u0644\u062d\u0641\u0627\u062a",
     "cat",
     "dog",
     "chicken",
     "hen",
     "rooster",
     "chick",
+    "turtle",
+    "turtles",
     "animal",
   ]);
   const asksForRobot = includesAny(lower, ENTITY_TERMS.robot);
@@ -976,12 +1177,25 @@ function buildRelationshipExactness(userPrompt) {
   return "Follow the subject exactly and do not reuse previous subjects.";
 }
 
-function buildFinalPrompt({ userPrompt, quality = "normal", style = "", type = "image" }) {
+function buildFinalPrompt({
+  userPrompt,
+  quality = "normal",
+  style = "",
+  type = "image",
+  translatedPromptOverride = "",
+}) {
   const analysis = analyzePromptV3(userPrompt);
-  const translatedPrompt = analysis?.finalPrompt || translateArabicToEnglish(userPrompt);
+  const translatedPrompt =
+    analysis?.finalPrompt ||
+    String(translatedPromptOverride || "").trim() ||
+    translateArabicToEnglish(userPrompt);
   const qualityText = QUALITY_LABELS[normalizeQuality(quality)] || QUALITY_LABELS.normal;
   const styleText = STYLE_LABELS[style] || STYLE_LABELS.realistic;
-  const negativeRules = buildNegativeRules(userPrompt).join(", ");
+  const negativeRules = [
+    ...buildNegativeRules(userPrompt),
+    ...(Array.isArray(analysis?.negativeRules) ? analysis.negativeRules : []),
+  ];
+  const negativeRuleText = [...new Set(negativeRules)].join(", ");
   const colorRules = buildColorRules(userPrompt, analysis);
   const countRules = buildCountRules(userPrompt);
   const exactness = buildRelationshipExactness(userPrompt);
@@ -1017,7 +1231,7 @@ function buildFinalPrompt({ userPrompt, quality = "normal", style = "", type = "
     "- Do not add extra animals or people beyond the requested count.",
     "- Keep every requested subject fully inside the frame. Do not crop or duplicate subjects.",
     "- No text, no watermark, no logo, no UI overlay, no grid lines.",
-    `- Avoid: ${negativeRules}.`,
+    `- Avoid: ${negativeRuleText}.`,
     `- Style: ${styleText}.`,
     `- Quality: ${qualityText}, clean composition, professional lighting, main subject clearly visible.`,
   ].join("\n");
@@ -1039,12 +1253,15 @@ export function buildSmartPromptEnhancement({ userPrompt, quality = "normal", st
       "لا تضف عناصر عشوائية أو نصوصًا أو شعارات.",
     ].join(" ");
   const finalPrompt = buildFinalPrompt({ userPrompt: prompt, quality, style, type });
-  const negativePrompt = buildNegativeRules(prompt).join(", ");
+  const negativePrompt = [
+    ...buildNegativeRules(prompt),
+    ...(Array.isArray(analysis?.negativeRules) ? analysis.negativeRules : []),
+  ];
 
   return {
     enhancedPrompt,
     finalPrompt,
-    negativePrompt,
+    negativePrompt: [...new Set(negativePrompt)].join(", "),
     debug: analysis?.debug || null,
   };
 }
@@ -1636,7 +1853,14 @@ export async function generateImageWithWaveSpeed({
   const baseConfig = getImageConfig(normalizedQuality);
   const model = String(modelOverride || baseConfig.model || "").trim();
   const endpoint = String(endpointOverride || (modelOverride ? buildEndpointFromModelPath(modelOverride) : baseConfig.endpoint) || "").trim();
-  const finalPrompt = buildFinalImagePrompt(prompt, normalizedQuality, style);
+  const translatedPromptOverride = await translateArabicPromptForGeneration(prompt);
+  const finalPrompt = buildFinalPrompt({
+    userPrompt: prompt,
+    quality: normalizedQuality,
+    style,
+    type: "image",
+    translatedPromptOverride,
+  });
   const safeSeed = randomSeed(seed);
   const body = {
     prompt: finalPrompt,
@@ -1749,7 +1973,14 @@ async function generateNativeVideoWithWaveSpeed({
   allowFallback = true,
 }) {
   const safeDuration = validateDuration(model, endpoint, duration);
-  const finalPrompt = buildFinalPrompt({ userPrompt: prompt, quality, style, type: "video" });
+  const translatedPromptOverride = await translateArabicPromptForGeneration(prompt);
+  const finalPrompt = buildFinalPrompt({
+    userPrompt: prompt,
+    quality,
+    style,
+    type: "video",
+    translatedPromptOverride,
+  });
   const safeSeed = randomSeed(seed);
   const body = {
     prompt: finalPrompt,

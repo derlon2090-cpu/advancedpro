@@ -72,3 +72,27 @@ test("unknown Arabic prompt is preserved instead of becoming a generic cached-lo
   assert.match(result.finalPrompt, /مشهد خيالي غير مألوف/);
   assert.doesNotMatch(result.finalPrompt, /A clean realistic image based/i);
 });
+
+test("large turtle prompt cannot become a rose or business portrait", () => {
+  build("رجل أعمال في غرفة اجتماعات");
+  const result = build("سلحفاة كبيرة الحجم");
+
+  assert.match(result.finalPrompt, /large.*turtle|turtle.*large/i);
+  assert.match(result.finalPrompt, /turtle shell/i);
+  assert.match(result.negativePrompt, /business meeting|meeting room/i);
+  assert.match(result.negativePrompt, /rose/i);
+  assert.doesNotMatch(result.finalPrompt, /businessman wearing|modern office/i);
+  assert.doesNotMatch(result.finalPrompt, /[\u0600-\u06ff]/);
+});
+
+test("mother turtle with babies on the beach preserves the whole family and location", () => {
+  const result = build("سلحفاة مع عيالها في الشاطئ");
+
+  assert.match(result.finalPrompt, /adult.*turtle/i);
+  assert.match(result.finalPrompt, /baby turtles/i);
+  assert.match(result.finalPrompt, /sandy beach/i);
+  assert.match(result.finalPrompt, /shoreline|sea/i);
+  assert.match(result.finalPrompt, /every baby turtle|all.*visible/i);
+  assert.match(result.negativePrompt, /business team|conference room/i);
+  assert.doesNotMatch(result.finalPrompt, /[\u0600-\u06ff]/);
+});
