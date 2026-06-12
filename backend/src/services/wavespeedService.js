@@ -88,6 +88,7 @@ const ENTITY_TERMS = {
   cat: ["\u0642\u0637\u0629", "\u0642\u0637", "cat"],
   dog: ["\u0643\u0644\u0628", "dog"],
   wolf: ["\u0630\u0626\u0628", "\u0630\u064a\u0628", "\u0630\u0626\u0627\u0628", "\u0630\u064a\u0627\u0628", "wolf", "wolves"],
+  snake: ["\u062b\u0639\u0628\u0627\u0646", "\u062b\u0639\u0627\u0628\u064a\u0646", "\u0623\u0641\u0639\u0649", "\u0627\u0641\u0639\u0649", "\u0623\u0641\u0639\u0649", "snake", "snakes"],
   chicken: ["\u062f\u062c\u0627\u062c\u0629", "\u062f\u062c\u0627\u062c", "\u0641\u0631\u062e\u0629", "\u0643\u062a\u0643\u0648\u062a", "chicken", "hen", "rooster", "chick"],
   turtle: ["\u0633\u0644\u062d\u0641\u0627\u0629", "\u0633\u0644\u062d\u0641\u0627\u0647", "\u0633\u0644\u062d\u0641\u0627\u062a", "turtle", "turtles"],
   house: ["\u0628\u064a\u062a", "\u0645\u0646\u0632\u0644", "house", "home"],
@@ -415,6 +416,18 @@ function analyzePromptV3(userPrompt) {
     "with his pups",
     "with her pups",
   ]);
+  const hasSnake = includesAny(lower, ENTITY_TERMS.snake);
+  const hasSnakeBabies = includesAny(lower, [
+    "\u0645\u0639 \u0635\u063a\u0627\u0631\u0647",
+    "\u0645\u0639 \u0635\u063a\u0627\u0631\u0647\u0627",
+    "\u0635\u063a\u0627\u0631 \u0627\u0644\u062b\u0639\u0628\u0627\u0646",
+    "\u0635\u063a\u0627\u0631 \u0627\u0644\u0623\u0641\u0639\u0649",
+    "\u0635\u063a\u0627\u0631 \u0627\u0644\u0627\u0641\u0639\u0649",
+    "\u062b\u0639\u0627\u0628\u064a\u0646 \u0635\u063a\u064a\u0631\u0629",
+    "baby snakes",
+    "snake hatchlings",
+    "with its young",
+  ]);
   const hasTurtleBabies = includesAny(lower, [
     "\u0639\u064a\u0627\u0644\u0647\u0627",
     "\u0635\u063a\u0627\u0631\u0647\u0627",
@@ -527,6 +540,64 @@ function analyzePromptV3(userPrompt) {
         subjects: hasWolfPups ? ["one large adult wolf", "multiple wolf pups"] : ["one large adult wolf"],
         relations: hasWolfPups ? ["adult wolf together with its wolf pups"] : ["single adult wolf"],
         scene: "natural forest wilderness",
+        style: "realistic wildlife photograph",
+      },
+    };
+  }
+
+  if (hasSnake) {
+    const snakeColor = hasBlack ? "black" : firstDetectedColor(lower);
+    const adultSize = hasVeryLargeSize ? "extremely large, massive adult" : hasLargeSize ? "large adult" : "adult";
+    const familyDescription = hasSnakeBabies
+      ? `one ${adultSize} ${snakeColor ? `${snakeColor} ` : ""}snake together with multiple baby snakes`
+      : `one ${adultSize} ${snakeColor ? `${snakeColor} ` : ""}snake`;
+
+    return {
+      subject: hasSnakeBabies ? "adult snake and baby snakes" : "snake",
+      subjectColor: snakeColor,
+      object: "natural rocky wilderness",
+      objectColor: null,
+      relation: hasSnakeBabies ? "together with its baby snakes" : "resting",
+      enhancedPrompt: hasSnakeBabies
+        ? "\u0635\u0648\u0631\u0629 \u0648\u0627\u0642\u0639\u064a\u0629 \u0644\u062b\u0639\u0628\u0627\u0646 \u0623\u0633\u0648\u062f \u0628\u0627\u0644\u063a \u0648\u0636\u062e\u0645 \u062c\u062f\u064b\u0627 \u0645\u0639 \u0635\u063a\u0627\u0631\u0647 \u0645\u0646 \u0627\u0644\u062b\u0639\u0627\u0628\u064a\u0646\u060c \u0648\u062a\u0638\u0647\u0631 \u062c\u0645\u064a\u0639 \u0627\u0644\u062b\u0639\u0627\u0628\u064a\u0646 \u0643\u0627\u0645\u0644\u0629 \u062f\u0627\u062e\u0644 \u0627\u0644\u0625\u0637\u0627\u0631 \u0641\u064a \u0628\u064a\u0626\u0629 \u0637\u0628\u064a\u0639\u064a\u0629\u060c \u0628\u062f\u0648\u0646 \u0623\u0634\u062e\u0627\u0635 \u0623\u0648 \u0646\u0635\u0648\u0635."
+        : "\u0635\u0648\u0631\u0629 \u0648\u0627\u0642\u0639\u064a\u0629 \u0644\u062b\u0639\u0628\u0627\u0646 \u0628\u0627\u0644\u063a \u0636\u062e\u0645 \u0643\u0627\u0645\u0644 \u0627\u0644\u0638\u0647\u0648\u0631 \u0641\u064a \u0628\u064a\u0626\u0629 \u0637\u0628\u064a\u0639\u064a\u0629.",
+      finalPrompt: [
+        `A realistic wildlife photograph of ${familyDescription} in a natural rocky wilderness.`,
+        snakeColor ? `The adult snake must be clearly ${snakeColor}; do not change its requested color.` : "",
+        hasSnakeBabies
+          ? "The smaller subjects must unmistakably be real baby snakes of the same species, not human children, people, dogs, wolves, or other animals."
+          : "The adult snake must be the only main subject.",
+        hasSnakeBabies
+          ? "Show the huge adult snake and every baby snake fully visible together in the same frame."
+          : "Show the complete adult snake fully visible in the frame.",
+        "Preserve a strong size contrast: the adult snake is extraordinarily large and thick, while the baby snakes are visibly much smaller.",
+        "Realistic snake anatomy, natural scales, long serpentine bodies, wildlife behavior, cinematic natural light.",
+        "No humans, no businessmen, no business suits, no office, no meeting room, no tables, no plates, no food.",
+        "No text, no Arabic letters, no captions, no watermark, no logo, no grid lines.",
+      ].filter(Boolean).join(" "),
+      negativeRules: [
+        "humans",
+        "human children",
+        "people",
+        "businessmen",
+        "business suits",
+        "office",
+        "meeting room",
+        "conference room",
+        "table",
+        "plates",
+        "food",
+        "dog",
+        "wolf",
+        "text",
+        "Arabic letters",
+        "watermark",
+        "logo",
+      ],
+      debug: {
+        subjects: hasSnakeBabies ? ["one huge adult snake", "multiple baby snakes"] : ["one huge adult snake"],
+        relations: hasSnakeBabies ? ["adult snake together with its baby snakes"] : ["single adult snake"],
+        scene: "natural rocky wilderness",
         style: "realistic wildlife photograph",
       },
     };
@@ -869,6 +940,10 @@ function translateArabicToEnglish(userPrompt) {
     ["\u0630\u064a\u0627\u0628", "wolves"],
     ["\u0630\u0626\u0628", "wolf"],
     ["\u0630\u064a\u0628", "wolf"],
+    ["\u062b\u0639\u0627\u0628\u064a\u0646", "snakes"],
+    ["\u062b\u0639\u0628\u0627\u0646", "snake"],
+    ["\u0623\u0641\u0639\u0649", "snake"],
+    ["\u0627\u0641\u0639\u0649", "snake"],
     ["\u0645\u0639 \u0635\u063a\u0627\u0631\u0647", "with its wolf pups"],
     ["\u0645\u0639 \u0635\u063a\u0627\u0631\u0647\u0627", "with her wolf pups"],
     ["\u0635\u063a\u0627\u0631\u0647", "its young"],
@@ -1108,6 +1183,12 @@ function buildNegativeRules(userPrompt) {
     "\u0633\u0644\u062d\u0641\u0627\u0629",
     "\u0633\u0644\u062d\u0641\u0627\u0647",
     "\u0633\u0644\u062d\u0641\u0627\u062a",
+    "\u0630\u0626\u0628",
+    "\u0630\u064a\u0628",
+    "\u062b\u0639\u0628\u0627\u0646",
+    "\u062b\u0639\u0627\u0628\u064a\u0646",
+    "\u0623\u0641\u0639\u0649",
+    "\u0627\u0641\u0639\u0649",
     "cat",
     "dog",
     "chicken",
@@ -1116,6 +1197,10 @@ function buildNegativeRules(userPrompt) {
     "chick",
     "turtle",
     "turtles",
+    "wolf",
+    "wolves",
+    "snake",
+    "snakes",
     "animal",
   ]);
   const asksForRobot = includesAny(lower, ENTITY_TERMS.robot);

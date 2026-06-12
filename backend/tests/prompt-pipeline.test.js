@@ -121,3 +121,18 @@ test("very large misspelled Arabic car prompt enforces massive scale and no bran
   assert.match(result.negativePrompt, /small car/i);
   assert.doesNotMatch(result.finalPrompt, /[\u0600-\u06ff]/);
 });
+
+test("huge black snake with its young produces snakes only and never business people", () => {
+  build("\u0631\u062c\u0644 \u0623\u0639\u0645\u0627\u0644 \u0641\u064a \u0645\u0643\u062a\u0628 \u0645\u0639 \u0637\u0639\u0627\u0645");
+  const result = build("\u062b\u0639\u0628\u0627\u0646 \u0627\u0633\u0648\u062f \u0643\u0628\u064a\u0631 \u062c\u062f\u0627 \u0645\u0639 \u0635\u063a\u0627\u0631\u0647");
+
+  assert.match(result.finalPrompt, /extremely large, massive adult black snake/i);
+  assert.match(result.finalPrompt, /multiple baby snakes/i);
+  assert.match(result.finalPrompt, /not human children/i);
+  assert.match(result.finalPrompt, /same species/i);
+  assert.match(result.finalPrompt, /size contrast/i);
+  assert.match(result.negativePrompt, /businessmen/i);
+  assert.match(result.negativePrompt, /food/i);
+  assert.doesNotMatch(result.finalPrompt, /[\u0600-\u06ff]/);
+  assert.doesNotMatch(result.finalPrompt, /business portrait|modern office/i);
+});
