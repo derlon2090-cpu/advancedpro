@@ -181,3 +181,106 @@ test("semantic translation preserves arbitrary Arabic subjects, actions, and rel
   assert.doesNotMatch(result.finalPrompt, /Create an image.*businessman.*office/is);
   assert.doesNotMatch(result.finalPrompt, /[\u0600-\u06ff]/);
 });
+
+const unusualArabicCases = [
+  {
+    prompt: "جمل شفاف يحمل مكتبة صغيرة فوق ظهره في صحراء زرقاء",
+    translation:
+      "A transparent camel carrying a small library on its back in a blue desert. The camel, library, and blue desert are all clearly visible.",
+    expected: [/transparent camel/i, /small library/i, /blue desert/i],
+  },
+  {
+    prompt: "ثلاث سمكات بنفسجية تطير فوق مدينة مقلوبة",
+    translation:
+      "Exactly three purple fish flying above an upside-down city. All three fish and the inverted city are fully visible.",
+    expected: [/exactly three purple fish/i, /flying above/i, /upside-down city/i],
+  },
+  {
+    prompt: "فيل مصنوع من التروس يسقي حديقة صغيرة على القمر",
+    translation:
+      "A clockwork elephant made of gears watering a small garden on the moon. The elephant, gears, garden, and lunar surface are visible.",
+    expected: [/clockwork elephant/i, /watering a small garden/i, /moon/i],
+  },
+  {
+    prompt: "مظلة حمراء تحت المحيط بجانب حوت أبيض",
+    translation:
+      "A red umbrella under the ocean next to a white whale. Both the umbrella and whale are fully visible underwater.",
+    expected: [/red umbrella/i, /under the ocean/i, /white whale/i],
+  },
+  {
+    prompt: "قطار زجاجي يعبر جسرًا من السحب في الليل",
+    translation:
+      "A glass train crossing a bridge made of clouds at night. The full train and cloud bridge are clearly visible.",
+    expected: [/glass train/i, /bridge made of clouds/i, /at night/i],
+  },
+  {
+    prompt: "رائدا فضاء يلعبان الشطرنج داخل إبريق شاي عملاق",
+    translation:
+      "Exactly two astronauts playing chess inside a giant teapot. Both astronauts, the chessboard, and the teapot interior are visible.",
+    expected: [/exactly two astronauts/i, /playing chess/i, /inside a giant teapot/i],
+  },
+  {
+    prompt: "بركان صغير فوق صدفة سلحفاة عملاقة",
+    translation:
+      "A small volcano on top of the shell of a giant turtle. The volcano, shell, and entire giant turtle are clearly visible.",
+    expected: [/small volcano/i, /shell of a giant turtle/i, /clearly visible/i],
+  },
+  {
+    prompt: "بومة ذهبية تقرأ كتابًا تحت الماء",
+    translation:
+      "A golden owl reading a book underwater. The owl and open book are fully visible beneath the water.",
+    expected: [/golden owl/i, /reading a book/i, /underwater/i],
+  },
+  {
+    prompt: "حصان أبيض بأجنحة فراشة داخل كهف جليدي",
+    translation:
+      "A white horse with butterfly wings inside an ice cave. The full horse, both wings, and icy cave are clearly visible.",
+    expected: [/white horse/i, /butterfly wings/i, /inside an ice cave/i],
+  },
+  {
+    prompt: "ساعة عملاقة تذوب فوق جبل بينما تمطر نجومًا",
+    translation:
+      "A giant melting clock on top of a mountain while stars rain from the sky. The clock, mountain, and falling stars are visible.",
+    expected: [/giant melting clock/i, /on top of a mountain/i, /stars rain/i],
+  },
+];
+
+test("ten unusual Arabic descriptions stay independent and preserve every requested concept", async () => {
+  for (const item of unusualArabicCases) {
+    const result = await buildSmartPromptEnhancementAsync(
+      {
+        userPrompt: item.prompt,
+        quality: "high",
+        style: "cinematic",
+        type: "image",
+      },
+      { translatePrompt: async () => item.translation }
+    );
+
+    for (const expected of item.expected) {
+      assert.match(result.finalPrompt, expected, item.prompt);
+    }
+    const positivePrompt = result.finalPrompt.split("\n\nStrict rules:")[0];
+    assert.doesNotMatch(result.finalPrompt, /[\u0600-\u06ff]/, item.prompt);
+    assert.doesNotMatch(positivePrompt, /business meeting|modern office|corporate portrait/i, item.prompt);
+  }
+});
+
+test("semantic guard rejects stale business content introduced by a translator", async () => {
+  await assert.rejects(
+    () =>
+      buildSmartPromptEnhancementAsync(
+        {
+          userPrompt: "حوت أزرق يسبح قرب جزيرة جليدية",
+          quality: "high",
+          style: "realistic",
+          type: "image",
+        },
+        {
+          translatePrompt: async () =>
+            "A businessman holding a meeting in a modern corporate office beside a blue whale.",
+        }
+      ),
+    (error) => error?.statusCode === 422 && /unrequested_people|unrequested_business_scene/.test(error.message)
+  );
+});

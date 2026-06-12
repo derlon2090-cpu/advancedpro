@@ -1103,9 +1103,57 @@ function extractTranslatedPrompt(payload) {
   return "";
 }
 
+function semanticTranslationIssue(source, translated) {
+  const sourceText = String(source || "").toLowerCase();
+  const translatedText = String(translated || "").toLowerCase();
+
+  if (!translatedText || hasArabicText(translatedText)) {
+    return "empty_or_arabic_output";
+  }
+
+  const conceptChecks = [
+    {
+      sourceTerms: ["رجل", "امرأة", "شخص", "إنسان", "انسان", "طفل", "ناس", "people", "person", "human"],
+      translatedTerms: ["businessman", "businesswoman", " man ", " woman ", "people", "person", "human", "employee"],
+      issue: "unrequested_people",
+    },
+    {
+      sourceTerms: ["مكتب", "شركة", "اجتماع", "مؤتمر", "عمل", "office", "meeting", "business", "corporate"],
+      translatedTerms: ["office", "meeting room", "conference room", "corporate office", "business meeting"],
+      issue: "unrequested_business_scene",
+    },
+    {
+      sourceTerms: ["طعام", "أكل", "اكل", "وجبة", "مطعم", "مائدة", "food", "meal", "restaurant"],
+      translatedTerms: ["food", "meal", "restaurant", "dining table"],
+      issue: "unrequested_food",
+    },
+  ];
+
+  for (const check of conceptChecks) {
+    const requested = includesAny(sourceText, check.sourceTerms);
+    const introduced = includesAny(` ${translatedText} `, check.translatedTerms);
+    if (!requested && introduced) {
+      return check.issue;
+    }
+  }
+
+  return "";
+}
+
+function assertSemanticTranslation(source, translated) {
+  const issue = semanticTranslationIssue(source, translated);
+  if (issue) {
+    throw serviceError(
+      `رفض النظام ترجمة غير مطابقة للوصف (${issue}). أعد المحاولة، ولم يتم خصم أي رصيد.`,
+      422
+    );
+  }
+  return String(translated || "").trim();
+}
+
 async function translateArabicPromptForGeneration(userPrompt) {
   const text = String(userPrompt || "").trim();
-  if (!hasArabicText(text) || analyzePromptV3(text)) return "";
+  if (!hasArabicText(text)) return "";
 
   const apiKey = getPromptTranslationKey();
   if (!apiKey) {
@@ -1135,11 +1183,19 @@ async function translateArabicPromptForGeneration(userPrompt) {
               parts: [
                 {
                   text: [
-                    "Translate the following Arabic visual-generation request into one precise English prompt.",
-                    "Preserve every subject, count, color, action, spatial relationship, size, and location.",
-                    "Do not add people, business scenes, offices, meetings, flowers, food, or any unrequested object.",
-                    "Return only the English visual prompt with no explanation and no markdown.",
-                    `Arabic request: ${text}`,
+                    "You are a strict Arabic-to-English visual prompt compiler.",
+                    "Convert the Arabic request below into one precise standalone English visual prompt.",
+                    "Preserve every requested noun, subject, species, count, color, size, material, action, pose, spatial relationship, location, time, and negation.",
+                    "Resolve Arabic pronouns and possessives accurately, including معه، بجانبه، صغاره، فوقه، خلفه، داخلها.",
+                    "Treat intensifiers such as كبير جدًا، صغير للغاية، عملاق، ضخم as mandatory visual scale requirements.",
+                    "Never reuse subjects or scenes from earlier requests. This request is independent and stateless.",
+                    "Do not add humans, business scenes, offices, meetings, food, flowers, text, logos, or any object not requested.",
+                    "Make every requested subject clearly visible in the same frame when possible.",
+                    "Silently verify that the English output contains all requested elements before answering.",
+                    "Return only the final English visual prompt. No explanation, labels, JSON, markdown, or Arabic.",
+                    "Arabic request starts:",
+                    text,
+                    "Arabic request ends.",
                   ].join("\n"),
                 },
               ],
@@ -1159,14 +1215,15 @@ async function translateArabicPromptForGeneration(userPrompt) {
     }
 
     const translated = extractTranslatedPrompt(payload);
-    if (!translated || hasArabicText(translated)) {
+    const issue = semanticTranslationIssue(text, translated);
+    if (issue) {
       console.warn("PROMPT_TRANSLATION_INVALID:", compactForLog(translated || "empty"));
       return "";
     }
 
     console.log("PROMPT_TRANSLATION_MODE:", "server");
     console.log("TRANSLATED_PROMPT:", compactForLog(translated));
-    return translated;
+    return assertSemanticTranslation(text, translated);
   } catch (error) {
     console.warn("PROMPT_TRANSLATION_ERROR:", error?.name || "error", error?.message || error);
     return "";
@@ -1410,8 +1467,8 @@ function buildFinalPrompt({
 }) {
   const analysis = analyzePromptV3(userPrompt);
   const translatedPrompt =
-    analysis?.finalPrompt ||
     String(translatedPromptOverride || "").trim() ||
+    analysis?.finalPrompt ||
     translateArabicToEnglish(userPrompt);
   if (!translatedPrompt || hasArabicText(translatedPrompt)) {
     throw serviceError(
@@ -1502,7 +1559,10 @@ export async function buildSmartPromptEnhancementAsync(
 ) {
   const prompt = String(userPrompt || "").trim();
   const analysis = analyzePromptV3(prompt);
-  const translatedPromptOverride = analysis ? "" : await translatePrompt(prompt);
+  const translatedPromptOverride = hasArabicText(prompt) ? await translatePrompt(prompt) : "";
+  if (translatedPromptOverride) {
+    assertSemanticTranslation(prompt, translatedPromptOverride);
+  }
   const enhancedPrompt =
     analysis?.enhancedPrompt ||
     [
@@ -1529,7 +1589,7 @@ export async function buildSmartPromptEnhancementAsync(
     negativePrompt: [...new Set(negativePrompt)].join(", "),
     debug: {
       ...(analysis?.debug || {}),
-      translationMode: analysis ? "local-structured" : "server-semantic",
+      translationMode: translatedPromptOverride ? "server-semantic" : analysis ? "local-structured" : "local-dictionary",
     },
   };
 }
