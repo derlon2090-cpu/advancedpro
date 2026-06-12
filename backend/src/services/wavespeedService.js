@@ -87,6 +87,7 @@ const COLOR_TERMS = {
 const ENTITY_TERMS = {
   cat: ["\u0642\u0637\u0629", "\u0642\u0637", "cat"],
   dog: ["\u0643\u0644\u0628", "dog"],
+  wolf: ["\u0630\u0626\u0628", "\u0630\u064a\u0628", "\u0630\u0626\u0627\u0628", "\u0630\u064a\u0627\u0628", "wolf", "wolves"],
   chicken: ["\u062f\u062c\u0627\u062c\u0629", "\u062f\u062c\u0627\u062c", "\u0641\u0631\u062e\u0629", "\u0643\u062a\u0643\u0648\u062a", "chicken", "hen", "rooster", "chick"],
   turtle: ["\u0633\u0644\u062d\u0641\u0627\u0629", "\u0633\u0644\u062d\u0641\u0627\u0647", "\u0633\u0644\u062d\u0641\u0627\u062a", "turtle", "turtles"],
   house: ["\u0628\u064a\u062a", "\u0645\u0646\u0632\u0644", "house", "home"],
@@ -120,7 +121,7 @@ const V4_ENTITY_TERMS = {
   businessman: ["\u0631\u062c\u0644 \u0623\u0639\u0645\u0627\u0644", "\u0631\u062c\u0644 \u0627\u0639\u0645\u0627\u0644", "\u0631\u062c\u0644 \u0631\u0633\u0645\u064a", "businessman"],
   ferrari: ["\u0641\u0631\u0627\u0631\u064a", "\u0641\u064a\u0631\u0627\u0631\u064a", "ferrari"],
   blackDog: ["\u0643\u0644\u0628 \u0623\u0633\u0648\u062f", "\u0643\u0644\u0628 \u0627\u0633\u0648\u062f", "black dog"],
-  car: ["\u0633\u064a\u0627\u0631\u0629", "\u0639\u0631\u0628\u0629", "car"],
+  car: ["\u0633\u064a\u0627\u0631\u0629", "\u0635\u064a\u0627\u0631\u0629", "\u0639\u0631\u0628\u0629", "car"],
   inside: ["\u062f\u0627\u062e\u0644", "\u0631\u0627\u0643\u0628", "\u064a\u0642\u0648\u062f", "inside", "riding", "driving"],
   nextTo: ["\u0628\u062c\u0627\u0646\u0628\u0647", "\u0628\u062c\u0627\u0646\u0628", "\u0645\u0639\u0647", "next to", "beside", "with him"],
 };
@@ -401,6 +402,19 @@ function analyzePromptV3(userPrompt) {
   const hasDog = includesAny(lower, ["\u0643\u0644\u0628", "dog"]);
   const hasChicken = includesAny(lower, ENTITY_TERMS.chicken);
   const hasTurtle = includesAny(lower, ENTITY_TERMS.turtle);
+  const hasWolf = includesAny(lower, ENTITY_TERMS.wolf);
+  const hasWolfPups = includesAny(lower, [
+    "\u0645\u0639 \u0635\u063a\u0627\u0631\u0647",
+    "\u0645\u0639 \u0635\u063a\u0627\u0631\u0647\u0627",
+    "\u0635\u063a\u0627\u0631 \u0627\u0644\u0630\u0626\u0628",
+    "\u0635\u063a\u0627\u0631 \u0627\u0644\u0630\u064a\u0628",
+    "\u062c\u0631\u0627\u0621 \u0627\u0644\u0630\u0626\u0628",
+    "\u062c\u0631\u0627\u0621 \u0627\u0644\u0630\u064a\u0628",
+    "wolf pups",
+    "with its pups",
+    "with his pups",
+    "with her pups",
+  ]);
   const hasTurtleBabies = includesAny(lower, [
     "\u0639\u064a\u0627\u0644\u0647\u0627",
     "\u0635\u063a\u0627\u0631\u0647\u0627",
@@ -419,6 +433,20 @@ function analyzePromptV3(userPrompt) {
     "large",
     "giant",
   ]);
+  const hasVeryLargeSize = includesAny(lower, [
+    "\u0643\u0628\u064a\u0631\u0629 \u062c\u062f\u0627",
+    "\u0643\u0628\u064a\u0631\u0629 \u062c\u062f\u064b\u0627",
+    "\u0643\u0628\u064a\u0631 \u062c\u062f\u0627",
+    "\u0643\u0628\u064a\u0631 \u062c\u062f\u064b\u0627",
+    "\u0639\u0645\u0644\u0627\u0642\u0629",
+    "\u0639\u0645\u0644\u0627\u0642",
+    "\u0636\u062e\u0645\u0629 \u062c\u062f\u0627",
+    "\u0636\u062e\u0645 \u062c\u062f\u0627",
+    "extremely large",
+    "very large",
+    "oversized",
+    "massive",
+  ]);
   const hasBlack = includesAny(lower, COLOR_TERMS.black);
   const hasWhite = includesAny(lower, COLOR_TERMS.white);
   const hasGarden = includesAny(lower, ["\u062d\u062f\u064a\u0642\u0629", "garden"]);
@@ -435,7 +463,7 @@ function analyzePromptV3(userPrompt) {
   const hasWearing = includesAny(lower, ["\u064a\u0631\u062a\u062f\u064a", "\u062a\u0631\u062a\u062f\u064a", "\u0644\u0627\u0628\u0633", "\u0644\u0627\u0628\u0633\u0629", "wearing", "wears"]);
   const hasOffice = includesAny(lower, ["\u0645\u0643\u062a\u0628", "office"]);
   const hasHandsome = includesAny(lower, ["\u0648\u0633\u064a\u0645", "handsome"]);
-  const hasCar = includesAny(lower, ["\u0633\u064a\u0627\u0631\u0629", "car"]);
+  const hasCar = includesAny(lower, V4_ENTITY_TERMS.car);
   const hasSports = includesAny(lower, ["\u0631\u064a\u0627\u0636\u064a\u0629", "sports"]);
   const hasNight = includesAny(lower, ["\u0644\u064a\u0644", "\u0644\u064a\u0644\u0627", "night"]);
   const hasStreet = includesAny(lower, ["\u0634\u0627\u0631\u0639", "street"]);
@@ -448,6 +476,61 @@ function analyzePromptV3(userPrompt) {
   const chickenColor =
     detectColorForEntity(lower, "chicken") || (hasChicken && hasWhite ? "white" : hasChicken ? firstDetectedColor(lower) : null);
   const houseColor = detectColorForEntity(lower, "house") || (hasHouse && hasYellow ? "yellow" : null);
+
+  if (hasWolf) {
+    const familyDescription = hasWolfPups
+      ? "one large adult wolf together with multiple young wolf pups"
+      : `${hasLargeSize || hasVeryLargeSize ? "one large adult " : "one adult "}wolf`;
+
+    return {
+      subject: hasWolfPups ? "adult wolf and wolf pups" : "wolf",
+      subjectColor: null,
+      object: "natural wilderness",
+      objectColor: null,
+      relation: hasWolfPups ? "together with its pups" : "standing",
+      enhancedPrompt: hasWolfPups
+        ? "\u0635\u0648\u0631\u0629 \u0648\u0627\u0642\u0639\u064a\u0629 \u0644\u0630\u0626\u0628 \u0628\u0627\u0644\u063a \u0643\u0628\u064a\u0631 \u0645\u0639 \u0635\u063a\u0627\u0631\u0647 \u0645\u0646 \u062c\u0631\u0627\u0621 \u0627\u0644\u0630\u0626\u0627\u0628\u060c \u0648\u062a\u0638\u0647\u0631 \u0639\u0627\u0626\u0644\u0629 \u0627\u0644\u0630\u0626\u0627\u0628 \u0643\u0627\u0645\u0644\u0629 \u062f\u0627\u062e\u0644 \u0627\u0644\u0625\u0637\u0627\u0631 \u0641\u064a \u0628\u064a\u0626\u0629 \u0628\u0631\u064a\u0629 \u0637\u0628\u064a\u0639\u064a\u0629\u060c \u0628\u062f\u0648\u0646 \u0623\u0634\u062e\u0627\u0635 \u0623\u0648 \u0646\u0635\u0648\u0635."
+        : "\u0635\u0648\u0631\u0629 \u0648\u0627\u0642\u0639\u064a\u0629 \u0644\u0630\u0626\u0628 \u0628\u0627\u0644\u063a \u0643\u0628\u064a\u0631 \u0643\u0627\u0645\u0644 \u0627\u0644\u0638\u0647\u0648\u0631 \u0641\u064a \u0628\u064a\u0626\u0629 \u0628\u0631\u064a\u0629 \u0637\u0628\u064a\u0639\u064a\u0629.",
+      finalPrompt: [
+        `A realistic wildlife photograph of ${familyDescription} in a natural forest wilderness.`,
+        hasWolfPups
+          ? "The smaller subjects must unmistakably be wolf pups, not human children, adults, businessmen, or any other species."
+          : "The adult wolf must be the only main subject.",
+        hasWolfPups
+          ? "Show the large adult wolf and every wolf pup fully visible together in the same frame."
+          : "Show the complete large wolf fully visible in the frame.",
+        "Preserve the clear size contrast: the adult wolf is large and the wolf pups are visibly smaller.",
+        "Natural wildlife behavior, realistic wolf anatomy, detailed fur, forest ground, cinematic natural light.",
+        "No humans, no businessmen, no business suits, no office, no meeting room, no tables, no plates, no food.",
+        "No text, no Arabic letters, no captions, no watermark, no logo, no grid lines.",
+      ].join(" "),
+      negativeRules: [
+        "humans",
+        "human children",
+        "men",
+        "women",
+        "businessmen",
+        "business suits",
+        "office",
+        "meeting room",
+        "conference room",
+        "table",
+        "plates",
+        "food",
+        "dog",
+        "text",
+        "Arabic letters",
+        "watermark",
+        "logo",
+      ],
+      debug: {
+        subjects: hasWolfPups ? ["one large adult wolf", "multiple wolf pups"] : ["one large adult wolf"],
+        relations: hasWolfPups ? ["adult wolf together with its wolf pups"] : ["single adult wolf"],
+        scene: "natural forest wilderness",
+        style: "realistic wildlife photograph",
+      },
+    };
+  }
 
   if (hasTurtle) {
     const subject = hasTurtleBabies ? "adult sea turtle with baby turtles" : "turtle";
@@ -703,13 +786,45 @@ function analyzePromptV3(userPrompt) {
     const type = hasSports ? "sports car" : "car";
     const place = hasStreet ? "on a well-lit street" : "in a clean urban environment";
     const time = hasNight ? "at night" : "";
+    const size = hasVeryLargeSize ? "extremely large, oversized, massive " : hasLargeSize ? "large " : "";
     return {
       subject: type,
       subjectColor: hasBlack ? "black" : null,
       object: hasStreet ? "street" : null,
       objectColor: null,
       relation: "on",
-      finalPrompt: `A ${color}${type} ${place} ${time}, realistic automotive photography, sharp details, cinematic lighting.`,
+      enhancedPrompt: hasVeryLargeSize
+        ? "\u0635\u0648\u0631\u0629 \u0648\u0627\u0642\u0639\u064a\u0629 \u0644\u0633\u064a\u0627\u0631\u0629 \u0639\u0645\u0644\u0627\u0642\u0629 \u0636\u062e\u0645\u0629 \u062c\u062f\u064b\u0627\u060c \u062a\u0638\u0647\u0631 \u0643\u0627\u0645\u0644\u0629 \u062f\u0627\u062e\u0644 \u0627\u0644\u0625\u0637\u0627\u0631 \u0645\u0639 \u0639\u0646\u0627\u0635\u0631 \u0645\u062d\u064a\u0637\u0629 \u062a\u0648\u0636\u062d \u062d\u062c\u0645\u0647\u0627 \u0627\u0644\u0647\u0627\u0626\u0644\u060c \u0628\u062f\u0648\u0646 \u0634\u0639\u0627\u0631 \u0623\u0648 \u0639\u0644\u0627\u0645\u0629 \u062a\u062c\u0627\u0631\u064a\u0629."
+        : null,
+      finalPrompt: [
+        `A realistic automotive photograph of one ${size}${color}${type} ${place} ${time}.`,
+        hasVeryLargeSize
+          ? "The car must look extraordinarily huge and imposing, far larger than an ordinary passenger car."
+          : "The complete car must be clearly visible.",
+        hasVeryLargeSize
+          ? "Use strong visual scale cues such as a wide road, nearby streetlights, buildings, or normal-sized surroundings to make the enormous scale unmistakable."
+          : "Keep the car fully inside the frame.",
+        "Show the full vehicle from a wide three-quarter angle; do not crop it into a small close-up.",
+        "Use a generic original vehicle design unless the user explicitly requests a brand.",
+        "Do not add BMW, Mercedes, Ferrari, or any brand badge or logo unless explicitly requested.",
+        "No people, no office, no meeting, no food, no text, no watermark, no logo, no grid lines.",
+        "Sharp details, cinematic lighting, professional automotive photography.",
+      ].join(" "),
+      negativeRules: [
+        "small car",
+        "tiny car",
+        "compact car",
+        "BMW",
+        "Mercedes",
+        "brand badge",
+        "car logo",
+        "people",
+        "office",
+        "meeting",
+        "food",
+        "text",
+        "watermark",
+      ],
     };
   }
 
@@ -750,6 +865,13 @@ function translateArabicToEnglish(userPrompt) {
     ["\u0633\u0644\u062d\u0641\u0627\u062a", "turtles"],
     ["\u0633\u0644\u062d\u0641\u0627\u0629", "turtle"],
     ["\u0633\u0644\u062d\u0641\u0627\u0647", "turtle"],
+    ["\u0630\u0626\u0627\u0628", "wolves"],
+    ["\u0630\u064a\u0627\u0628", "wolves"],
+    ["\u0630\u0626\u0628", "wolf"],
+    ["\u0630\u064a\u0628", "wolf"],
+    ["\u0645\u0639 \u0635\u063a\u0627\u0631\u0647", "with its wolf pups"],
+    ["\u0645\u0639 \u0635\u063a\u0627\u0631\u0647\u0627", "with her wolf pups"],
+    ["\u0635\u063a\u0627\u0631\u0647", "its young"],
     ["\u0639\u064a\u0627\u0644\u0647\u0627", "her baby turtles"],
     ["\u0635\u063a\u0627\u0631\u0647\u0627", "her babies"],
     ["\u0623\u0637\u0641\u0627\u0644\u0647\u0627", "her babies"],
@@ -827,8 +949,15 @@ function translateArabicToEnglish(userPrompt) {
     ["\u0645\u0643\u062a\u0628", "office"],
     ["\u0641\u064a\u0631\u0627\u0631\u064a", "Ferrari"],
     ["\u0641\u0631\u0627\u0631\u064a", "Ferrari"],
+    ["\u0635\u064a\u0627\u0631\u0629", "car"],
     ["\u0633\u064a\u0627\u0631\u0629", "car"],
     ["\u0639\u0631\u0628\u0629", "car"],
+    ["\u0643\u0628\u064a\u0631\u0629 \u062c\u062f\u0627", "extremely large"],
+    ["\u0643\u0628\u064a\u0631 \u062c\u062f\u0627", "extremely large"],
+    ["\u0636\u062e\u0645\u0629 \u062c\u062f\u0627", "massive"],
+    ["\u0636\u062e\u0645 \u062c\u062f\u0627", "massive"],
+    ["\u0639\u0645\u0644\u0627\u0642\u0629", "gigantic"],
+    ["\u0639\u0645\u0644\u0627\u0642", "gigantic"],
     ["\u0631\u064a\u0627\u0636\u064a\u0629", "sports"],
     ["\u0634\u0627\u0631\u0639", "street"],
     ["\u0645\u0636\u0627\u0621", "well-lit"],
@@ -841,19 +970,11 @@ function translateArabicToEnglish(userPrompt) {
     translated = translated.replaceAll(arabic, ` ${english} `);
   }
 
-  translated = translated
-    .replace(/[\u0600-\u06ff]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+  if (hasArabicText(translated)) {
+    return "";
+  }
 
-  return (
-    translated ||
-    [
-      `Interpret this Arabic request exactly: "${text}".`,
-      "Preserve every requested subject, action, color, count, and location.",
-      "Do not replace it with a generic person, businessman, office, meeting, restaurant, or food scene.",
-    ].join(" ")
-  );
+  return translated.replace(/\s+/g, " ").trim();
 }
 
 function getPromptTranslationKey() {
@@ -1189,6 +1310,12 @@ function buildFinalPrompt({
     analysis?.finalPrompt ||
     String(translatedPromptOverride || "").trim() ||
     translateArabicToEnglish(userPrompt);
+  if (!translatedPrompt || hasArabicText(translatedPrompt)) {
+    throw serviceError(
+      "\u062a\u0639\u0630\u0631 \u0641\u0647\u0645 \u0628\u0639\u0636 \u0643\u0644\u0645\u0627\u062a \u0627\u0644\u0648\u0635\u0641 \u0627\u0644\u0639\u0631\u0628\u064a \u0628\u062f\u0642\u0629. \u0623\u0639\u062f \u0635\u064a\u0627\u063a\u0629 \u0627\u0644\u0648\u0635\u0641 \u0628\u0643\u0644\u0645\u0627\u062a \u0623\u0648\u0636\u062d\u060c \u0648\u0644\u0645 \u064a\u062a\u0645 \u062e\u0635\u0645 \u0623\u064a \u0631\u0635\u064a\u062f.",
+      422
+    );
+  }
   const qualityText = QUALITY_LABELS[normalizeQuality(quality)] || QUALITY_LABELS.normal;
   const styleText = STYLE_LABELS[style] || STYLE_LABELS.realistic;
   const negativeRules = [

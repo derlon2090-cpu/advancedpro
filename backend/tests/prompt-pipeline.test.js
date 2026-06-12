@@ -65,12 +65,11 @@ test("common robot misspelling in space never falls back to a businessman scene"
   assert.match(result.negativePrompt, /office/i);
 });
 
-test("unknown Arabic prompt is preserved instead of becoming a generic cached-looking prompt", () => {
-  const result = build("مشهد خيالي غير مألوف");
-
-  assert.match(result.finalPrompt, /Interpret this Arabic request exactly/i);
-  assert.match(result.finalPrompt, /مشهد خيالي غير مألوف/);
-  assert.doesNotMatch(result.finalPrompt, /A clean realistic image based/i);
+test("unknown Arabic prompt is blocked instead of leaking raw Arabic to the provider", () => {
+  assert.throws(
+    () => build("\u0645\u0634\u0647\u062f \u062e\u064a\u0627\u0644\u064a \u063a\u064a\u0631 \u0645\u0623\u0644\u0648\u0641"),
+    (error) => error?.statusCode === 422 && /رصيد/.test(error.message)
+  );
 });
 
 test("large turtle prompt cannot become a rose or business portrait", () => {
@@ -94,5 +93,31 @@ test("mother turtle with babies on the beach preserves the whole family and loca
   assert.match(result.finalPrompt, /shoreline|sea/i);
   assert.match(result.finalPrompt, /every baby turtle|all.*visible/i);
   assert.match(result.negativePrompt, /business team|conference room/i);
+  assert.doesNotMatch(result.finalPrompt, /[\u0600-\u06ff]/);
+});
+
+test("large wolf with its young always produces wolf pups without business subjects", () => {
+  build("\u0631\u062c\u0644 \u0623\u0639\u0645\u0627\u0644 \u062f\u0627\u062e\u0644 \u0645\u0643\u062a\u0628");
+  const result = build("\u0630\u0626\u0628 \u0643\u0628\u064a\u0631 \u0645\u0639 \u0635\u063a\u0627\u0631\u0647");
+
+  assert.match(result.finalPrompt, /large adult wolf/i);
+  assert.match(result.finalPrompt, /wolf pups/i);
+  assert.match(result.finalPrompt, /not human children/i);
+  assert.match(result.finalPrompt, /forest wilderness/i);
+  assert.match(result.negativePrompt, /businessmen/i);
+  assert.match(result.negativePrompt, /food/i);
+  assert.doesNotMatch(result.finalPrompt, /[\u0600-\u06ff]/);
+  assert.doesNotMatch(result.finalPrompt, /business portrait|modern office/i);
+});
+
+test("very large misspelled Arabic car prompt enforces massive scale and no brand", () => {
+  const result = build("\u0635\u064a\u0627\u0631\u0629 \u0643\u0628\u064a\u0631\u0629 \u062c\u062f\u0627");
+
+  assert.match(result.finalPrompt, /extremely large|oversized|massive/i);
+  assert.match(result.finalPrompt, /visual scale cues/i);
+  assert.match(result.finalPrompt, /full vehicle/i);
+  assert.match(result.finalPrompt, /generic original vehicle design/i);
+  assert.match(result.negativePrompt, /BMW/i);
+  assert.match(result.negativePrompt, /small car/i);
   assert.doesNotMatch(result.finalPrompt, /[\u0600-\u06ff]/);
 });

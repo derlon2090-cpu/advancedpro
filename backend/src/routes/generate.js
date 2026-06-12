@@ -92,6 +92,7 @@ function isComplexGenerationPrompt(prompt) {
     "inside",
     "wearing",
     "driving",
+    "\u0645\u0639",
   ];
   const colorWords = [
     "أسود",
@@ -132,6 +133,9 @@ function isComplexGenerationPrompt(prompt) {
     "car",
     "house",
     "moon",
+    "\u0630\u0626\u0628",
+    "\u0630\u064a\u0628",
+    "\u0635\u064a\u0627\u0631\u0629",
   ];
 
   const relations = relationWords.filter((word) => text.includes(word)).length;
