@@ -284,3 +284,21 @@ test("semantic guard rejects stale business content introduced by a translator",
     (error) => error?.statusCode === 422 && /unrequested_people|unrequested_business_scene/.test(error.message)
   );
 });
+
+test("the Arabic word بينما never becomes a false between relation", async () => {
+  const result = await buildSmartPromptEnhancementAsync(
+    {
+      userPrompt: "ساعة عملاقة تذوب فوق جبل بينما تمطر نجوما",
+      quality: "high",
+      style: "cinematic",
+      type: "image",
+    },
+    {
+      translatePrompt: async () =>
+        "A giant melting clock on top of a mountain while stars rain from the sky.",
+    }
+  );
+
+  assert.match(result.finalPrompt, /melting clock/i);
+  assert.doesNotMatch(result.finalPrompt, /positioned between|left, center, and right/i);
+});

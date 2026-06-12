@@ -93,6 +93,18 @@ function includesAny(value, terms) {
   return terms.some((term) => text.includes(term));
 }
 
+function includesWholePhrase(value, phrase) {
+  const text = String(value || "").toLowerCase();
+  const expected = String(phrase || "").toLowerCase().trim();
+  if (!expected) return false;
+  return text
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter(Boolean)
+    .join(" ")
+    .split(" ")
+    .includes(expected);
+}
+
 const COLOR_TERMS = {
   black: ["\u0623\u0633\u0648\u062f", "\u0627\u0633\u0648\u062f", "\u0633\u0648\u062f\u0627\u0621", "black"],
   white: ["\u0623\u0628\u064a\u0636", "\u0627\u0628\u064a\u0636", "\u0628\u064a\u0636\u0627\u0621", "white"],
@@ -1383,7 +1395,7 @@ function buildRelationshipExactness(userPrompt) {
     ].join(" ");
   }
 
-  if (includesAny(lower, ["\u0628\u064a\u0646", "between"])) {
+  if (includesWholePhrase(lower, "\u0628\u064a\u0646") || includesAny(lower, [" between "])) {
     return [
       "The main subject is positioned between the requested surrounding subjects or objects.",
       "Show the left, center, and right positions clearly.",
