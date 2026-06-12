@@ -7,7 +7,7 @@ import { withDbRetry } from "../utils/dbRetry.js";
 import { logError, logInfo } from "../utils/logger.js";
 import { serializeBigInt } from "../utils/serializeBigInt.js";
 import {
-  buildSmartPromptEnhancement,
+  buildSmartPromptEnhancementAsync,
   generateImageWithWaveSpeed,
   generateVideoWithWaveSpeed,
 } from "../services/wavespeedService.js";
@@ -30,6 +30,27 @@ import {
 } from "../utils/credits.js";
 
 const router = Router();
+
+function promptVerboseLogsEnabled() {
+  return String(process.env.PROMPT_VERBOSE_LOGS || "false").trim().toLowerCase() === "true";
+}
+
+function logGenerationPromptDiagnostics({ prompt, diagnostics, requestId, seed }) {
+  if (promptVerboseLogsEnabled()) {
+    console.log("USER_PROMPT:", prompt);
+    console.log("ENHANCED_PROMPT:", diagnostics.enhancedPrompt || "");
+    console.log("FINAL_PROMPT_PREVIEW:", diagnostics.finalPrompt || "");
+    console.log("NEGATIVE_PROMPT:", diagnostics.negativePrompt || "");
+  } else {
+    console.log("PROMPT_PIPELINE:", {
+      requestId,
+      seed,
+      userPromptLength: String(prompt || "").length,
+      finalPromptLength: String(diagnostics.finalPrompt || "").length,
+      translationMode: diagnostics.debug?.translationMode || "local",
+    });
+  }
+}
 
 function httpError(message, statusCode = 400) {
   const error = new Error(message);
@@ -284,15 +305,19 @@ router.post(
     const type = normalizeGenerationType(req.body.type || "image");
     const quality = normalizeQuality(req.body.quality || "normal");
     const style = String(req.body.style || "").trim();
-    const result = buildSmartPromptEnhancement({
+    const result = await buildSmartPromptEnhancementAsync({
       userPrompt: prompt,
       type,
       quality,
       style,
     });
 
-    console.log("SMART_ENHANCE_USER_PROMPT:", prompt);
-    console.log("SMART_ENHANCE_FINAL_PROMPT:", result.finalPrompt);
+    logGenerationPromptDiagnostics({
+      prompt,
+      diagnostics: result,
+      requestId: "smart-enhance",
+      seed: null,
+    });
 
     return res.json({
       success: true,
@@ -861,17 +886,19 @@ router.post(
       quality = routing.quality;
     }
     const creditsUsed = calculateRequiredCredits(type, quality, duration || 5);
-    const promptDiagnostics = buildSmartPromptEnhancement({
+    const promptDiagnostics = await buildSmartPromptEnhancementAsync({
       userPrompt: prompt,
       type,
       quality,
       style,
     });
 
-    console.log("USER_PROMPT:", prompt);
-    console.log("ENHANCED_PROMPT:", promptDiagnostics.enhancedPrompt || "");
-    console.log("FINAL_PROMPT_PREVIEW:", promptDiagnostics.finalPrompt || "");
-    console.log("NEGATIVE_PROMPT:", promptDiagnostics.negativePrompt || "");
+    logGenerationPromptDiagnostics({
+      prompt,
+      diagnostics: promptDiagnostics,
+      requestId,
+      seed,
+    });
     console.log("REQUEST_ID:", requestId);
     console.log("SEED:", seed);
     console.log("SELECTED TYPE:", type);

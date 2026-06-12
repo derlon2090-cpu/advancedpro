@@ -52,6 +52,24 @@ function compactForLog(value, maxLength = 1200) {
   return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text;
 }
 
+function promptVerboseLogsEnabled() {
+  return String(process.env.PROMPT_VERBOSE_LOGS || "false").trim().toLowerCase() === "true";
+}
+
+function logPromptDiagnostics({ userPrompt, finalPrompt }) {
+  if (promptVerboseLogsEnabled()) {
+    console.log("USER_PROMPT:", userPrompt);
+    console.log("FINAL_PROMPT:", finalPrompt);
+    return;
+  }
+
+  console.log("PROMPT_DIAGNOSTICS:", {
+    userPromptLength: String(userPrompt || "").length,
+    finalPromptLength: String(finalPrompt || "").length,
+    containsArabicInFinalPrompt: hasArabicText(finalPrompt),
+  });
+}
+
 function normalizeQuality(quality) {
   return ["normal", "high", "ultra"].includes(quality) ? quality : "normal";
 }
@@ -1091,7 +1109,7 @@ async function translateArabicPromptForGeneration(userPrompt) {
 
   const apiKey = getPromptTranslationKey();
   if (!apiKey) {
-    console.warn("PROMPT_TRANSLATION_FALLBACK:", "No server translation key; using the local Arabic prompt dictionary.");
+    console.warn("PROMPT_TRANSLATION_UNAVAILABLE:", "No server translation key is configured.");
     return "";
   }
 
@@ -1397,7 +1415,7 @@ function buildFinalPrompt({
     translateArabicToEnglish(userPrompt);
   if (!translatedPrompt || hasArabicText(translatedPrompt)) {
     throw serviceError(
-      "\u062a\u0639\u0630\u0631 \u0641\u0647\u0645 \u0628\u0639\u0636 \u0643\u0644\u0645\u0627\u062a \u0627\u0644\u0648\u0635\u0641 \u0627\u0644\u0639\u0631\u0628\u064a \u0628\u062f\u0642\u0629. \u0623\u0639\u062f \u0635\u064a\u0627\u063a\u0629 \u0627\u0644\u0648\u0635\u0641 \u0628\u0643\u0644\u0645\u0627\u062a \u0623\u0648\u0636\u062d\u060c \u0648\u0644\u0645 \u064a\u062a\u0645 \u062e\u0635\u0645 \u0623\u064a \u0631\u0635\u064a\u062f.",
+      "\u062a\u0639\u0630\u0631 \u062a\u0631\u062c\u0645\u0629 \u0627\u0644\u0648\u0635\u0641 \u0627\u0644\u0639\u0631\u0628\u064a \u062a\u0644\u0642\u0627\u0626\u064a\u064b\u0627. \u062a\u062d\u0642\u0642 \u0645\u0646 \u0625\u0639\u062f\u0627\u062f PROMPT_TRANSLATION_API_KEY \u0641\u064a \u0627\u0644\u062e\u0627\u062f\u0645\u060c \u0648\u0644\u0645 \u064a\u062a\u0645 \u062e\u0635\u0645 \u0623\u064a \u0631\u0635\u064a\u062f.",
       422
     );
   }
@@ -1475,6 +1493,44 @@ export function buildSmartPromptEnhancement({ userPrompt, quality = "normal", st
     finalPrompt,
     negativePrompt: [...new Set(negativePrompt)].join(", "),
     debug: analysis?.debug || null,
+  };
+}
+
+export async function buildSmartPromptEnhancementAsync(
+  { userPrompt, quality = "normal", style = "", type = "image" },
+  { translatePrompt = translateArabicPromptForGeneration } = {}
+) {
+  const prompt = String(userPrompt || "").trim();
+  const analysis = analyzePromptV3(prompt);
+  const translatedPromptOverride = analysis ? "" : await translatePrompt(prompt);
+  const enhancedPrompt =
+    analysis?.enhancedPrompt ||
+    [
+      `صورة واقعية عالية الجودة حسب هذا الوصف: ${prompt}.`,
+      "يجب أن تظهر جميع العناصر المطلوبة بوضوح داخل الإطار.",
+      "حافظ على العدد والألوان والأحجام والأفعال والعلاقات المكانية المذكورة بدقة.",
+      "لا تحذف أي عنصر مطلوب ولا تضف أشخاصًا أو أطعمة أو مكاتب أو عناصر عشوائية.",
+    ].join(" ");
+  const finalPrompt = buildFinalPrompt({
+    userPrompt: prompt,
+    quality,
+    style,
+    type,
+    translatedPromptOverride,
+  });
+  const negativePrompt = [
+    ...buildNegativeRules(prompt),
+    ...(Array.isArray(analysis?.negativeRules) ? analysis.negativeRules : []),
+  ];
+
+  return {
+    enhancedPrompt,
+    finalPrompt,
+    negativePrompt: [...new Set(negativePrompt)].join(", "),
+    debug: {
+      ...(analysis?.debug || {}),
+      translationMode: analysis ? "local-structured" : "server-semantic",
+    },
   };
 }
 
@@ -2087,9 +2143,14 @@ export async function generateImageWithWaveSpeed({
   console.log("MODEL:", model);
   console.log("WAVESPEED MODEL:", model);
   console.log("REQUEST_ID:", requestId);
-  console.log("USER_PROMPT:", prompt);
-  console.log("FINAL_PROMPT:", finalPrompt);
-  console.log("WAVESPEED BODY SENT:", JSON.stringify({ ...body, prompt: compactForLog(body.prompt) }));
+  logPromptDiagnostics({ userPrompt: prompt, finalPrompt });
+  console.log(
+    "WAVESPEED BODY SENT:",
+    JSON.stringify({
+      ...body,
+      prompt: promptVerboseLogsEnabled() ? compactForLog(body.prompt) : "[redacted]",
+    })
+  );
 
   const request = allowFallback
     ? await postWaveSpeedWithFallback({
@@ -2207,9 +2268,14 @@ async function generateNativeVideoWithWaveSpeed({
   console.log("MODEL:", model);
   console.log("WAVESPEED MODEL:", model);
   console.log("REQUEST_ID:", requestId);
-  console.log("USER_PROMPT:", prompt);
-  console.log("FINAL_PROMPT:", finalPrompt);
-  console.log("WAVESPEED BODY SENT:", JSON.stringify({ ...body, prompt: compactForLog(body.prompt) }));
+  logPromptDiagnostics({ userPrompt: prompt, finalPrompt });
+  console.log(
+    "WAVESPEED BODY SENT:",
+    JSON.stringify({
+      ...body,
+      prompt: promptVerboseLogsEnabled() ? compactForLog(body.prompt) : "[redacted]",
+    })
+  );
 
   const request = allowFallback
     ? await postWaveSpeedWithFallback({

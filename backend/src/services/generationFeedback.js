@@ -8,6 +8,10 @@ const RATING_SCORES = {
   mismatch: 0,
 };
 
+export function isPromptAnalyticsEnabled() {
+  return String(process.env.PROMPT_ANALYTICS_ENABLED || "false").trim().toLowerCase() === "true";
+}
+
 export function normalizeGenerationRating(value) {
   const rating = String(value || "").trim().toLowerCase();
   if (Object.prototype.hasOwnProperty.call(RATING_SCORES, rating)) {
@@ -127,6 +131,10 @@ export async function upsertPromptAnalytics({
   success = true,
   qualityScore = null,
 }) {
+  if (!isPromptAnalyticsEnabled()) {
+    return { stored: false, reason: "prompt_analytics_disabled" };
+  }
+
   await ensureGenerationFeedbackTables();
   const normalizedRating = rating ? normalizeGenerationRating(rating) : null;
   const score = qualityScore == null && normalizedRating ? scoreForGenerationRating(normalizedRating) : qualityScore;
@@ -168,22 +176,25 @@ export async function upsertPromptAnalytics({
         updated_at = CURRENT_TIMESTAMP
     `
   );
+
+  return { stored: true };
 }
 
 export async function upsertGenerationFeedback({ generationId, keyId, model, prompt, rating }) {
   await ensureGenerationFeedbackTables();
   const normalizedRating = normalizeGenerationRating(rating);
   const score = scoreForGenerationRating(normalizedRating);
+  const storedPrompt = isPromptAnalyticsEnabled() ? prompt || "" : null;
 
   await withDbRetry(() =>
     prisma.$executeRaw`
       INSERT INTO generation_feedback (generation_id, key_id, model, prompt, rating, score)
-      VALUES (${generationId}, ${keyId || null}, ${model || null}, ${prompt || ""}, ${normalizedRating}, ${score})
+      VALUES (${generationId}, ${keyId || null}, ${model || null}, ${storedPrompt}, ${normalizedRating}, ${score})
       ON CONFLICT (generation_id)
       DO UPDATE SET
         key_id = EXCLUDED.key_id,
         model = EXCLUDED.model,
-        prompt = EXCLUDED.prompt,
+        prompt = ${storedPrompt},
         rating = EXCLUDED.rating,
         score = EXCLUDED.score,
         updated_at = CURRENT_TIMESTAMP
@@ -192,7 +203,7 @@ export async function upsertGenerationFeedback({ generationId, keyId, model, pro
 
   await upsertPromptAnalytics({
     generationId,
-    prompt,
+    prompt: storedPrompt,
     model,
     rating: normalizedRating,
     success: ratingSuccess(normalizedRating),
@@ -271,6 +282,10 @@ export async function getFeedbackRoutingDecision(model) {
 }
 
 export async function getPromptAnalyticsStats({ limit = 40 } = {}) {
+  if (!isPromptAnalyticsEnabled()) {
+    return [];
+  }
+
   await ensureGenerationFeedbackTables();
   const rows = await withDbRetry(() =>
     prisma.$queryRaw(

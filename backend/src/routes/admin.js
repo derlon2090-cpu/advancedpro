@@ -18,7 +18,7 @@ import {
   updateActivationCode,
 } from "../services/activationCodes.js";
 import {
-  buildSmartPromptEnhancement,
+  buildSmartPromptEnhancementAsync,
   generateImageWithWaveSpeed,
   generateVideoWithWaveSpeed,
 } from "../services/wavespeedService.js";
@@ -1374,7 +1374,7 @@ router.post(
     for (const test of tests) {
       const requestId = randomUUID();
       const seed = Math.floor(Math.random() * 999_999_999);
-      const enhancement = buildSmartPromptEnhancement({
+      const enhancement = await buildSmartPromptEnhancementAsync({
         userPrompt: test.prompt,
         quality: modelOption.quality || "high",
         style: "realistic",

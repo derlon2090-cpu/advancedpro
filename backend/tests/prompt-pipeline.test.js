@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { buildSmartPromptEnhancement } from "../src/services/wavespeedService.js";
+import {
+  buildSmartPromptEnhancement,
+  buildSmartPromptEnhancementAsync,
+} from "../src/services/wavespeedService.js";
 
 function build(userPrompt) {
   return buildSmartPromptEnhancement({
@@ -135,4 +138,46 @@ test("huge black snake with its young produces snakes only and never business pe
   assert.match(result.negativePrompt, /food/i);
   assert.doesNotMatch(result.finalPrompt, /[\u0600-\u06ff]/);
   assert.doesNotMatch(result.finalPrompt, /business portrait|modern office/i);
+});
+
+test("unknown Arabic vocabulary uses semantic server translation instead of being rejected", async () => {
+  const result = await buildSmartPromptEnhancementAsync(
+    {
+      userPrompt: "شلال ضخم يهبط من جبل جليدي وقت الشروق",
+      quality: "high",
+      style: "cinematic",
+      type: "image",
+    },
+    {
+      translatePrompt: async () =>
+        "A massive waterfall descending from an icy mountain at sunrise, with the waterfall, mountain, ice, and sunrise all clearly visible.",
+    }
+  );
+
+  assert.match(result.finalPrompt, /massive waterfall/i);
+  assert.match(result.finalPrompt, /icy mountain/i);
+  assert.match(result.finalPrompt, /sunrise/i);
+  assert.doesNotMatch(result.finalPrompt, /[\u0600-\u06ff]/);
+  assert.equal(result.debug.translationMode, "server-semantic");
+});
+
+test("semantic translation preserves arbitrary Arabic subjects, actions, and relations", async () => {
+  const result = await buildSmartPromptEnhancementAsync(
+    {
+      userPrompt: "طائر أزرق يحمل غصن زيتون ويطير خلف قلعة قديمة",
+      quality: "ultra",
+      style: "realistic",
+      type: "image",
+    },
+    {
+      translatePrompt: async () =>
+        "A blue bird carrying an olive branch while flying behind an ancient castle. The bird, olive branch, and castle must all be visible.",
+    }
+  );
+
+  assert.match(result.finalPrompt, /blue bird/i);
+  assert.match(result.finalPrompt, /olive branch/i);
+  assert.match(result.finalPrompt, /ancient castle/i);
+  assert.doesNotMatch(result.finalPrompt, /Create an image.*businessman.*office/is);
+  assert.doesNotMatch(result.finalPrompt, /[\u0600-\u06ff]/);
 });
