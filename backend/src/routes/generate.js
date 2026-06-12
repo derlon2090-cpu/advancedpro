@@ -28,6 +28,10 @@ import {
   normalizeGenerationType,
   normalizeQuality,
 } from "../utils/credits.js";
+import {
+  analyzePromptComplexity,
+  isComplexGenerationPrompt as isComplexPromptV2,
+} from "../utils/promptComplexity.js";
 
 const router = Router();
 
@@ -198,7 +202,7 @@ function modelDecisionAllowsPrompt(decision, complexPrompt) {
 
 async function resolveQualityForPrompt({ type, quality, prompt }) {
   const requireApprovedModels = process.env.REQUIRE_APPROVED_MODELS === "true";
-  const complexPrompt = isComplexGenerationPrompt(prompt);
+  const complexPrompt = isComplexPromptV2(prompt);
 
   if (!complexPrompt) {
     if (!requireApprovedModels) {
@@ -233,7 +237,8 @@ async function resolveQualityForPrompt({ type, quality, prompt }) {
   }
 
   const order = ["normal", "high", "ultra"];
-  const startIndex = Math.max(order.indexOf(quality), 0);
+  const requestedIndex = Math.max(order.indexOf(quality), 0);
+  const startIndex = type === "image" && quality === "normal" ? 1 : requestedIndex;
   for (const candidateQuality of order.slice(startIndex)) {
     const model = modelForQuality(type, candidateQuality);
     const monitorDecision = await getModelMonitorDecision(type, model);
@@ -864,6 +869,10 @@ router.post(
     const requestId = String(req.body.requestId || "").trim().slice(0, 80) || randomUUID();
     const providedSeed = Number(req.body.seed);
     const seed = Number.isFinite(providedSeed) ? providedSeed : Math.floor(Math.random() * 999999999);
+    console.log("PROMPT_COMPLEXITY:", {
+      requestId,
+      ...analyzePromptComplexity(prompt),
+    });
     const routing = await resolveQualityForPrompt({ type, quality, prompt });
     if (routing.blocked) {
       console.log("MODEL_QUALITY_BLOCKED:", {

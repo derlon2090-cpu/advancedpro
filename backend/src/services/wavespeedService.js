@@ -1423,7 +1423,7 @@ function buildRelationshipExactness(userPrompt) {
     return [
       "The requested subject is sitting inside / riding in the requested vehicle.",
       "The vehicle must be clearly visible.",
-      "Do not move the subject into an office or unrelated indoor scene.",
+      "Keep the requested vehicle and its interior as the only surrounding scene.",
     ].join(" ");
   }
 
@@ -1490,11 +1490,6 @@ function buildFinalPrompt({
   }
   const qualityText = QUALITY_LABELS[normalizeQuality(quality)] || QUALITY_LABELS.normal;
   const styleText = STYLE_LABELS[style] || STYLE_LABELS.realistic;
-  const negativeRules = [
-    ...buildNegativeRules(userPrompt),
-    ...(Array.isArray(analysis?.negativeRules) ? analysis.negativeRules : []),
-  ];
-  const negativeRuleText = [...new Set(negativeRules)].join(", ");
   const colorRules = buildColorRules(userPrompt, analysis);
   const countRules = buildCountRules(userPrompt);
   const exactness = buildRelationshipExactness(userPrompt);
@@ -1523,14 +1518,15 @@ function buildFinalPrompt({
     "Mandatory composition rules:",
     "- All requested subjects must appear.",
     "- Do not remove any requested subject.",
-    "- Do not replace the scene with an office unless the user asks for an office.",
     "- Keep all requested colors accurate.",
     "- The main subjects must be centered and fully visible.",
-    "- Do not add unrelated people, food, city, office, restaurant, animals, robots, or objects unless explicitly requested.",
-    "- Do not add extra animals or people beyond the requested count.",
+    "- Render only the requested subjects, actions, and environment.",
+    "- Do not introduce any unrequested subject, object, or secondary scene.",
+    "- Use one coherent full-frame scene only.",
+    "- No inset image, picture-in-picture, collage, split panel, poster, framed photo, or overlay.",
+    "- Do not add extra subjects beyond the requested count.",
     "- Keep every requested subject fully inside the frame. Do not crop or duplicate subjects.",
     "- No text, no watermark, no logo, no UI overlay, no grid lines.",
-    `- Avoid: ${negativeRuleText}.`,
     `- Style: ${styleText}.`,
     `- Quality: ${qualityText}, clean composition, professional lighting, main subject clearly visible.`,
   ].join("\n");
@@ -2132,6 +2128,154 @@ export function buildFinalImagePrompt(userPrompt, quality = "normal", style = ""
   return buildFinalPrompt({ userPrompt, quality, style, type: "image" });
 }
 
+function imageResultValidationEnabled() {
+  return String(process.env.IMAGE_RESULT_VALIDATION_ENABLED || "true").trim().toLowerCase() !== "false";
+}
+
+function imageResultValidationRequired() {
+  return String(process.env.IMAGE_RESULT_VALIDATION_REQUIRED || "true").trim().toLowerCase() !== "false";
+}
+
+function imageResultValidationAttempts() {
+  const value = Number(process.env.IMAGE_RESULT_VALIDATION_ATTEMPTS || 2);
+  return Math.min(Math.max(Number.isFinite(value) ? Math.floor(value) : 2, 1), 3);
+}
+
+export function parseImageValidationPayload(payload) {
+  const rawText =
+    typeof payload === "string"
+      ? payload
+      : extractTranslatedPrompt(payload);
+  const cleanText = String(rawText || "")
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+
+  if (!cleanText) {
+    throw new Error("Empty image validation response.");
+  }
+
+  const parsed = JSON.parse(cleanText);
+  return {
+    checked: true,
+    passed: parsed?.passed === true,
+    reason: String(parsed?.reason || "").trim(),
+    unexpectedElements: Array.isArray(parsed?.unexpectedElements)
+      ? parsed.unexpectedElements.map((item) => String(item))
+      : [],
+    missingElements: Array.isArray(parsed?.missingElements)
+      ? parsed.missingElements.map((item) => String(item))
+      : [],
+  };
+}
+
+async function downloadImageForValidation(resultUrl) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20_000);
+
+  try {
+    const response = await fetch(resultUrl, {
+      cache: "no-store",
+      signal: controller.signal,
+      headers: {
+        Accept: "image/*",
+        "Cache-Control": "no-store",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Image download failed with status ${response.status}.`);
+    }
+
+    const bytes = Buffer.from(await response.arrayBuffer());
+    const maxBytes = 15 * 1024 * 1024;
+    if (!bytes.length || bytes.length > maxBytes) {
+      throw new Error("Generated image is empty or too large for validation.");
+    }
+
+    return {
+      mimeType: String(response.headers.get("content-type") || "image/jpeg").split(";")[0],
+      data: bytes.toString("base64"),
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function validateGeneratedImageAgainstPrompt({ resultUrl, userPrompt, finalPrompt }) {
+  const apiKey = getPromptTranslationKey();
+  if (!imageResultValidationEnabled() || !apiKey) {
+    return {
+      checked: false,
+      passed: !imageResultValidationRequired(),
+      reason: apiKey ? "validation_disabled" : "validation_key_unavailable",
+      unexpectedElements: [],
+      missingElements: [],
+    };
+  }
+
+  const image = await downloadImageForValidation(resultUrl);
+  const model = String(
+    process.env.PROMPT_VALIDATION_MODEL ||
+      process.env.PROMPT_TRANSLATION_MODEL ||
+      "gemini-3.1-flash-lite"
+  ).trim();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 25_000);
+
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+      {
+        method: "POST",
+        cache: "no-store",
+        signal: controller.signal,
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-store",
+          "x-goog-api-key": apiKey,
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: [
+                    "You are a strict visual quality gate for an image generation service.",
+                    "Compare the generated image with the current user request and final English prompt.",
+                    "Reject the image when a main requested subject, action, count, color, size, or spatial relationship is missing or materially wrong.",
+                    "Reject any human, office, business meeting, food, inset image, picture-in-picture, collage, framed photo, poster, caption, or unrelated secondary scene unless the current request explicitly asks for it.",
+                    "Reject duplicated or substituted subjects.",
+                    "Minor artistic differences are acceptable only when every requested concept remains correct.",
+                    `Current user request: ${String(userPrompt || "").trim()}`,
+                    `Current final prompt: ${String(finalPrompt || "").trim()}`,
+                    'Return JSON only: {"passed":true|false,"reason":"short reason","unexpectedElements":[],"missingElements":[]}',
+                  ].join("\n"),
+                },
+                {
+                  inlineData: image,
+                },
+              ],
+            },
+          ],
+          generationConfig: {
+            temperature: 0,
+            maxOutputTokens: 300,
+            responseMimeType: "application/json",
+          },
+        }),
+      }
+    );
+    const payload = await readJsonResponse(response);
+    if (!response.ok) {
+      throw new Error(payload?.error?.message || `Image validation failed with status ${response.status}.`);
+    }
+    return parseImageValidationPayload(payload);
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export async function generateRawImageWithWaveSpeed({
   prompt = "A white chicken standing on a farm. No humans.",
   model = "wavespeed-ai/z-image/turbo",
@@ -2224,33 +2368,82 @@ export async function generateImageWithWaveSpeed({
     })
   );
 
-  const request = allowFallback
-    ? await postWaveSpeedWithFallback({
-        apiKey,
-        endpoint,
-        body,
-        mediaType: "image",
-        quality: normalizedQuality,
-        model,
-      })
-    : {
-        initial: await postWaveSpeed({ apiKey, endpoint, body }),
-        endpoint,
-        model,
-        usedFallback: false,
+  const attempts = getPromptTranslationKey() && imageResultValidationEnabled()
+    ? imageResultValidationAttempts()
+    : 1;
+  let lastValidation = null;
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    const attemptSeed = attempt === 1 ? safeSeed : randomSeed();
+    const attemptBody = {
+      ...body,
+      seed: attemptSeed,
+    };
+    const request = allowFallback
+      ? await postWaveSpeedWithFallback({
+          apiKey,
+          endpoint,
+          body: attemptBody,
+          mediaType: "image",
+          quality: normalizedQuality,
+          model,
+        })
+      : {
+          initial: await postWaveSpeed({ apiKey, endpoint, body: attemptBody }),
+          endpoint,
+          model,
+          usedFallback: false,
+        };
+    const resultUrl = await pollWaveSpeedResult({
+      apiKey,
+      initial: request.initial,
+      mediaType: "image",
+    });
+
+    console.log("NEW RESULT URL:", resultUrl);
+
+    try {
+      lastValidation = await validateGeneratedImageAgainstPrompt({
+        resultUrl,
+        userPrompt: prompt,
+        finalPrompt,
+      });
+    } catch (error) {
+      console.warn("IMAGE_RESULT_VALIDATION_ERROR:", error?.message || error);
+      lastValidation = {
+        checked: false,
+        passed: !imageResultValidationRequired(),
+        reason: "validator_error",
+        unexpectedElements: [],
+        missingElements: [],
       };
-  const resultUrl = await pollWaveSpeedResult({ apiKey, initial: request.initial, mediaType: "image" });
+    }
 
-  console.log("NEW RESULT URL:", resultUrl);
+    console.log("IMAGE_RESULT_VALIDATION:", {
+      requestId,
+      attempt,
+      seed: attemptSeed,
+      model: request.model,
+      ...lastValidation,
+    });
 
-  return {
-    provider: "wavespeed",
-    model: request.model,
-    finalPrompt,
-    seed: safeSeed,
-    resultUrl,
-    raw: request.initial,
-  };
+    if (lastValidation.passed) {
+      return {
+        provider: "wavespeed",
+        model: request.model,
+        finalPrompt,
+        seed: attemptSeed,
+        resultUrl,
+        validation: lastValidation,
+        raw: request.initial,
+      };
+    }
+  }
+
+  throw serviceError(
+    `تم رفض النتيجة لأنها لم تطابق الوصف بدقة (${lastValidation?.reason || "visual_mismatch"}). لم يتم خصم أي رصيد.`,
+    422
+  );
 }
 
 export async function generateVideoWithWaveSpeed({

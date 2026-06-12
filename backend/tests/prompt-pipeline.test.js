@@ -4,7 +4,12 @@ import test from "node:test";
 import {
   buildSmartPromptEnhancement,
   buildSmartPromptEnhancementAsync,
+  parseImageValidationPayload,
 } from "../src/services/wavespeedService.js";
+import {
+  analyzePromptComplexity,
+  isComplexGenerationPrompt,
+} from "../src/utils/promptComplexity.js";
 
 function build(userPrompt) {
   return buildSmartPromptEnhancement({
@@ -301,4 +306,71 @@ test("the Arabic word بينما never becomes a false between relation", async 
 
   assert.match(result.finalPrompt, /melting clock/i);
   assert.doesNotMatch(result.finalPrompt, /positioned between|left, center, and right/i);
+});
+
+test("animal hunting prompt never sends business concepts or inset-scene suggestions to the image model", async () => {
+  const result = await buildSmartPromptEnhancementAsync(
+    {
+      userPrompt: "أسد في الغابة يلتهم غزال مع قطيعه",
+      quality: "normal",
+      style: "realistic",
+      type: "image",
+    },
+    {
+      translatePrompt: async () =>
+        "A lion in a forest hunting and eating a gazelle while the rest of the lion pride remains visible nearby.",
+    }
+  );
+
+  assert.match(result.finalPrompt, /lion/i);
+  assert.match(result.finalPrompt, /gazelle/i);
+  assert.match(result.finalPrompt, /forest/i);
+  assert.match(result.finalPrompt, /one coherent full-frame scene/i);
+  assert.match(result.finalPrompt, /No inset image, picture-in-picture/i);
+  assert.doesNotMatch(
+    result.finalPrompt,
+    /businessman|business meeting|meeting room|conference room|corporate|office|restaurant|food|employees/i
+  );
+});
+
+test("Arabic multi-subject animal scenes are routed as complex prompts", () => {
+  const hunting = analyzePromptComplexity("أسد في الغابة يلتهم غزال مع قطيعه");
+  const family = analyzePromptComplexity("ذئب كبير مع صغاره");
+  const simple = analyzePromptComplexity("وردة حمراء");
+
+  assert.equal(hunting.complex, true);
+  assert.ok(hunting.subjects >= 3);
+  assert.ok(hunting.relations >= 1);
+  assert.equal(family.complex, true);
+  assert.equal(isComplexGenerationPrompt("روبوت أخضر بجانب روبوت أصفر على القمر"), true);
+  assert.equal(simple.complex, false);
+});
+
+test("visual validation rejects unrequested business inset content", () => {
+  const validation = parseImageValidationPayload(
+    JSON.stringify({
+      passed: false,
+      reason: "Unrequested businessmen appear in an inset panel.",
+      unexpectedElements: ["businessmen", "inset panel"],
+      missingElements: [],
+    })
+  );
+
+  assert.equal(validation.checked, true);
+  assert.equal(validation.passed, false);
+  assert.deepEqual(validation.unexpectedElements, ["businessmen", "inset panel"]);
+});
+
+test("visual validation accepts a faithful single-scene animal result", () => {
+  const validation = parseImageValidationPayload(
+    JSON.stringify({
+      passed: true,
+      reason: "The lion, gazelle, pride, and forest are visible in one scene.",
+      unexpectedElements: [],
+      missingElements: [],
+    })
+  );
+
+  assert.equal(validation.checked, true);
+  assert.equal(validation.passed, true);
 });
