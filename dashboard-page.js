@@ -870,6 +870,20 @@
     $("[data-enhanced-prompt-modal]")?.addEventListener("click", (event) => {
       if (event.target === event.currentTarget) closeEnhancedPromptModal();
     });
+
+    const setSidebarOpen = (open) => {
+      document.body.classList.toggle("is-sidebar-open", open);
+      const backdrop = $("[data-sidebar-backdrop]");
+      if (backdrop) backdrop.hidden = !open;
+    };
+
+    $("[data-sidebar-open]")?.addEventListener("click", () => setSidebarOpen(true));
+    $$("[data-sidebar-close]").forEach((button) => {
+      button.addEventListener("click", () => setSidebarOpen(false));
+    });
+    $$(".udv3-nav a").forEach((link) => {
+      link.addEventListener("click", () => setSidebarOpen(false));
+    });
   }
 
   async function init() {
