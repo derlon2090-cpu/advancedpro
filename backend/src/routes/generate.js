@@ -366,6 +366,7 @@ function serializeGeneration(row) {
     xpCost: Number(row.credits_used || 0),
     status: row.status,
     resultUrl: row.result_url,
+    isFavorite: Boolean(row.is_favorite),
     createdAt: row.created_at,
     completedAt: row.completed_at,
     generationTimeMs:
@@ -395,6 +396,7 @@ async function loadCompletedGenerationById({ keyId, generationId }) {
              g.credits_used,
              g.status,
              g.result_url,
+             g.is_favorite,
              g.created_at,
              g.completed_at,
              EXTRACT(EPOCH FROM (g.completed_at - g.created_at)) * 1000 AS generation_time_ms,
@@ -406,6 +408,7 @@ async function loadCompletedGenerationById({ keyId, generationId }) {
         AND g.id = ${generationId}
         AND g.status = 'completed'
         AND g.result_url IS NOT NULL
+        AND g.deleted_at IS NULL
       LIMIT 1
     `
   );
@@ -449,6 +452,8 @@ async function ensureGenerationTable() {
     `ALTER TABLE generations ADD COLUMN IF NOT EXISTS enhanced_prompt TEXT`,
     `ALTER TABLE generations ADD COLUMN IF NOT EXISTS negative_prompt TEXT`,
     `ALTER TABLE generations ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP(3)`,
+    `ALTER TABLE generations ADD COLUMN IF NOT EXISTS is_favorite BOOLEAN NOT NULL DEFAULT FALSE`,
+    `ALTER TABLE generations ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP(3)`,
   ];
 
   for (const statement of statements) {
@@ -746,6 +751,7 @@ router.get(
                g.credits_used,
                g.status,
                g.result_url,
+               g.is_favorite,
                g.created_at,
                g.completed_at,
                EXTRACT(EPOCH FROM (g.completed_at - g.created_at)) * 1000 AS generation_time_ms,
@@ -756,6 +762,7 @@ router.get(
         WHERE g.key_id = ${keyId}
           AND g.status = 'completed'
           AND g.result_url IS NOT NULL
+          AND g.deleted_at IS NULL
         ORDER BY g.created_at DESC
         LIMIT 60
       `
@@ -817,6 +824,75 @@ router.post(
       success: true,
       feedback,
       modelStats: stats[0] || null,
+    });
+  })
+);
+
+router.patch(
+  "/:id/favorite",
+  asyncHandler(async (req, res) => {
+    await ensureGenerationTable();
+
+    const keyId = getKeyId(req);
+    const generationId = Number(req.params.id);
+    if (!Number.isFinite(generationId)) {
+      httpError("معرف النتيجة غير صالح.", 400);
+    }
+
+    const isFavorite = Boolean(req.body?.isFavorite);
+    const rows = await withDbRetry(() =>
+      prisma.$queryRaw`
+        UPDATE generations
+        SET is_favorite = ${isFavorite}
+        WHERE id = ${generationId}
+          AND key_id = ${keyId}
+          AND deleted_at IS NULL
+        RETURNING id, is_favorite
+      `
+    );
+
+    if (!rows.length) {
+      httpError("لم يتم العثور على النتيجة المطلوبة.", 404);
+    }
+
+    return res.json({
+      success: true,
+      generationId: Number(rows[0].id),
+      isFavorite: Boolean(rows[0].is_favorite),
+    });
+  })
+);
+
+router.delete(
+  "/:id",
+  asyncHandler(async (req, res) => {
+    await ensureGenerationTable();
+
+    const keyId = getKeyId(req);
+    const generationId = Number(req.params.id);
+    if (!Number.isFinite(generationId)) {
+      httpError("معرف النتيجة غير صالح.", 400);
+    }
+
+    const rows = await withDbRetry(() =>
+      prisma.$queryRaw`
+        UPDATE generations
+        SET deleted_at = NOW(),
+            is_favorite = FALSE
+        WHERE id = ${generationId}
+          AND key_id = ${keyId}
+          AND deleted_at IS NULL
+        RETURNING id
+      `
+    );
+
+    if (!rows.length) {
+      httpError("لم يتم العثور على النتيجة المطلوبة.", 404);
+    }
+
+    return res.json({
+      success: true,
+      generationId: Number(rows[0].id),
     });
   })
 );

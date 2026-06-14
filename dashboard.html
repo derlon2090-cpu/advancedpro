@@ -16,6 +16,7 @@
     />
     <link rel="stylesheet" href="/styles.css?v=20260605-brand-v9" />
     <link rel="stylesheet" href="/dashboard-v5.css?v=20260612-pixigen-exact" />
+    <link rel="stylesheet" href="/dashboard-sections.css?v=20260613-sections-v1" />
   </head>
   <body class="user-dashboard-v3" data-page="dashboard-v4">
     <svg class="udv5-symbols" aria-hidden="true">
@@ -45,49 +46,49 @@
       </a>
 
       <nav class="udv3-nav">
-        <a class="is-active" href="/dashboard">
+        <a class="is-active" href="#home" data-dashboard-view="home">
           <span><svg><use href="#udv5-home"></use></svg></span>
           لوحة التحكم
         </a>
 
         <p>إنشاء جديد</p>
-        <a href="#create" data-type-shortcut="image">
+        <a href="#create" data-type-shortcut="image" data-dashboard-view="home">
           <span><svg><use href="#udv5-image"></use></svg></span>
           صورة
         </a>
-        <a href="#create" data-type-shortcut="video">
+        <a href="#create" data-type-shortcut="video" data-dashboard-view="home">
           <span><svg><use href="#udv5-video"></use></svg></span>
           فيديو
         </a>
 
         <p>المحتوى</p>
-        <a href="#recent" data-local-nav>
+        <a href="#projects" data-dashboard-view="projects">
           <span><svg><use href="#udv5-folder"></use></svg></span>
           مشاريعي
         </a>
-        <a href="#recent" data-local-nav>
+        <a href="#favorites" data-dashboard-view="favorites">
           <span><svg><use href="#udv5-heart"></use></svg></span>
           المفضلة
         </a>
-        <a href="#tips" data-local-nav>
+        <a href="#models" data-dashboard-view="models">
           <span><svg><use href="#udv5-cube"></use></svg></span>
           النماذج
         </a>
-        <a href="#tips" data-local-nav>
+        <a href="#templates" data-dashboard-view="templates">
           <span><svg><use href="#udv5-template"></use></svg></span>
           القوالب
         </a>
 
         <p>الحساب</p>
-        <a href="#balance" data-local-nav>
+        <a href="#plan" data-dashboard-view="plan">
           <span><svg><use href="#udv5-wallet"></use></svg></span>
           باقتي
         </a>
-        <a href="#transactions" data-local-nav>
+        <a href="#transactions" data-dashboard-view="transactions">
           <span><svg><use href="#udv5-receipt"></use></svg></span>
           معاملاتي
         </a>
-        <a href="#settings" data-local-nav>
+        <a href="#settings" data-dashboard-view="settings">
           <span><svg><use href="#udv5-settings"></use></svg></span>
           إعدادات الحساب
         </a>
@@ -132,6 +133,7 @@
 
       <div class="udv3-workspace">
         <main class="udv3-main">
+          <div class="udv6-home-view" data-dashboard-home>
           <section class="udv3-create-card" id="create">
             <div class="udv3-section-title">
               <span><svg><use href="#udv5-sparkles"></use></svg></span>
@@ -289,6 +291,8 @@
               </article>
             </div>
           </section>
+          </div>
+          <section class="udv6-section-view" data-dashboard-section hidden></section>
         </main>
 
         <aside class="udv3-widgets">
@@ -341,6 +345,6 @@
     </div>
 
     <script src="/config.js"></script>
-    <script src="/dashboard-page.js?v=20260606-prompt-v4"></script>
+    <script src="/dashboard-page.js?v=20260613-sections-v1"></script>
   </body>
 </html>

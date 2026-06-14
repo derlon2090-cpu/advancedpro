@@ -15,6 +15,11 @@
     enhancedPromptDebug: null,
     upgradeRecommendationDismissed: false,
     results: [],
+    activeView: "home",
+    sectionFilter: "all",
+    sectionSearch: "",
+    activeMenuId: null,
+    favorites: new Set(),
   };
 
   const IMAGE_XP_COST = { normal: 5, high: 10, ultra: 20 };
@@ -283,6 +288,7 @@
       resultUrl: item.resultUrl || item.url || item.outputUrl || item.imageUrl || item.videoUrl || "",
       thumbnailUrl: item.thumbnailUrl || item.resultUrl || item.url || item.outputUrl || "",
       status: item.status || "completed",
+      isFavorite: Boolean(item.isFavorite || state.favorites.has(String(item.id || item.generationId))),
     };
   }
 
@@ -422,6 +428,579 @@
         <button class="udv3-card-menu" type="button" aria-label="إجراءات">⋮</button>
       </article>
     `;
+  }
+
+  const TEMPLATE_ITEMS = [
+    {
+      id: "luxury-product",
+      category: "ads",
+      title: "إعلان منتج فاخر",
+      prompt: "إعلان احترافي لمنتج فاخر على منصة رخامية، إضاءة استوديو سينمائية، خلفية نظيفة وتفاصيل دقيقة",
+      image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=900&q=80",
+    },
+    {
+      id: "youtube-cover",
+      category: "youtube",
+      title: "غلاف يوتيوب جذاب",
+      prompt: "غلاف يوتيوب سينمائي عالي التباين مع موضوع رئيسي واضح ومساحة نظيفة للعنوان",
+      image: "https://images.unsplash.com/photo-1492619375914-88005aa9e8fb?auto=format&fit=crop&w=900&q=80",
+    },
+    {
+      id: "social-post",
+      category: "instagram",
+      title: "منشور إنستغرام",
+      prompt: "تصميم منشور إنستغرام عصري بألوان متناسقة وتكوين بسيط وفخم وإضاءة ناعمة",
+      image: "https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&w=900&q=80",
+    },
+    {
+      id: "brand-logo",
+      category: "logos",
+      title: "شعار احترافي",
+      prompt: "شعار هندسي بسيط وفاخر لعلامة تقنية حديثة، تكوين متوازن وخلفية محايدة",
+      image: "https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=900&q=80",
+    },
+    {
+      id: "real-estate",
+      category: "realestate",
+      title: "عقار فاخر",
+      prompt: "فيلا عصرية فاخرة وقت الغروب، تصوير معماري احترافي، واجهة كاملة وإضاءة دافئة",
+      image: "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=900&q=80",
+    },
+    {
+      id: "sports-car",
+      category: "cars",
+      title: "سيارة رياضية",
+      prompt: "سيارة رياضية سوداء في شارع مدينة مضاء ليلًا، تصوير إعلاني سينمائي وانعكاسات واقعية",
+      image: "https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?auto=format&fit=crop&w=900&q=80",
+    },
+  ];
+
+  function loadLocalPreferences() {
+    try {
+      const favorites = JSON.parse(localStorage.getItem("pixigen:favorites") || "[]");
+      state.favorites = new Set(Array.isArray(favorites) ? favorites.map(String) : []);
+    } catch {
+      state.favorites = new Set();
+    }
+  }
+
+  function saveFavorites() {
+    try {
+      localStorage.setItem("pixigen:favorites", JSON.stringify(Array.from(state.favorites)));
+    } catch {
+      // Local persistence is optional; the current session remains functional.
+    }
+  }
+
+  function sectionItemMatches(item) {
+    const filterMatches = state.sectionFilter === "all" || item.type === state.sectionFilter;
+    const search = state.sectionSearch.trim().toLowerCase();
+    const searchMatches = !search || String(item.prompt || "").toLowerCase().includes(search);
+    return filterMatches && searchMatches;
+  }
+
+  function renderSectionStats(items = state.results) {
+    const images = items.filter((item) => item.type === "image").length;
+    const videos = items.filter((item) => item.type === "video").length;
+    const latest = items[0]?.createdAt ? relativeTime(items[0].createdAt) : "لا يوجد نشاط";
+    return `
+      <div class="udv6-stat-grid">
+        <article class="udv6-stat-card"><i>▣</i><div><span>إجمالي المشاريع</span><strong>${formatNumber(items.length)}</strong></div></article>
+        <article class="udv6-stat-card"><i>▧</i><div><span>عدد الصور</span><strong>${formatNumber(images)}</strong></div></article>
+        <article class="udv6-stat-card"><i>▶</i><div><span>عدد الفيديوهات</span><strong>${formatNumber(videos)}</strong></div></article>
+        <article class="udv6-stat-card"><i>◷</i><div><span>آخر نشاط</span><strong style="font-size:16px">${escapeHtml(latest)}</strong></div></article>
+      </div>
+    `;
+  }
+
+  function generationMedia(item) {
+    const resultUrl = escapeHtml(item.resultUrl);
+    const thumbnailUrl = escapeHtml(item.thumbnailUrl || "");
+    if (item.type === "video") {
+      return `<video src="${resultUrl}"${thumbnailUrl && thumbnailUrl !== resultUrl ? ` poster="${thumbnailUrl}"` : ""} muted playsinline preload="metadata"></video>`;
+    }
+    return `<img src="${resultUrl}" alt="${escapeHtml(item.prompt)}" loading="lazy" />`;
+  }
+
+  function renderGenerationMenu(item) {
+    if (String(state.activeMenuId) !== String(item.id)) return "";
+    return `
+      <div class="udv6-menu" data-generation-menu>
+        <button type="button" data-generation-action="download" data-generation-id="${escapeHtml(item.id)}">تحميل</button>
+        <button type="button" data-generation-action="share" data-generation-id="${escapeHtml(item.id)}">مشاركة</button>
+        <button type="button" data-generation-action="copy" data-generation-id="${escapeHtml(item.id)}">نسخ الرابط</button>
+        <button type="button" data-generation-action="regenerate" data-generation-id="${escapeHtml(item.id)}">إعادة إنشاء</button>
+        <button type="button" data-generation-action="favorite" data-generation-id="${escapeHtml(item.id)}">${item.isFavorite ? "إزالة من المفضلة" : "إضافة للمفضلة"}</button>
+        <button class="is-danger" type="button" data-generation-action="delete" data-generation-id="${escapeHtml(item.id)}">حذف</button>
+      </div>
+    `;
+  }
+
+  function renderWorkCard(item, { favoriteView = false } = {}) {
+    const targetUrl = `/generation?id=${encodeURIComponent(item.id)}`;
+    return `
+      <article class="udv6-work-card">
+        <a class="udv6-work-media" href="${targetUrl}">
+          ${generationMedia(item)}
+          <b>${typeLabel(item.type)}</b>
+          ${favoriteView || item.isFavorite ? "<em>♥</em>" : ""}
+        </a>
+        <div class="udv6-work-body">
+          <h3>${escapeHtml(item.prompt)}</h3>
+          <div class="udv6-work-meta">
+            <span>${qualityLabel(item.quality)} · ${relativeTime(item.createdAt)}</span>
+            <button class="udv6-card-menu-button" type="button" data-menu-generation-id="${escapeHtml(item.id)}" aria-label="إجراءات المشروع">⋮</button>
+          </div>
+        </div>
+        ${renderGenerationMenu(item)}
+      </article>
+    `;
+  }
+
+  function renderProjectsSection() {
+    const items = state.results.filter(sectionItemMatches);
+    return `
+      <div class="udv6-section-shell">
+        <header class="udv6-section-head">
+          <div><h1>مشاريعي</h1><p>كل الصور والفيديوهات التي أنشأتها في مكان واحد.</p></div>
+          <button class="udv6-primary-button" type="button" data-section-create>＋ مشروع جديد</button>
+        </header>
+        ${renderSectionStats(state.results)}
+        <section class="udv6-panel">
+          <div class="udv6-toolbar">
+            <input class="udv6-search" type="search" placeholder="ابحث في مشاريعك..." value="${escapeHtml(state.sectionSearch)}" data-section-search />
+            ${renderTypeFilters()}
+          </div>
+          ${items.length ? `<div class="udv6-card-grid">${items.map((item) => renderWorkCard(item)).join("")}</div>` : renderEmpty("لا توجد مشاريع مطابقة", "ابدأ بإنشاء أول صورة أو فيديو، وستظهر هنا مباشرة.")}
+        </section>
+      </div>
+    `;
+  }
+
+  function renderTypeFilters() {
+    return `
+      <div class="udv6-segmented">
+        <button class="${state.sectionFilter === "all" ? "is-active" : ""}" type="button" data-section-filter="all">الكل</button>
+        <button class="${state.sectionFilter === "image" ? "is-active" : ""}" type="button" data-section-filter="image">الصور</button>
+        <button class="${state.sectionFilter === "video" ? "is-active" : ""}" type="button" data-section-filter="video">الفيديو</button>
+      </div>
+    `;
+  }
+
+  function renderEmpty(title, copy) {
+    return `<div class="udv6-empty"><div><strong>${escapeHtml(title)}</strong><span>${escapeHtml(copy)}</span></div></div>`;
+  }
+
+  function renderFavoritesSection() {
+    const items = state.results
+      .filter((item) => item.isFavorite || state.favorites.has(String(item.id)))
+      .filter(sectionItemMatches);
+    return `
+      <div class="udv6-section-shell">
+        <header class="udv6-section-head">
+          <div><h1>المفضلة</h1><p>احتفظ بأفضل نتائجك وارجع إليها بسرعة.</p></div>
+        </header>
+        <section class="udv6-panel">
+          <div class="udv6-toolbar">
+            <input class="udv6-search" type="search" placeholder="ابحث في المفضلة..." value="${escapeHtml(state.sectionSearch)}" data-section-search />
+            ${renderTypeFilters()}
+          </div>
+          ${items.length ? `<div class="udv6-card-grid">${items.map((item) => renderWorkCard(item, { favoriteView: true })).join("")}</div>` : renderEmpty("لم تضف أي نتيجة للمفضلة بعد", "اضغط على القلب أو اختر إضافة للمفضلة من قائمة أي نتيجة.")}
+        </section>
+      </div>
+    `;
+  }
+
+  function renderModelsSection() {
+    const normalUses = state.results.filter((item) => item.quality === "normal").length;
+    const highUses = state.results.filter((item) => item.quality === "high").length;
+    const ultraUses = state.results.filter((item) => item.quality === "ultra").length;
+    const models = [
+      { name: "Z Image Turbo", icon: "⚡", copy: "سريع جدًا واقتصادي ومناسب للأوصاف البسيطة.", cost: 5, success: 94, uses: normalUses, rating: "4.6" },
+      { name: "Seedream 4.5", icon: "◈", copy: "جودة واقعية ممتازة للأوصاف المتوسطة والمتوازنة.", cost: 12, success: 97, uses: highUses, rating: "4.8" },
+      { name: "Nano Banana Pro", icon: "♛", copy: "أفضل جودة للأوصاف المركبة والمشاهد متعددة العناصر.", cost: 35, success: 98, uses: ultraUses, rating: "4.9" },
+    ];
+    return `
+      <div class="udv6-section-shell">
+        <header class="udv6-section-head"><div><h1>النماذج</h1><p>اختر مستوى الجودة الأنسب لفكرتك وميزانيتك.</p></div></header>
+        <section class="udv6-panel">
+          <div class="udv6-model-list">
+            ${models.map((model) => `
+              <article class="udv6-model-card">
+                <div class="udv6-model-visual">${model.icon}</div>
+                <div>
+                  <h3>${model.name}</h3>
+                  <p>${model.copy}</p>
+                  <div class="udv6-model-tags"><span>نسبة النجاح ${model.success}%</span><span>${formatNumber(model.uses)} استخدام</span><span>★ ${model.rating}</span></div>
+                </div>
+                <div class="udv6-model-price">${model.cost}<small style="display:block;font-size:10px">XP</small></div>
+              </article>
+            `).join("")}
+          </div>
+        </section>
+      </div>
+    `;
+  }
+
+  function renderTemplatesSection() {
+    const categories = [
+      ["all", "الكل"], ["ads", "إعلانات"], ["youtube", "يوتيوب"], ["instagram", "إنستغرام"],
+      ["logos", "شعارات"], ["products", "صور منتجات"], ["realestate", "عقارات"], ["cars", "سيارات"],
+    ];
+    const items = TEMPLATE_ITEMS.filter((item) => state.sectionFilter === "all" || item.category === state.sectionFilter);
+    return `
+      <div class="udv6-section-shell">
+        <header class="udv6-section-head"><div><h1>القوالب</h1><p>برومبتات جاهزة تمنحك بداية سريعة ونتيجة مرتبة.</p></div></header>
+        <section class="udv6-panel">
+          <div class="udv6-toolbar">
+            <div class="udv6-segmented" style="overflow:auto;max-width:100%">
+              ${categories.map(([value, label]) => `<button class="${state.sectionFilter === value ? "is-active" : ""}" type="button" data-template-filter="${value}">${label}</button>`).join("")}
+            </div>
+          </div>
+          <div class="udv6-template-grid">
+            ${items.map((item) => `
+              <article class="udv6-template-card">
+                <img src="${item.image}" alt="${item.title}" loading="lazy" />
+                <div><h3>${item.title}</h3><p>${item.prompt}</p><button type="button" data-use-template="${item.id}">استخدام القالب</button></div>
+              </article>
+            `).join("")}
+          </div>
+        </section>
+      </div>
+    `;
+  }
+
+  function renderPlanSection() {
+    const key = state.key || {};
+    const remaining = keyCredits();
+    const total = Math.max(keyTotalCredits(), remaining, 1);
+    const percent = Math.max(4, Math.min(100, Math.round((remaining / total) * 100)));
+    const images = state.results.filter((item) => item.type === "image").length;
+    const videos = state.results.filter((item) => item.type === "video").length;
+    return `
+      <div class="udv6-section-shell">
+        <header class="udv6-section-head"><div><h1>باقتي</h1><p>مركز حسابك المالي والرصيد المتاح والصلاحية.</p></div></header>
+        <section class="udv6-plan-hero">
+          <article class="udv6-balance-panel" style="--plan-progress:${percent}%">
+            <small>الرصيد الحالي</small><strong>${formatNumber(remaining)} XP</strong><span>${escapeHtml(key.planName || "VIP")} · ${daysLeftText(key.expiresAt)}</span>
+            <div class="udv6-plan-progress"><i></i></div><span>متبقي ${percent}% من رصيد الباقة</span>
+            <div class="udv6-plan-actions"><button type="button" data-plan-action="recharge">شحن رصيد</button><button type="button" data-plan-action="upgrade">ترقية الباقة</button></div>
+          </article>
+          <div class="udv6-plan-stat-list">
+            <article class="udv6-plan-stat"><span>صور مستخدمة</span><strong>${formatNumber(images)}</strong></article>
+            <article class="udv6-plan-stat"><span>فيديوهات مستخدمة</span><strong>${formatNumber(videos)}</strong></article>
+            <article class="udv6-plan-stat"><span>إزالة العلامة المائية</span><strong>مفعلة</strong></article>
+            <article class="udv6-plan-stat"><span>المتبقي من الباقة</span><strong>${formatNumber(remaining)} XP</strong></article>
+          </div>
+        </section>
+      </div>
+    `;
+  }
+
+  function renderTransactionsSection() {
+    const rows = state.results.map((item) => ({
+      label: `إنشاء ${typeLabel(item.type)}`,
+      detail: qualityLabel(item.quality),
+      date: formatDate(item.createdAt),
+      amount: `-${formatNumber(item.creditsUsed)} XP`,
+      positive: false,
+    }));
+    return `
+      <div class="udv6-section-shell">
+        <header class="udv6-section-head"><div><h1>معاملاتي</h1><p>كشف واضح لجميع عمليات الرصيد والاستخدام.</p></div></header>
+        <section class="udv6-panel">
+          <div class="udv6-transaction-list">
+            ${rows.length ? rows.map((row) => `
+              <article class="udv6-transaction-row">
+                <div><strong>${row.label}</strong><span style="display:block">${row.detail}</span></div>
+                <time>${row.date}</time>
+                <b class="${row.positive ? "is-positive" : ""}">${row.amount}</b>
+                <span class="udv6-status">مكتملة</span>
+              </article>
+            `).join("") : renderEmpty("لا توجد معاملات حتى الآن", "ستظهر عمليات الخصم والشحن هنا بعد أول استخدام.")}
+          </div>
+        </section>
+      </div>
+    `;
+  }
+
+  function getSettings() {
+    try {
+      return {
+        language: "ar",
+        quality: "high",
+        emailNotifications: true,
+        systemNotifications: true,
+        ...JSON.parse(localStorage.getItem("pixigen:settings") || "{}"),
+      };
+    } catch {
+      return { language: "ar", quality: "high", emailNotifications: true, systemNotifications: true };
+    }
+  }
+
+  function renderSettingsSection() {
+    const settings = getSettings();
+    const key = state.key || {};
+    return `
+      <div class="udv6-section-shell">
+        <header class="udv6-section-head"><div><h1>إعدادات الحساب</h1><p>حدّث معلوماتك وتفضيلات التوليد والإشعارات.</p></div></header>
+        <form class="udv6-settings-grid" data-settings-form>
+          <section class="udv6-settings-card">
+            <h2>المعلومات الشخصية</h2>
+            <label class="udv6-field"><span>الاسم</span><input name="customerName" value="${escapeHtml(key.customerName || "")}" /></label>
+            <label class="udv6-field"><span>البريد الإلكتروني</span><input name="customerEmail" type="email" value="${escapeHtml(key.customerEmail || "")}" /></label>
+            <button class="udv6-primary-button" type="submit">حفظ المعلومات</button>
+          </section>
+          <section class="udv6-settings-card">
+            <h2>التفضيلات</h2>
+            <label class="udv6-field"><span>الجودة الافتراضية</span><select name="quality"><option value="normal" ${settings.quality === "normal" ? "selected" : ""}>عادية</option><option value="high" ${settings.quality === "high" ? "selected" : ""}>عالية</option><option value="ultra" ${settings.quality === "ultra" ? "selected" : ""}>فائقة</option></select></label>
+            <label class="udv6-field"><span>اللغة</span><select name="language"><option value="ar" ${settings.language === "ar" ? "selected" : ""}>العربية</option><option value="en" ${settings.language === "en" ? "selected" : ""}>English</option></select></label>
+          </section>
+          <section class="udv6-settings-card">
+            <h2>الأمان</h2>
+            <button class="udv6-secondary-button" type="button" data-security-action="email">تغيير البريد</button>
+            <button class="udv6-secondary-button" style="margin-right:8px" type="button" data-security-action="password">تغيير كلمة المرور</button>
+          </section>
+          <section class="udv6-settings-card">
+            <h2>الإشعارات</h2>
+            <div class="udv6-toggle-row"><span>إشعارات البريد</span><button class="udv6-toggle" type="button" aria-pressed="${settings.emailNotifications}" data-setting-toggle="emailNotifications"></button></div>
+            <div class="udv6-toggle-row"><span>إشعارات النظام</span><button class="udv6-toggle" type="button" aria-pressed="${settings.systemNotifications}" data-setting-toggle="systemNotifications"></button></div>
+          </section>
+        </form>
+      </div>
+    `;
+  }
+
+  function renderDashboardSection() {
+    const section = $("[data-dashboard-section]");
+    if (!section || state.activeView === "home") return;
+    const renderers = {
+      projects: renderProjectsSection,
+      favorites: renderFavoritesSection,
+      models: renderModelsSection,
+      templates: renderTemplatesSection,
+      plan: renderPlanSection,
+      transactions: renderTransactionsSection,
+      settings: renderSettingsSection,
+    };
+    section.innerHTML = (renderers[state.activeView] || renderProjectsSection)();
+  }
+
+  function setDashboardView(view, { updateHistory = true } = {}) {
+    const allowed = ["home", "projects", "favorites", "models", "templates", "plan", "transactions", "settings"];
+    state.activeView = allowed.includes(view) ? view : "home";
+    state.sectionFilter = "all";
+    state.sectionSearch = "";
+    state.activeMenuId = null;
+
+    const isHome = state.activeView === "home";
+    document.body.classList.toggle("is-dashboard-section", !isHome);
+    document.body.dataset.dashboardView = state.activeView;
+    $("[data-dashboard-home]").hidden = !isHome;
+    $("[data-dashboard-section]").hidden = isHome;
+    $$("[data-dashboard-view]").forEach((link) => {
+      link.classList.toggle("is-active", link.dataset.dashboardView === state.activeView);
+    });
+
+    if (!isHome) renderDashboardSection();
+    if (updateHistory) history.pushState({ dashboardView: state.activeView }, "", `#${state.activeView}`);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function findGeneration(id) {
+    return state.results.find((item) => String(item.id) === String(id));
+  }
+
+  function switchToCreate({ type = "image", prompt = "" } = {}) {
+    setDashboardView("home");
+    setType(type);
+    const input = $("[data-prompt-input]");
+    if (prompt) {
+      input.value = prompt;
+      $("[data-char-count]").textContent = prompt.length;
+    }
+    setTimeout(() => {
+      $("#create")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      input?.focus();
+    }, 40);
+  }
+
+  async function copyText(value, message = "تم نسخ الرابط") {
+    try {
+      await navigator.clipboard.writeText(value);
+      showToast(message);
+    } catch {
+      showToast("تعذر النسخ من المتصفح.", "error");
+    }
+  }
+
+  async function handleGenerationAction(action, id) {
+    const item = findGeneration(id);
+    if (!item) return;
+    state.activeMenuId = null;
+
+    if (action === "download") {
+      const anchor = document.createElement("a");
+      anchor.href = item.resultUrl;
+      anchor.download = "";
+      anchor.target = "_blank";
+      anchor.click();
+    } else if (action === "copy") {
+      await copyText(item.resultUrl);
+    } else if (action === "share") {
+      if (navigator.share) {
+        await navigator.share({ title: item.prompt, url: item.resultUrl }).catch(() => {});
+      } else {
+        await copyText(item.resultUrl, "تم نسخ الرابط للمشاركة");
+      }
+    } else if (action === "regenerate") {
+      switchToCreate({ type: item.type, prompt: item.prompt });
+      return;
+    } else if (action === "favorite") {
+      const key = String(item.id);
+      const nextFavorite = !state.favorites.has(key);
+      try {
+        const data = await requestJson(`/api/generate/${encodeURIComponent(item.id)}/favorite`, {
+          method: "PATCH",
+          body: JSON.stringify({ isFavorite: nextFavorite }),
+        });
+        item.isFavorite = Boolean(data.isFavorite);
+      } catch (error) {
+        console.warn("FAVORITE SAVE WARNING:", error);
+        item.isFavorite = nextFavorite;
+      }
+      if (item.isFavorite) state.favorites.add(key);
+      else state.favorites.delete(key);
+      saveFavorites();
+      showToast(item.isFavorite ? "تمت الإضافة إلى المفضلة" : "تمت الإزالة من المفضلة");
+    } else if (action === "delete") {
+      try {
+        await requestJson(`/api/generate/${encodeURIComponent(item.id)}`, {
+          method: "DELETE",
+        });
+      } catch (error) {
+        console.warn("GENERATION DELETE WARNING:", error);
+        showToast(error.message || "تعذر حذف العمل من الخادم.", "error");
+        renderDashboardSection();
+        return;
+      }
+      state.results = state.results.filter((result) => String(result.id) !== String(id));
+      state.favorites.delete(String(id));
+      saveFavorites();
+      showToast("تم حذف العمل بنجاح.");
+    }
+    renderDashboardSection();
+  }
+
+  function bindSectionEvents() {
+    document.addEventListener("click", async (event) => {
+      const navigation = event.target.closest("[data-dashboard-view]");
+      if (navigation && !navigation.matches("[data-type-shortcut]")) {
+        event.preventDefault();
+        setDashboardView(navigation.dataset.dashboardView);
+        return;
+      }
+
+      const createButton = event.target.closest("[data-section-create]");
+      if (createButton) {
+        switchToCreate();
+        return;
+      }
+
+      const filter = event.target.closest("[data-section-filter]");
+      if (filter) {
+        state.sectionFilter = filter.dataset.sectionFilter;
+        renderDashboardSection();
+        return;
+      }
+
+      const templateFilter = event.target.closest("[data-template-filter]");
+      if (templateFilter) {
+        state.sectionFilter = templateFilter.dataset.templateFilter;
+        renderDashboardSection();
+        return;
+      }
+
+      const templateButton = event.target.closest("[data-use-template]");
+      if (templateButton) {
+        const item = TEMPLATE_ITEMS.find((template) => template.id === templateButton.dataset.useTemplate);
+        if (item) switchToCreate({ prompt: item.prompt });
+        return;
+      }
+
+      const menuButton = event.target.closest("[data-menu-generation-id]");
+      if (menuButton) {
+        event.stopPropagation();
+        const id = menuButton.dataset.menuGenerationId;
+        state.activeMenuId = String(state.activeMenuId) === String(id) ? null : id;
+        renderDashboardSection();
+        return;
+      }
+
+      const actionButton = event.target.closest("[data-generation-action]");
+      if (actionButton) {
+        event.stopPropagation();
+        await handleGenerationAction(actionButton.dataset.generationAction, actionButton.dataset.generationId);
+        return;
+      }
+
+      const toggle = event.target.closest("[data-setting-toggle]");
+      if (toggle) {
+        const settings = getSettings();
+        const key = toggle.dataset.settingToggle;
+        settings[key] = !settings[key];
+        localStorage.setItem("pixigen:settings", JSON.stringify(settings));
+        toggle.setAttribute("aria-pressed", String(settings[key]));
+        return;
+      }
+
+      const planAction = event.target.closest("[data-plan-action]");
+      if (planAction) {
+        showToast(planAction.dataset.planAction === "upgrade" ? "سيتم عرض الباقات المتاحة قريبًا." : "سيتم فتح خيارات شحن الرصيد قريبًا.");
+        return;
+      }
+
+      const securityAction = event.target.closest("[data-security-action]");
+      if (securityAction) {
+        showToast("حفاظًا على الأمان، يتم تحديث هذه البيانات عبر الدعم.");
+        return;
+      }
+
+      if (state.activeMenuId && !event.target.closest("[data-generation-menu]")) {
+        state.activeMenuId = null;
+        renderDashboardSection();
+      }
+    });
+
+    document.addEventListener("input", (event) => {
+      if (!event.target.matches("[data-section-search]")) return;
+      state.sectionSearch = event.target.value;
+      renderDashboardSection();
+      const input = $("[data-section-search]");
+      input?.focus();
+      input?.setSelectionRange(input.value.length, input.value.length);
+    });
+
+    document.addEventListener("submit", (event) => {
+      if (!event.target.matches("[data-settings-form]")) return;
+      event.preventDefault();
+      const form = new FormData(event.target);
+      const settings = getSettings();
+      settings.quality = form.get("quality") || settings.quality;
+      settings.language = form.get("language") || settings.language;
+      localStorage.setItem("pixigen:settings", JSON.stringify(settings));
+      state.key = {
+        ...(state.key || {}),
+        customerName: String(form.get("customerName") || state.key?.customerName || ""),
+        customerEmail: String(form.get("customerEmail") || state.key?.customerEmail || ""),
+      };
+      updateKeyUi();
+      showToast("تم حفظ إعدادات الحساب.");
+    });
+
+    window.addEventListener("popstate", () => {
+      setDashboardView(window.location.hash.slice(1) || "home", { updateHistory: false });
+    });
   }
 
   function renderTransactions() {
@@ -793,6 +1372,7 @@
     renderRecent();
     renderTransactions();
     updateUsageUi();
+    if (state.activeView !== "home") renderDashboardSection();
   }
 
   function bindEvents() {
@@ -810,8 +1390,7 @@
     $$("[data-type-shortcut]").forEach((link) => {
       link.addEventListener("click", (event) => {
         event.preventDefault();
-        setType(link.dataset.typeShortcut);
-        $("#create").scrollIntoView({ behavior: "smooth", block: "start" });
+        switchToCreate({ type: link.dataset.typeShortcut });
       });
     });
     $$("[data-local-nav]").forEach((link) => {
@@ -823,8 +1402,7 @@
       });
     });
     $("[data-focus-create]").addEventListener("click", () => {
-      $("#create").scrollIntoView({ behavior: "smooth", block: "start" });
-      $("[data-prompt-input]").focus();
+      switchToCreate({ type: state.type });
     });
     $("[data-quality-select]").addEventListener("change", (event) => {
       state.quality = event.target.value;
@@ -887,8 +1465,11 @@
   }
 
   async function init() {
+    loadLocalPreferences();
     bindEvents();
+    bindSectionEvents();
     setType("image");
+    setDashboardView(window.location.hash.slice(1) || "home", { updateHistory: false });
     renderAll();
     await refreshKey();
     await refreshGenerations({ silent: true });

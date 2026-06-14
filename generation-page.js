@@ -305,7 +305,6 @@
     $("[data-detail-aspect]").textContent = isVideo ? `${result.duration || 5} ثواني` : result.aspectRatio;
     $("[data-detail-quality]").textContent = qualityLabel(result.quality);
     $("[data-detail-created]").textContent = relativeTime(result.createdAt);
-    $("[data-detail-model]").textContent = result.model || "PixiGen Pro v2";
     $("[data-detail-cost]").textContent = `${formatNumber(result.creditsUsed)} XP`;
     $("[data-detail-generation-id]").textContent = result.id || "-";
     $("[data-detail-request-id]").textContent = result.requestId || "-";
@@ -371,7 +370,6 @@
     $("[data-detail-aspect]").textContent = "غير متاح";
     $("[data-detail-quality]").textContent = "غير متاح";
     $("[data-detail-created]").textContent = "غير متاح";
-    $("[data-detail-model]").textContent = "غير متاح";
     $("[data-detail-cost]").textContent = "غير متاح";
     $("[data-detail-generation-id]").textContent = "غير متاح";
     $("[data-detail-request-id]").textContent = "غير متاح";
