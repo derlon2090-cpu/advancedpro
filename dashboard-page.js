@@ -382,6 +382,9 @@
     state.upgradeRecommendationDismissed = false;
     resetEnhancedPromptState();
     $$("[data-type-tab]").forEach((button) => button.classList.toggle("is-active", button.dataset.typeTab === type));
+    $$("[data-type-shortcut]").forEach((link) => {
+      link.classList.toggle("is-active", state.activeView === "home" && link.dataset.typeShortcut === type);
+    });
     $$("[data-video-only]").forEach((node) => {
       node.hidden = type !== "video";
     });
@@ -616,9 +619,9 @@
     const highUses = state.results.filter((item) => item.quality === "high").length;
     const ultraUses = state.results.filter((item) => item.quality === "ultra").length;
     const models = [
-      { name: "Z Image Turbo", icon: "⚡", copy: "سريع جدًا واقتصادي ومناسب للأوصاف البسيطة.", cost: 5, success: 94, uses: normalUses, rating: "4.6" },
-      { name: "Seedream 4.5", icon: "◈", copy: "جودة واقعية ممتازة للأوصاف المتوسطة والمتوازنة.", cost: 12, success: 97, uses: highUses, rating: "4.8" },
-      { name: "Nano Banana Pro", icon: "♛", copy: "أفضل جودة للأوصاف المركبة والمشاهد متعددة العناصر.", cost: 35, success: 98, uses: ultraUses, rating: "4.9" },
+      { name: "وميض", level: "سريع", icon: "⚡", copy: "سريع جدًا واقتصادي ومناسب للأوصاف البسيطة.", cost: 5, success: 94, uses: normalUses, rating: "4.6" },
+      { name: "رؤية", level: "متوازن", icon: "◈", copy: "جودة واقعية ممتازة للأوصاف المتوسطة والمتوازنة.", cost: 12, success: 97, uses: highUses, rating: "4.8" },
+      { name: "إتقان برو", level: "احترافي", icon: "♛", copy: "أفضل جودة للأوصاف المركبة والمشاهد متعددة العناصر.", cost: 35, success: 98, uses: ultraUses, rating: "4.9" },
     ];
     return `
       <div class="udv6-section-shell">
@@ -629,7 +632,7 @@
               <article class="udv6-model-card">
                 <div class="udv6-model-visual">${model.icon}</div>
                 <div>
-                  <h3>${model.name}</h3>
+                  <h3>${model.name} <small>${model.level}</small></h3>
                   <p>${model.copy}</p>
                   <div class="udv6-model-tags"><span>نسبة النجاح ${model.success}%</span><span>${formatNumber(model.uses)} استخدام</span><span>★ ${model.rating}</span></div>
                 </div>
@@ -799,7 +802,11 @@
     $("[data-dashboard-home]").hidden = !isHome;
     $("[data-dashboard-section]").hidden = isHome;
     $$("[data-dashboard-view]").forEach((link) => {
-      link.classList.toggle("is-active", link.dataset.dashboardView === state.activeView);
+      const isTypeShortcut = Boolean(link.dataset.typeShortcut);
+      const isActive = isTypeShortcut
+        ? isHome && link.dataset.typeShortcut === state.type
+        : link.dataset.dashboardView === state.activeView;
+      link.classList.toggle("is-active", isActive);
     });
 
     if (!isHome) renderDashboardSection();
@@ -1009,6 +1016,7 @@
       time: relativeTime(item.createdAt),
       amount: `-${formatNumber(item.creditsUsed)} XP`,
       positive: false,
+      icon: item.type === "video" ? "udv5-transaction-video" : "udv5-transaction-image",
     }));
 
     const list = recent.slice(0, 3);
@@ -1018,6 +1026,7 @@
           .map(
             (item) => `
           <article>
+            <i><svg><use href="#${item.icon}"></use></svg></i>
             <span>${escapeHtml(item.label)}<small>${escapeHtml(item.time)}</small></span>
             <b class="${item.positive ? "is-positive" : ""}">${escapeHtml(item.amount)}</b>
           </article>

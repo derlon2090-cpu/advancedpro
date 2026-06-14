@@ -408,6 +408,18 @@
   font-size: 18px;
 }
 
+.user-dashboard-v3 .udv6-model-card h3 small {
+  display: inline-flex;
+  margin-inline-start: 7px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: var(--section-purple);
+  background: #f1edff;
+  font-size: 10px;
+  font-weight: 800;
+  vertical-align: middle;
+}
+
 .user-dashboard-v3 .udv6-model-card p {
   margin: 0;
   color: var(--section-muted);

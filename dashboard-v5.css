@@ -433,8 +433,25 @@
   border-radius: 8px;
 }
 
-.user-dashboard-v3 .udv3-options-grid span {
+.user-dashboard-v3 .udv3-options-grid .udv3-option-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   font-size: 11px;
+  color: #171935;
+}
+
+.user-dashboard-v3 .udv3-options-grid .udv3-option-heading b {
+  font: inherit;
+  font-weight: 800;
+}
+
+.user-dashboard-v3 .udv3-options-grid .udv3-option-heading svg {
+  width: 17px;
+  height: 17px;
+  color: #6d35ff;
+  stroke-width: 2;
 }
 
 .user-dashboard-v3 .udv3-options-grid select {
@@ -518,9 +535,19 @@
 }
 
 .user-dashboard-v3 .udv3-tips-card h2 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
   margin-bottom: 12px;
   text-align: center;
   font-size: 17px;
+}
+
+.user-dashboard-v3 .udv3-tips-card h2 svg {
+  width: 18px;
+  height: 18px;
+  color: var(--ud5-purple);
 }
 
 .user-dashboard-v3 .udv3-tips-card > div {
@@ -533,7 +560,25 @@
   border-radius: 9px;
   gap: 5px;
   text-align: center;
+  align-content: start;
   box-shadow: none;
+}
+
+.user-dashboard-v3 .udv3-tips-card article i {
+  width: 28px;
+  height: 28px;
+  margin: 0 auto 2px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  color: var(--ud5-purple);
+  background: #f2edff;
+  font-style: normal;
+}
+
+.user-dashboard-v3 .udv3-tips-card article i svg {
+  width: 15px;
+  height: 15px;
 }
 
 .user-dashboard-v3 .udv3-tips-card strong {
@@ -626,8 +671,28 @@
 }
 
 .user-dashboard-v3 .udv3-transactions-widget article {
+  display: grid;
+  grid-template-columns: 27px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
   padding-bottom: 8px;
   font-size: 10px;
+}
+
+.user-dashboard-v3 .udv3-transactions-widget article > i {
+  width: 27px;
+  height: 27px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  color: #6d35ff;
+  background: #f2edff;
+  font-style: normal;
+}
+
+.user-dashboard-v3 .udv3-transactions-widget article > i svg {
+  width: 14px;
+  height: 14px;
 }
 
 .user-dashboard-v3 .udv3-transactions-widget small {
