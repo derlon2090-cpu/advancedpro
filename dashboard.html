@@ -15,7 +15,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/styles.css?v=20260605-brand-v9" />
-    <link rel="stylesheet" href="/dashboard-v5.css?v=20260614-ui-icons-v2" />
+    <link rel="stylesheet" href="/dashboard-v5.css?v=20260614-xp-coins-v3" />
     <link rel="stylesheet" href="/dashboard-sections.css?v=20260614-ui-icons-v2" />
   </head>
   <body class="user-dashboard-v3" data-page="dashboard-v4">
@@ -44,6 +44,35 @@
       <symbol id="udv5-bulb" viewBox="0 0 24 24"><path d="M9 18h6M10 22h4"/><path d="M8.3 15.5A7 7 0 1 1 15.7 15.5c-.8.6-.7 1.5-.7 2.5H9c0-1 .1-1.9-.7-2.5Z"/></symbol>
       <symbol id="udv5-transaction-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="m21 15-5-5L5 20"/></symbol>
       <symbol id="udv5-transaction-video" viewBox="0 0 24 24"><rect x="3" y="5" width="13" height="14" rx="3"/><path d="m16 10 5-3v10l-5-3z"/></symbol>
+      <symbol id="udv5-xp-coins" viewBox="0 0 64 64">
+        <defs>
+          <linearGradient id="udv5-xp-face" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#c38aff"/>
+            <stop offset=".46" stop-color="#7c3cff"/>
+            <stop offset="1" stop-color="#5520dd"/>
+          </linearGradient>
+          <linearGradient id="udv5-xp-edge" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="#5520dd"/>
+            <stop offset=".5" stop-color="#8f54ff"/>
+            <stop offset="1" stop-color="#4d16c9"/>
+          </linearGradient>
+          <filter id="udv5-xp-shadow" x="-35%" y="-35%" width="170%" height="190%">
+            <feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#7138f4" flood-opacity=".28"/>
+          </filter>
+        </defs>
+        <g filter="url(#udv5-xp-shadow)">
+          <path d="M11 39v8c0 5 10 9 22 9s22-4 22-9v-8" fill="url(#udv5-xp-edge)"/>
+          <ellipse cx="33" cy="39" rx="22" ry="9" fill="url(#udv5-xp-face)"/>
+          <ellipse cx="33" cy="39" rx="16" ry="5.8" fill="none" stroke="#d8b7ff" stroke-opacity=".58"/>
+          <path d="M11 28v8c0 5 10 9 22 9s22-4 22-9v-8" fill="url(#udv5-xp-edge)"/>
+          <ellipse cx="33" cy="28" rx="22" ry="9" fill="url(#udv5-xp-face)"/>
+          <ellipse cx="33" cy="28" rx="16" ry="5.8" fill="none" stroke="#e1c8ff" stroke-opacity=".65"/>
+          <path d="M15 17v8c0 4.6 8 8 18 8s18-3.4 18-8v-8" fill="url(#udv5-xp-edge)"/>
+          <ellipse cx="33" cy="17" rx="18" ry="8" fill="url(#udv5-xp-face)"/>
+          <ellipse cx="33" cy="17" rx="12.5" ry="4.7" fill="none" stroke="#f0e1ff" stroke-opacity=".72"/>
+          <ellipse cx="27" cy="14.5" rx="5.5" ry="2.2" fill="#fff" fill-opacity=".28"/>
+        </g>
+      </symbol>
     </svg>
     <aside class="udv3-sidebar" aria-label="قائمة لوحة المستخدم">
       <button class="udv5-sidebar-close" type="button" data-sidebar-close aria-label="إغلاق القائمة">
@@ -133,7 +162,7 @@
         </button>
 
         <div class="udv3-xp-pill" aria-label="رصيدك الحالي">
-          <span class="udv3-coin-icon" aria-hidden="true"></span>
+          <svg class="udv3-coin-icon" aria-hidden="true"><use href="#udv5-xp-coins"></use></svg>
           <strong data-total-xp>1,095 XP</strong>
         </div>
 
@@ -286,7 +315,7 @@
           <section class="udv3-recent-card" id="recent">
             <div class="udv3-card-header">
               <h2>أحدث الإبداعات</h2>
-              <a href="#recent" data-local-nav>عرض الكل</a>
+              <a href="#projects" data-dashboard-view="projects">عرض الكل</a>
             </div>
             <div class="udv3-creations-grid" data-recent-grid></div>
           </section>
@@ -327,7 +356,9 @@
               <strong data-widget-xp>1,095 XP</strong>
               <p data-expiry-text>ينتهي في 25 أغسطس 2026</p>
             </div>
-            <div class="udv3-stack-icon" aria-hidden="true"><span></span></div>
+            <div class="udv3-stack-icon" aria-hidden="true">
+              <svg><use href="#udv5-xp-coins"></use></svg>
+            </div>
             <div class="udv3-progress">
               <i data-xp-progress></i>
             </div>
@@ -370,6 +401,6 @@
     </div>
 
     <script src="/config.js"></script>
-    <script src="/dashboard-page.js?v=20260614-ui-icons-v2"></script>
+    <script src="/dashboard-page.js?v=20260614-xp-coins-v3"></script>
   </body>
 </html>

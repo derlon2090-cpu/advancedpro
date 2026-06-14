@@ -245,7 +245,17 @@
 }
 
 .user-dashboard-v3 .udv3-coin-icon {
-  transform: scale(.72);
+  position: static;
+  width: 25px;
+  height: 25px;
+  flex: 0 0 25px;
+  overflow: visible;
+  stroke: none;
+}
+
+.user-dashboard-v3 .udv3-coin-icon::before,
+.user-dashboard-v3 .udv3-coin-icon::after {
+  display: none;
 }
 
 .user-dashboard-v3 .udv3-add-button {
@@ -631,8 +641,23 @@
 .user-dashboard-v3 .udv3-stack-icon {
   width: 68px;
   height: 68px;
-  transform: scale(.78);
-  transform-origin: top center;
+  display: grid;
+  place-items: center;
+  transform: none;
+  background: radial-gradient(circle, rgba(113, 56, 244, .13), transparent 66%);
+}
+
+.user-dashboard-v3 .udv3-stack-icon::before,
+.user-dashboard-v3 .udv3-stack-icon::after,
+.user-dashboard-v3 .udv3-stack-icon span {
+  display: none;
+}
+
+.user-dashboard-v3 .udv3-stack-icon svg {
+  width: 66px;
+  height: 66px;
+  overflow: visible;
+  stroke: none;
 }
 
 .user-dashboard-v3 .udv3-progress {
