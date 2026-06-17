@@ -188,11 +188,9 @@
     const remaining = keyCredits();
     const total = Math.max(keyTotalCredits(), remaining, 1);
     const percent = Math.max(8, Math.min(100, Math.round((remaining / total) * 100)));
-    const seed = encodeURIComponent(key.customerName || "advanced-pro");
 
     $("[data-customer-name]").textContent = key.customerName;
-    $("[data-customer-avatar]").src =
-      key.avatarUrl || `https://api.dicebear.com/8.x/avataaars/svg?seed=${seed}`;
+    $("[data-customer-avatar]").src = key.avatarUrl || "/ap-mark.svg";
     $("[data-plan-badge]").textContent = key.planName || "VIP";
     $("[data-total-xp]").textContent = `${formatNumber(remaining)} XP`;
     $("[data-widget-xp]").textContent = `${formatNumber(remaining)} XP`;

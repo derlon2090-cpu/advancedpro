@@ -119,6 +119,11 @@ function getAccessTypeLabel(email) {
   return email ? "مخصص لحساب واحد" : "متاح للاستخدام العام";
 }
 
+function extractPlanName(notes) {
+  const match = String(notes || "").match(/(?:^|[;,\s])plan:([^;,\n]+)/i);
+  return match ? match[1].trim() || null : null;
+}
+
 function getStatusMeta(code, now = new Date()) {
   if (!code.isActive) {
     return { key: "inactive", label: "غير مفعل" };
@@ -176,6 +181,7 @@ function serializeActivationCode(record) {
     code: record.code,
     email: record.email || null,
     ownerName: record.ownerName || null,
+    planName: extractPlanName(record.notes) || null,
     imageLimit: limits.imageLimit,
     videoLimit: limits.videoLimit,
     imageUsed: limits.imageUsed,
@@ -213,10 +219,11 @@ async function syncSubscriptionForCode(record) {
   const serialized = serializeActivationCode(record);
   const farFuture = new Date(record.activatedAt || record.createdAt || new Date());
   farFuture.setFullYear(farFuture.getFullYear() + 10);
+  const planName = serialized.planName || record.ownerName || `كود ${record.code}`;
 
   const subscriptionData = {
     userId: record.activatedByUserId,
-    packageName: record.ownerName || `كود ${record.code}`,
+    packageName: planName,
     imageBalance: serialized.imageAvailable,
     videoBalance: serialized.videoAvailable,
     videoMaxDurationSeconds: 60,

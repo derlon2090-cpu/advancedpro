@@ -260,7 +260,7 @@
     const key = payload?.key || payload?.data || payload || {};
     return {
       ...key,
-      customerName: key.customerName || key.customer_name || key.ownerName || key.name || "أحمد العتيبي",
+      customerName: key.customerName || key.customer_name || key.ownerName || key.name || "العميل",
       customerEmail: key.customerEmail || key.customer_email || key.email || "",
       planName: key.planName || key.plan_name || key.plan || "VIP",
       status: key.status || "active",
@@ -322,12 +322,10 @@
     const remaining = keyCredits();
     const total = Math.max(keyTotalCredits(), remaining, 1);
     const percent = Math.max(4, Math.min(100, Math.round((remaining / total) * 100)));
-    const name = key.customerName || "أحمد العتيبي";
-    const seed = encodeURIComponent(name);
+    const name = key.customerName || "العميل";
 
     $("[data-customer-name]").textContent = name;
-    $("[data-customer-avatar]").src =
-      key.avatarUrl || `https://api.dicebear.com/8.x/avataaars/svg?seed=${seed}`;
+    $("[data-customer-avatar]").src = key.avatarUrl || "/ap-mark.svg";
     $("[data-plan-badge]").textContent = key.planName || "VIP";
     $("[data-total-xp]").textContent = `${formatNumber(remaining)} XP`;
     $("[data-widget-xp]").textContent = `${formatNumber(remaining)} XP`;

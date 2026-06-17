@@ -159,9 +159,11 @@ app.get(
       accessCode.expiresAt && new Date(accessCode.expiresAt).getTime() < Date.now();
     const status =
       !accessCode.isActive ? "disabled" : isExpired || accessCode.statusKey === "expired" ? "expired" : "active";
+    const customerName = accessCode.ownerName || "العميل";
 
     return res.json({
-      planName: accessCode.ownerName || "مفتاح رقمي",
+      customerName,
+      planName: accessCode.planName || "مفتاح رقمي",
       codeMasked: maskAccessCode(accessCode.code),
       creditsRemaining: Math.max(Number(accessCode.creditsRemaining || 0), 0),
       imagesLimit,
