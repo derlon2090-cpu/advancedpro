@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
   const API_BASE_URL = window.AdvancedProConfig?.apiBaseUrl || "";
   const form = document.querySelector("#keyActivationForm");
   const input = document.querySelector("#keyCode");
@@ -20,28 +20,28 @@
     USED_KEY: {
       tone: "warning",
       icon: "⚠",
-      title: "هذا المفتاح تم استخدامه مسبقًا.",
-      body: "إذا كنت تعتقد بوجود خطأ يرجى التواصل مع الدعم الفني.",
+      title: "تم استخدام هذا المفتاح مسبقًا.",
+      body: "إذا كنت تعتقد أن هناك خطأ، تواصل مع الدعم الفني.",
       action: "تواصل معنا",
     },
     EXPIRED_KEY: {
       tone: "warning",
-      icon: "◴",
+      icon: "◔",
       title: "انتهت صلاحية هذا المفتاح.",
-      body: "يرجى شراء أو الحصول على مفتاح جديد.",
+      body: "يرجى الحصول على مفتاح جديد أو التواصل مع المسؤول.",
       action: "عرض الباقات",
     },
     DISABLED_KEY: {
       tone: "danger",
-      icon: "⊘",
+      icon: "⛔",
       title: "تم إيقاف هذا المفتاح.",
       body: "للمزيد من المعلومات يرجى التواصل مع الدعم الفني.",
       action: "تواصل معنا",
     },
     SERVER_ERROR: {
       tone: "neutral",
-      icon: "▦",
-      title: "تعذر إتمام العملية حالياً.",
+      icon: "▣",
+      title: "تعذر إتمام العملية حاليًا.",
       body: "يرجى المحاولة بعد قليل.",
       action: "إعادة المحاولة",
     },
@@ -70,7 +70,7 @@
     input.disabled = isBusy;
     submitButton.classList.toggle("is-loading", isBusy);
     submitButton.setAttribute("aria-busy", isBusy ? "true" : "false");
-    submitLabel.textContent = isBusy ? "جارٍ التحقق من المفتاح..." : "ابدأ تفعيل الكود الآن";
+    submitLabel.textContent = isBusy ? "جارِ التحقق..." : "تفعيل الحساب";
   }
 
   function setInlineMessage(text, tone = "error") {
@@ -81,7 +81,7 @@
   }
 
   function shakeInput() {
-    const target = document.querySelector(".key-input-wrap");
+    const target = document.querySelector(".key-input-shell");
     if (!target) return;
     target.classList.remove("is-shaking");
     void target.offsetWidth;
@@ -93,16 +93,12 @@
     const toast = document.createElement("article");
     toast.className = `activation-toast is-${meta.tone || "neutral"}`;
     toast.innerHTML = `
-      <span class="toast-icon">${meta.icon || "•"}</span>
+      <span class="toast-icon">${escapeHtml(meta.icon || "•")}</span>
       <div>
         <strong>${escapeHtml(meta.title || "")}</strong>
         <p>${escapeHtml(meta.body || "")}</p>
       </div>
-      ${
-        meta.action
-          ? `<button type="button" data-toast-action>${escapeHtml(meta.action)}</button>`
-          : ""
-      }
+      ${meta.action ? `<button type="button" data-toast-action>${escapeHtml(meta.action)}</button>` : ""}
     `;
     toastStack.appendChild(toast);
     requestAnimationFrame(() => toast.classList.add("is-visible"));
@@ -138,41 +134,55 @@
     if (apiCode && ERROR_META[apiCode]) return apiCode;
 
     const text = String(payload?.message || payload?.error || "").toLowerCase();
-    if (status === 404 || text.includes("غير صحيح") || text.includes("invalid")) return "INVALID_KEY";
-    if (status === 410 || text.includes("انتهت") || text.includes("expired")) return "EXPIRED_KEY";
-    if (status === 403 || text.includes("غير متاح") || text.includes("موقوف") || text.includes("disabled")) return "DISABLED_KEY";
-    if (text.includes("استخدام") || text.includes("used")) return "USED_KEY";
+    if (status === 404 || text.includes("invalid")) return "INVALID_KEY";
+    if (status === 410 || text.includes("expired")) return "EXPIRED_KEY";
+    if (status === 403 || text.includes("disabled") || text.includes("blocked")) return "DISABLED_KEY";
+    if (text.includes("used")) return "USED_KEY";
     return "SERVER_ERROR";
   }
 
   async function activateKey(code) {
-    const response = await fetch(apiUrl("/api/keys/activate"), {
-      method: "POST",
-      credentials: "include",
-      cache: "no-store",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({ code }),
-    });
+    const routes = ["/api/activate-key", "/api/activate", "/api/user/code/activate"];
+    let lastError = null;
 
-    let payload = {};
-    try {
-      payload = await response.json();
-    } catch {
-      payload = {};
+    for (const path of routes) {
+      try {
+        const response = await fetch(apiUrl(path), {
+          method: "POST",
+          credentials: "include",
+          cache: "no-store",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({ code }),
+        });
+
+        let payload = {};
+        try {
+          payload = await response.json();
+        } catch {
+          payload = {};
+        }
+
+        if (!response.ok || payload.success === false) {
+          const errorCode = normalizeError(payload, response.status);
+          const error = new Error(errorCode);
+          error.code = errorCode;
+          error.payload = payload;
+          throw error;
+        }
+
+        return payload;
+      } catch (error) {
+        lastError = error;
+        if (error?.code) {
+          throw error;
+        }
+      }
     }
 
-    if (!response.ok || payload.success === false) {
-      const errorCode = normalizeError(payload, response.status);
-      const error = new Error(errorCode);
-      error.code = errorCode;
-      error.payload = payload;
-      throw error;
-    }
-
-    return payload;
+    throw lastError || new Error("SERVER_ERROR");
   }
 
   function calculateDaysLeft(expiresAt) {
@@ -214,28 +224,61 @@
     };
   }
 
+  function saveActivationState(payload) {
+    const accessCode = payload?.accessCode || payload?.codeInfo || null;
+    const token = payload?.token || null;
+
+    try {
+      if (token) {
+        window.localStorage.setItem("advancedpro_token", token);
+        window.sessionStorage.setItem("advancedpro_token", token);
+      }
+    } catch {
+      // ignore storage failures
+    }
+
+    try {
+      if (accessCode) {
+        window.localStorage.setItem("advancedpro_access_code", JSON.stringify(accessCode));
+      }
+    } catch {
+      // ignore storage failures
+    }
+  }
+
   function showSuccess(payload) {
     const info = getActivationInfo(payload);
-    document.querySelector("[data-success-plan]").textContent = info.planName;
-    document.querySelector("[data-success-xp]").textContent = `${new Intl.NumberFormat("en-US").format(info.xp)} XP`;
-    document.querySelector("[data-success-expiry]").textContent = info.expiresAt
-      ? `${info.validity} - ${formatDate(info.expiresAt)}`
-      : info.validity;
-    document.querySelector("[data-dashboard-link]").href = info.redirectTo;
+    const planTarget = document.querySelector("[data-success-plan]");
+    const xpTarget = document.querySelector("[data-success-xp]");
+    const expiryTarget = document.querySelector("[data-success-expiry]");
+    const dashboardLink = document.querySelector("[data-dashboard-link]");
 
-    showToast({
-      tone: "success",
-      icon: "✓",
-      title: "تم تفعيل المفتاح بنجاح 🎉",
-      body: `تم إضافة ${new Intl.NumberFormat("en-US").format(info.xp)} XP - الباقة: ${info.planName} - الصلاحية: ${info.validity}`,
-      action: "الانتقال للوحة التحكم",
-    }, {
-      onAction: () => {
-        window.location.href = info.redirectTo;
+    if (planTarget) planTarget.textContent = info.planName;
+    if (xpTarget) xpTarget.textContent = `${new Intl.NumberFormat("en-US").format(info.xp)} XP`;
+    if (expiryTarget) {
+      expiryTarget.textContent = info.expiresAt ? `${info.validity} · ${formatDate(info.expiresAt)}` : info.validity;
+    }
+    if (dashboardLink) dashboardLink.href = info.redirectTo;
+
+    showToast(
+      {
+        tone: "success",
+        icon: "✓",
+        title: "تم تفعيل الحساب بنجاح",
+        body: `تمت إضافة ${new Intl.NumberFormat("en-US").format(info.xp)} XP - الباقة: ${info.planName}`,
+        action: "الانتقال إلى لوحة التحكم",
       },
-    });
+      {
+        onAction: () => {
+          window.location.href = info.redirectTo;
+        },
+      }
+    );
 
-    successModal.hidden = false;
+    if (successModal) {
+      successModal.hidden = false;
+    }
+
     clearTimeout(redirectTimer);
     redirectTimer = setTimeout(() => {
       window.location.href = info.redirectTo;
@@ -249,6 +292,13 @@
     input.value = formatKey(input.value);
     if (cursorAtEnd) input.setSelectionRange(input.value.length, input.value.length);
     setInlineMessage("");
+  });
+
+  input.addEventListener("paste", (event) => {
+    event.preventDefault();
+    const pasted = event.clipboardData?.getData("text") || "";
+    input.value = formatKey(pasted);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
   });
 
   form.addEventListener("submit", async (event) => {
@@ -270,7 +320,8 @@
 
     try {
       const payload = await activateKey(code);
-      setInlineMessage("تم تفعيل المفتاح بنجاح. يتم تحويلك الآن...", "success");
+      saveActivationState(payload);
+      setInlineMessage("تم تفعيل الحساب بنجاح. سيتم تحويلك الآن...", "success");
       showSuccess(payload);
     } catch (error) {
       const codeName = error.code || "SERVER_ERROR";

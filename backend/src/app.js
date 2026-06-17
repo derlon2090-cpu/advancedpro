@@ -179,6 +179,7 @@ app.get(
   })
 );
 app.use("/api/activate", activateRoutes);
+app.use("/api/activate-key", activateRoutes);
 app.use("/api/user/code", activateRoutes);
 app.use("/api/keys", keyRoutes);
 app.use("/api/dashboard", dashboardRoutes);
