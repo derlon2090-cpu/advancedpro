@@ -494,6 +494,7 @@
 }
 
 .user-dashboard-v3 .udv3-creation-card {
+  position: relative;
   gap: 5px;
 }
 
@@ -518,6 +519,19 @@
   font-size: 8px;
 }
 
+.user-dashboard-v3 .udv3-creation-body {
+  display: grid;
+  gap: 5px;
+}
+
+.user-dashboard-v3 .udv3-creation-meta {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 .user-dashboard-v3 .udv3-creation-card h3 {
   min-height: 19px;
   white-space: nowrap;
@@ -526,6 +540,7 @@
 }
 
 .user-dashboard-v3 .udv3-creation-card p {
+  margin: 0;
   font-size: 9px;
 }
 
@@ -533,8 +548,14 @@
   justify-self: end;
   width: 23px;
   height: 23px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #e7e7f1;
+  border-radius: 10px;
+  background: #fff;
   color: #15162f;
   font-size: 15px;
+  line-height: 1;
 }
 
 .user-dashboard-v3 .udv3-tips-card {

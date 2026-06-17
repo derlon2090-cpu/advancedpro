@@ -424,9 +424,14 @@
           <span class="udv3-creation-media">${media}</span>
           <b>${typeLabel(item.type)}</b>
         </a>
-        <h3>${prompt}</h3>
-        <p>${meta}</p>
-        <button class="udv3-card-menu" type="button" aria-label="إجراءات">⋮</button>
+        <div class="udv3-creation-body">
+          <h3>${prompt}</h3>
+          <div class="udv3-creation-meta">
+            <p>${meta}</p>
+            <button class="udv3-card-menu" type="button" data-menu-generation-id="${escapeHtml(item.id)}" aria-label="إجراءات المشروع">⋮</button>
+          </div>
+        </div>
+        ${renderGenerationMenu(item)}
       </article>
     `;
   }
