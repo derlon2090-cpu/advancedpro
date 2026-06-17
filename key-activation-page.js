@@ -42,7 +42,7 @@
       tone: "neutral",
       icon: "▣",
       title: "تعذر إتمام العملية حاليًا.",
-      body: "إذا ظهر هذا الخطأ فغالبًا الجلسة غير مفعلة أو هناك مشكلة اتصال مؤقتة. سجّل الدخول ثم أعد المحاولة.",
+      body: "تعذر التحقق من الكود الآن. تأكد من اتصالك وأعد المحاولة.",
       action: "إعادة المحاولة",
     },
   };
@@ -161,7 +161,7 @@
   }
 
   async function activateKey(code) {
-    const routes = ["/api/activate-key", "/api/activate", "/api/user/code/activate"];
+    const routes = ["/api/public/keys/activate", "/api/activate-key", "/api/activate", "/api/user/code/activate"];
     let lastError = null;
 
     for (const path of routes) {
@@ -188,6 +188,7 @@
           const errorCode = normalizeError(payload, response.status);
           const error = new Error(errorCode);
           error.code = errorCode;
+          error.status = response.status;
           error.payload = payload;
           throw error;
         }
@@ -195,7 +196,13 @@
         return payload;
       } catch (error) {
         lastError = error;
-        if (error?.code) {
+        const canRetry =
+          !error?.code ||
+          error.code === "SERVER_ERROR" ||
+          error.status === 401 ||
+          error.status === 403;
+
+        if (!canRetry) {
           throw error;
         }
       }
