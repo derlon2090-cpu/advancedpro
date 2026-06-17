@@ -525,13 +525,11 @@
 
   function renderGenerationMenu(item) {
     if (String(state.activeMenuId) !== String(item.id)) return "";
+    const downloadLabel = item.type === "video" ? "تحميل الفيديو" : "تحميل";
     return `
       <div class="udv6-menu" data-generation-menu>
-        <button type="button" data-generation-action="download" data-generation-id="${escapeHtml(item.id)}">تحميل</button>
-        <button type="button" data-generation-action="share" data-generation-id="${escapeHtml(item.id)}">مشاركة</button>
+        <button type="button" data-generation-action="download" data-generation-id="${escapeHtml(item.id)}">${escapeHtml(downloadLabel)}</button>
         <button type="button" data-generation-action="copy" data-generation-id="${escapeHtml(item.id)}">نسخ الرابط</button>
-        <button type="button" data-generation-action="regenerate" data-generation-id="${escapeHtml(item.id)}">إعادة إنشاء</button>
-        <button type="button" data-generation-action="favorite" data-generation-id="${escapeHtml(item.id)}">${item.isFavorite ? "إزالة من المفضلة" : "إضافة للمفضلة"}</button>
         <button class="is-danger" type="button" data-generation-action="delete" data-generation-id="${escapeHtml(item.id)}">حذف</button>
       </div>
     `;
@@ -758,7 +756,7 @@
             <label class="udv6-field"><span>اللغة</span><select name="language"><option value="ar" ${settings.language === "ar" ? "selected" : ""}>العربية</option><option value="en" ${settings.language === "en" ? "selected" : ""}>English</option></select></label>
           </section>
           <section class="udv6-settings-card">
-            <h2>الأمان</h2>
+            <h2>حماية فائقة للكود</h2>
             <button class="udv6-secondary-button" type="button" data-security-action="email">تغيير البريد</button>
             <button class="udv6-secondary-button" style="margin-right:8px" type="button" data-security-action="password">تغيير كلمة المرور</button>
           </section>
@@ -809,7 +807,6 @@
 
     if (!isHome) renderDashboardSection();
     if (updateHistory) history.pushState({ dashboardView: state.activeView }, "", `#${state.activeView}`);
-    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function findGeneration(id) {
@@ -826,7 +823,7 @@
     }
     setTimeout(() => {
       $("#create")?.scrollIntoView({ behavior: "smooth", block: "start" });
-      input?.focus();
+      input?.focus({ preventScroll: true });
     }, 40);
   }
 
@@ -851,48 +848,23 @@
       anchor.target = "_blank";
       anchor.click();
     } else if (action === "copy") {
-      await copyText(item.resultUrl);
-    } else if (action === "share") {
-      if (navigator.share) {
-        await navigator.share({ title: item.prompt, url: item.resultUrl }).catch(() => {});
-      } else {
-        await copyText(item.resultUrl, "تم نسخ الرابط للمشاركة");
-      }
-    } else if (action === "regenerate") {
-      switchToCreate({ type: item.type, prompt: item.prompt });
-      return;
-    } else if (action === "favorite") {
-      const key = String(item.id);
-      const nextFavorite = !state.favorites.has(key);
-      try {
-        const data = await requestJson(`/api/generate/${encodeURIComponent(item.id)}/favorite`, {
-          method: "PATCH",
-          body: JSON.stringify({ isFavorite: nextFavorite }),
-        });
-        item.isFavorite = Boolean(data.isFavorite);
-      } catch (error) {
-        console.warn("FAVORITE SAVE WARNING:", error);
-        item.isFavorite = nextFavorite;
-      }
-      if (item.isFavorite) state.favorites.add(key);
-      else state.favorites.delete(key);
-      saveFavorites();
-      showToast(item.isFavorite ? "تمت الإضافة إلى المفضلة" : "تمت الإزالة من المفضلة");
+      await copyText(item.resultUrl, "تم نسخ الرابط");
     } else if (action === "delete") {
+      const confirmed = window.confirm("هل أنت متأكد؟");
+      if (!confirmed) return;
       try {
         await requestJson(`/api/generate/${encodeURIComponent(item.id)}`, {
           method: "DELETE",
         });
       } catch (error) {
         console.warn("GENERATION DELETE WARNING:", error);
-        showToast(error.message || "تعذر حذف العمل من الخادم.", "error");
-        renderDashboardSection();
+        showToast(error.message || "تعذر حذف المشروع.", "error");
         return;
       }
       state.results = state.results.filter((result) => String(result.id) !== String(id));
       state.favorites.delete(String(id));
       saveFavorites();
-      showToast("تم حذف العمل بنجاح.");
+      showToast("تم حذف المشروع");
     }
     renderDashboardSection();
   }
@@ -900,7 +872,7 @@
   function bindSectionEvents() {
     document.addEventListener("click", async (event) => {
       const navigation = event.target.closest("[data-dashboard-view]");
-      if (navigation && !navigation.matches("[data-type-shortcut]")) {
+      if (navigation && navigation.hasAttribute("data-dashboard-view") && !navigation.matches("[data-type-shortcut]")) {
         event.preventDefault();
         setDashboardView(navigation.dataset.dashboardView);
         return;
@@ -929,7 +901,10 @@
       const templateButton = event.target.closest("[data-use-template]");
       if (templateButton) {
         const item = TEMPLATE_ITEMS.find((template) => template.id === templateButton.dataset.useTemplate);
-        if (item) switchToCreate({ prompt: item.prompt });
+        if (item) {
+          switchToCreate({ prompt: item.prompt });
+          $("[data-prompt-input]")?.focus({ preventScroll: true });
+        }
         return;
       }
 
@@ -967,7 +942,7 @@
 
       const securityAction = event.target.closest("[data-security-action]");
       if (securityAction) {
-        showToast("حفاظًا على الأمان، يتم تحديث هذه البيانات عبر الدعم.");
+        showToast("حماية فائقة للكود");
         return;
       }
 
@@ -1177,7 +1152,7 @@
 
     if (currentPrompt.length < 3) {
       setMessage("اكتب وصفًا قصيرًا أولًا ثم اضغط تحسين ذكي.", "error");
-      promptInput.focus();
+      promptInput.focus({ preventScroll: true });
       return;
     }
 
@@ -1217,7 +1192,7 @@
       setMessage("تم تحسين الوصف بدقة مع تثبيت العناصر والعلاقات.", "info");
       showToast("تم تحسين الوصف ذكيًا.");
       updateUpgradeRecommendation();
-      promptInput.focus();
+      promptInput.focus({ preventScroll: true });
     } catch (error) {
       console.error("SMART ENHANCE ERROR:", error);
       resetEnhancedPromptState();
@@ -1239,7 +1214,7 @@
     const userPrompt = promptInput.value.trim();
     if (userPrompt.length < 3) {
       setMessage("اكتب وصفًا واضحًا أولًا.", "error");
-      promptInput.focus();
+      promptInput.focus({ preventScroll: true });
       return;
     }
 
@@ -1397,6 +1372,7 @@
     $$("[data-type-shortcut]").forEach((link) => {
       link.addEventListener("click", (event) => {
         event.preventDefault();
+        event.stopPropagation();
         switchToCreate({ type: link.dataset.typeShortcut });
       });
     });

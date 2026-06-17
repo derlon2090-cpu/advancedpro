@@ -310,18 +310,26 @@
   cursor: pointer;
 }
 
+.user-dashboard-v3 .udv6-work-meta {
+  position: relative;
+}
+
 .user-dashboard-v3 .udv6-menu {
   position: absolute;
   z-index: 30;
-  left: 14px;
-  bottom: 52px;
-  width: 205px;
+  right: 14px;
+  top: calc(100% + 8px);
+  left: auto;
+  bottom: auto;
+  width: 180px;
   overflow: hidden;
-  border: 1px solid var(--section-line);
-  border-radius: 16px;
-  padding: 7px;
+  border: 0;
+  border-radius: 14px;
+  padding: 8px;
   background: #fff;
-  box-shadow: 0 22px 55px rgba(24, 18, 60, 0.16);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+  transform-origin: top right;
+  animation: udv6-menu-pop 150ms ease both;
 }
 
 .user-dashboard-v3 .udv6-menu button {
@@ -346,6 +354,17 @@
 
 .user-dashboard-v3 .udv6-menu button.is-danger {
   color: #e63c54;
+}
+
+@keyframes udv6-menu-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .user-dashboard-v3 .udv6-empty {
@@ -702,6 +721,10 @@
   outline: none;
 }
 
+.user-dashboard-v3 .udv6-settings-card {
+  overflow: visible;
+}
+
 .user-dashboard-v3 .udv6-toggle-row {
   min-height: 57px;
   display: flex;
@@ -899,5 +922,20 @@
   .user-dashboard-v3 .udv6-segmented button {
     flex: 1;
     min-width: 0;
+  }
+
+  .user-dashboard-v3 .udv6-field input,
+  .user-dashboard-v3 .udv6-field select {
+    height: 50px;
+    font-size: 15px;
+  }
+
+  .user-dashboard-v3 .udv6-settings-card {
+    padding: 16px;
+  }
+
+  .user-dashboard-v3 .udv6-menu {
+    width: 180px;
+    max-width: calc(100vw - 24px);
   }
 }
