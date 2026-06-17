@@ -14034,13 +14034,13 @@ html[data-theme="dark"] .create-chat-bubble__state {
 
 /* Final activation layout overrides - keep after all responsive rules */
 .activate-page-v2 .activate-header {
-  width: min(1720px, calc(100% - 48px));
+  width: 100%;
   min-height: 124px;
-  margin: 18px auto 0;
+  margin: 0;
   padding: 0 32px;
-  border-radius: 24px;
-  border-top: 1px solid #e8eaf3;
-  border-inline: 1px solid #e8eaf3;
+  border-radius: 0 0 24px 24px;
+  border-top: 0;
+  border-inline: 0;
   direction: ltr;
   justify-content: space-between;
   background:
@@ -14096,10 +14096,10 @@ html[data-theme="dark"] .create-chat-bubble__state {
 
 @media (max-width: 860px) {
   .activate-page-v2 .activate-header {
-    width: calc(100% - 32px);
+    width: 100%;
     min-height: 112px;
     padding: 0 22px;
-    border-radius: 22px;
+    border-radius: 0 0 22px 22px;
   }
 
   .activate-page-v2 .activate-content {
@@ -14122,7 +14122,7 @@ html[data-theme="dark"] .create-chat-bubble__state {
 
 @media (max-width: 1024px) and (min-width: 861px) {
   .activate-page-v2 .activate-header {
-    width: calc(100% - 32px);
+    width: 100%;
     padding: 0 24px;
   }
 
@@ -14149,7 +14149,7 @@ html[data-theme="dark"] .create-chat-bubble__state {
 
 @media (max-width: 820px) {
   .activate-page-v2 .activate-header {
-    width: calc(100% - 24px);
+    width: 100%;
     min-height: 104px;
     padding: 0 18px;
   }
@@ -14169,7 +14169,7 @@ html[data-theme="dark"] .create-chat-bubble__state {
 
 @media (max-width: 640px) {
   .activate-page-v2 .activate-header {
-    width: calc(100% - 20px);
+    width: 100%;
     min-height: 96px;
     padding: 14px 16px;
     flex-wrap: wrap;

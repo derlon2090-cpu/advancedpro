@@ -42,7 +42,7 @@
       tone: "neutral",
       icon: "▣",
       title: "تعذر إتمام العملية حاليًا.",
-      body: "يرجى المحاولة بعد قليل.",
+      body: "إذا ظهر هذا الخطأ فغالبًا الجلسة غير مفعلة أو هناك مشكلة اتصال مؤقتة. سجّل الدخول ثم أعد المحاولة.",
       action: "إعادة المحاولة",
     },
   };
@@ -80,8 +80,27 @@
     message.dataset.tone = tone;
   }
 
+  function getFriendlyErrorMessage(errorCode) {
+    if (errorCode === "SERVER_ERROR") {
+      return "تأكد أنك مسجل الدخول وأن الكود صحيح، ثم أعد المحاولة.";
+    }
+    if (errorCode === "INVALID_KEY") {
+      return "أدخل الكود بشكل صحيح ثم أعد المحاولة.";
+    }
+    if (errorCode === "USED_KEY") {
+      return "هذا الكود مستخدم مسبقًا.";
+    }
+    if (errorCode === "EXPIRED_KEY") {
+      return "انتهت صلاحية هذا الكود.";
+    }
+    if (errorCode === "DISABLED_KEY") {
+      return "هذا الكود متوقف حاليًا.";
+    }
+    return "تعذر إتمام العملية.";
+  }
+
   function shakeInput() {
-    const target = document.querySelector(".key-input-shell");
+    const target = document.querySelector(".key-input-wrap");
     if (!target) return;
     target.classList.remove("is-shaking");
     void target.offsetWidth;
@@ -326,7 +345,11 @@
     } catch (error) {
       const codeName = error.code || "SERVER_ERROR";
       const meta = ERROR_META[codeName] || ERROR_META.SERVER_ERROR;
-      setInlineMessage(`${meta.title} ${meta.body}`, meta.tone);
+      const fallbackMessage =
+        error?.message && error.message !== codeName
+          ? error.message
+          : getFriendlyErrorMessage(codeName);
+      setInlineMessage(fallbackMessage, meta.tone);
       shakeInput();
       showToast(meta, {
         onAction: () => {
