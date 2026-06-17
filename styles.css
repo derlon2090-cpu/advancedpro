@@ -11853,7 +11853,7 @@ html[data-theme="dark"] .create-chat-bubble__state {
   }
 }
 
-@media (max-width: 980px) {
+@media (max-width: 720px) {
   .user-dashboard-v3 {
     display: block;
   }
@@ -12348,7 +12348,7 @@ html[data-theme="dark"] .create-chat-bubble__state {
   }
 }
 
-@media (max-width: 980px) {
+@media (max-width: 720px) {
   .user-dashboard-v3 {
     display: block;
   }
@@ -12384,6 +12384,23 @@ html[data-theme="dark"] .create-chat-bubble__state {
 
   .udv3-workspace {
     padding: 14px;
+  }
+
+  .udv3-cost-card {
+    min-height: 0;
+  }
+
+  .udv3-cost-card span {
+    padding-top: 18px;
+  }
+
+  .udv3-cost-card strong {
+    font-size: 36px;
+  }
+
+  .udv3-cost-card button {
+    min-height: 54px;
+    font-size: 15px;
   }
 
   .udv3-widgets,
