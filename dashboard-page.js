@@ -19,7 +19,9 @@
     sectionFilter: "all",
     sectionSearch: "",
     activeMenuId: null,
+    activeMenuScope: null,
     favorites: new Set(),
+    refreshTimer: null,
   };
 
   const IMAGE_XP_COST = { normal: 5, high: 10, ultra: 20 };
@@ -405,7 +407,7 @@
     const grid = $("[data-recent-grid]");
     const list = state.results.slice(0, 5);
     grid.innerHTML = list.length
-      ? list.map(renderCreationCard).join("")
+      ? list.map(renderCreationCardFixed).join("")
       : `<div class="udv3-empty-state">لم تنشئ أي محتوى بعد. ابدأ الآن بإنشاء أول صورة أو فيديو.</div>`;
   }
 
@@ -433,6 +435,38 @@
             <p>${meta}</p>
             <div class="udv3-card-menu-wrap">
               <button class="udv3-card-menu" type="button" data-menu-generation-id="${escapeHtml(item.id)}" aria-label="إجراءات المشروع">⋮</button>
+              ${renderGenerationMenu(item)}
+            </div>
+          </div>
+        </div>
+      </article>
+    `;
+  }
+
+  function renderCreationCardFixed(item) {
+    const mediaUrl = item.thumbnailUrl || item.resultUrl;
+    const prompt = escapeHtml(item.prompt);
+    const meta = `${qualityLabel(item.quality)} · ${relativeTime(item.createdAt)}`;
+    const targetUrl = `/generation?id=${encodeURIComponent(item.id)}`;
+    const isProcessing = item.status !== "completed" || !item.resultUrl;
+    const media = isProcessing
+      ? `<div class="udv6-creation-placeholder"><strong>جاري الإنشاء...</strong><span>${escapeHtml(item.prompt || "نحن نحضر نتيجتك الآن")}</span><i></i></div>`
+      : item.type === "video"
+        ? `<video src="${escapeHtml(mediaUrl)}" muted playsinline preload="metadata"></video>`
+        : `<img src="${escapeHtml(mediaUrl)}" alt="${prompt}" loading="lazy" />`;
+
+    return `
+      <article class="udv3-creation-card ${isProcessing ? "is-processing" : ""}">
+        <a class="udv3-creation-preview" href="${targetUrl}" data-generation-link="${escapeHtml(item.id)}">
+          <span class="udv3-creation-media">${media}</span>
+          <b>${isProcessing ? "جاري الإنشاء..." : typeLabel(item.type)}</b>
+        </a>
+        <div class="udv3-creation-body">
+          <h3>${prompt}</h3>
+          <div class="udv3-creation-meta">
+            <p>${meta}</p>
+            <div class="udv3-card-menu-wrap">
+              <button class="udv3-card-menu" type="button" data-menu-generation-id="${escapeHtml(item.id)}" data-menu-scope="recent" aria-label="إجراءات المشروع">⋮</button>
               ${renderGenerationMenu(item)}
             </div>
           </div>
@@ -550,8 +584,9 @@
 
   function renderWorkCard(item, { favoriteView = false } = {}) {
     const targetUrl = `/generation?id=${encodeURIComponent(item.id)}`;
+    const isProcessing = item.status !== "completed" || !item.resultUrl;
     return `
-      <article class="udv6-work-card">
+      <article class="udv6-work-card ${isProcessing ? "is-processing" : ""}">
         <a class="udv6-work-media" href="${targetUrl}">
           ${generationMedia(item)}
           <b>${typeLabel(item.type)}</b>
@@ -563,6 +598,30 @@
             <span>${qualityLabel(item.quality)} · ${relativeTime(item.createdAt)}</span>
             <div class="udv6-card-menu-wrap">
               <button class="udv6-card-menu-button" type="button" data-menu-generation-id="${escapeHtml(item.id)}" aria-label="إجراءات المشروع">⋮</button>
+              ${renderGenerationMenu(item)}
+            </div>
+          </div>
+        </div>
+      </article>
+    `;
+  }
+
+  function renderWorkCardFixed(item, { favoriteView = false } = {}) {
+    const targetUrl = `/generation?id=${encodeURIComponent(item.id)}`;
+    const isProcessing = item.status !== "completed" || !item.resultUrl;
+    return `
+      <article class="udv6-work-card ${isProcessing ? "is-processing" : ""}">
+        <a class="udv6-work-media" href="${targetUrl}" data-generation-link="${escapeHtml(item.id)}">
+          ${generationMedia(item)}
+          <b>${typeLabel(item.type)}</b>
+          ${favoriteView || item.isFavorite ? "<em>♥</em>" : ""}
+        </a>
+        <div class="udv6-work-body">
+          <h3>${escapeHtml(item.prompt)}</h3>
+          <div class="udv6-work-meta">
+            <span>${qualityLabel(item.quality)} · ${relativeTime(item.createdAt)}</span>
+            <div class="udv6-card-menu-wrap">
+              <button class="udv6-card-menu-button" type="button" data-menu-generation-id="${escapeHtml(item.id)}" data-menu-scope="${favoriteView ? "favorites" : "projects"}" aria-label="إجراءات المشروع">⋮</button>
               ${renderGenerationMenu(item)}
             </div>
           </div>
@@ -585,7 +644,7 @@
             <input class="udv6-search" type="search" placeholder="ابحث في مشاريعك..." value="${escapeHtml(state.sectionSearch)}" data-section-search />
             ${renderTypeFilters()}
           </div>
-          ${items.length ? `<div class="udv6-card-grid">${items.map((item) => renderWorkCard(item)).join("")}</div>` : renderEmpty("لا توجد مشاريع مطابقة", "ابدأ بإنشاء أول صورة أو فيديو، وستظهر هنا مباشرة.")}
+          ${items.length ? `<div class="udv6-card-grid">${items.map((item) => renderWorkCardFixed(item)).join("")}</div>` : renderEmpty("لا توجد مشاريع مطابقة", "ابدأ بإنشاء أول صورة أو فيديو، وستظهر هنا مباشرة.")}
         </section>
       </div>
     `;
@@ -619,7 +678,7 @@
             <input class="udv6-search" type="search" placeholder="ابحث في المفضلة..." value="${escapeHtml(state.sectionSearch)}" data-section-search />
             ${renderTypeFilters()}
           </div>
-          ${items.length ? `<div class="udv6-card-grid">${items.map((item) => renderWorkCard(item, { favoriteView: true })).join("")}</div>` : renderEmpty("لم تضف أي نتيجة للمفضلة بعد", "اضغط على القلب أو اختر إضافة للمفضلة من قائمة أي نتيجة.")}
+          ${items.length ? `<div class="udv6-card-grid">${items.map((item) => renderWorkCardFixed(item, { favoriteView: true })).join("")}</div>` : renderEmpty("لم تضف أي نتيجة للمفضلة بعد", "اضغط على القلب أو اختر إضافة للمفضلة من قائمة أي نتيجة.")}
         </section>
       </div>
     `;
@@ -854,7 +913,7 @@
   async function handleGenerationAction(action, id) {
     const item = findGeneration(id);
     if (!item) return;
-    state.activeMenuId = null;
+    closeAllMenus();
 
     if (action === "download") {
       const anchor = document.createElement("a");
@@ -881,20 +940,22 @@
       saveFavorites();
       showToast("تم حذف المشروع");
     }
-    renderDashboardSection();
+    renderAll();
   }
 
   function closeAllMenus() {
     state.activeMenuId = null;
+    state.activeMenuScope = null;
     $$("[data-generation-menu]").forEach((menu) => {
       menu.hidden = true;
     });
   }
 
-  function openMenu(id) {
+  function openMenu(id, menuButton) {
     closeAllMenus();
     state.activeMenuId = id;
-    const menu = document.querySelector(`[data-generation-menu-id="${CSS.escape(String(id))}"]`);
+    state.activeMenuScope = menuButton?.dataset.menuScope || null;
+    const menu = menuButton?.parentElement?.querySelector("[data-generation-menu]");
     if (menu) {
       menu.hidden = false;
     }
@@ -918,6 +979,8 @@
 
       const filter = event.target.closest("[data-section-filter]");
       if (filter) {
+        event.preventDefault();
+        event.stopPropagation();
         state.sectionFilter = filter.dataset.sectionFilter;
         renderDashboardSection();
         return;
@@ -925,6 +988,8 @@
 
       const templateFilter = event.target.closest("[data-template-filter]");
       if (templateFilter) {
+        event.preventDefault();
+        event.stopPropagation();
         state.sectionFilter = templateFilter.dataset.templateFilter;
         renderDashboardSection();
         return;
@@ -937,6 +1002,7 @@
         const item = TEMPLATE_ITEMS.find((template) => template.id === templateButton.dataset.useTemplate);
         if (item) {
           switchToCreate({ prompt: item.prompt });
+          showToast("تم استخدام القالب");
           $("[data-prompt-input]")?.focus({ preventScroll: true });
         }
         return;
@@ -947,10 +1013,11 @@
         event.preventDefault();
         event.stopPropagation();
         const id = menuButton.dataset.menuGenerationId;
-        if (String(state.activeMenuId) === String(id)) {
+        const scope = menuButton.dataset.menuScope || null;
+        if (String(state.activeMenuId) === String(id) && String(state.activeMenuScope) === String(scope)) {
           closeAllMenus();
         } else {
-          openMenu(id);
+          openMenu(id, menuButton);
         }
         return;
       }
@@ -1389,6 +1456,8 @@
     } catch (error) {
       if (!silent) console.warn("GENERATIONS LOAD WARNING:", error);
       renderAll();
+    } finally {
+      scheduleGenerationsRefresh();
     }
   }
 
@@ -1400,7 +1469,15 @@
     renderTransactions();
     updateUsageUi();
     if (state.activeView !== "home") renderDashboardSection();
-    closeAllMenus();
+    showProcessing(state.results.some((item) => item.status !== "completed"));
+  }
+
+  function scheduleGenerationsRefresh() {
+    clearTimeout(state.refreshTimer);
+    if (!state.results.some((item) => item.status !== "completed")) return;
+    state.refreshTimer = setTimeout(() => {
+      refreshGenerations({ silent: true });
+    }, 3000);
   }
 
   function bindEvents() {

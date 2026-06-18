@@ -228,6 +228,7 @@
   transform: scale(1.02);
 }
 
+.user-dashboard-v3 .udv3-creation-placeholder,
 .user-dashboard-v3 .udv6-creation-placeholder,
 .user-dashboard-v3 .udv6-media-placeholder {
   min-height: 100%;
@@ -240,6 +241,7 @@
   background: linear-gradient(135deg, #f6f2ff, #fff);
 }
 
+.user-dashboard-v3 .udv3-creation-placeholder i,
 .user-dashboard-v3 .udv6-creation-placeholder i {
   width: 72%;
   height: 6px;
@@ -269,6 +271,7 @@
   height: 100%;
   display: block;
   object-fit: cover;
+  pointer-events: none;
 }
 
 .user-dashboard-v3 .udv6-work-media b,
