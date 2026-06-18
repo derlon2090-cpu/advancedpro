@@ -287,7 +287,7 @@
       createdAt: item.createdAt || item.created_at || new Date().toISOString(),
       resultUrl: item.resultUrl || item.url || item.outputUrl || item.imageUrl || item.videoUrl || "",
       thumbnailUrl: item.thumbnailUrl || item.resultUrl || item.url || item.outputUrl || "",
-      status: item.status || "completed",
+      status: item.status || (item.resultUrl ? "completed" : "processing"),
       isFavorite: Boolean(item.isFavorite || state.favorites.has(String(item.id || item.generationId))),
     };
   }
@@ -357,7 +357,6 @@
     if (show) {
       $("[data-processing-title]").textContent =
         state.type === "video" ? "جاري إنشاء الفيديو..." : "جاري إنشاء صورتك...";
-      card.scrollIntoView({ behavior: "smooth", block: "center" });
     }
   }
 
@@ -372,7 +371,9 @@
         ? "جاري إنشاء الفيديو..."
         : "جاري إنشاء الصورة..."
       : "إنشاء الآن ✨";
-    showProcessing(isLoading);
+    if (isLoading) {
+      showProcessing(true);
+    }
   }
 
   function setType(type) {
@@ -413,16 +414,18 @@
     const prompt = escapeHtml(item.prompt);
     const meta = `${qualityLabel(item.quality)} · ${relativeTime(item.createdAt)}`;
     const targetUrl = `/generation?id=${encodeURIComponent(item.id)}`;
-    const media =
-      item.type === "video"
+    const isProcessing = item.status !== "completed" || !item.resultUrl;
+    const media = isProcessing
+      ? `<div class="udv3-creation-placeholder"><strong>جاري الإنشاء...</strong><span>${escapeHtml(item.prompt || "نحن نحضر نتيجتك الآن")}</span><i></i></div>`
+      : item.type === "video"
         ? `<video src="${escapeHtml(mediaUrl)}" muted playsinline preload="metadata"></video>`
         : `<img src="${escapeHtml(mediaUrl)}" alt="${prompt}" loading="lazy" />`;
 
     return `
-      <article class="udv3-creation-card">
+      <article class="udv3-creation-card ${isProcessing ? "is-processing" : ""}">
         <a class="udv3-creation-preview" href="${targetUrl}" data-generation-link="${escapeHtml(item.id)}">
           <span class="udv3-creation-media">${media}</span>
-          <b>${typeLabel(item.type)}</b>
+          <b>${isProcessing ? "جاري الإنشاء..." : typeLabel(item.type)}</b>
         </a>
         <div class="udv3-creation-body">
           <h3>${prompt}</h3>
@@ -522,8 +525,11 @@
   }
 
   function generationMedia(item) {
-    const resultUrl = escapeHtml(item.resultUrl);
+    const resultUrl = escapeHtml(item.resultUrl || item.thumbnailUrl || "/ap-mark.svg");
     const thumbnailUrl = escapeHtml(item.thumbnailUrl || "");
+    if (!item.resultUrl && !item.thumbnailUrl) {
+      return `<div class="udv6-media-placeholder">جاري الإنشاء...</div>`;
+    }
     if (item.type === "video") {
       return `<video src="${resultUrl}"${thumbnailUrl && thumbnailUrl !== resultUrl ? ` poster="${thumbnailUrl}"` : ""} muted playsinline preload="metadata"></video>`;
     }
@@ -531,12 +537,12 @@
   }
 
   function renderGenerationMenu(item) {
-    if (String(state.activeMenuId) !== String(item.id)) return "";
     const downloadLabel = item.type === "video" ? "تحميل الفيديو" : "تحميل";
+    const isReady = Boolean(item.resultUrl && item.status === "completed");
     return `
-      <div class="udv6-menu" data-generation-menu>
-        <button type="button" data-generation-action="download" data-generation-id="${escapeHtml(item.id)}">${escapeHtml(downloadLabel)}</button>
-        <button type="button" data-generation-action="copy" data-generation-id="${escapeHtml(item.id)}">نسخ الرابط</button>
+      <div class="udv6-menu" data-generation-menu data-generation-menu-id="${escapeHtml(item.id)}" hidden>
+        <button type="button" data-generation-action="download" data-generation-id="${escapeHtml(item.id)}" ${isReady ? "" : "disabled"}>${escapeHtml(downloadLabel)}</button>
+        <button type="button" data-generation-action="copy" data-generation-id="${escapeHtml(item.id)}" ${isReady ? "" : "disabled"}>نسخ الرابط</button>
         <button class="is-danger" type="button" data-generation-action="delete" data-generation-id="${escapeHtml(item.id)}">حذف</button>
       </div>
     `;
@@ -878,6 +884,22 @@
     renderDashboardSection();
   }
 
+  function closeAllMenus() {
+    state.activeMenuId = null;
+    $$("[data-generation-menu]").forEach((menu) => {
+      menu.hidden = true;
+    });
+  }
+
+  function openMenu(id) {
+    closeAllMenus();
+    state.activeMenuId = id;
+    const menu = document.querySelector(`[data-generation-menu-id="${CSS.escape(String(id))}"]`);
+    if (menu) {
+      menu.hidden = false;
+    }
+  }
+
   function bindSectionEvents() {
     document.addEventListener("click", async (event) => {
       const navigation = event.target.closest("[data-dashboard-view]");
@@ -925,14 +947,10 @@
         event.preventDefault();
         event.stopPropagation();
         const id = menuButton.dataset.menuGenerationId;
-        const nextMenuId = String(state.activeMenuId) === String(id) ? null : id;
-        if (String(nextMenuId) !== String(state.activeMenuId)) {
-          state.activeMenuId = nextMenuId;
-          if (state.activeView === "home") {
-            renderRecent();
-          } else {
-            renderDashboardSection();
-          }
+        if (String(state.activeMenuId) === String(id)) {
+          closeAllMenus();
+        } else {
+          openMenu(id);
         }
         return;
       }
@@ -968,12 +986,7 @@
       }
 
       if (state.activeMenuId && !event.target.closest("[data-generation-menu]")) {
-        state.activeMenuId = null;
-        if (state.activeView === "home") {
-          renderRecent();
-        } else {
-          renderDashboardSection();
-        }
+        closeAllMenus();
       }
     });
 
@@ -1307,13 +1320,14 @@
         style: rawGeneration.style || state.style,
         aspectRatio: rawGeneration.aspectRatio || state.aspect,
         creditsUsed: rawGeneration.creditsUsed ?? requiredCredits,
+        status: rawGeneration.status || data.status || "processing",
       });
 
-      if (!generation.resultUrl) {
-        throw new Error("تم إنشاء العملية لكن لم يصل رابط النتيجة من الخادم.");
-      }
-
-      state.results = [generation, ...state.results.filter((item) => String(item.id) !== String(generation.id))];
+      state.results = [
+        generation,
+        ...state.results.filter((item) => String(item.id) !== String(generation.id)),
+      ];
+      showProcessing(true);
       try {
         sessionStorage.setItem("pixigen:key", JSON.stringify(state.key || {}));
       } catch {
@@ -1323,11 +1337,12 @@
       $("[data-char-count]").textContent = "0";
       resetEnhancedPromptState();
       renderAll();
-      showToast(`تم الإنشاء بنجاح وتم خصم ${formatNumber(generation.creditsUsed)} XP.`);
+      showToast("تم بدء إنشاء الصورة");
       await refreshKey({ silent: true });
-      console.log("OPEN GENERATION ROUTE ID:", generation.id);
-      console.log("REDIRECT GENERATION ID:", generation.id);
-      window.location.href = `/generation?id=${encodeURIComponent(generation.id)}`;
+      await refreshGenerations({ silent: true });
+      if (generation.resultUrl) {
+        window.history.replaceState({ generationId: generation.id }, "", `/generation?id=${encodeURIComponent(generation.id)}`);
+      }
     } catch (error) {
       if (error.name === "AbortError") {
         setMessage("تم إلغاء الإنشاء. لم يتم خصم أي رصيد.", "info");
@@ -1338,9 +1353,14 @@
         showToast(error.message || "فشل التوليد، لم يتم خصم أي رصيد.", "error");
       }
     } finally {
-      setLoading(false);
       state.activeRequestId = null;
       state.abortController = null;
+      state.loading = false;
+      const button = $("[data-submit-button]");
+      if (button) {
+        button.disabled = false;
+        button.textContent = "إنشاء الآن ✨";
+      }
     }
   }
 
@@ -1364,7 +1384,7 @@
     try {
       const data = await requestJson("/api/generate");
       const list = data.generations || data.items || data.results || [];
-      state.results = list.map(normalizeGeneration).filter((item) => item.resultUrl);
+      state.results = list.map(normalizeGeneration);
       renderAll();
     } catch (error) {
       if (!silent) console.warn("GENERATIONS LOAD WARNING:", error);
@@ -1380,6 +1400,7 @@
     renderTransactions();
     updateUsageUi();
     if (state.activeView !== "home") renderDashboardSection();
+    closeAllMenus();
   }
 
   function bindEvents() {

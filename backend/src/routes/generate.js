@@ -698,6 +698,130 @@ async function completeGenerationAndDeduct({
   );
 }
 
+function scheduleGenerationCompletion(task) {
+  setImmediate(() => {
+    runGenerationCompletionTask(task).catch((error) => {
+      logError(error, { scope: "scheduleGenerationCompletion", generationId: task.generationId });
+    });
+  });
+}
+
+async function runGenerationCompletionTask({
+  generationId,
+  keyId,
+  type,
+  prompt,
+  duration,
+  quality,
+  style,
+  aspectRatio,
+  creditsUsed,
+  promptDiagnostics,
+  requestId,
+  seed,
+}) {
+  let result;
+
+  try {
+    if (type === "image") {
+      result = await generateImageWithWaveSpeed({
+        prompt,
+        quality,
+        aspectRatio,
+        style,
+        requestId,
+        seed,
+      });
+    } else {
+      result = await generateVideoWithWaveSpeed({
+        prompt,
+        duration,
+        quality,
+        aspectRatio,
+        style,
+        requestId,
+        seed,
+      });
+    }
+  } catch (error) {
+    await markGenerationFailed({ generationId, message: error.message });
+    await upsertPromptAnalytics({
+      generationId,
+      prompt,
+      enhancedPrompt: promptDiagnostics.enhancedPrompt || null,
+      finalPrompt: promptDiagnostics.finalPrompt || prompt,
+      negativePrompt: promptDiagnostics.negativePrompt || null,
+      model: modelForQuality(type, quality),
+      success: false,
+    }).catch((analyticsError) => {
+      logError(analyticsError, { scope: "upsertPromptAnalyticsFailedGeneration", generationId });
+    });
+    logError(error, { scope: "generateProvider", keyId, generationId, type });
+    return;
+  }
+
+  if (!result?.resultUrl) {
+    await markGenerationFailed({ generationId, message: "لم يرجع مزود التوليد رابط نتيجة." });
+    return;
+  }
+
+  try {
+    const updatedKey = await completeGenerationAndDeduct({
+      generationId,
+      keyId,
+      type,
+      prompt,
+      duration,
+      quality,
+      style,
+      aspectRatio,
+      creditsUsed,
+      resultUrl: result.resultUrl,
+      provider: result.provider,
+      model: result.model,
+      finalPrompt: result.finalPrompt || prompt,
+      enhancedPrompt: promptDiagnostics.enhancedPrompt || null,
+      negativePrompt: promptDiagnostics.negativePrompt || null,
+      seed: result.seed,
+    });
+
+    await upsertPromptAnalytics({
+      generationId,
+      prompt,
+      enhancedPrompt: promptDiagnostics.enhancedPrompt || null,
+      finalPrompt: result.finalPrompt || promptDiagnostics.finalPrompt || prompt,
+      negativePrompt: promptDiagnostics.negativePrompt || null,
+      model: result.model,
+      success: true,
+    }).catch((error) => {
+      logError(error, { scope: "upsertPromptAnalytics", generationId });
+    });
+
+    logInfo("GENERATION_COMPLETED", {
+      keyId,
+      generationId,
+      type,
+      creditsUsed,
+      provider: result.provider,
+      seed: result.seed,
+    });
+
+    console.log("SAVED GENERATION ID:", generationId);
+    console.log("SAVED RESULT URL:", result.resultUrl);
+    console.log("REMAINING BALANCE:", Number(updatedKey.balance || 0));
+  } catch (error) {
+    if (error.statusCode !== 409) {
+      await markGenerationFailed({ generationId, message: "تم إنشاء النتيجة لكن تعذر حفظها أو خصم الرصيد." });
+    }
+    logError(error, {
+      scope: "completeGenerationAndDeduct",
+      keyId,
+      generationId,
+      resultUrl: result.resultUrl,
+    });
+  }
+}
+
 async function loadAndValidateKey({ keyId, type, creditsUsed }) {
   const key = await withDbRetry(() =>
     prisma.activationCode.findUnique({
@@ -760,8 +884,7 @@ router.get(
         FROM generations g
         LEFT JOIN generation_feedback gf ON gf.generation_id = g.id
         WHERE g.key_id = ${keyId}
-          AND g.status = 'completed'
-          AND g.result_url IS NOT NULL
+          AND g.status IN ('queued', 'processing', 'completed', 'failed')
           AND g.deleted_at IS NULL
         ORDER BY g.created_at DESC
         LIMIT 60
@@ -928,6 +1051,60 @@ router.get(
   })
 );
 
+router.get(
+  "/:id/status",
+  asyncHandler(async (req, res) => {
+    await ensureGenerationTable();
+
+    const keyId = getKeyId(req);
+    const generationId = Number(req.params.id);
+
+    if (!Number.isFinite(generationId)) {
+      httpError("معرف النتيجة غير صالح.", 400);
+    }
+
+    const rows = await withDbRetry(() =>
+      prisma.$queryRaw`
+        SELECT g.id,
+               g.request_id,
+               g.type,
+               g.prompt,
+               g.quality,
+               g.style,
+               g.aspect_ratio,
+               g.duration,
+               g.provider,
+               g.model,
+               g.seed,
+               g.final_prompt,
+               g.enhanced_prompt,
+               g.negative_prompt,
+               g.credits_used,
+               g.status,
+               g.result_url,
+               g.is_favorite,
+               g.created_at,
+               g.completed_at,
+               EXTRACT(EPOCH FROM (g.completed_at - g.created_at)) * 1000 AS generation_time_ms
+        FROM generations g
+        WHERE g.key_id = ${keyId}
+          AND g.id = ${generationId}
+          AND g.deleted_at IS NULL
+        LIMIT 1
+      `
+    );
+
+    if (!rows.length) {
+      httpError("لم يتم العثور على النتيجة المطلوبة.", 404);
+    }
+
+    return res.json({
+      success: true,
+      generation: serializeGeneration(rows[0]),
+    });
+  })
+);
+
 router.post(
   "/",
   aiLimiter,
@@ -1017,6 +1194,43 @@ router.post(
       requestId,
       style,
       aspectRatio,
+    });
+
+    scheduleGenerationCompletion({
+      generationId,
+      keyId,
+      type,
+      prompt,
+      duration,
+      quality,
+      style,
+      aspectRatio,
+      creditsUsed,
+      promptDiagnostics,
+      requestId,
+      seed,
+    });
+
+    return res.json({
+      success: true,
+      message: "تم بدء إنشاء الصورة.",
+      generationId,
+      requestId,
+      status: "processing",
+      creditsUsed,
+      generation: {
+        id: generationId,
+        requestId,
+        type,
+        prompt,
+        quality,
+        style,
+        aspectRatio,
+        duration,
+        creditsUsed,
+        status: "processing",
+        createdAt: new Date().toISOString(),
+      },
     });
 
     let result;

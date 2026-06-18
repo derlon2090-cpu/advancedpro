@@ -3,237 +3,857 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>نتيجة الإنشاء | PixiGenl</title>
-    <meta name="description" content="عرض نتيجة الإنشاء وتفاصيلها داخل لوحة PixiGenl." />
+    <title>تم إنشاء صورتك بنجاح! | PixiGenl</title>
+    <meta name="description" content="صفحة نتيجة إنشاء الصور والفيديوهات داخل PixiGenl." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800;900&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260605-brand-v9" />
+    <link rel="stylesheet" href="/styles.css?v=20260618-generation-shell-v1" />
+    <style>
+      body.generation-result-page {
+        margin: 0;
+        background: #fafaff;
+        color: #10163f;
+        font-family: "IBM Plex Sans Arabic", system-ui, sans-serif;
+      }
+
+      .result-page {
+        min-height: 100vh;
+        display: grid;
+        grid-template-columns: 260px minmax(0, 1fr) 330px;
+        direction: ltr;
+      }
+
+      .result-sidebar,
+      .result-main,
+      .result-details {
+        direction: rtl;
+      }
+
+      .result-sidebar {
+        position: sticky;
+        top: 0;
+        align-self: start;
+        min-height: 100vh;
+        padding: 28px 22px;
+        background: #fff;
+        border-inline-end: 1px solid #e8eaf3;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+
+      .result-brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: #10163f;
+        text-decoration: none;
+        font-weight: 900;
+        font-size: 18px;
+      }
+
+      .result-brand-mark {
+        width: 42px;
+        height: 42px;
+        display: grid;
+        place-items: center;
+        border-radius: 14px;
+        color: #6d35ff;
+        background: #f4f0ff;
+        font-size: 20px;
+      }
+
+      .result-nav {
+        display: grid;
+        gap: 8px;
+      }
+
+      .result-nav a {
+        min-height: 46px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 0 14px;
+        border-radius: 14px;
+        color: #475069;
+        text-decoration: none;
+        font-weight: 800;
+        background: transparent;
+      }
+
+      .result-nav a.is-active,
+      .result-nav a:hover {
+        color: #6d35ff;
+        background: #f4f0ff;
+      }
+
+      .result-support {
+        margin-top: auto;
+        border: 1px solid #e8eaf3;
+        border-radius: 20px;
+        padding: 18px;
+        background: linear-gradient(180deg, #fff, #faf9ff);
+      }
+
+      .result-support strong,
+      .result-support span,
+      .result-support a {
+        display: block;
+      }
+
+      .result-support strong {
+        margin-bottom: 6px;
+        color: #10163f;
+      }
+
+      .result-support span {
+        margin-bottom: 14px;
+        color: #667085;
+        font-size: 13px;
+      }
+
+      .result-support a {
+        color: #6d35ff;
+        text-decoration: none;
+        font-weight: 800;
+      }
+
+      .result-main {
+        padding: 28px 30px 32px;
+        min-width: 0;
+      }
+
+      .result-topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        margin-bottom: 18px;
+      }
+
+      .result-back {
+        min-height: 40px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 14px;
+        border: 1px solid #e8eaf3;
+        border-radius: 12px;
+        color: #475069;
+        text-decoration: none;
+        background: #fff;
+        font-weight: 800;
+      }
+
+      .result-hero {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 18px;
+      }
+
+      .result-hero h1 {
+        margin: 0;
+        color: #10163f;
+        font-size: clamp(24px, 2.5vw, 36px);
+        font-weight: 900;
+        line-height: 1.2;
+      }
+
+      .result-hero p {
+        margin: 0;
+        color: #667085;
+        font-weight: 700;
+      }
+
+      .result-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 18px;
+      }
+
+      .result-actions a,
+      .result-actions button {
+        min-height: 46px;
+        padding: 0 18px;
+        border: 1px solid #e8eaf3;
+        border-radius: 14px;
+        background: #fff;
+        color: #6d35ff;
+        cursor: pointer;
+        font: inherit;
+        font-weight: 900;
+        text-decoration: none;
+      }
+
+      .result-actions .primary {
+        color: #fff;
+        border-color: transparent;
+        background: linear-gradient(135deg, #6d35ff, #b832f6);
+      }
+
+      .result-shell {
+        display: grid;
+        gap: 18px;
+      }
+
+      .result-card {
+        position: relative;
+        overflow: hidden;
+        padding: 20px;
+        border: 1px solid #e8eaf3;
+        border-radius: 28px;
+        background: #fff;
+        box-shadow: 0 18px 50px rgba(30, 20, 80, 0.06);
+      }
+
+      .result-media-card {
+        position: relative;
+        overflow: hidden;
+        border-radius: 24px;
+        background: linear-gradient(180deg, #fbfbff, #f3f1ff);
+      }
+
+      .result-badge,
+      .result-favorite,
+      .result-arrow {
+        position: absolute;
+        z-index: 3;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border: 0;
+        border-radius: 999px;
+        font: inherit;
+        font-weight: 900;
+      }
+
+      .result-badge {
+        top: 16px;
+        right: 16px;
+        min-height: 30px;
+        padding: 0 12px;
+        color: #fff;
+        background: rgba(16, 22, 63, 0.72);
+        backdrop-filter: blur(8px);
+      }
+
+      .result-favorite {
+        top: 16px;
+        left: 16px;
+        width: 36px;
+        height: 36px;
+        color: #6d35ff;
+        background: rgba(255, 255, 255, 0.95);
+        cursor: pointer;
+      }
+
+      .result-arrow {
+        top: 50%;
+        width: 42px;
+        height: 42px;
+        color: #10163f;
+        background: rgba(255, 255, 255, 0.92);
+        transform: translateY(-50%);
+        box-shadow: 0 10px 24px rgba(30, 20, 80, 0.08);
+        cursor: pointer;
+      }
+
+      .result-arrow.prev {
+        right: 16px;
+      }
+
+      .result-arrow.next {
+        left: 16px;
+      }
+
+      .result-media-frame {
+        width: 100%;
+        min-height: 520px;
+        display: grid;
+        place-items: center;
+        padding: 18px;
+      }
+
+      .result-placeholder,
+      .udv6-media-placeholder {
+        min-height: 280px;
+        display: grid;
+        place-items: center;
+        color: #6d35ff;
+        text-align: center;
+        font-weight: 800;
+      }
+
+      .result-media-frame img,
+      .result-media-frame video {
+        width: 100%;
+        max-height: 520px;
+        object-fit: contain;
+        display: block;
+        border-radius: 18px;
+        background: #f7f8fd;
+        transition: transform 0.4s ease, opacity 0.4s ease;
+      }
+
+      .result-media-frame.is-entering img,
+      .result-media-frame.is-entering video {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+
+      .result-processing {
+        width: 100%;
+        min-height: 520px;
+        display: grid;
+        grid-template-columns: minmax(0, 1.15fr) 360px;
+        gap: 18px;
+        padding: 18px;
+      }
+
+      .result-processing-preview,
+      .result-processing-steps {
+        border: 1px solid #e8eaf3;
+        border-radius: 22px;
+        background: #fff;
+        box-shadow: 0 18px 50px rgba(30, 20, 80, 0.05);
+      }
+
+      .result-processing-preview {
+        position: relative;
+        overflow: hidden;
+        display: grid;
+        place-items: center;
+        min-height: 460px;
+        background:
+          radial-gradient(circle at 20% 20%, rgba(109, 53, 255, 0.18), transparent 35%),
+          linear-gradient(135deg, #ede8ff, #faf7ff);
+      }
+
+      .result-processing-preview::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(120deg, rgba(255, 255, 255, 0) 30%, rgba(255, 255, 255, 0.4) 50%, rgba(255, 255, 255, 0) 70%);
+        animation: result-shimmer 1.7s linear infinite;
+        pointer-events: none;
+      }
+
+      .result-processing-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        filter: blur(8px) saturate(0.85);
+        opacity: 0.86;
+      }
+
+      .result-processing-overlay {
+        position: absolute;
+        inset-inline: 18px;
+        bottom: 18px;
+        z-index: 2;
+        display: grid;
+        gap: 10px;
+        padding: 18px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.76);
+        backdrop-filter: blur(12px);
+      }
+
+      .result-progress {
+        height: 8px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: #e9eaf3;
+      }
+
+      .result-progress i {
+        display: block;
+        width: 48%;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(135deg, #6d35ff, #b832f6);
+        animation: result-progress 1.5s ease-in-out infinite;
+      }
+
+      .result-stage-list {
+        display: grid;
+        gap: 10px;
+        padding: 20px;
+      }
+
+      .result-stage-list h3 {
+        margin: 0 0 6px;
+        color: #10163f;
+        font-size: 18px;
+        font-weight: 900;
+      }
+
+      .result-stage-list p {
+        margin: 0;
+        color: #667085;
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .result-stage {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 12px 14px;
+        border-radius: 14px;
+        background: #fbfbfe;
+      }
+
+      .result-stage strong {
+        color: #10163f;
+        font-size: 13px;
+      }
+
+      .result-stage span {
+        color: #8a92a8;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .result-stage.is-active {
+        color: #6d35ff;
+        background: #f4f0ff;
+      }
+
+      .result-stage.is-done {
+        background: #edfdf3;
+      }
+
+      .result-thumbs {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        padding-bottom: 6px;
+        align-items: stretch;
+      }
+
+      .result-thumb {
+        flex: 0 0 auto;
+        width: 112px;
+        height: 78px;
+        border: 1px solid #e8eaf3;
+        border-radius: 16px;
+        padding: 0;
+        overflow: hidden;
+        background: #fff;
+        cursor: pointer;
+      }
+
+      .result-thumb img,
+      .result-thumb video,
+      .result-thumb .placeholder {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      .result-thumb .placeholder {
+        display: grid;
+        place-items: center;
+        color: #6d35ff;
+        font-size: 12px;
+        font-weight: 800;
+        background: linear-gradient(135deg, #f5f1ff, #fff);
+      }
+
+      .result-thumbs-shell {
+        display: grid;
+        gap: 12px;
+      }
+
+      .result-thumbs-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .result-thumbs-head strong {
+        color: #10163f;
+        font-size: 16px;
+        font-weight: 900;
+      }
+
+      .result-thumbs-head button {
+        min-height: 38px;
+        padding: 0 14px;
+        border: 1px solid #e8eaf3;
+        border-radius: 12px;
+        background: #fff;
+        color: #6d35ff;
+        font: inherit;
+        font-weight: 800;
+        cursor: pointer;
+      }
+
+      .result-status-pill {
+        min-height: 38px;
+        display: inline-flex;
+        align-items: center;
+        padding: 0 14px;
+        border-radius: 999px;
+        color: #6d35ff;
+        background: #f4f0ff;
+        font-weight: 900;
+      }
+
+      .result-panel {
+        border: 1px solid #e8eaf3;
+        border-radius: 24px;
+        padding: 22px;
+        background: #fff;
+        box-shadow: 0 14px 40px rgba(30, 20, 80, 0.05);
+      }
+
+      .result-panel h2,
+      .result-panel h3 {
+        margin: 0 0 16px;
+        color: #10163f;
+        font-size: 18px;
+        font-weight: 900;
+      }
+
+      .result-details-list {
+        display: grid;
+        gap: 12px;
+      }
+
+      .result-detail {
+        display: grid;
+        gap: 6px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #f0f1f7;
+      }
+
+      .result-detail:last-child {
+        border-bottom: 0;
+        padding-bottom: 0;
+      }
+
+      .result-detail dt {
+        color: #7b839d;
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .result-detail dd {
+        margin: 0;
+        color: #10163f;
+        font-size: 14px;
+        font-weight: 800;
+        word-break: break-word;
+      }
+
+      .result-rating {
+        display: grid;
+        gap: 14px;
+      }
+
+      .result-rating-buttons {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .result-rating-buttons button {
+        min-height: 44px;
+        border: 1px solid #e8eaf3;
+        border-radius: 14px;
+        background: #fff;
+        color: #475069;
+        cursor: pointer;
+        font: inherit;
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .result-rating-buttons button.is-active {
+        color: #6d35ff;
+        border-color: #cdbbff;
+        background: #f4f0ff;
+      }
+
+      .result-extras {
+        display: grid;
+        gap: 10px;
+      }
+
+      .result-extras button {
+        min-height: 44px;
+        border: 1px solid #e8eaf3;
+        border-radius: 13px;
+        background: #fff;
+        color: #475069;
+        cursor: pointer;
+        font: inherit;
+        font-weight: 800;
+        text-align: right;
+      }
+
+      .result-similar {
+        display: grid;
+        gap: 14px;
+      }
+
+      .result-similar-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .result-similar-card {
+        border: 1px solid #e8eaf3;
+        border-radius: 18px;
+        overflow: hidden;
+        background: #fff;
+        text-decoration: none;
+        color: inherit;
+      }
+
+      .result-similar-card img,
+      .result-similar-card video {
+        width: 100%;
+        height: 118px;
+        object-fit: cover;
+        display: block;
+      }
+
+      .result-similar-card div {
+        padding: 10px 12px 12px;
+      }
+
+      .result-similar-card strong,
+      .result-similar-card span {
+        display: block;
+      }
+
+      .result-similar-card strong {
+        margin-bottom: 4px;
+        color: #10163f;
+        font-size: 13px;
+      }
+
+      .result-similar-card span {
+        color: #667085;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .result-toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 60;
+        min-width: 220px;
+        max-width: min(92vw, 360px);
+        padding: 14px 16px;
+        border-radius: 16px;
+        color: #10163f;
+        background: rgba(255, 255, 255, 0.96);
+        box-shadow: 0 14px 36px rgba(30, 20, 80, 0.12);
+      }
+
+      .result-toast[hidden] {
+        display: none;
+      }
+
+      @keyframes result-progress {
+        0% {
+          transform: translateX(0);
+        }
+        50% {
+          transform: translateX(48%);
+        }
+        100% {
+          transform: translateX(0);
+        }
+      }
+
+      @keyframes result-shimmer {
+        from {
+          transform: translateX(-100%);
+        }
+        to {
+          transform: translateX(100%);
+        }
+      }
+
+      @media (max-width: 1100px) {
+        .result-page {
+          grid-template-columns: 1fr;
+        }
+
+        .result-sidebar,
+        .result-details {
+          display: none;
+        }
+
+        .result-main {
+          padding: 16px;
+        }
+
+        .result-processing {
+          grid-template-columns: 1fr;
+        }
+
+        .result-similar-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 720px) {
+        .result-topbar {
+          flex-wrap: wrap;
+        }
+
+        .result-actions,
+        .result-rating-buttons {
+          grid-template-columns: 1fr;
+        }
+
+        .result-similar-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .result-media-frame,
+        .result-processing-preview {
+          min-height: 340px;
+        }
+
+        .result-toast {
+          right: 12px;
+          left: 12px;
+          width: auto;
+          max-width: none;
+        }
+      }
+    </style>
   </head>
-  <body class="user-dashboard-v3 generation-detail-v4" data-page="generation-detail-v4">
-    <aside class="udv3-sidebar" aria-label="قائمة لوحة المستخدم">
-      <a class="udv3-brand" href="/dashboard" aria-label="PixiGenl">
-        <span class="udv3-brand-mark">✧</span>
-        <strong>PixiGenl</strong>
-      </a>
+  <body class="generation-result-page">
+    <div class="result-page" data-result-page>
+      <aside class="result-sidebar" aria-label="الشريط الجانبي">
+        <a class="result-brand" href="/dashboard" aria-label="PixiGenl">
+          <span class="result-brand-mark">✦</span>
+          <strong>PixiGenl</strong>
+        </a>
+        <nav class="result-nav">
+          <a href="/dashboard">لوحة التحكم</a>
+          <a href="/dashboard#projects">مشاريعي</a>
+          <a href="/dashboard#favorites">المفضلة</a>
+          <a href="/dashboard#templates">القوالب</a>
+          <a href="/dashboard#settings">إعدادات الحساب</a>
+        </nav>
+        <section class="result-support">
+          <strong>مركز الدعم</strong>
+          <span>إذا احتجت أي مساعدة، راسلنا أو ارجع للوحة التحكم.</span>
+          <a href="mailto:support@advancedpro.com">تواصل معنا</a>
+        </section>
+      </aside>
 
-      <nav class="udv3-nav">
-        <a class="is-active" href="/dashboard">
-          <span>⌂</span>
-          لوحة التحكم
-        </a>
+      <main class="result-main">
+        <div class="result-topbar">
+          <a class="result-back" href="/dashboard">
+            <span>←</span>
+            <span>رجوع</span>
+          </a>
+          <span class="result-status-pill" data-page-state-label>جاري التحميل...</span>
+        </div>
 
-        <p>إنشاء جديد</p>
-        <a href="/dashboard#create" data-type-shortcut="image">
-          <span>▧</span>
-          صورة
-        </a>
-        <a href="/dashboard#create" data-type-shortcut="video">
-          <span>▣</span>
-          فيديو
-        </a>
+        <section class="result-hero">
+          <h1 data-page-title>جارٍ إنشاء صورتك...</h1>
+          <p data-page-copy>الذكاء الاصطناعي يعمل الآن على تحويل فكرتك إلى نتيجة واضحة.</p>
+        </section>
 
-        <p>المحتوى</p>
-        <a href="/dashboard#recent">
-          <span>▤</span>
-          مشاريعي
-        </a>
-        <a href="/dashboard#recent">
-          <span>♡</span>
-          المفضلة
-        </a>
-        <a href="/dashboard#tips">
-          <span>◇</span>
-          النماذج
-        </a>
-        <a href="/dashboard#tips">
-          <span>▦</span>
-          القوالب
-        </a>
+        <div class="result-actions">
+          <a class="primary" href="#" data-action-download>تحميل الصورة</a>
+          <button type="button" data-action-regenerate>إعادة إنشاء</button>
+          <button type="button" data-action-copy>نسخ الرابط</button>
+          <button type="button" data-action-share>مشاركة</button>
+        </div>
 
-        <p>الحساب</p>
-        <a href="/dashboard#balance">
-          <span>▱</span>
-          باقتي
-        </a>
-        <a href="/dashboard#transactions">
-          <span>▥</span>
-          معاملاتي
-        </a>
-        <a href="/dashboard#settings">
-          <span>⚙</span>
-          إعدادات الحساب
-        </a>
-      </nav>
+        <section class="result-shell" data-center-shell>
+          <article class="result-card">
+            <div class="result-media-card" data-media-card>
+              <button class="result-favorite" type="button" data-action-favorite aria-label="إضافة للمفضلة">♥</button>
+              <button class="result-arrow prev" type="button" data-action-prev aria-label="السابق">‹</button>
+              <button class="result-arrow next" type="button" data-action-next aria-label="التالي">›</button>
+              <div class="result-media-frame" data-media-frame>
+                <div class="result-placeholder">جاري تحميل النتيجة...</div>
+              </div>
+              <div class="result-badge" data-result-badge>عالية</div>
+            </div>
+          </article>
 
-      <section class="udv3-support-card">
-        <strong>مركز الدعم</strong>
-        <span>تحتاج إلى مساعدة؟</span>
-        <a href="mailto:support@advancedpro.com">تواصل معنا</a>
-      </section>
-    </aside>
+          <section class="result-panel result-thumbs-shell">
+            <div class="result-thumbs-head">
+              <strong>النتائج الأخيرة</strong>
+              <button type="button" data-more-results>عرض المزيد</button>
+            </div>
+            <div class="result-thumbs" data-result-thumbs></div>
+          </section>
 
-    <div class="udv3-app">
-      <header class="udv3-topbar">
-        <div class="udv3-profile">
-          <img
-            src="/ap-mark.svg"
-            alt=""
-            data-customer-avatar
-          />
-          <div>
-            <strong data-customer-name>أحمد العتيبي</strong>
-            <span data-plan-badge>VIP</span>
+          <section class="result-panel">
+            <div class="result-rating">
+              <div>
+                <h3>ما مدى رضاك عن النتيجة؟</h3>
+                <p>تقييمك يساعدنا على تحسين المخرجات القادمة.</p>
+              </div>
+              <div class="result-rating-buttons" role="group" aria-label="تقييم النتيجة" data-rating-buttons>
+                <button type="button" data-rating="mismatch" data-rating-label="غير راضٍ">غير راضٍ</button>
+                <button type="button" data-rating="mismatch" data-rating-label="غير جيد">غير جيد</button>
+                <button type="button" data-rating="acceptable" data-rating-label="مقبول">مقبول</button>
+                <button type="button" data-rating="acceptable" data-rating-label="جيد">جيد</button>
+                <button type="button" data-rating="excellent" data-rating-label="ممتاز">ممتاز</button>
+              </div>
+              <small data-rating-message></small>
+            </div>
+          </section>
+
+          <section class="result-panel result-similar">
+            <div>
+              <h3>مشاريع مشابهة</h3>
+              <p>قد تعجبك هذه النتائج من أعمالك الأخيرة.</p>
+            </div>
+            <div class="result-similar-grid" data-similar-grid></div>
+          </section>
+        </section>
+      </main>
+
+      <aside class="result-details">
+        <section class="result-panel">
+          <h2>تفاصيل الإنشاء</h2>
+          <dl class="result-details-list" data-details-list></dl>
+        </section>
+
+        <section class="result-panel">
+          <h2>خيارات إضافية</h2>
+          <div class="result-extras">
+            <button type="button" data-extra-action="enhance">تحسين الجودة</button>
+            <button type="button" data-extra-action="remove-bg">إزالة الخلفية</button>
+            <button type="button" data-extra-action="colorize">تلوين الصورة</button>
+            <button type="button" data-extra-action="video">إنشاء فيديو من الصورة</button>
           </div>
-        </div>
-
-        <button class="udv3-icon-button" type="button" aria-label="التنبيهات">♧</button>
-
-        <div class="udv3-xp-pill" aria-label="رصيدك الحالي">
-          <span>◉</span>
-          <strong data-total-xp>1,095 XP</strong>
-        </div>
-
-        <a class="udv3-add-button" href="/dashboard#create" aria-label="إنشاء جديد">＋</a>
-      </header>
-
-      <div class="udv3-workspace">
-        <main class="udv3-main">
-          <a class="udv3-back-link" href="/dashboard">العودة للوحة التحكم ←</a>
-
-          <section class="udv3-success-alert" data-success-alert>
-            <span>✓</span>
-            <div>
-              <strong data-success-title>تم إنشاء الصورة بنجاح!</strong>
-              <p data-success-copy>تم خصم 10 XP من رصيدك.</p>
-            </div>
-            <a href="/dashboard#create">إنشاء جديد ✨</a>
-          </section>
-
-          <section class="udv3-result-page-card">
-            <aside class="udv3-result-details">
-              <h2 data-details-title>تفاصيل الصورة</h2>
-              <dl>
-                <div>
-                  <dt>النمط</dt>
-                  <dd data-detail-style>واقعي</dd>
-                </div>
-                <div>
-                  <dt>المقاس</dt>
-                  <dd data-detail-aspect>16:9</dd>
-                </div>
-                <div>
-                  <dt>الجودة</dt>
-                  <dd data-detail-quality>عالية الدقة</dd>
-                </div>
-                <div>
-                  <dt>تم الإنشاء</dt>
-                  <dd data-detail-created>منذ أقل من دقيقة</dd>
-                </div>
-                <div>
-                  <dt>التكلفة</dt>
-                  <dd data-detail-cost>10 XP</dd>
-                </div>
-                <div>
-                  <dt>Generation ID</dt>
-                  <dd data-detail-generation-id>-</dd>
-                </div>
-                <div>
-                  <dt>Request ID</dt>
-                  <dd data-detail-request-id>-</dd>
-                </div>
-                <div>
-                  <dt>Seed</dt>
-                  <dd data-detail-seed>-</dd>
-                </div>
-              </dl>
-              <h3>الوصف المستخدم</h3>
-              <p data-detail-prompt>سيظهر وصفك هنا.</p>
-              <h3>Result URL</h3>
-              <p data-detail-result-url>-</p>
-            </aside>
-
-            <article class="udv3-result-hero">
-              <div class="udv3-result-badge" data-result-badge>عالية الدقة</div>
-              <button class="udv3-result-menu" type="button" aria-label="خيارات">⋮</button>
-              <div class="udv3-result-media" data-result-media>
-                <div class="udv3-result-placeholder">جاري تحميل النتيجة...</div>
-              </div>
-              <div class="udv3-result-actions">
-                <a href="#" data-download-result>تحميل الصورة</a>
-                <button type="button" data-share-result>مشاركة</button>
-                <button type="button" data-copy-result>نسخ الرابط</button>
-                <a href="/dashboard#create" data-regenerate>إعادة إنشاء</a>
-                <button class="is-danger" type="button" data-delete-result>حذف</button>
-              </div>
-            </article>
-          </section>
-
-          <section class="udv3-feedback-card" data-result-feedback>
-            <div>
-              <h2>كيف كانت النتيجة؟</h2>
-              <p>تقييمك يساعدنا نحسن اختيار الموديل والبرومبت تلقائيًا.</p>
-            </div>
-            <div class="udv3-feedback-actions" role="group" aria-label="تقييم النتيجة">
-              <button type="button" data-rating-button="excellent">👍 النتيجة ممتازة</button>
-              <button type="button" data-rating-button="acceptable">😐 مقبولة</button>
-              <button type="button" data-rating-button="mismatch">👎 غير مطابقة</button>
-            </div>
-            <small data-rating-message></small>
-          </section>
-
-          <section class="udv3-recent-card" id="recent">
-            <div class="udv3-card-header">
-              <h2>أحدث إبداعاتك</h2>
-              <a href="/dashboard#recent">عرض الكل</a>
-            </div>
-            <div class="udv3-creations-grid" data-recent-grid></div>
-          </section>
-        </main>
-
-        <aside class="udv3-widgets">
-          <section class="udv3-balance-widget" id="balance">
-            <div>
-              <span>رصيدي الحالي</span>
-              <strong data-widget-xp>1,095 XP</strong>
-              <p data-expiry-text>ينتهي في 25 أغسطس 2026</p>
-            </div>
-            <div class="udv3-stack-icon" aria-hidden="true">◉</div>
-            <div class="udv3-progress">
-              <i data-xp-progress></i>
-            </div>
-            <small data-days-left>90 يوم متبقية</small>
-            <a href="/dashboard#balance">ترقية الباقة ✨</a>
-          </section>
-
-          <section class="udv3-usage-widget">
-            <h2>استهلاكك سريع</h2>
-            <div class="udv3-meter-row">
-              <span class="udv3-ring" data-image-ring>▧</span>
-              <p>صور <b data-images-count>18 / 240</b></p>
-            </div>
-            <div class="udv3-meter-row">
-              <span class="udv3-ring is-orange" data-video-ring>▣</span>
-              <p>فيديو <b data-videos-count>4 / 24</b></p>
-            </div>
-            <a href="/dashboard#recent">عرض كل الإحصائيات</a>
-          </section>
-
-          <section class="udv3-transactions-widget" id="transactions">
-            <h2>معاملات حديثة</h2>
-            <div data-transactions-list></div>
-            <a href="/dashboard#transactions">عرض كل المعاملات</a>
-          </section>
-        </aside>
-      </div>
+        </section>
+      </aside>
     </div>
 
-    <div class="udv3-toast" data-toast hidden></div>
+    <div class="result-toast" data-toast hidden></div>
 
     <script src="/config.js"></script>
-    <script src="/generation-page.js?v=20260605-generation-db-response-v1"></script>
+    <script src="/generation-page.js?v=20260618-result-v2"></script>
   </body>
 </html>
