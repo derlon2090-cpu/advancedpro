@@ -917,8 +917,15 @@
       if (menuButton) {
         event.stopPropagation();
         const id = menuButton.dataset.menuGenerationId;
-        state.activeMenuId = String(state.activeMenuId) === String(id) ? null : id;
-        renderAll();
+        const nextMenuId = String(state.activeMenuId) === String(id) ? null : id;
+        if (String(nextMenuId) !== String(state.activeMenuId)) {
+          state.activeMenuId = nextMenuId;
+          if (state.activeView === "home") {
+            renderRecent();
+          } else {
+            renderDashboardSection();
+          }
+        }
         return;
       }
 
@@ -953,7 +960,11 @@
 
       if (state.activeMenuId && !event.target.closest("[data-generation-menu]")) {
         state.activeMenuId = null;
-        renderAll();
+        if (state.activeView === "home") {
+          renderRecent();
+        } else {
+          renderDashboardSection();
+        }
       }
     });
 
