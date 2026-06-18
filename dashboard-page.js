@@ -918,7 +918,7 @@
         event.stopPropagation();
         const id = menuButton.dataset.menuGenerationId;
         state.activeMenuId = String(state.activeMenuId) === String(id) ? null : id;
-        renderDashboardSection();
+        renderAll();
         return;
       }
 
@@ -953,7 +953,7 @@
 
       if (state.activeMenuId && !event.target.closest("[data-generation-menu]")) {
         state.activeMenuId = null;
-        renderDashboardSection();
+        renderAll();
       }
     });
 
