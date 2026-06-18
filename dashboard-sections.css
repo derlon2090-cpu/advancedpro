@@ -296,6 +296,11 @@
   font-weight: 650;
 }
 
+.user-dashboard-v3 .udv6-card-menu-wrap {
+  position: relative;
+  z-index: 70;
+}
+
 .user-dashboard-v3 .udv6-card-menu-button {
   width: 34px;
   height: 34px;
@@ -316,7 +321,7 @@
 
 .user-dashboard-v3 .udv6-menu {
   position: absolute;
-  z-index: 30;
+  z-index: 80;
   right: 14px;
   top: calc(100% + 8px);
   left: auto;

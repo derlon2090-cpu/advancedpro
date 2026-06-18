@@ -428,10 +428,12 @@
           <h3>${prompt}</h3>
           <div class="udv3-creation-meta">
             <p>${meta}</p>
-            <button class="udv3-card-menu" type="button" data-menu-generation-id="${escapeHtml(item.id)}" aria-label="إجراءات المشروع">⋮</button>
+            <div class="udv3-card-menu-wrap">
+              <button class="udv3-card-menu" type="button" data-menu-generation-id="${escapeHtml(item.id)}" aria-label="إجراءات المشروع">⋮</button>
+              ${renderGenerationMenu(item)}
+            </div>
           </div>
         </div>
-        ${renderGenerationMenu(item)}
       </article>
     `;
   }
@@ -553,10 +555,12 @@
           <h3>${escapeHtml(item.prompt)}</h3>
           <div class="udv6-work-meta">
             <span>${qualityLabel(item.quality)} · ${relativeTime(item.createdAt)}</span>
-            <button class="udv6-card-menu-button" type="button" data-menu-generation-id="${escapeHtml(item.id)}" aria-label="إجراءات المشروع">⋮</button>
+            <div class="udv6-card-menu-wrap">
+              <button class="udv6-card-menu-button" type="button" data-menu-generation-id="${escapeHtml(item.id)}" aria-label="إجراءات المشروع">⋮</button>
+              ${renderGenerationMenu(item)}
+            </div>
           </div>
         </div>
-        ${renderGenerationMenu(item)}
       </article>
     `;
   }
@@ -885,6 +889,7 @@
 
       const createButton = event.target.closest("[data-section-create]");
       if (createButton) {
+        event.preventDefault();
         switchToCreate();
         return;
       }
@@ -905,6 +910,8 @@
 
       const templateButton = event.target.closest("[data-use-template]");
       if (templateButton) {
+        event.preventDefault();
+        event.stopPropagation();
         const item = TEMPLATE_ITEMS.find((template) => template.id === templateButton.dataset.useTemplate);
         if (item) {
           switchToCreate({ prompt: item.prompt });
@@ -915,6 +922,7 @@
 
       const menuButton = event.target.closest("[data-menu-generation-id]");
       if (menuButton) {
+        event.preventDefault();
         event.stopPropagation();
         const id = menuButton.dataset.menuGenerationId;
         const nextMenuId = String(state.activeMenuId) === String(id) ? null : id;
@@ -931,6 +939,7 @@
 
       const actionButton = event.target.closest("[data-generation-action]");
       if (actionButton) {
+        event.preventDefault();
         event.stopPropagation();
         await handleGenerationAction(actionButton.dataset.generationAction, actionButton.dataset.generationId);
         return;
