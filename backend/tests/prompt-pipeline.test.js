@@ -10,6 +10,7 @@ import {
   analyzePromptComplexity,
   isComplexGenerationPrompt,
 } from "../src/utils/promptComplexity.js";
+import { assertAllowedGenerationContent } from "../src/utils/credits.js";
 
 function build(userPrompt) {
   return buildSmartPromptEnhancement({
@@ -19,6 +20,24 @@ function build(userPrompt) {
     type: "image",
   });
 }
+
+test("explicit sexual prompts are rejected with the safe educational message", () => {
+  assert.throws(
+    () => assertAllowedGenerationContent("أنشئ محتوى جنسي صريح"),
+    /التعليمية الآمنة فقط/
+  );
+  assert.throws(
+    () => assertAllowedGenerationContent("Create an explicit NSFW nude image"),
+    /التعليمية الآمنة فقط/
+  );
+});
+
+test("safe educational anatomy wording is not blocked by the explicit-content guard", () => {
+  assert.equal(
+    assertAllowedGenerationContent("رسم تعليمي مبسط لتشريح القلب البشري"),
+    "رسم تعليمي مبسط لتشريح القلب البشري"
+  );
+});
 
 test("white chicken prompt remains isolated from business fallback content", () => {
   const result = build("دجاجة بيضاء");

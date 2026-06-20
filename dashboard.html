@@ -15,8 +15,8 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/styles.css?v=20260605-brand-v9" />
-    <link rel="stylesheet" href="/dashboard-v5.css?v=20260617-recent-menu-v1" />
-    <link rel="stylesheet" href="/dashboard-sections.css?v=20260617-recent-menu-v1" />
+    <link rel="stylesheet" href="/dashboard-v5.css?v=20260619-mobile-create-v2" />
+    <link rel="stylesheet" href="/dashboard-sections.css?v=20260619-mobile-create-v2" />
   </head>
   <body class="user-dashboard-v3" data-page="dashboard-v4">
     <svg class="udv5-symbols" aria-hidden="true">
@@ -147,12 +147,12 @@
         </button>
         <div class="udv3-profile">
           <img
-            src="/ap-mark.svg"
+            src="/assets/pixigen-robot-avatar.svg"
             alt=""
             data-customer-avatar
           />
           <div>
-            <strong data-customer-name>أحمد العتيبي</strong>
+            <strong data-customer-name>العميل</strong>
             <span data-plan-badge>VIP</span>
           </div>
         </div>
@@ -209,7 +209,7 @@
                   <span>التكلفة المتوقعة</span>
                   <strong data-cost-value>10 XP</strong>
                   <p data-cost-label>صورة عالية الدقة</p>
-                  <button type="submit" data-submit-button>إنشاء الآن ✨</button>
+                  <button type="button" data-submit-button>إنشاء الآن ✨</button>
                 </aside>
               </div>
 
@@ -281,35 +281,6 @@
 
               <p class="udv3-inline-message" data-form-message role="status"></p>
             </form>
-          </section>
-
-          <section class="udv3-processing-card" data-processing-card hidden>
-            <div class="udv3-spinner" aria-hidden="true"></div>
-            <h2 data-processing-title>جاري إنشاء صورتك...</h2>
-            <p>قد يستغرق الأمر من 10 إلى 30 ثانية حسب تعقيد الطلب</p>
-            <div class="udv3-progress-steps" aria-label="مراحل المعالجة">
-              <article class="is-active">
-                <b></b>
-                <strong>جاري المعالجة</strong>
-                <span>تحليل الوصف</span>
-              </article>
-              <article>
-                <b></b>
-                <strong>جاري التوليد</strong>
-                <span>إنشاء التفاصيل</span>
-              </article>
-              <article>
-                <b></b>
-                <strong>جاري التحسين</strong>
-                <span>تحسين الجودة</span>
-              </article>
-              <article>
-                <b></b>
-                <strong>جاري الإنهاء</strong>
-                <span>جاهز قريبًا</span>
-              </article>
-            </div>
-            <button type="button" data-cancel-generation>إلغاء الإنشاء</button>
           </section>
 
           <section class="udv3-recent-card" id="recent">
@@ -391,6 +362,17 @@
 
     <div class="udv3-toast" data-toast hidden></div>
 
+    <div class="udv3-confirm-modal" data-confirm-modal hidden>
+      <section role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+        <h2 id="confirm-title">هل أنت متأكد؟</h2>
+        <p data-confirm-message>سيتم حذف هذا المشروع.</p>
+        <div>
+          <button type="button" data-confirm-cancel>إلغاء</button>
+          <button class="is-danger" type="button" data-confirm-accept>حذف</button>
+        </div>
+      </section>
+    </div>
+
     <div class="udv3-prompt-debug-modal" data-enhanced-prompt-modal hidden>
       <section role="dialog" aria-modal="true" aria-labelledby="enhanced-prompt-title">
         <button type="button" data-close-enhanced-prompt aria-label="إغلاق">×</button>
@@ -401,6 +383,6 @@
     </div>
 
     <script src="/config.js"></script>
-    <script src="/dashboard-page.js?v=20260617-recent-menu-v1"></script>
+    <script src="/dashboard-page.js?v=20260619-mobile-create-v2"></script>
   </body>
 </html>

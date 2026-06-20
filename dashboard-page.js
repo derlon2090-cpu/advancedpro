@@ -1,5 +1,7 @@
 (function () {
   const API_BASE_URL = window.AdvancedProConfig?.apiBaseUrl || "";
+  const BUILD_VERSION = "2026.06.20-mobile-generation-v3";
+  console.info("PIXIGEN_BUILD:", BUILD_VERSION);
 
   const state = {
     key: null,
@@ -327,7 +329,7 @@
     const name = key.customerName || "العميل";
 
     $("[data-customer-name]").textContent = name;
-    $("[data-customer-avatar]").src = key.avatarUrl || "/ap-mark.svg";
+    $("[data-customer-avatar]").src = "/assets/pixigen-robot-avatar.svg";
     $("[data-plan-badge]").textContent = key.planName || "VIP";
     $("[data-total-xp]").textContent = `${formatNumber(remaining)} XP`;
     $("[data-widget-xp]").textContent = `${formatNumber(remaining)} XP`;
@@ -353,15 +355,6 @@
     }, 3500);
   }
 
-  function showProcessing(show) {
-    const card = $("[data-processing-card]");
-    card.hidden = !show;
-    if (show) {
-      $("[data-processing-title]").textContent =
-        state.type === "video" ? "جاري إنشاء الفيديو..." : "جاري إنشاء صورتك...";
-    }
-  }
-
   function setLoading(isLoading) {
     state.loading = isLoading;
     const button = $("[data-submit-button]");
@@ -373,9 +366,35 @@
         ? "جاري إنشاء الفيديو..."
         : "جاري إنشاء الصورة..."
       : "إنشاء الآن ✨";
-    if (isLoading) {
-      showProcessing(true);
-    }
+  }
+
+  function confirmAction(message = "هل أنت متأكد؟") {
+    const modal = $("[data-confirm-modal]");
+    const messageNode = $("[data-confirm-message]");
+    const accept = $("[data-confirm-accept]");
+    const cancel = $("[data-confirm-cancel]");
+    if (!modal || !accept || !cancel) return Promise.resolve(false);
+
+    messageNode.textContent = message;
+    modal.hidden = false;
+
+    return new Promise((resolve) => {
+      const finish = (accepted) => {
+        modal.hidden = true;
+        accept.removeEventListener("click", onAccept);
+        cancel.removeEventListener("click", onCancel);
+        modal.removeEventListener("click", onBackdrop);
+        resolve(accepted);
+      };
+      const onAccept = () => finish(true);
+      const onCancel = () => finish(false);
+      const onBackdrop = (event) => {
+        if (event.target === modal) finish(false);
+      };
+      accept.addEventListener("click", onAccept);
+      cancel.addEventListener("click", onCancel);
+      modal.addEventListener("click", onBackdrop);
+    });
   }
 
   function setType(type) {
@@ -822,7 +841,7 @@
             <h2>المعلومات الشخصية</h2>
             <label class="udv6-field"><span>الاسم</span><input name="customerName" value="${escapeHtml(key.customerName || "")}" /></label>
             <label class="udv6-field"><span>البريد الإلكتروني</span><input name="customerEmail" type="email" value="${escapeHtml(key.customerEmail || "")}" /></label>
-            <button class="udv6-primary-button" type="submit">حفظ المعلومات</button>
+            <button class="udv6-primary-button" type="button" data-settings-save>حفظ المعلومات</button>
           </section>
           <section class="udv6-settings-card">
             <h2>التفضيلات</h2>
@@ -924,7 +943,7 @@
     } else if (action === "copy") {
       await copyText(item.resultUrl, "تم نسخ الرابط");
     } else if (action === "delete") {
-      const confirmed = window.confirm("هل أنت متأكد؟");
+      const confirmed = await confirmAction("هل أنت متأكد؟ سيتم حذف هذا المشروع نهائيًا.");
       if (!confirmed) return;
       try {
         await requestJson(`/api/generate/${encodeURIComponent(item.id)}`, {
@@ -949,19 +968,88 @@
     $$("[data-generation-menu]").forEach((menu) => {
       menu.hidden = true;
     });
+    $$("[data-menu-generation-id]").forEach((button) => {
+      button.setAttribute("aria-expanded", "false");
+    });
   }
 
-  function openMenu(id, menuButton) {
-    closeAllMenus();
-    state.activeMenuId = id;
-    state.activeMenuScope = menuButton?.dataset.menuScope || null;
+  function toggleMenu(menuButton) {
     const menu = menuButton?.parentElement?.querySelector("[data-generation-menu]");
-    if (menu) {
-      menu.hidden = false;
-    }
+    if (!menu) return;
+    const shouldOpen = menu.hidden;
+    closeAllMenus();
+    if (!shouldOpen) return;
+    state.activeMenuId = menuButton.dataset.menuGenerationId;
+    state.activeMenuScope = menuButton.dataset.menuScope || null;
+    menu.hidden = false;
+    menuButton.setAttribute("aria-expanded", "true");
   }
 
   function bindSectionEvents() {
+    document.addEventListener(
+      "click",
+      async (event) => {
+        const menuButton = event.target.closest("[data-menu-generation-id]");
+        if (menuButton) {
+          event.preventDefault();
+          event.stopPropagation();
+          toggleMenu(menuButton);
+          return;
+        }
+
+        const actionButton = event.target.closest("[data-generation-action]");
+        if (actionButton) {
+          event.preventDefault();
+          event.stopPropagation();
+          await handleGenerationAction(
+            actionButton.dataset.generationAction,
+            actionButton.dataset.generationId
+          );
+          return;
+        }
+
+        const filter = event.target.closest("[data-section-filter]");
+        if (filter) {
+          event.preventDefault();
+          event.stopPropagation();
+          state.sectionFilter = filter.dataset.sectionFilter;
+          renderDashboardSection();
+          return;
+        }
+
+        const templateFilter = event.target.closest("[data-template-filter]");
+        if (templateFilter) {
+          event.preventDefault();
+          event.stopPropagation();
+          state.sectionFilter = templateFilter.dataset.templateFilter;
+          renderDashboardSection();
+          return;
+        }
+
+        const templateButton = event.target.closest("[data-use-template]");
+        if (templateButton) {
+          event.preventDefault();
+          event.stopPropagation();
+          const item = TEMPLATE_ITEMS.find(
+            (template) => template.id === templateButton.dataset.useTemplate
+          );
+          if (item) {
+            switchToCreate({ prompt: item.prompt });
+            showToast("تم استخدام القالب");
+          }
+          return;
+        }
+
+        const settingsSave = event.target.closest("[data-settings-save]");
+        if (settingsSave) {
+          event.preventDefault();
+          event.stopPropagation();
+          saveSettingsForm(settingsSave.closest("[data-settings-form]"));
+        }
+      },
+      true
+    );
+
     document.addEventListener("click", async (event) => {
       const navigation = event.target.closest("[data-dashboard-view]");
       if (navigation && navigation.hasAttribute("data-dashboard-view") && !navigation.matches("[data-type-shortcut]")) {
@@ -974,59 +1062,6 @@
       if (createButton) {
         event.preventDefault();
         switchToCreate();
-        return;
-      }
-
-      const filter = event.target.closest("[data-section-filter]");
-      if (filter) {
-        event.preventDefault();
-        event.stopPropagation();
-        state.sectionFilter = filter.dataset.sectionFilter;
-        renderDashboardSection();
-        return;
-      }
-
-      const templateFilter = event.target.closest("[data-template-filter]");
-      if (templateFilter) {
-        event.preventDefault();
-        event.stopPropagation();
-        state.sectionFilter = templateFilter.dataset.templateFilter;
-        renderDashboardSection();
-        return;
-      }
-
-      const templateButton = event.target.closest("[data-use-template]");
-      if (templateButton) {
-        event.preventDefault();
-        event.stopPropagation();
-        const item = TEMPLATE_ITEMS.find((template) => template.id === templateButton.dataset.useTemplate);
-        if (item) {
-          switchToCreate({ prompt: item.prompt });
-          showToast("تم استخدام القالب");
-          $("[data-prompt-input]")?.focus({ preventScroll: true });
-        }
-        return;
-      }
-
-      const menuButton = event.target.closest("[data-menu-generation-id]");
-      if (menuButton) {
-        event.preventDefault();
-        event.stopPropagation();
-        const id = menuButton.dataset.menuGenerationId;
-        const scope = menuButton.dataset.menuScope || null;
-        if (String(state.activeMenuId) === String(id) && String(state.activeMenuScope) === String(scope)) {
-          closeAllMenus();
-        } else {
-          openMenu(id, menuButton);
-        }
-        return;
-      }
-
-      const actionButton = event.target.closest("[data-generation-action]");
-      if (actionButton) {
-        event.preventDefault();
-        event.stopPropagation();
-        await handleGenerationAction(actionButton.dataset.generationAction, actionButton.dataset.generationId);
         return;
       }
 
@@ -1066,26 +1101,36 @@
       input?.setSelectionRange(input.value.length, input.value.length);
     });
 
-    document.addEventListener("submit", (event) => {
-      if (!event.target.matches("[data-settings-form]")) return;
-      event.preventDefault();
-      const form = new FormData(event.target);
-      const settings = getSettings();
-      settings.quality = form.get("quality") || settings.quality;
-      settings.language = form.get("language") || settings.language;
-      localStorage.setItem("pixigen:settings", JSON.stringify(settings));
-      state.key = {
-        ...(state.key || {}),
-        customerName: String(form.get("customerName") || state.key?.customerName || ""),
-        customerEmail: String(form.get("customerEmail") || state.key?.customerEmail || ""),
-      };
-      updateKeyUi();
-      showToast("تم حفظ إعدادات الحساب.");
-    });
+    document.addEventListener(
+      "submit",
+      (event) => {
+        if (!event.target.matches("[data-settings-form]")) return;
+        event.preventDefault();
+        event.stopPropagation();
+        saveSettingsForm(event.target);
+      },
+      true
+    );
 
     window.addEventListener("popstate", () => {
       setDashboardView(window.location.hash.slice(1) || "home", { updateHistory: false });
     });
+  }
+
+  function saveSettingsForm(formElement) {
+    if (!formElement) return;
+    const form = new FormData(formElement);
+    const settings = getSettings();
+    settings.quality = form.get("quality") || settings.quality;
+    settings.language = form.get("language") || settings.language;
+    localStorage.setItem("pixigen:settings", JSON.stringify(settings));
+    state.key = {
+      ...(state.key || {}),
+      customerName: String(form.get("customerName") || state.key?.customerName || ""),
+      customerEmail: String(form.get("customerEmail") || state.key?.customerEmail || ""),
+    };
+    updateKeyUi();
+    showToast("تم حفظ إعدادات الحساب.");
   }
 
   function renderTransactions() {
@@ -1312,7 +1357,7 @@
   }
 
   async function handleGenerate(event) {
-    event.preventDefault();
+    event?.preventDefault();
     if (state.loading) return;
 
     const promptInput = $("[data-prompt-input]");
@@ -1394,7 +1439,6 @@
         generation,
         ...state.results.filter((item) => String(item.id) !== String(generation.id)),
       ];
-      showProcessing(true);
       try {
         sessionStorage.setItem("pixigen:key", JSON.stringify(state.key || {}));
       } catch {
@@ -1404,7 +1448,11 @@
       $("[data-char-count]").textContent = "0";
       resetEnhancedPromptState();
       renderAll();
-      showToast("تم بدء إنشاء الصورة");
+      showToast(
+        state.type === "video"
+          ? "✨ تم بدء إنشاء الفيديو. سيتم إشعارك عند الانتهاء."
+          : "✨ تم بدء إنشاء الصورة. الوقت المتوقع حوالي 15 ثانية."
+      );
       await refreshKey({ silent: true });
       await refreshGenerations({ silent: true });
       if (generation.resultUrl) {
@@ -1422,12 +1470,7 @@
     } finally {
       state.activeRequestId = null;
       state.abortController = null;
-      state.loading = false;
-      const button = $("[data-submit-button]");
-      if (button) {
-        button.disabled = false;
-        button.textContent = "إنشاء الآن ✨";
-      }
+      setLoading(false);
     }
   }
 
@@ -1449,9 +1492,26 @@
 
   async function refreshGenerations({ silent = false } = {}) {
     try {
+      const previousStatuses = new Map(
+        state.results.map((item) => [String(item.id), item.status])
+      );
       const data = await requestJson("/api/generate");
       const list = data.generations || data.items || data.results || [];
       state.results = list.map(normalizeGeneration);
+      const completed = state.results.find(
+        (item) =>
+          item.status === "completed" &&
+          previousStatuses.has(String(item.id)) &&
+          previousStatuses.get(String(item.id)) !== "completed"
+      );
+      if (completed) {
+        showToast(
+          completed.type === "video"
+            ? "🎉 تم إنشاء الفيديو بنجاح. نتيجتك جاهزة الآن."
+            : "🎉 تم إنشاء الصورة بنجاح. نتيجتك جاهزة الآن."
+        );
+        await refreshKey({ silent: true });
+      }
       renderAll();
     } catch (error) {
       if (!silent) console.warn("GENERATIONS LOAD WARNING:", error);
@@ -1469,7 +1529,6 @@
     renderTransactions();
     updateUsageUi();
     if (state.activeView !== "home") renderDashboardSection();
-    showProcessing(state.results.some((item) => item.status !== "completed"));
   }
 
   function scheduleGenerationsRefresh() {
@@ -1482,6 +1541,7 @@
 
   function bindEvents() {
     $("[data-create-form]").addEventListener("submit", handleGenerate);
+    $("[data-submit-button]")?.addEventListener("click", handleGenerate);
     $("[data-smart-enhance]")?.addEventListener("click", handleSmartEnhance);
     $("[data-prompt-input]").addEventListener("input", (event) => {
       $("[data-char-count]").textContent = event.target.value.length;
@@ -1533,10 +1593,6 @@
       resetEnhancedPromptState();
       updateCost();
       updateUpgradeRecommendation();
-    });
-    $("[data-cancel-generation]").addEventListener("click", () => {
-      state.abortController?.abort();
-      setLoading(false);
     });
     $("[data-show-enhanced-prompt]")?.addEventListener("click", openEnhancedPromptModal);
     $("[data-accept-quality-upgrade]")?.addEventListener("click", () => {

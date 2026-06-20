@@ -22,6 +22,7 @@ import {
   upsertPromptAnalytics,
 } from "../services/generationFeedback.js";
 import {
+  assertAllowedGenerationContent,
   assertValidPrompt,
   calculateRequiredCredits,
   normalizeDuration,
@@ -307,6 +308,7 @@ router.post(
   aiLimiter,
   asyncHandler(async (req, res) => {
     const prompt = assertValidPrompt(req.body.prompt);
+    assertAllowedGenerationContent(prompt);
     const type = normalizeGenerationType(req.body.type || "image");
     const quality = normalizeQuality(req.body.quality || "normal");
     const style = String(req.body.style || "").trim();
@@ -497,36 +499,6 @@ async function ensureProjectsTable(tx = prisma) {
       created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
     )
   `);
-}
-
-async function assertNoRunningGeneration(keyId) {
-  const staleSeconds = Math.max(Number(process.env.GENERATION_STALE_SECONDS || 30), 10);
-
-  await withDbRetry(() =>
-    prisma.$executeRaw`
-      UPDATE generations
-      SET status = 'failed',
-          error_message = 'تم إلغاء طلب عالق تلقائيًا قبل إرسال طلب جديد.'
-      WHERE key_id = ${keyId}
-        AND status IN ('queued', 'processing')
-        AND created_at < NOW() - (${`${staleSeconds} seconds`})::interval
-    `
-  );
-
-  const rows = await withDbRetry(() =>
-    prisma.$queryRaw`
-      SELECT id, created_at
-      FROM generations
-      WHERE key_id = ${keyId}
-        AND status IN ('queued', 'processing')
-        AND created_at > NOW() - (${`${staleSeconds} seconds`})::interval
-      LIMIT 1
-    `
-  );
-
-  if (rows.length > 0) {
-    httpError(`لديك طلب قيد المعالجة حاليًا. أعد المحاولة بعد ${staleSeconds} ثانية.`, 409);
-  }
 }
 
 async function createGenerationRecord({
@@ -1119,6 +1091,7 @@ router.post(
     const style = String(req.body.style || "").trim();
     const aspectRatio = String(req.body.aspectRatio || req.body.aspect || "").trim();
     const prompt = assertValidPrompt(req.body.prompt);
+    assertAllowedGenerationContent(prompt);
     const requestId = String(req.body.requestId || "").trim().slice(0, 80) || randomUUID();
     const providedSeed = Number(req.body.seed);
     const seed = Number.isFinite(providedSeed) ? providedSeed : Math.floor(Math.random() * 999999999);
@@ -1178,7 +1151,6 @@ router.post(
       seed,
     });
 
-    await assertNoRunningGeneration(keyId);
     await loadAndValidateKey({ keyId, type, creditsUsed });
 
     const generationId = await createGenerationRecord({
@@ -1213,7 +1185,7 @@ router.post(
 
     return res.json({
       success: true,
-      message: "تم بدء إنشاء الصورة.",
+      message: type === "video" ? "تم بدء إنشاء الفيديو." : "تم بدء إنشاء الصورة.",
       generationId,
       requestId,
       status: "processing",

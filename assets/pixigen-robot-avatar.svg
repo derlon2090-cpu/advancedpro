@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title id="title">PixiGen robot avatar</title>
+  <defs>
+    <linearGradient id="bg" x1="18" y1="8" x2="112" y2="122" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#EEE8FF"/>
+      <stop offset="1" stop-color="#D9F4FF"/>
+    </linearGradient>
+    <linearGradient id="metal" x1="35" y1="31" x2="93" y2="102" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#D9D7F8"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="38" y1="39" x2="94" y2="91" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6236F5"/>
+      <stop offset="1" stop-color="#B13AF1"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="34" fill="url(#bg)"/>
+  <circle cx="101" cy="27" r="10" fill="#FFF" opacity=".72"/>
+  <path d="M64 20v13" stroke="#6D35FF" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="64" cy="17" r="7" fill="#A63DFF"/>
+  <rect x="27" y="32" width="74" height="63" rx="25" fill="url(#metal)" stroke="#FFF" stroke-width="5"/>
+  <rect x="35" y="42" width="58" height="39" rx="16" fill="#17183A"/>
+  <circle cx="52" cy="61" r="7" fill="#73E8FF"/>
+  <circle cx="76" cy="61" r="7" fill="#73E8FF"/>
+  <circle cx="50" cy="59" r="2.5" fill="#FFF"/>
+  <circle cx="74" cy="59" r="2.5" fill="#FFF"/>
+  <path d="M51 72c7 7 19 7 26 0" fill="none" stroke="#FFF" stroke-width="4" stroke-linecap="round"/>
+  <rect x="19" y="48" width="12" height="30" rx="6" fill="url(#accent)"/>
+  <rect x="97" y="48" width="12" height="30" rx="6" fill="url(#accent)"/>
+  <path d="M40 94h48l13 24H27l13-24Z" fill="url(#accent)"/>
+  <circle cx="64" cy="105" r="7" fill="#FFF" opacity=".92"/>
+</svg>

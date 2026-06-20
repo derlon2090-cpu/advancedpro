@@ -123,6 +123,29 @@ export function assertValidPrompt(prompt) {
   return normalized;
 }
 
+const EXPLICIT_SEXUAL_CONTENT_PATTERNS = [
+  /\b(?:porn|pornographic|nsfw|explicit sex|sexual intercourse|nude|nudity|naked|genitals?)\b/i,
+  /(?:إباحي|اباحي|إباحية|اباحية|جنسي(?:ة)?|جنس صريح|ممارسة جنسية|عاري(?:ة)?|عُري|عري كامل|أعضاء جنسية)/i,
+];
+
+export function assertAllowedGenerationContent(prompt) {
+  const normalized = String(prompt || "").trim();
+  const containsExplicitSexualContent = EXPLICIT_SEXUAL_CONTENT_PATTERNS.some((pattern) =>
+    pattern.test(normalized)
+  );
+
+  if (containsExplicitSexualContent) {
+    const error = new Error(
+      "لا يمكن إعداد هذا المحتوى. يمكن استخدام المنصة للأغراض التعليمية الآمنة فقط."
+    );
+    error.statusCode = 400;
+    error.code = "UNSAFE_SEXUAL_CONTENT";
+    throw error;
+  }
+
+  return normalized;
+}
+
 export const CREDIT_RULES = {
   IMAGE_CREDIT_COST,
   VIDEO_CREDIT_COST,

@@ -177,6 +177,7 @@
               <strong>جاري المعالجة...</strong>
               <div class="result-progress" aria-hidden="true"><i></i></div>
               <small>${escapeHtml(currentStageLabel())}</small>
+              <small>${escapeHtml(expectedTimeLabel(result))}</small>
             </div>
           </div>
           <div class="result-processing-steps">
@@ -210,6 +211,12 @@
       "حفظ النتيجة",
     ];
     return stages[state.currentIndex % stages.length];
+  }
+
+  function expectedTimeLabel(result = state.result) {
+    return result?.type === "video"
+      ? "قد يستغرق الفيديو وقتًا أطول حسب المدة والجودة"
+      : "الوقت المتوقع حوالي 15 ثانية";
   }
 
   function renderStages(result) {
