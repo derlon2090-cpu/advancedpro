@@ -21,6 +21,32 @@ function build(userPrompt) {
   });
 }
 
+test("generation UI uses one submit path and keeps background jobs inside the dashboard", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const dashboardHtml = await readFile(new URL("../../dashboard.html", import.meta.url), "utf8");
+  const dashboardScript = await readFile(new URL("../../dashboard-page.js", import.meta.url), "utf8");
+  const resultScript = await readFile(new URL("../../generation-page.js", import.meta.url), "utf8");
+
+  assert.match(dashboardHtml, /<button type="submit" data-submit-button>/);
+  assert.match(dashboardScript, /\[data-create-form\]"\)\.addEventListener\("submit", handleGenerate\)/);
+  assert.doesNotMatch(
+    dashboardScript,
+    /\[data-submit-button\]"\)\?\.addEventListener\("click", handleGenerate\)/
+  );
+  assert.match(
+    dashboardScript,
+    /closest\("a\[data-dashboard-view\], button\[data-dashboard-view\]"\)/
+  );
+  assert.doesNotMatch(
+    dashboardScript,
+    /event\.target\.closest\("\[data-dashboard-view\]"\)/
+  );
+  assert.doesNotMatch(dashboardScript, /history\.replaceState\([^)]*\/generation\?id=/);
+  assert.match(dashboardScript, /\["queued", "processing"\]\.includes\(item\.status\)/);
+  assert.match(resultScript, /updateActions\(result\)/);
+  assert.match(resultScript, /\["completed", "failed"\]\.includes\(state\.result\.status\)/);
+});
+
 test("explicit sexual prompts are rejected with the safe educational message", () => {
   assert.throws(
     () => assertAllowedGenerationContent("أنشئ محتوى جنسي صريح"),

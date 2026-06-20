@@ -1,6 +1,6 @@
 (function () {
   const API_BASE_URL = window.AdvancedProConfig?.apiBaseUrl || "";
-  const BUILD_VERSION = "2026.06.20-mobile-generation-v3";
+  const BUILD_VERSION = "2026.06.20-background-generation-v4";
   console.info("PIXIGEN_BUILD:", BUILD_VERSION);
 
   const state = {
@@ -1051,8 +1051,8 @@
     );
 
     document.addEventListener("click", async (event) => {
-      const navigation = event.target.closest("[data-dashboard-view]");
-      if (navigation && navigation.hasAttribute("data-dashboard-view") && !navigation.matches("[data-type-shortcut]")) {
+      const navigation = event.target.closest("a[data-dashboard-view], button[data-dashboard-view]");
+      if (navigation && !navigation.matches("[data-type-shortcut]")) {
         event.preventDefault();
         setDashboardView(navigation.dataset.dashboardView);
         return;
@@ -1358,6 +1358,7 @@
 
   async function handleGenerate(event) {
     event?.preventDefault();
+    event?.stopPropagation();
     if (state.loading) return;
 
     const promptInput = $("[data-prompt-input]");
@@ -1455,9 +1456,6 @@
       );
       await refreshKey({ silent: true });
       await refreshGenerations({ silent: true });
-      if (generation.resultUrl) {
-        window.history.replaceState({ generationId: generation.id }, "", `/generation?id=${encodeURIComponent(generation.id)}`);
-      }
     } catch (error) {
       if (error.name === "AbortError") {
         setMessage("تم إلغاء الإنشاء. لم يتم خصم أي رصيد.", "info");
@@ -1533,7 +1531,7 @@
 
   function scheduleGenerationsRefresh() {
     clearTimeout(state.refreshTimer);
-    if (!state.results.some((item) => item.status !== "completed")) return;
+    if (!state.results.some((item) => ["queued", "processing"].includes(item.status))) return;
     state.refreshTimer = setTimeout(() => {
       refreshGenerations({ silent: true });
     }, 3000);
@@ -1541,7 +1539,6 @@
 
   function bindEvents() {
     $("[data-create-form]").addEventListener("submit", handleGenerate);
-    $("[data-submit-button]")?.addEventListener("click", handleGenerate);
     $("[data-smart-enhance]")?.addEventListener("click", handleSmartEnhance);
     $("[data-prompt-input]").addEventListener("input", (event) => {
       $("[data-char-count]").textContent = event.target.value.length;

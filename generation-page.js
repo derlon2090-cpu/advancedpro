@@ -168,6 +168,15 @@
       return;
     }
 
+    if (result.status === "failed") {
+      frame.innerHTML = `
+        <div class="result-placeholder">
+          تعذر إكمال الإنشاء. لم يتم خصم أي رصيد، ويمكنك إعادة المحاولة من لوحة التحكم.
+        </div>
+      `;
+      return;
+    }
+
     if (result.status !== "completed" || !result.resultUrl) {
       frame.innerHTML = `
         <div class="result-processing">
@@ -383,7 +392,7 @@
       const data = await requestJson(`/api/generations/${encodeURIComponent(id)}`);
       state.result = normalizeGeneration(data.generation || data.result || data);
       renderCurrent();
-      if (state.result.status !== "completed") {
+      if (["queued", "processing"].includes(state.result.status)) {
         startPolling();
       }
     } catch (error) {
@@ -392,7 +401,7 @@
           const statusData = await requestJson(`/api/generations/${encodeURIComponent(id)}/status`);
           state.result = normalizeGeneration(statusData.generation || statusData.result || statusData);
           renderCurrent();
-          if (state.result.status !== "completed") startPolling();
+          if (["queued", "processing"].includes(state.result.status)) startPolling();
           return;
         } catch {
           // fall through
@@ -408,7 +417,7 @@
       const data = await requestJson(`/api/generations/${encodeURIComponent(state.result.id)}`);
       const next = normalizeGeneration(data.generation || data.result || data);
       state.result = { ...state.result, ...next };
-      if (state.result.status === "completed") {
+      if (["completed", "failed"].includes(state.result.status)) {
         stopPolling();
       }
       renderCurrent();
@@ -420,10 +429,12 @@
   function startPolling() {
     stopPolling();
     state.pollingTimer = window.setInterval(() => {
-      if (state.result?.status !== "completed") {
+      if (["queued", "processing"].includes(state.result?.status)) {
         state.currentIndex = (state.currentIndex + 1) % 6;
         renderCurrent();
         refreshGenerationSilently();
+      } else {
+        stopPolling();
       }
     }, 3000);
   }
@@ -446,6 +457,7 @@
     updateFavoriteState(result);
     updateRatingUi(result.userRating);
     updateActionLabels(result);
+    updateActions(result);
   }
 
   function updateActionLabels(result) {
