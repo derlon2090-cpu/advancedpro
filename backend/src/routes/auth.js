@@ -6,6 +6,7 @@ import { signToken } from "../utils/jwt.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { requireAuth } from "../middleware/auth.js";
 import { activateCodeForUser } from "../services/codeActivation.js";
+import { getUserActivationCode } from "../services/activationCodes.js";
 import { sendResetCodeEmail } from "../utils/email.js";
 
 const TRIAL_PACKAGE_NAME = "تجربة مجانية";
@@ -33,6 +34,24 @@ const resetSchema = z.object({
   code: z.string().min(6),
   password: z.string().min(8),
 });
+
+function setKeySessionCookie(res, keyId) {
+  const cookieSecure = process.env.COOKIE_SECURE === "true";
+  res.cookie("key_session", String(keyId), {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: cookieSecure,
+    path: "/",
+    maxAge: 1000 * 60 * 60 * 24 * 30,
+  });
+}
+
+async function restoreUserKeySession(res, userId) {
+  const accessCode = await getUserActivationCode(userId);
+  if (accessCode?.id) {
+    setKeySessionCookie(res, accessCode.id);
+  }
+}
 
 function validatePasswordRules(password) {
   if (password.length < 8) {
@@ -95,6 +114,7 @@ router.post(
       secure: cookieSecure,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
+    await restoreUserKeySession(res, user.id);
 
     return res.json({
       message: "تم إنشاء الحساب بنجاح 🎉",
@@ -145,6 +165,7 @@ router.post(
       secure: cookieSecure,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
+    await restoreUserKeySession(res, user.id);
 
     return res.json({
       message: "تم تسجيل الدخول بنجاح 🎉",
@@ -167,6 +188,12 @@ router.post(
       httpOnly: true,
       sameSite: "none",
       secure: process.env.COOKIE_SECURE === "true",
+    });
+    res.clearCookie("key_session", {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.COOKIE_SECURE === "true",
+      path: "/",
     });
     return res.json({ message: "تم تسجيل الخروج." });
   })

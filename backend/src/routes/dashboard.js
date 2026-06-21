@@ -11,10 +11,11 @@ router.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const accessCode = await getUserActivationCode(req.user.id);
+    const accessCodeId = accessCode?.id ? Number(accessCode.id) : null;
 
     const [
       legacySubscription,
-      accessCode,
       usageTotals,
       recentUsage,
       recentGenerations,
@@ -28,7 +29,6 @@ router.get(
         orderBy: { createdAt: "desc" },
         include: { code: true },
       }),
-      getUserActivationCode(req.user.id),
       prisma.usageLog.groupBy({
         by: ["type"],
         where: { userId: req.user.id },
@@ -40,14 +40,28 @@ router.get(
         take: 6,
       }),
       prisma.generation.findMany({
-        where: { userId: req.user.id },
+        where: accessCodeId ? { keyId: accessCodeId } : { userId: req.user.id },
         orderBy: { createdAt: "desc" },
         take: 6,
       }),
-      prisma.usageLog.count({ where: { userId: req.user.id } }),
-      prisma.usageLog.count({ where: { userId: req.user.id, type: "image" } }),
-      prisma.usageLog.count({ where: { userId: req.user.id, type: "video" } }),
-      prisma.usageLog.count({ where: { userId: req.user.id, createdAt: { gte: weekAgo } } }),
+      prisma.usageLog.count({
+        where: accessCodeId ? { keyId: accessCodeId } : { userId: req.user.id },
+      }),
+      prisma.usageLog.count({
+        where: accessCodeId
+          ? { keyId: accessCodeId, type: "image" }
+          : { userId: req.user.id, type: "image" },
+      }),
+      prisma.usageLog.count({
+        where: accessCodeId
+          ? { keyId: accessCodeId, type: "video" }
+          : { userId: req.user.id, type: "video" },
+      }),
+      prisma.usageLog.count({
+        where: accessCodeId
+          ? { keyId: accessCodeId, createdAt: { gte: weekAgo } }
+          : { userId: req.user.id, createdAt: { gte: weekAgo } },
+      }),
     ]);
 
     const totals = usageTotals.reduce(

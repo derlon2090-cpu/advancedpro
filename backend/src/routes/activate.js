@@ -9,6 +9,17 @@ import { activateCodeForUser as activateLegacyCodeForUser } from "../services/co
 
 const router = Router();
 
+function setKeySessionCookie(res, keyId) {
+  const cookieSecure = process.env.COOKIE_SECURE === "true";
+  res.cookie("key_session", String(keyId), {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: cookieSecure,
+    path: "/",
+    maxAge: 1000 * 60 * 60 * 24 * 30,
+  });
+}
+
 async function handleActivation(req, res) {
   const codeValue = String(req.body.code || "").trim();
 
@@ -38,6 +49,7 @@ async function handleActivation(req, res) {
   }
 
   if (accessCode) {
+    setKeySessionCookie(res, accessCode.id);
     return res.json({
       success: true,
       message: buildActivationSuccessMessage(accessCode),

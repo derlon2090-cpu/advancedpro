@@ -438,24 +438,39 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  width: 100%;
   gap: 10px;
   min-height: 43px;
   font-size: 13px;
   color: #fff;
   text-shadow: 0 1px 2px rgba(34, 20, 90, .14);
+  text-align: center;
+  overflow: hidden;
 }
 
 .user-dashboard-v3 .udv3-submit-spinner {
-  width: 18px;
-  height: 18px;
+  position: absolute;
+  inset-inline-start: 16px;
+  top: 50%;
+  width: 13px;
+  height: 13px;
   display: none;
-  border: 2.5px solid rgba(255, 255, 255, .34);
+  transform: translateY(-50%);
+  border: 2px solid rgba(255, 255, 255, .28);
   border-top-color: #fff;
   border-radius: 50%;
-  animation: udv3-submit-spin .9s linear infinite;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, .08);
+  animation: udv3-submit-spin .82s linear infinite;
 }
 
 .user-dashboard-v3 .udv3-cost-card button [data-submit-label] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  text-align: center;
+  margin-inline: auto;
   color: #fff;
 }
 
@@ -465,11 +480,15 @@
 
 .user-dashboard-v3 .udv3-cost-card button.is-loading [data-submit-label] {
   white-space: nowrap;
+  padding-inline: 0;
 }
 
 @keyframes udv3-submit-spin {
+  from {
+    transform: translateY(-50%) rotate(0deg);
+  }
   to {
-    transform: rotate(360deg);
+    transform: translateY(-50%) rotate(360deg);
   }
 }
 
