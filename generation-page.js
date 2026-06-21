@@ -1,25 +1,21 @@
 (function () {
   const API_BASE_URL = window.AdvancedProConfig?.apiBaseUrl || "";
+  const PROCESSING_STAGES = [
+    "استلام الطلب",
+    "تحليل الوصف",
+    "اختيار النموذج",
+    "إنشاء النتيجة",
+    "تحسين الجودة",
+    "تجهيز النتيجة",
+  ];
 
   const state = {
-    key: null,
+    currentId: "",
     result: null,
     results: [],
     pollingTimer: null,
-    currentIndex: 0,
-    similarIndex: 0,
-  };
-  const USER_FACING_MODEL_NAMES = {
-    image: {
-      normal: "وميض",
-      high: "رؤية",
-      ultra: "إتقان برو",
-    },
-    video: {
-      normal: "وميض موشن",
-      high: "رؤية موشن",
-      ultra: "إتقان موشن",
-    },
+    menuOpen: false,
+    processingStageIndex: 0,
   };
 
   const $ = (selector, root = document) => root.querySelector(selector);
@@ -27,6 +23,15 @@
 
   function apiUrl(path) {
     return `${API_BASE_URL}${path}`;
+  }
+
+  function sanitizeMessage(message, fallback = "تعذر إتمام الطلب مؤقتًا، حاول لاحقًا.") {
+    const text = String(message || "").trim();
+    if (!text) return fallback;
+    if (/api[_-\s]*key|gemini|wavespeed|prompt_translation|deepseek|env\b|process\.env/i.test(text)) {
+      return fallback;
+    }
+    return text;
   }
 
   async function requestJson(path, options = {}) {
@@ -40,13 +45,17 @@
         ...(options.headers || {}),
       },
     });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok || data.success === false) {
-      const error = new Error(data.message || "تعذر تحميل البيانات.");
+
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || payload.success === false) {
+      const error = new Error(
+        sanitizeMessage(payload.message || payload.error || "تعذر تحميل البيانات.", "تعذر تحميل البيانات.")
+      );
       error.status = response.status;
       throw error;
     }
-    return data;
+
+    return payload;
   }
 
   function escapeHtml(value) {
@@ -58,68 +67,6 @@
       .replace(/'/g, "&#039;");
   }
 
-  function formatNumber(value) {
-    return new Intl.NumberFormat("en-US").format(Number(value || 0));
-  }
-
-  function formatDate(value) {
-    if (!value) return "غير محدد";
-    try {
-      return new Intl.DateTimeFormat("ar-SA", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      }).format(new Date(value));
-    } catch {
-      return "غير محدد";
-    }
-  }
-
-  function relativeTime(value) {
-    const time = value ? new Date(value).getTime() : Date.now();
-    const diff = Math.max(Date.now() - time, 0);
-    const minutes = Math.floor(diff / 60000);
-    if (minutes < 1) return "منذ لحظات";
-    if (minutes < 60) return `منذ ${minutes} دقيقة`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `منذ ${hours} ساعة`;
-    const days = Math.floor(hours / 24);
-    return `منذ ${days} يوم`;
-  }
-
-  function qualityLabel(value) {
-    return {
-      normal: "عادية",
-      high: "عالية",
-      ultra: "فائقة",
-    }[value || "high"] || "عالية";
-  }
-
-  function typeLabel(value) {
-    return value === "video" ? "فيديو" : "صورة";
-  }
-
-  function resolveUserFacingModelName(model, { type = "image", quality = "high" } = {}) {
-    const raw = String(model || "").trim().toLowerCase();
-    if (raw.includes("z-image")) return USER_FACING_MODEL_NAMES.image.normal;
-    if (raw.includes("seedream")) return USER_FACING_MODEL_NAMES.image.high;
-    if (raw.includes("nano-banana")) return USER_FACING_MODEL_NAMES.image.ultra;
-    if (raw.includes("wan-2.2/t2v-480p-ultra-fast") || raw.includes("wan-2.2-ultra-fast")) {
-      return USER_FACING_MODEL_NAMES.video.normal;
-    }
-    if (raw.includes("wan-2.2-animate") || raw.includes("wan-2.7")) {
-      return USER_FACING_MODEL_NAMES.video.high;
-    }
-    if (raw.includes("kling-v3.0-std") || raw.includes("kling-3.0-std")) {
-      return USER_FACING_MODEL_NAMES.video.ultra;
-    }
-
-    const group = USER_FACING_MODEL_NAMES[type] || USER_FACING_MODEL_NAMES.image;
-    return group[quality] || group.high || USER_FACING_MODEL_NAMES.image.high;
-  }
-
   function getGenerationId() {
     const params = new URLSearchParams(window.location.search);
     const queryId = params.get("id");
@@ -128,69 +75,367 @@
     return match ? decodeURIComponent(match[1]) : "";
   }
 
-  function normalizeKey(payload) {
-    const key = payload?.key || payload?.data || payload || {};
-    return {
-      ...key,
-      customerName: key.customerName || key.ownerName || key.name || "العميل",
-      planName: key.planName || key.plan?.name || "VIP",
-      balance: Number(key.balance ?? key.creditsRemaining ?? key.xp ?? 1095),
-      initialBalance: Number(key.initialBalance ?? key.totalCredits ?? key.balance ?? key.creditsRemaining ?? 1200),
-      imageLimit: Number(key.imageLimit ?? key.imagesLimit ?? 240),
-      imageUsed: Number(key.imageUsed ?? key.imagesUsed ?? 18),
-      videoLimit: Number(key.videoLimit ?? key.videosLimit ?? 24),
-      videoUsed: Number(key.videoUsed ?? key.videosUsed ?? 4),
-      expiresAt: key.expiresAt || null,
-    };
+  function formatDateValue(value) {
+    const time = Date.parse(value || "");
+    return Number.isFinite(time) ? time : 0;
+  }
+
+  function mediaUrlWithVersion(item) {
+    const base = item?.resultUrl || item?.thumbnailUrl || "";
+    if (!base) return "";
+    const version = encodeURIComponent(item.requestId || item.id || Date.now());
+    return `${base}${base.includes("?") ? "&" : "?"}v=${version}`;
+  }
+
+  function isPending(result) {
+    return Boolean(result && ["queued", "processing", "pending"].includes(result.status));
+  }
+
+  function isFailed(result) {
+    return Boolean(result && result.status === "failed");
+  }
+
+  function isCompleted(result) {
+    return Boolean(result && result.status === "completed" && result.resultUrl);
+  }
+
+  function qualityLabel(value) {
+    return (
+      {
+        normal: "عادية",
+        high: "عالية",
+        ultra: "فائقة",
+      }[String(value || "normal").toLowerCase()] || "عالية"
+    );
   }
 
   function normalizeGeneration(item) {
+    const raw = item?.generation || item?.result || item || {};
     return {
-      id: item?.id || item?.generationId || null,
-      requestId: item?.requestId || item?.request_id || null,
-      type: item?.type || "image",
-      prompt: item?.userPrompt || item?.prompt || "",
-      finalPrompt: item?.finalPrompt || item?.final_prompt || "",
-      quality: item?.quality || "high",
-      style: item?.style || "realistic",
-      aspectRatio: item?.aspectRatio || item?.aspect_ratio || item?.aspect || "16:9",
-      duration: item?.duration || item?.durationSeconds || null,
-      model: resolveUserFacingModelName(item?.model, {
-        type: item?.type || "image",
-        quality: item?.quality || "high",
-      }),
-      seed: item?.seed || null,
-      creditsUsed: Number(item?.creditsUsed ?? item?.credits_used ?? item?.xpCost ?? item?.cost ?? 10),
-      createdAt: item?.createdAt || item?.created_at || null,
-      completedAt: item?.completedAt || item?.completed_at || null,
-      resultUrl: item?.resultUrl || item?.result_url || item?.url || item?.outputUrl || item?.imageUrl || item?.videoUrl || "",
-      thumbnailUrl: item?.thumbnailUrl || item?.resultUrl || item?.result_url || item?.url || item?.outputUrl || "",
-      status: item?.status || "processing",
-      userRating: item?.userRating || item?.user_rating || null,
-      isFavorite: Boolean(item?.isFavorite || item?.is_favorite),
-      generationTimeMs: item?.generationTimeMs ?? item?.generation_time_ms ?? null,
+      id: raw.id || raw.generationId || raw.generation_id || null,
+      requestId: raw.requestId || raw.request_id || null,
+      type: raw.type === "video" ? "video" : "image",
+      prompt: raw.userPrompt || raw.prompt || raw.description || "",
+      quality: raw.quality || "normal",
+      status: raw.status || (raw.resultUrl || raw.result_url ? "completed" : "processing"),
+      resultUrl:
+        raw.resultUrl ||
+        raw.result_url ||
+        raw.url ||
+        raw.outputUrl ||
+        raw.output_url ||
+        raw.imageUrl ||
+        raw.videoUrl ||
+        "",
+      thumbnailUrl:
+        raw.thumbnailUrl ||
+        raw.thumbnail_url ||
+        raw.resultUrl ||
+        raw.result_url ||
+        raw.outputUrl ||
+        raw.output_url ||
+        raw.url ||
+        "",
+      createdAt: raw.createdAt || raw.created_at || null,
+      completedAt: raw.completedAt || raw.completed_at || null,
+      isFavorite: Boolean(raw.isFavorite || raw.is_favorite),
     };
+  }
+
+  function fileBaseName(result) {
+    return `pixigen-${result?.type === "video" ? "video" : "image"}-${result?.id || Date.now()}`;
+  }
+
+  function setPageCopy(result) {
+    const title = $("[data-page-title]");
+    const copy = $("[data-page-copy]");
+    const createLabel = $("[data-create-label]");
+    const enhanceLabel = $("[data-enhance-label]");
+
+    if (!title || !copy) return;
+
+    if (!result) {
+      title.textContent = "تعذر تحميل النتيجة";
+      copy.textContent = "تعذر العثور على المشروع المطلوب. حاول العودة إلى مشاريعي.";
+      if (createLabel) createLabel.textContent = "إنشاء صورة جديدة";
+      if (enhanceLabel) enhanceLabel.textContent = "تحسين الصورة";
+      return;
+    }
+
+    if (isFailed(result)) {
+      title.textContent = "تعذر إكمال الإنشاء";
+      copy.textContent = "تعذر إتمام الطلب مؤقتًا، حاول لاحقًا أو أعد المحاولة من لوحة التحكم.";
+    } else if (isPending(result)) {
+      title.textContent = result.type === "video" ? "جاري إنشاء الفيديو..." : "جاري إنشاء صورتك...";
+      copy.textContent =
+        result.type === "video"
+          ? "نعالج طلبك الآن وسنُحدّث الصفحة تلقائيًا فور اكتمال الفيديو"
+          : "نعالج طلبك الآن وسنُحدّث الصفحة تلقائيًا فور اكتمال الصورة";
+    } else {
+      title.textContent = result.type === "video" ? "تم إنشاء الفيديو بنجاح!" : "تم إنشاء صورتك بنجاح!";
+      copy.textContent = result.type === "video" ? "تم إنشاء الفيديو بناءً على وصفك" : "تم إنشاء الصورة بناءً على وصفك";
+    }
+
+    if (createLabel) createLabel.textContent = result.type === "video" ? "إنشاء فيديو جديد" : "إنشاء صورة جديدة";
+    if (enhanceLabel) enhanceLabel.textContent = result.type === "video" ? "تحسين الفيديو" : "تحسين الصورة";
   }
 
   function showToast(message) {
     const toast = $("[data-toast]");
     if (!toast) return;
-    toast.textContent = message;
+    toast.textContent = sanitizeMessage(message, "تم تنفيذ الطلب");
     toast.hidden = false;
     clearTimeout(showToast.timer);
-    showToast.timer = setTimeout(() => {
+    showToast.timer = window.setTimeout(() => {
       toast.hidden = true;
-    }, 3200);
+    }, 2800);
   }
 
-  function setPageState(result) {
-    const label = $("[data-page-state-label]");
-    if (!label) return;
-    if (!result) {
-      label.textContent = "غير متاح";
+  async function copyText(value, successMessage = "تم نسخ الرابط") {
+    const text = String(value || "").trim();
+    if (!text) return;
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        throw new Error("Clipboard API unavailable");
+      }
+    } catch {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.setAttribute("readonly", "true");
+      textarea.style.position = "fixed";
+      textarea.style.top = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand("copy");
+      textarea.remove();
+    }
+
+    showToast(successMessage);
+  }
+
+  function triggerDownload(url, filename) {
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.target = "_blank";
+    anchor.rel = "noopener";
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+  }
+
+  async function fetchBlob(url) {
+    const response = await fetch(url, { mode: "cors" });
+    if (!response.ok) {
+      throw new Error("Failed to fetch asset");
+    }
+    return response.blob();
+  }
+
+  function loadImageFromBlob(blob) {
+    return new Promise((resolve, reject) => {
+      const objectUrl = URL.createObjectURL(blob);
+      const image = new Image();
+      image.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        resolve(image);
+      };
+      image.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error("Failed to decode image"));
+      };
+      image.src = objectUrl;
+    });
+  }
+
+  async function downloadImageAs(format) {
+    const result = state.result;
+    if (!isCompleted(result)) return;
+
+    const extension = format === "jpeg" ? "jpg" : format;
+    const filename = `${fileBaseName(result)}.${extension}`;
+
+    try {
+      const sourceBlob = await fetchBlob(result.resultUrl);
+      const image = await loadImageFromBlob(sourceBlob);
+      const canvas = document.createElement("canvas");
+      canvas.width = image.naturalWidth || image.width;
+      canvas.height = image.naturalHeight || image.height;
+      const context = canvas.getContext("2d");
+
+      if (!context || !canvas.width || !canvas.height) {
+        throw new Error("Canvas unavailable");
+      }
+
+      context.drawImage(image, 0, 0);
+      const mimeType = format === "jpeg" ? "image/jpeg" : `image/${format}`;
+      const quality = format === "jpeg" || format === "webp" ? 0.95 : undefined;
+      const convertedBlob = await new Promise((resolve, reject) => {
+        canvas.toBlob(
+          (blob) => {
+            if (blob) resolve(blob);
+            else reject(new Error("Blob conversion failed"));
+          },
+          mimeType,
+          quality
+        );
+      });
+
+      const objectUrl = URL.createObjectURL(convertedBlob);
+      triggerDownload(objectUrl, filename);
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+      showToast(`بدأ تنزيل ${extension.toUpperCase()}`);
+    } catch {
+      triggerDownload(result.resultUrl, filename);
+      showToast("بدأ تنزيل الملف");
+    }
+  }
+
+  function openShareWindow(url) {
+    const popup = window.open(url, "_blank", "noopener,noreferrer,width=760,height=640");
+    if (!popup) {
+      showToast("اسمح بفتح النافذة لإكمال المشاركة");
+    }
+  }
+
+  function buildShareLink(service, result) {
+    const url = encodeURIComponent(result.resultUrl);
+    const text = encodeURIComponent(result.prompt || "تم الإنشاء عبر PixiGenI");
+
+    if (service === "x") {
+      return `https://x.com/intent/tweet?url=${url}&text=${text}`;
+    }
+    if (service === "whatsapp") {
+      return `https://wa.me/?text=${text}%20${url}`;
+    }
+    return `https://www.facebook.com/sharer/sharer.php?u=${url}`;
+  }
+
+  function closeMenu() {
+    const toggle = $("[data-menu-toggle]");
+    const menu = $("[data-menu]");
+    state.menuOpen = false;
+    if (toggle) toggle.setAttribute("aria-expanded", "false");
+    if (menu) menu.hidden = true;
+  }
+
+  function toggleMenu() {
+    const menu = $("[data-menu]");
+    const toggle = $("[data-menu-toggle]");
+    if (!menu || !toggle || toggle.disabled) return;
+
+    state.menuOpen = !state.menuOpen;
+    toggle.setAttribute("aria-expanded", String(state.menuOpen));
+    menu.hidden = !state.menuOpen;
+  }
+
+  function updateFavoriteControls(result) {
+    const button = $("[data-action-favorite]");
+    const label = $("[data-favorite-label]");
+    if (!button || !label) return;
+
+    const active = Boolean(result?.isFavorite);
+    button.dataset.active = String(active);
+    button.disabled = !result || isPending(result) || isFailed(result);
+    label.textContent = active ? "في المفضلة" : "إضافة للمفضلة";
+  }
+
+  function updateBadge(result) {
+    const badge = $("[data-result-quality]");
+    if (!badge) return;
+    if (!result || isFailed(result)) {
+      badge.hidden = true;
       return;
     }
-    label.textContent = result.status === "completed" ? "مكتمل" : result.status === "failed" ? "فشل الإنشاء" : "جاري الإنشاء...";
+    badge.hidden = false;
+    badge.textContent = qualityLabel(result.quality);
+  }
+
+  function renderMenu(result) {
+    const menu = $("[data-menu]");
+    const toggle = $("[data-menu-toggle]");
+    if (!menu || !toggle) return;
+
+    if (!isCompleted(result)) {
+      menu.innerHTML = "";
+      toggle.disabled = true;
+      closeMenu();
+      return;
+    }
+
+    toggle.disabled = false;
+
+    if (result.type === "video") {
+      menu.innerHTML = `
+        <div class="gr-menu-group">
+          <p class="gr-menu-heading">حفظ الفيديو</p>
+          <button class="gr-menu-item" type="button" data-menu-action="download-video">
+            <span>تحميل الفيديو</span>
+            <b>MP4</b>
+          </button>
+        </div>
+        <div class="gr-menu-group">
+          <p class="gr-menu-heading">مشاركة الفيديو</p>
+          <button class="gr-menu-item" type="button" data-menu-action="copy-link">
+            <span>نسخ الرابط</span>
+            <i><svg><use href="#gr-link"></use></svg></i>
+          </button>
+          <button class="gr-menu-item" type="button" data-menu-action="share-x">
+            <span>مشاركة عبر إكس</span>
+            <i><svg><use href="#gr-x"></use></svg></i>
+          </button>
+          <button class="gr-menu-item" type="button" data-menu-action="share-whatsapp">
+            <span>مشاركة عبر واتساب</span>
+            <i><svg><use href="#gr-whatsapp"></use></svg></i>
+          </button>
+          <button class="gr-menu-item" type="button" data-menu-action="share-facebook">
+            <span>مشاركة عبر فيسبوك</span>
+            <i><svg><use href="#gr-facebook"></use></svg></i>
+          </button>
+        </div>
+      `;
+      return;
+    }
+
+    menu.innerHTML = `
+      <div class="gr-menu-group">
+        <p class="gr-menu-heading">حفظ الصورة</p>
+        <button class="gr-menu-item" type="button" data-menu-action="download-png">
+          <span>حفظ ك PNG</span>
+          <b>PNG</b>
+        </button>
+        <button class="gr-menu-item" type="button" data-menu-action="download-jpg">
+          <span>حفظ ك JPG</span>
+          <b>JPG</b>
+        </button>
+        <button class="gr-menu-item" type="button" data-menu-action="download-webp">
+          <span>حفظ ك WEBP</span>
+          <b>WEBP</b>
+        </button>
+      </div>
+      <div class="gr-menu-group">
+        <p class="gr-menu-heading">مشاركة الصورة</p>
+        <button class="gr-menu-item" type="button" data-menu-action="copy-link">
+          <span>نسخ الرابط</span>
+          <i><svg><use href="#gr-link"></use></svg></i>
+        </button>
+        <button class="gr-menu-item" type="button" data-menu-action="share-x">
+          <span>مشاركة عبر إكس</span>
+          <i><svg><use href="#gr-x"></use></svg></i>
+        </button>
+        <button class="gr-menu-item" type="button" data-menu-action="share-whatsapp">
+          <span>مشاركة عبر واتساب</span>
+          <i><svg><use href="#gr-whatsapp"></use></svg></i>
+        </button>
+        <button class="gr-menu-item" type="button" data-menu-action="share-facebook">
+          <span>مشاركة عبر فيسبوك</span>
+          <i><svg><use href="#gr-facebook"></use></svg></i>
+        </button>
+      </div>
+    `;
   }
 
   function renderMedia(result) {
@@ -198,270 +443,213 @@
     if (!frame) return;
 
     if (!result) {
-      frame.innerHTML = `<div class="result-placeholder">لم يتم العثور على النتيجة.</div>`;
-      return;
-    }
-
-    if (result.status === "failed") {
       frame.innerHTML = `
-        <div class="result-placeholder">
-          تعذر إتمام الطلب مؤقتًا. لم يتم خصم أي رصيد، ويمكنك إعادة المحاولة من لوحة التحكم.
+        <div class="gr-empty-state" role="status" aria-live="polite">
+          <div class="gr-spinner" aria-hidden="true"></div>
+          <h2>تعذر تحميل النتيجة</h2>
+          <p>لم نتمكن من العثور على هذا المشروع. جرّب العودة إلى صفحة مشاريعي ثم افتح النتيجة من جديد.</p>
         </div>
       `;
       return;
     }
 
-    if (result.status !== "completed" || !result.resultUrl) {
+    if (isFailed(result)) {
       frame.innerHTML = `
-        <div class="result-placeholder">
-          النتيجة ليست جاهزة للعرض بعد. سيتم تحويلك لهذه الصفحة عند اكتمال الإنشاء من لوحة التحكم.
+        <div class="gr-empty-state" role="alert">
+          <h2>تعذر إكمال الإنشاء</h2>
+          <p>تعذر إتمام الطلب مؤقتًا، حاول لاحقًا أو أعد المحاولة من لوحة التحكم.</p>
         </div>
       `;
       return;
     }
 
-    const mediaId = `${result.resultUrl}${result.resultUrl.includes("?") ? "&" : "?"}v=${encodeURIComponent(result.requestId || result.id || Date.now())}`;
+    if (isPending(result)) {
+      const previewMedia = mediaUrlWithVersion(result)
+        ? result.type === "video"
+          ? `<video src="${escapeHtml(mediaUrlWithVersion(result))}" muted playsinline preload="metadata"></video>`
+          : `<img src="${escapeHtml(mediaUrlWithVersion(result))}" alt="${escapeHtml(result.prompt)}" loading="eager" />`
+        : "";
+
+      frame.innerHTML = `
+        <div class="gr-processing-state" role="status" aria-live="polite">
+          <div class="gr-processing-preview">${previewMedia}</div>
+          <div class="gr-spinner" aria-hidden="true"></div>
+          <h2>${result.type === "video" ? "جاري إنشاء الفيديو..." : "جاري إنشاء صورتك..."}</h2>
+          <p>${result.type === "video"
+            ? "يمكنك ترك الصفحة مفتوحة، وسنقوم بتحديث النتيجة تلقائيًا فور اكتمال الفيديو."
+            : "يمكنك ترك الصفحة مفتوحة، وسنقوم بتحديث النتيجة تلقائيًا فور اكتمال الصورة."}</p>
+          <div class="gr-processing-stage">
+            <i aria-hidden="true"></i>
+            <span>${escapeHtml(PROCESSING_STAGES[state.processingStageIndex % PROCESSING_STAGES.length])}</span>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    const assetUrl = mediaUrlWithVersion(result);
     frame.innerHTML =
       result.type === "video"
-        ? `<video src="${escapeHtml(mediaId)}" controls playsinline preload="metadata"></video>`
-        : `<img src="${escapeHtml(mediaId)}" alt="${escapeHtml(result.prompt)}" loading="eager" />`;
-
-    const badge = $("[data-result-badge]");
-    if (badge) {
-      badge.textContent = qualityLabel(result.quality);
-    }
+        ? `<video class="gr-ready-asset" src="${escapeHtml(assetUrl)}" controls playsinline preload="metadata"></video>`
+        : `<img class="gr-ready-asset" src="${escapeHtml(assetUrl)}" alt="${escapeHtml(result.prompt)}" loading="eager" />`;
   }
 
-  function currentStageLabel() {
-    const stages = [
-      "استلام الطلب",
-      "تحليل الوصف",
-      "اختيار النموذج",
-      "إنشاء الصورة",
-      "تحسين الجودة",
-      "حفظ النتيجة",
-    ];
-    return stages[state.currentIndex % stages.length];
-  }
-
-  function expectedTimeLabel(result = state.result) {
-    return result?.type === "video"
-      ? "قد يستغرق الفيديو وقتًا أطول حسب المدة والجودة"
-      : "الوقت المتوقع حوالي 15 ثانية";
-  }
-
-  function renderStages(result) {
-    const list = $("[data-stage-list]");
-    if (!list) return;
-    const stages = [
-      ["استلام الطلب", true],
-      ["تحليل الوصف", true],
-      ["اختيار النموذج", true],
-      [result.status === "completed" ? "إنشاء الصورة" : "إنشاء الصورة", result.status === "completed"],
-      ["تحسين الجودة", result.status === "completed"],
-      ["حفظ النتيجة", result.status === "completed"],
-    ];
-    list.innerHTML = `
-      <h3>مراحل التنفيذ</h3>
-      <p>نُحدّث الحالة بشكل حي أثناء المعالجة.</p>
-      ${stages
-        .map(([label, done], index) => {
-          const active = !done && index === Math.min(state.currentIndex, stages.length - 1);
-          return `
-            <div class="result-stage ${done ? "is-done" : active ? "is-active" : ""}">
-              <strong>${escapeHtml(label)}</strong>
-              <span>${done ? "تم" : active ? "جاري الآن" : "في الانتظار"}</span>
-            </div>
-          `;
-        })
-        .join("")}
-    `;
-  }
-
-  function renderDetails(result) {
-    const list = $("[data-details-list]");
-    if (!list || !result) return;
-    list.innerHTML = `
-      <div class="result-detail"><dt>الوصف المستخدم</dt><dd>${escapeHtml(result.prompt || "-")}</dd></div>
-      <div class="result-detail"><dt>النموذج</dt><dd>${escapeHtml(result.model || "من نماذجنا")}</dd></div>
-      <div class="result-detail"><dt>الجودة</dt><dd>${escapeHtml(qualityLabel(result.quality))}</dd></div>
-      <div class="result-detail"><dt>الأبعاد</dt><dd>${escapeHtml(result.aspectRatio || "-")}</dd></div>
-      <div class="result-detail"><dt>التكلفة</dt><dd>${formatNumber(result.creditsUsed)} XP</dd></div>
-      <div class="result-detail"><dt>تاريخ الإنشاء</dt><dd>${escapeHtml(formatDate(result.createdAt))}</dd></div>
-      <div class="result-detail"><dt>الحالة</dt><dd>${escapeHtml(result.status === "completed" ? "مكتمل" : result.status === "failed" ? "فشل الإنشاء" : "قيد المعالجة")}</dd></div>
-      <div class="result-detail"><dt>رقم المشروع / Generation ID</dt><dd>${escapeHtml(String(result.id || "-"))}</dd></div>
-      <div class="result-detail"><dt>الوقت منذ الإنشاء</dt><dd>${escapeHtml(relativeTime(result.createdAt))}</dd></div>
-    `;
-  }
-
-  function renderThumbs() {
-    const grid = $("[data-result-thumbs]");
-    const current = state.result;
+  function renderLatestGrid() {
+    const grid = $("[data-latest-grid]");
     if (!grid) return;
-    const list = state.results.filter((item) => String(item.id) !== String(current?.id)).slice(0, 6);
-    if (!list.length) {
-      grid.innerHTML = `<div class="result-thumb"><div class="placeholder">لا توجد نتائج أخرى</div></div>`;
+
+    const items = state.results
+      .filter((item) => String(item.id) !== String(state.result?.id))
+      .filter((item) => isCompleted(item))
+      .slice(0, 5);
+
+    if (!items.length) {
+      grid.innerHTML = `<div class="gr-latest-empty">لا توجد نتائج مكتملة أخرى حتى الآن.</div>`;
       return;
     }
-    grid.innerHTML = list
+
+    grid.innerHTML = items
       .map((item) => {
         const media = item.type === "video"
-          ? `<video src="${escapeHtml(item.thumbnailUrl || item.resultUrl)}" muted playsinline preload="metadata"></video>`
-          : `<img src="${escapeHtml(item.thumbnailUrl || item.resultUrl)}" alt="${escapeHtml(item.prompt)}" loading="lazy" />`;
+          ? `<video src="${escapeHtml(mediaUrlWithVersion(item))}" muted playsinline preload="metadata"></video>`
+          : `<img src="${escapeHtml(mediaUrlWithVersion(item))}" alt="${escapeHtml(item.prompt)}" loading="lazy" />`;
+
         return `
-          <button class="result-thumb" type="button" data-thumb-id="${escapeHtml(item.id)}">
-            ${media}
-          </button>
+          <article class="gr-latest-item">
+            <button
+              class="gr-latest-favorite"
+              type="button"
+              data-card-favorite="${escapeHtml(item.id)}"
+              data-active="${String(Boolean(item.isFavorite))}"
+              aria-label="${item.isFavorite ? "إزالة من المفضلة" : "إضافة للمفضلة"}"
+            >
+              <svg><use href="#gr-heart"></use></svg>
+            </button>
+            <a class="gr-latest-link" href="/generation?id=${encodeURIComponent(item.id)}">
+              ${media}
+              <span class="gr-latest-chip">${escapeHtml(qualityLabel(item.quality))}</span>
+              <span class="gr-sr-only">${escapeHtml(item.prompt || "نتيجة حديثة")}</span>
+            </a>
+          </article>
         `;
       })
       .join("");
   }
 
-  function updateHeader(result) {
-    const title = $("[data-page-title]");
-    const copy = $("[data-page-copy]");
-    const download = $("[data-action-download]");
-    const page = document.body;
-    const isVideo = result?.type === "video";
-    title.textContent =
-      result?.status === "completed"
-        ? `تم إنشاء ${isVideo ? "الفيديو" : "صورتك"} بنجاح!`
-        : result?.status === "failed"
-          ? "فشل الإنشاء"
-          : `يتم الآن إنشاء ${isVideo ? "الفيديو" : "الصورة"}...`;
-    copy.textContent =
-      result?.status === "completed"
-        ? `تم إنشاء ${isVideo ? "الفيديو" : "الصورة"} بناءً على وصفك`
-        : result?.status === "failed"
-          ? "تعذر إتمام الطلب مؤقتًا. يمكنك إعادة المحاولة الآن."
-          : "يرجى الانتظار، سننقلك لهذه النتيجة فور اكتمال الإنشاء.";
-    download.textContent = isVideo ? "تحميل الفيديو" : "تحميل الصورة";
-    page.dataset.resultState = result?.status || "loading";
+  function renderCurrent() {
+    setPageCopy(state.result);
+    updateBadge(state.result);
+    updateFavoriteControls(state.result);
+    renderMenu(state.result);
+    renderMedia(state.result);
+    renderLatestGrid();
   }
 
-  function updateActions(result) {
-    const download = $("[data-action-download]");
-    const copy = $("[data-action-copy]");
-    const share = $("[data-action-share]");
-    const regenerate = $("[data-action-regenerate]");
-    if (!result) return;
+  function mergeCurrentIntoResults() {
+    if (!state.result?.id) return;
 
-    if (result.resultUrl) {
-      download.href = result.resultUrl;
-      download.download = "";
-      download.removeAttribute("aria-disabled");
-    } else {
-      download.href = "#";
-      download.removeAttribute("download");
-      download.setAttribute("aria-disabled", "true");
+    const currentId = String(state.result.id);
+    const next = state.results.filter((item) => String(item.id) !== currentId);
+    next.unshift(state.result);
+    next.sort((a, b) => formatDateValue(b.createdAt || b.completedAt) - formatDateValue(a.createdAt || a.completedAt));
+    state.results = next;
+  }
+
+  async function loadResult() {
+    state.currentId = getGenerationId();
+    if (!state.currentId) {
+      state.result = null;
+      renderCurrent();
+      return;
     }
 
-    copy.onclick = async (event) => {
-      event.preventDefault();
-      if (!result.resultUrl) return;
-      await navigator.clipboard?.writeText(result.resultUrl).catch(() => {});
-      showToast("تم نسخ الرابط");
-    };
-
-    share.onclick = async (event) => {
-      event.preventDefault();
-      if (!result.resultUrl) return;
-      if (navigator.share) {
-        await navigator.share({
-          title: "PixiGenI",
-          text: result.prompt,
-          url: result.resultUrl,
-        }).catch(() => {});
-      } else {
-        await navigator.clipboard?.writeText(result.resultUrl).catch(() => {});
-        showToast("تم نسخ الرابط");
-      }
-    };
-
-    regenerate.onclick = (event) => {
-      event.preventDefault();
-      window.location.href = "/dashboard#create";
-    };
-  }
-
-  async function loadKey() {
     try {
-      const data = await requestJson("/api/me/key");
-      state.key = normalizeKey(data);
-    } catch {
-      state.key = normalizeKey({});
+      const payload = await requestJson(`/api/generations/${encodeURIComponent(state.currentId)}`);
+      state.result = normalizeGeneration(payload);
+      mergeCurrentIntoResults();
+      renderCurrent();
+      if (isPending(state.result)) startPolling();
+    } catch (error) {
+      if (error.status === 404) {
+        try {
+          const payload = await requestJson(`/api/generations/${encodeURIComponent(state.currentId)}/status`);
+          state.result = normalizeGeneration(payload);
+          mergeCurrentIntoResults();
+          renderCurrent();
+          if (isPending(state.result)) startPolling();
+          return;
+        } catch (statusError) {
+          state.result = null;
+          setPageCopy(null);
+          renderMedia(null);
+          showToast(statusError.message || "تعذر تحميل النتيجة");
+          return;
+        }
+      }
+
+      state.result = null;
+      setPageCopy(null);
+      renderMedia(null);
+      showToast(error.message || "تعذر تحميل النتيجة");
     }
   }
 
   async function loadRecentGenerations() {
     try {
-      const data = await requestJson("/api/generate");
-      const list = (data.generations || data.items || data.results || []).map(normalizeGeneration);
-      state.results = list;
+      const payload = await requestJson("/api/generate");
+      const rawItems = payload.generations || payload.items || payload.results || [];
+      state.results = rawItems
+        .map(normalizeGeneration)
+        .sort((a, b) => formatDateValue(b.createdAt || b.completedAt) - formatDateValue(a.createdAt || a.completedAt));
+      mergeCurrentIntoResults();
+      renderLatestGrid();
     } catch {
-      state.results = [];
-    }
-  }
-
-  async function loadResult() {
-    const id = getGenerationId();
-    if (!id) {
-      renderError("لم يتم تحديد معرف النتيجة.");
-      return;
-    }
-
-    try {
-      const data = await requestJson(`/api/generations/${encodeURIComponent(id)}`);
-      state.result = normalizeGeneration(data.generation || data.result || data);
-      renderCurrent();
-      if (["queued", "processing"].includes(state.result.status)) {
-        startPolling();
-      }
-    } catch (error) {
-      if (error.status === 404) {
-        try {
-          const statusData = await requestJson(`/api/generations/${encodeURIComponent(id)}/status`);
-          state.result = normalizeGeneration(statusData.generation || statusData.result || statusData);
-          renderCurrent();
-          if (["queued", "processing"].includes(state.result.status)) startPolling();
-          return;
-        } catch {
-          // fall through
-        }
-      }
-      renderError(error.message || "تعذر تحميل النتيجة.");
+      mergeCurrentIntoResults();
+      renderLatestGrid();
     }
   }
 
   async function refreshGenerationSilently() {
     if (!state.result?.id) return;
+
     try {
-      const statusPath = ["queued", "processing"].includes(state.result.status)
+      const path = isPending(state.result)
         ? `/api/generations/${encodeURIComponent(state.result.id)}/status`
         : `/api/generations/${encodeURIComponent(state.result.id)}`;
-      const data = await requestJson(statusPath);
-      const next = normalizeGeneration(data.generation || data.result || data);
+      const payload = await requestJson(path);
+      const next = normalizeGeneration(payload);
+      const wasPending = isPending(state.result);
       state.result = { ...state.result, ...next };
-      if (["completed", "failed"].includes(state.result.status)) {
+      mergeCurrentIntoResults();
+
+      if (wasPending && isCompleted(state.result)) {
         stopPolling();
+        renderCurrent();
+        showToast(state.result.type === "video" ? "تم إنشاء الفيديو بنجاح" : "تم إنشاء الصورة بنجاح");
         await loadRecentGenerations();
+        return;
       }
+
+      if (wasPending && isFailed(state.result)) {
+        stopPolling();
+      }
+
       renderCurrent();
-    } catch (error) {
-      console.warn("POLLING ERROR:", error);
+    } catch {
+      // Keep the current state visible and try again on the next polling cycle.
     }
   }
 
   function startPolling() {
     stopPolling();
     state.pollingTimer = window.setInterval(() => {
-      if (["queued", "processing"].includes(state.result?.status)) {
-        state.currentIndex = (state.currentIndex + 1) % 6;
-        renderCurrent();
-        refreshGenerationSilently();
-      } else {
+      if (!isPending(state.result)) {
         stopPolling();
+        return;
       }
+      state.processingStageIndex = (state.processingStageIndex + 1) % PROCESSING_STAGES.length;
+      renderMedia(state.result);
+      refreshGenerationSilently();
     }, 3000);
   }
 
@@ -472,96 +660,98 @@
     }
   }
 
-  function renderCurrent() {
-    const result = state.result;
-    if (!result) return;
-    updateHeader(result);
-    setPageState(result);
-    renderMedia(result);
-    renderDetails(result);
-    renderThumbs();
-    updateFavoriteState(result);
-    updateRatingUi(result.userRating);
-    updateActionLabels(result);
-    updateActions(result);
-  }
-
-  function updateActionLabels(result) {
-    const download = $("[data-action-download]");
-    if (!download) return;
-    download.textContent = result.type === "video" ? "تحميل الفيديو" : "تحميل الصورة";
-  }
-
-  function updateFavoriteState(result) {
-    const existing = $("[data-action-favorite]");
-    if (!existing) return;
-    existing.dataset.active = String(Boolean(result.isFavorite));
-  }
-
-  function updateRatingUi(rating) {
-    $$("[data-rating]").forEach((button) => {
-      button.classList.toggle("is-active", button.dataset.rating === rating);
+  async function setFavorite(id, nextValue) {
+    const payload = await requestJson(`/api/generations/${encodeURIComponent(id)}/favorite`, {
+      method: "PATCH",
+      body: JSON.stringify({ isFavorite: nextValue }),
     });
-    const msg = $("[data-rating-message]");
-    if (msg) {
-      msg.textContent = rating ? "تم حفظ تقييمك لهذه النتيجة." : "";
+
+    const isFavorite = Boolean(payload.isFavorite);
+    state.results = state.results.map((item) =>
+      String(item.id) === String(id) ? { ...item, isFavorite } : item
+    );
+
+    if (String(state.result?.id) === String(id) && state.result) {
+      state.result = { ...state.result, isFavorite };
     }
+
+    renderCurrent();
+    showToast(isFavorite ? "تمت الإضافة للمفضلة" : "تمت الإزالة من المفضلة");
   }
 
-  async function submitRating(rating) {
-    if (!state.result?.id) return;
+  function navigateToCreate() {
     try {
-      const payload = await requestJson(`/api/generations/${encodeURIComponent(state.result.id)}/rating`, {
-        method: "POST",
-        body: JSON.stringify({ rating }),
-      });
-      state.result.userRating = payload.feedback?.rating || rating;
-      updateRatingUi(state.result.userRating);
-      showToast("تم حفظ التقييم");
-    } catch (error) {
-      showToast(error.message || "تعذر حفظ التقييم");
+      if (state.result) {
+        sessionStorage.setItem(
+          "pixigen:create-intent",
+          JSON.stringify({
+            type: state.result.type,
+            prompt: state.result.prompt,
+          })
+        );
+      }
+    } catch {
+      // Optional enhancement only.
+    }
+
+    window.location.href = "/dashboard#create";
+  }
+
+  async function handleMenuAction(action) {
+    const result = state.result;
+    if (!isCompleted(result)) return;
+
+    if (action === "download-png") {
+      await downloadImageAs("png");
+    } else if (action === "download-jpg") {
+      await downloadImageAs("jpeg");
+    } else if (action === "download-webp") {
+      await downloadImageAs("webp");
+    } else if (action === "download-video") {
+      triggerDownload(result.resultUrl, `${fileBaseName(result)}.mp4`);
+      showToast("بدأ تنزيل الفيديو");
+    } else if (action === "copy-link") {
+      await copyText(result.resultUrl, "تم نسخ الرابط");
+    } else if (action === "share-x") {
+      openShareWindow(buildShareLink("x", result));
+    } else if (action === "share-whatsapp") {
+      openShareWindow(buildShareLink("whatsapp", result));
+    } else if (action === "share-facebook") {
+      openShareWindow(buildShareLink("facebook", result));
     }
   }
 
-  function renderError(message) {
-    const frame = $("[data-media-frame]");
-    const details = $("[data-details-list]");
-    const similar = $("[data-similar-grid]");
-    const title = $("[data-page-title]");
-    const copy = $("[data-page-copy]");
-
-    if (frame) {
-      frame.innerHTML = `<div class="result-placeholder">${escapeHtml(message)}</div>`;
+  function handleBack() {
+    if (document.referrer && new URL(document.referrer, window.location.origin).origin === window.location.origin) {
+      window.history.back();
+      return;
     }
-    if (details) {
-      details.innerHTML = `<div class="result-detail"><dt>خطأ</dt><dd>${escapeHtml(message)}</dd></div>`;
-    }
-    if (similar) {
-      similar.innerHTML = "";
-    }
-    if (title) title.textContent = "تعذر تحميل النتيجة";
-    if (copy) copy.textContent = message;
-    showToast(message);
+    window.location.href = "/dashboard#projects";
   }
 
   function bindEvents() {
     document.addEventListener("click", async (event) => {
-      const thumbButton = event.target.closest("[data-thumb-id]");
-      if (thumbButton) {
+      const backButton = event.target.closest("[data-back-button]");
+      if (backButton) {
         event.preventDefault();
-        const next = state.results.find((item) => String(item.id) === String(thumbButton.dataset.thumbId));
-        if (next) {
-          state.result = next;
-          renderCurrent();
-        }
+        handleBack();
         return;
       }
 
-      const ratingButton = event.target.closest("[data-rating]");
-      if (ratingButton) {
+      const menuToggle = event.target.closest("[data-menu-toggle]");
+      if (menuToggle) {
         event.preventDefault();
         event.stopPropagation();
-        await submitRating(ratingButton.dataset.rating);
+        toggleMenu();
+        return;
+      }
+
+      const menuAction = event.target.closest("[data-menu-action]");
+      if (menuAction) {
+        event.preventDefault();
+        event.stopPropagation();
+        await handleMenuAction(menuAction.dataset.menuAction);
+        closeMenu();
         return;
       }
 
@@ -571,64 +761,62 @@
         event.stopPropagation();
         if (!state.result?.id) return;
         try {
-          const payload = await requestJson(`/api/generations/${encodeURIComponent(state.result.id)}/favorite`, {
-            method: "PATCH",
-            body: JSON.stringify({ isFavorite: !state.result.isFavorite }),
-          });
-          state.result.isFavorite = Boolean(payload.isFavorite);
-          favoriteButton.dataset.active = String(state.result.isFavorite);
-          showToast(state.result.isFavorite ? "تمت الإضافة للمفضلة" : "تمت الإزالة من المفضلة");
+          await setFavorite(state.result.id, !state.result.isFavorite);
         } catch (error) {
           showToast(error.message || "تعذر تحديث المفضلة");
         }
         return;
       }
 
-      const extra = event.target.closest("[data-extra-action]");
-      if (extra) {
+      const cardFavorite = event.target.closest("[data-card-favorite]");
+      if (cardFavorite) {
         event.preventDefault();
         event.stopPropagation();
-        const action = extra.dataset.extraAction;
-        if (action === "enhance") showToast("سيتم تفعيل تحسين الجودة قريبًا");
-        if (action === "remove-bg") showToast("سيتم تفعيل إزالة الخلفية قريبًا");
-        if (action === "colorize") showToast("سيتم تفعيل التلوين قريبًا");
-        if (action === "video") showToast("سيتم تفعيل إنشاء فيديو من الصورة قريبًا");
+        const item = state.results.find((entry) => String(entry.id) === String(cardFavorite.dataset.cardFavorite));
+        if (!item) return;
+        try {
+          await setFavorite(item.id, !item.isFavorite);
+        } catch (error) {
+          showToast(error.message || "تعذر تحديث المفضلة");
+        }
         return;
       }
 
-      const moreResults = event.target.closest("[data-more-results]");
-      if (moreResults) {
+      const enhanceButton = event.target.closest("[data-action-enhance]");
+      if (enhanceButton) {
         event.preventDefault();
         event.stopPropagation();
-        window.location.href = "/dashboard#projects";
+        navigateToCreate();
+        return;
+      }
+
+      const createButton = event.target.closest("[data-action-create-new]");
+      if (createButton) {
+        event.preventDefault();
+        event.stopPropagation();
+        navigateToCreate();
+        return;
+      }
+
+      if (state.menuOpen && !event.target.closest("[data-menu]")) {
+        closeMenu();
       }
     });
 
-    $("[data-action-prev]")?.addEventListener("click", () => {
-      if (!state.results.length) return;
-      state.currentIndex = (state.currentIndex - 1 + state.results.length) % state.results.length;
-      const next = state.results[state.currentIndex];
-      if (next) {
-        state.result = next;
-        renderCurrent();
+    window.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        closeMenu();
       }
     });
 
-    $("[data-action-next]")?.addEventListener("click", () => {
-      if (!state.results.length) return;
-      state.currentIndex = (state.currentIndex + 1) % state.results.length;
-      const next = state.results[state.currentIndex];
-      if (next) {
-        state.result = next;
-        renderCurrent();
-      }
-    });
+    window.addEventListener("beforeunload", stopPolling);
   }
 
   async function init() {
     bindEvents();
-    await Promise.all([loadKey(), loadRecentGenerations()]);
     await loadResult();
+    await loadRecentGenerations();
+    renderCurrent();
   }
 
   init();

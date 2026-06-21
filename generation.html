@@ -3,762 +3,1188 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>تم إنشاء صورتك بنجاح! | PixiGenI</title>
-    <meta name="description" content="صفحة نتيجة إنشاء الصور والفيديوهات داخل PixiGenI." />
+    <title>نتيجة الإنشاء | PixiGenI</title>
+    <meta
+      name="description"
+      content="صفحة نتيجة الإنشاء في PixiGenI لعرض الصورة أو الفيديو النهائي بأناقة ووضوح."
+    />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800;900&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260621-generation-reference-v2" />
     <style>
-      body.generation-result-page {
-        margin: 0;
-        background:
-          radial-gradient(circle at 50% 0%, rgba(130, 97, 255, 0.08), transparent 24%),
-          #fafaff;
-        color: #10163f;
-        font-family: "IBM Plex Sans Arabic", system-ui, sans-serif;
+      :root {
+        --gr-bg: #ffffff;
+        --gr-page-bg:
+          radial-gradient(circle at top left, rgba(153, 105, 255, 0.12), transparent 22%),
+          linear-gradient(180deg, #ffffff 0%, #faf9ff 100%);
+        --gr-card: #ffffff;
+        --gr-line: #e9e7f6;
+        --gr-text: #16173d;
+        --gr-muted: #7e84a2;
+        --gr-soft: #f7f6ff;
+        --gr-primary: #7b3cff;
+        --gr-primary-2: #bf35ff;
+        --gr-primary-soft: rgba(123, 60, 255, 0.12);
+        --gr-shadow: 0 24px 70px rgba(52, 36, 112, 0.09);
+        --gr-card-shadow: 0 20px 55px rgba(46, 29, 110, 0.08);
       }
 
-      .result-page {
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+      }
+
+      body {
         min-height: 100vh;
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) 320px;
-        direction: rtl;
-        gap: 28px;
-        width: min(1380px, calc(100% - 32px));
-        margin: 0 auto;
-        padding: 18px 0 28px;
+        background: var(--gr-page-bg);
+        color: var(--gr-text);
+        font-family: "IBM Plex Sans Arabic", sans-serif;
       }
 
-      .result-main {
-        min-width: 0;
-        padding: 14px 0 0;
-      }
-
-      .result-topbar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 18px;
-        margin-bottom: 34px;
-      }
-
-      .result-back {
-        min-height: 46px;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 0 18px;
-        border: 1px solid #e8eaf3;
-        border-radius: 16px;
-        color: #475069;
+      a {
+        color: inherit;
         text-decoration: none;
-        background: #fff;
-        font-weight: 800;
-        box-shadow: 0 8px 24px rgba(30, 20, 80, 0.04);
       }
 
-      .result-hero {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        margin-bottom: 20px;
-        text-align: center;
-        align-items: center;
-      }
-
-      .result-hero h1 {
-        margin: 0;
-        color: #10163f;
-        font-size: clamp(32px, 3vw, 56px);
-        font-weight: 900;
-        line-height: 1.2;
-        letter-spacing: -0.04em;
-      }
-
-      .result-hero p {
-        margin: 0;
-        color: #667085;
-        font-weight: 700;
-        font-size: 16px;
-      }
-
-      .result-actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-bottom: 20px;
-        justify-content: center;
-      }
-
-      .result-actions a,
-      .result-actions button {
-        min-height: 46px;
-        padding: 0 18px;
-        border: 1px solid #e8eaf3;
-        border-radius: 14px;
-        background: #fff;
-        color: #6d35ff;
-        cursor: pointer;
+      button,
+      input,
+      textarea,
+      select {
         font: inherit;
-        font-weight: 900;
-        text-decoration: none;
       }
 
-      .result-actions .primary {
-        color: #fff;
-        border-color: transparent;
-        background: linear-gradient(135deg, #6d35ff, #b832f6);
+      button {
+        cursor: pointer;
       }
 
-      .result-shell {
-        display: grid;
-        gap: 18px;
-      }
-
-      .result-card {
-        position: relative;
-        overflow: hidden;
-        padding: 20px;
-        border: 1px solid #e8eaf3;
-        border-radius: 28px;
-        background: #fff;
-        box-shadow: 0 18px 50px rgba(30, 20, 80, 0.06);
-      }
-
-      .result-media-card {
-        position: relative;
-        overflow: hidden;
-        border-radius: 24px;
-        background: linear-gradient(180deg, #fbfbff, #f3f1ff);
-      }
-
-      .result-badge,
-      .result-favorite,
-      .result-arrow {
+      .gr-sr-only {
         position: absolute;
-        z-index: 3;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
         border: 0;
-        border-radius: 999px;
-        font: inherit;
-        font-weight: 900;
       }
 
-      .result-badge {
-        top: 16px;
-        right: 16px;
-        min-height: 30px;
-        padding: 0 12px;
-        color: #fff;
-        background: rgba(16, 22, 63, 0.72);
-        backdrop-filter: blur(8px);
+      .gr-icons {
+        position: absolute;
+        width: 0;
+        height: 0;
+        overflow: hidden;
       }
 
-      .result-favorite {
-        top: 16px;
-        left: 16px;
-        width: 36px;
-        height: 36px;
-        color: #6d35ff;
-        background: rgba(255, 255, 255, 0.95);
-        cursor: pointer;
+      .gr-page {
+        width: min(1580px, calc(100% - 32px));
+        min-height: calc(100vh - 32px);
+        margin: 16px auto;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 278px;
+        direction: ltr;
+        background: rgba(255, 255, 255, 0.94);
+        border: 1px solid rgba(98, 85, 170, 0.12);
+        border-radius: 34px;
+        overflow: hidden;
+        box-shadow: var(--gr-shadow);
+        backdrop-filter: blur(18px);
       }
 
-      .result-arrow {
-        top: 50%;
+      .gr-main {
+        position: relative;
+        padding: 28px 34px 36px;
+        min-width: 0;
+        direction: rtl;
+      }
+
+      .gr-mobile-brand {
+        display: none;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 12px;
+        direction: ltr;
+        margin-bottom: 22px;
+      }
+
+      .gr-mobile-brand img {
         width: 42px;
         height: 42px;
-        color: #10163f;
-        background: rgba(255, 255, 255, 0.92);
-        transform: translateY(-50%);
-        box-shadow: 0 10px 24px rgba(30, 20, 80, 0.08);
-        cursor: pointer;
       }
 
-      .result-arrow.prev {
-        right: 16px;
-      }
-
-      .result-arrow.next {
-        left: 16px;
-      }
-
-      .result-media-frame {
-        width: 100%;
-        min-height: 520px;
-        display: grid;
-        place-items: center;
-        padding: 18px;
-      }
-
-      .result-placeholder,
-      .udv6-media-placeholder {
-        min-height: 280px;
-        display: grid;
-        place-items: center;
-        color: #6d35ff;
-        text-align: center;
+      .gr-mobile-brand strong {
+        font-size: 1.95rem;
         font-weight: 800;
+        color: #11143b;
       }
 
-      .result-media-frame img,
-      .result-media-frame video {
-        width: 100%;
-        max-height: 520px;
-        object-fit: contain;
-        display: block;
-        border-radius: 18px;
-        background: #f7f8fd;
-        transition: transform 0.4s ease, opacity 0.4s ease;
-      }
-
-      .result-media-frame.is-entering img,
-      .result-media-frame.is-entering video {
-        opacity: 0;
-        transform: scale(0.95);
-      }
-
-      .result-processing {
-        width: 100%;
-        min-height: 520px;
-        display: grid;
-        grid-template-columns: minmax(0, 1.15fr) 360px;
-        gap: 18px;
-        padding: 18px;
-      }
-
-      .result-processing-preview,
-      .result-processing-steps {
-        border: 1px solid #e8eaf3;
-        border-radius: 22px;
-        background: #fff;
-        box-shadow: 0 18px 50px rgba(30, 20, 80, 0.05);
-      }
-
-      .result-processing-preview {
-        position: relative;
-        overflow: hidden;
-        display: grid;
-        place-items: center;
-        min-height: 460px;
-        background:
-          radial-gradient(circle at 20% 20%, rgba(109, 53, 255, 0.18), transparent 35%),
-          linear-gradient(135deg, #ede8ff, #faf7ff);
-      }
-
-      .result-processing-preview::after {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(120deg, rgba(255, 255, 255, 0) 30%, rgba(255, 255, 255, 0.4) 50%, rgba(255, 255, 255, 0) 70%);
-        animation: result-shimmer 1.7s linear infinite;
-        pointer-events: none;
-      }
-
-      .result-processing-preview img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        filter: blur(8px) saturate(0.85);
-        opacity: 0.86;
-      }
-
-      .result-processing-overlay {
-        position: absolute;
-        inset-inline: 18px;
-        bottom: 18px;
-        z-index: 2;
-        display: grid;
-        gap: 10px;
-        padding: 18px;
-        border-radius: 18px;
-        background: rgba(255, 255, 255, 0.76);
-        backdrop-filter: blur(12px);
-      }
-
-      .result-progress {
-        height: 8px;
-        overflow: hidden;
-        border-radius: 999px;
-        background: #e9eaf3;
-      }
-
-      .result-progress i {
-        display: block;
-        width: 48%;
-        height: 100%;
-        border-radius: inherit;
-        background: linear-gradient(135deg, #6d35ff, #b832f6);
-        animation: result-progress 1.5s ease-in-out infinite;
-      }
-
-      .result-stage-list {
-        display: grid;
-        gap: 10px;
-        padding: 20px;
-      }
-
-      .result-stage-list h3 {
-        margin: 0 0 6px;
-        color: #10163f;
-        font-size: 18px;
-        font-weight: 900;
-      }
-
-      .result-stage-list p {
-        margin: 0;
-        color: #667085;
-        font-size: 13px;
-        font-weight: 700;
-      }
-
-      .result-stage {
+      .gr-back-row {
         display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
-        padding: 12px 14px;
-        border-radius: 14px;
-        background: #fbfbfe;
+        justify-content: flex-end;
+        margin-bottom: 10px;
       }
 
-      .result-stage strong {
-        color: #10163f;
-        font-size: 13px;
-      }
-
-      .result-stage span {
-        color: #8a92a8;
-        font-size: 12px;
-        font-weight: 700;
-      }
-
-      .result-stage.is-active {
-        color: #6d35ff;
-        background: #f4f0ff;
-      }
-
-      .result-stage.is-done {
-        background: #edfdf3;
-      }
-
-      .result-thumbs {
-        display: flex;
-        gap: 10px;
-        overflow-x: auto;
-        padding-bottom: 6px;
-        align-items: stretch;
-      }
-
-      .result-thumb {
-        flex: 0 0 auto;
-        width: 112px;
-        height: 78px;
-        border: 1px solid #e8eaf3;
-        border-radius: 16px;
-        padding: 0;
-        overflow: hidden;
-        background: #fff;
-        cursor: pointer;
-      }
-
-      .result-thumb img,
-      .result-thumb video,
-      .result-thumb .placeholder {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-      }
-
-      .result-thumb .placeholder {
-        display: grid;
-        place-items: center;
-        color: #6d35ff;
-        font-size: 12px;
-        font-weight: 800;
-        background: linear-gradient(135deg, #f5f1ff, #fff);
-      }
-
-      .result-thumbs-shell {
-        display: grid;
-        gap: 12px;
-      }
-
-      .result-thumbs-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-      }
-
-      .result-thumbs-head strong {
-        color: #10163f;
-        font-size: 16px;
-        font-weight: 900;
-      }
-
-      .result-thumbs-head button {
-        min-height: 38px;
-        padding: 0 14px;
-        border: 1px solid #e8eaf3;
-        border-radius: 12px;
-        background: #fff;
-        color: #6d35ff;
-        font: inherit;
-        font-weight: 800;
-        cursor: pointer;
-      }
-
-      .result-status-pill {
-        min-height: 38px;
+      .gr-back-button {
+        border: 1px solid rgba(58, 65, 104, 0.1);
+        background: rgba(255, 255, 255, 0.96);
+        color: #354067;
+        min-height: 56px;
+        padding: 0 24px;
+        border-radius: 20px;
         display: inline-flex;
         align-items: center;
-        padding: 0 14px;
-        border-radius: 999px;
-        color: #6d35ff;
-        background: #f4f0ff;
-        font-weight: 900;
-      }
-
-      .result-panel {
-        border: 1px solid #e8eaf3;
-        border-radius: 24px;
-        padding: 22px;
-        background: #fff;
-        box-shadow: 0 14px 40px rgba(30, 20, 80, 0.05);
-      }
-
-      .result-details {
-        position: sticky;
-        top: 18px;
-        align-self: start;
-        display: grid;
-        gap: 16px;
-        padding-top: 2px;
-      }
-
-      .result-panel h2,
-      .result-panel h3 {
-        margin: 0 0 16px;
-        color: #10163f;
-        font-size: 18px;
-        font-weight: 900;
-      }
-
-      .result-details-list {
-        display: grid;
-        gap: 12px;
-      }
-
-      .result-detail {
-        display: grid;
-        gap: 6px;
-        padding-bottom: 12px;
-        border-bottom: 1px solid #f0f1f7;
-      }
-
-      .result-detail:last-child {
-        border-bottom: 0;
-        padding-bottom: 0;
-      }
-
-      .result-detail dt {
-        color: #7b839d;
-        font-size: 12px;
-        font-weight: 800;
-      }
-
-      .result-detail dd {
-        margin: 0;
-        color: #10163f;
-        font-size: 14px;
-        font-weight: 800;
-        word-break: break-word;
-      }
-
-      .result-rating {
-        display: grid;
-        gap: 14px;
-      }
-
-      .result-rating-buttons {
-        display: grid;
-        grid-template-columns: repeat(5, minmax(0, 1fr));
         gap: 10px;
-      }
-
-      .result-rating-buttons button {
-        min-height: 44px;
-        border: 1px solid #e8eaf3;
-        border-radius: 14px;
-        background: #fff;
-        color: #475069;
-        cursor: pointer;
-        font: inherit;
-        font-size: 12px;
-        font-weight: 800;
-      }
-
-      .result-rating-buttons button.is-active {
-        color: #6d35ff;
-        border-color: #cdbbff;
-        background: #f4f0ff;
-      }
-
-      .result-extras {
-        display: grid;
-        gap: 10px;
-      }
-
-      .result-extras button {
-        min-height: 44px;
-        border: 1px solid #e8eaf3;
-        border-radius: 13px;
-        background: #fff;
-        color: #475069;
-        cursor: pointer;
-        font: inherit;
-        font-weight: 800;
-        text-align: right;
-      }
-
-      .result-similar {
-        display: grid;
-        gap: 14px;
-      }
-
-      .result-similar-grid {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 12px;
-      }
-
-      .result-similar-card {
-        border: 1px solid #e8eaf3;
-        border-radius: 18px;
-        overflow: hidden;
-        background: #fff;
-        text-decoration: none;
-        color: inherit;
-      }
-
-      .result-similar-card img,
-      .result-similar-card video {
-        width: 100%;
-        height: 118px;
-        object-fit: cover;
-        display: block;
-      }
-
-      .result-similar-card div {
-        padding: 10px 12px 12px;
-      }
-
-      .result-similar-card strong,
-      .result-similar-card span {
-        display: block;
-      }
-
-      .result-similar-card strong {
-        margin-bottom: 4px;
-        color: #10163f;
-        font-size: 13px;
-      }
-
-      .result-similar-card span {
-        color: #667085;
-        font-size: 12px;
+        font-size: 1.05rem;
         font-weight: 700;
+        box-shadow: 0 8px 24px rgba(36, 29, 89, 0.06);
+        transition:
+          transform 0.18s ease,
+          box-shadow 0.18s ease,
+          border-color 0.18s ease;
       }
 
-      .result-toast {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 60;
-        min-width: 220px;
-        max-width: min(92vw, 360px);
-        padding: 14px 16px;
-        border-radius: 16px;
-        color: #10163f;
-        background: rgba(255, 255, 255, 0.96);
-        box-shadow: 0 14px 36px rgba(30, 20, 80, 0.12);
+      .gr-back-button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 14px 28px rgba(36, 29, 89, 0.08);
+        border-color: rgba(123, 60, 255, 0.18);
       }
 
-      .result-toast[hidden] {
+      .gr-back-button svg {
+        width: 18px;
+        height: 18px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 2;
+        flex: 0 0 auto;
+      }
+
+      .gr-hero {
+        text-align: center;
+        padding: 18px 18px 28px;
+      }
+
+      .gr-hero h1 {
+        margin: 0;
+        font-size: clamp(2.6rem, 4vw, 4.2rem);
+        line-height: 1.12;
+        font-weight: 900;
+        color: #141842;
+      }
+
+      .gr-hero p {
+        margin: 10px 0 0;
+        color: #6f7697;
+        font-size: 1.34rem;
+        font-weight: 600;
+      }
+
+      .gr-result-card {
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(251, 250, 255, 0.98));
+        border: 1px solid rgba(83, 76, 131, 0.08);
+        border-radius: 28px;
+        box-shadow: var(--gr-card-shadow);
+        padding: 22px 22px 20px;
+      }
+
+      .gr-media-stage {
+        position: relative;
+        min-height: 520px;
+        border-radius: 22px;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at top right, rgba(156, 111, 255, 0.1), transparent 24%),
+          linear-gradient(180deg, #f8f8ff 0%, #efedf8 100%);
+        border: 1px solid rgba(99, 84, 154, 0.08);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.65);
+      }
+
+      .gr-quality-badge {
+        position: absolute;
+        top: 14px;
+        left: 16px;
+        z-index: 6;
+        min-width: 68px;
+        padding: 9px 14px;
+        border-radius: 999px;
+        background: rgba(72, 77, 112, 0.9);
+        color: #fff;
+        font-size: 1rem;
+        font-weight: 800;
+        text-align: center;
+        box-shadow: 0 10px 24px rgba(24, 28, 54, 0.22);
+      }
+
+      .gr-menu-anchor {
+        position: absolute;
+        top: 14px;
+        right: 16px;
+        z-index: 8;
+      }
+
+      .gr-menu-button {
+        width: 42px;
+        height: 42px;
+        border: 0;
+        border-radius: 50%;
+        display: inline-grid;
+        place-items: center;
+        background: rgba(255, 255, 255, 0.98);
+        color: var(--gr-primary);
+        box-shadow: 0 14px 28px rgba(52, 35, 115, 0.18);
+        transition:
+          transform 0.16s ease,
+          box-shadow 0.16s ease;
+      }
+
+      .gr-menu-button:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 18px 34px rgba(52, 35, 115, 0.22);
+      }
+
+      .gr-menu-button:disabled {
+        opacity: 0.55;
+        cursor: default;
+      }
+
+      .gr-menu-button svg {
+        width: 20px;
+        height: 20px;
+        fill: currentColor;
+      }
+
+      .gr-menu {
+        position: absolute;
+        top: 52px;
+        right: 0;
+        width: 250px;
+        padding: 18px;
+        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.98);
+        border: 1px solid rgba(109, 99, 170, 0.1);
+        box-shadow: 0 20px 46px rgba(42, 28, 101, 0.16);
+        transform-origin: top right;
+        animation: gr-menu-in 150ms ease forwards;
+        z-index: 20;
+      }
+
+      .gr-menu[hidden] {
         display: none;
       }
 
-      @keyframes result-progress {
-        0% {
-          transform: translateX(0);
+      .gr-menu-heading {
+        margin: 0 0 12px;
+        color: #7d84a4;
+        font-size: 0.96rem;
+        font-weight: 700;
+      }
+
+      .gr-menu-group + .gr-menu-group {
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid rgba(115, 116, 159, 0.12);
+      }
+
+      .gr-menu-item {
+        width: 100%;
+        border: 0;
+        background: transparent;
+        color: #283253;
+        min-height: 44px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        text-align: right;
+        font-size: 1.03rem;
+        font-weight: 700;
+      }
+
+      .gr-menu-item + .gr-menu-item {
+        margin-top: 4px;
+      }
+
+      .gr-menu-item:hover {
+        color: var(--gr-primary);
+      }
+
+      .gr-menu-item b,
+      .gr-menu-item i {
+        flex: 0 0 auto;
+      }
+
+      .gr-menu-item b {
+        min-width: 34px;
+        padding: 4px 7px;
+        border-radius: 10px;
+        background: rgba(155, 104, 255, 0.12);
+        color: #9a45ff;
+        font-size: 0.7rem;
+        font-style: normal;
+        font-weight: 900;
+        letter-spacing: 0.02em;
+        text-align: center;
+      }
+
+      .gr-menu-item i {
+        width: 22px;
+        height: 22px;
+        display: inline-grid;
+        place-items: center;
+        color: inherit;
+        font-style: normal;
+      }
+
+      .gr-menu-item i svg {
+        width: 18px;
+        height: 18px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.9;
+      }
+
+      .gr-media-frame {
+        min-height: 520px;
+        display: grid;
+        place-items: center;
+        padding: 26px;
+      }
+
+      .gr-media-frame img,
+      .gr-media-frame video {
+        width: 100%;
+        height: 100%;
+        max-height: 468px;
+        border-radius: 18px;
+        object-fit: contain;
+        display: block;
+      }
+
+      .gr-ready-asset {
+        width: 100%;
+        animation: gr-result-in 0.4s ease both;
+      }
+
+      .gr-empty-state,
+      .gr-processing-state {
+        width: min(640px, 100%);
+        margin-inline: auto;
+        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid rgba(103, 87, 170, 0.12);
+        box-shadow: 0 20px 40px rgba(43, 30, 98, 0.08);
+        padding: 32px 28px;
+        text-align: center;
+      }
+
+      .gr-processing-preview {
+        width: min(520px, 100%);
+        aspect-ratio: 16 / 9;
+        margin: 0 auto 20px;
+        border-radius: 22px;
+        overflow: hidden;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.02)),
+          linear-gradient(135deg, rgba(127, 64, 255, 0.18), rgba(184, 57, 255, 0.12));
+        border: 1px solid rgba(124, 96, 214, 0.14);
+        position: relative;
+        box-shadow: 0 0 30px rgba(109, 53, 255, 0.22);
+        animation: gr-pulse 2.1s ease-in-out infinite;
+      }
+
+      .gr-processing-preview img,
+      .gr-processing-preview video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        filter: blur(10px) saturate(0.9);
+        transform: scale(1.05);
+        opacity: 0.82;
+      }
+
+      .gr-processing-preview::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.28));
+      }
+
+      .gr-spinner {
+        width: 58px;
+        height: 58px;
+        margin: 0 auto 16px;
+        border-radius: 50%;
+        border: 4px solid rgba(123, 60, 255, 0.14);
+        border-top-color: var(--gr-primary);
+        animation: gr-spin 0.9s linear infinite;
+      }
+
+      .gr-processing-state h2,
+      .gr-empty-state h2 {
+        margin: 0;
+        font-size: 1.78rem;
+        font-weight: 900;
+        color: #161b43;
+      }
+
+      .gr-processing-state p,
+      .gr-empty-state p {
+        margin: 12px auto 0;
+        max-width: 520px;
+        color: #697192;
+        font-size: 1.02rem;
+        line-height: 1.85;
+      }
+
+      .gr-processing-stage {
+        margin-top: 18px;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 16px;
+        border-radius: 999px;
+        background: rgba(123, 60, 255, 0.08);
+        color: var(--gr-primary);
+        font-weight: 800;
+      }
+
+      .gr-processing-stage i {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: currentColor;
+        box-shadow: 0 0 0 7px rgba(123, 60, 255, 0.13);
+      }
+
+      .gr-result-actions {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+        padding-top: 18px;
+      }
+
+      .gr-action {
+        border-radius: 18px;
+        min-height: 56px;
+        padding: 0 24px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        border: 1px solid rgba(103, 91, 161, 0.14);
+        background: #fff;
+        color: #334063;
+        font-size: 1.07rem;
+        font-weight: 800;
+        box-shadow: 0 10px 22px rgba(44, 30, 102, 0.05);
+        transition:
+          transform 0.16s ease,
+          box-shadow 0.16s ease,
+          border-color 0.16s ease,
+          background 0.16s ease,
+          color 0.16s ease;
+      }
+
+      .gr-action:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 14px 28px rgba(44, 30, 102, 0.08);
+        border-color: rgba(123, 60, 255, 0.2);
+      }
+
+      .gr-action:disabled {
+        opacity: 0.58;
+        cursor: default;
+      }
+
+      .gr-action.primary {
+        border: 0;
+        background: linear-gradient(135deg, var(--gr-primary), var(--gr-primary-2));
+        color: #fff;
+        box-shadow: 0 18px 34px rgba(123, 60, 255, 0.24);
+      }
+
+      .gr-action.ghost[data-active="true"] {
+        color: var(--gr-primary);
+        background: rgba(123, 60, 255, 0.07);
+        border-color: rgba(123, 60, 255, 0.18);
+      }
+
+      .gr-action svg {
+        width: 18px;
+        height: 18px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 2;
+        flex: 0 0 auto;
+      }
+
+      .gr-latest-card {
+        margin-top: 22px;
+        background: rgba(255, 255, 255, 0.96);
+        border: 1px solid rgba(99, 84, 154, 0.08);
+        border-radius: 28px;
+        box-shadow: var(--gr-card-shadow);
+        padding: 24px 24px 22px;
+      }
+
+      .gr-section-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 18px;
+      }
+
+      .gr-section-head h2 {
+        margin: 0;
+        color: #161b43;
+        font-size: clamp(1.85rem, 2vw, 2.35rem);
+        font-weight: 900;
+      }
+
+      .gr-section-head a {
+        color: var(--gr-primary);
+        font-weight: 800;
+      }
+
+      .gr-latest-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      .gr-latest-item {
+        position: relative;
+        border-radius: 20px;
+        overflow: hidden;
+        background: #f7f6ff;
+        border: 1px solid rgba(99, 84, 154, 0.08);
+        min-height: 164px;
+        box-shadow: 0 10px 24px rgba(45, 30, 104, 0.06);
+      }
+
+      .gr-latest-link {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+
+      .gr-latest-link img,
+      .gr-latest-link video {
+        width: 100%;
+        height: 100%;
+        min-height: 164px;
+        object-fit: cover;
+        display: block;
+        transition: transform 0.22s ease;
+      }
+
+      .gr-latest-link:hover img,
+      .gr-latest-link:hover video {
+        transform: scale(1.03);
+      }
+
+      .gr-latest-favorite {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        z-index: 2;
+        width: 34px;
+        height: 34px;
+        border: 0;
+        border-radius: 50%;
+        display: inline-grid;
+        place-items: center;
+        background: rgba(255, 255, 255, 0.95);
+        color: var(--gr-primary);
+        box-shadow: 0 10px 18px rgba(34, 24, 84, 0.12);
+      }
+
+      .gr-latest-favorite svg {
+        width: 16px;
+        height: 16px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 2;
+      }
+
+      .gr-latest-favorite[data-active="true"] svg {
+        fill: currentColor;
+      }
+
+      .gr-latest-chip {
+        position: absolute;
+        right: 10px;
+        bottom: 10px;
+        z-index: 2;
+        padding: 7px 10px;
+        border-radius: 999px;
+        background: rgba(18, 20, 47, 0.62);
+        color: #fff;
+        font-size: 0.84rem;
+        font-weight: 800;
+        backdrop-filter: blur(14px);
+      }
+
+      .gr-latest-empty {
+        grid-column: 1 / -1;
+        border-radius: 20px;
+        border: 1px dashed rgba(123, 60, 255, 0.18);
+        background: rgba(123, 60, 255, 0.04);
+        padding: 30px 22px;
+        text-align: center;
+        color: #6d7392;
+        font-weight: 700;
+      }
+
+      .gr-sidebar {
+        min-height: 100%;
+        padding: 34px 28px 26px;
+        direction: rtl;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(252, 250, 255, 0.96)),
+          radial-gradient(circle at top right, rgba(180, 115, 255, 0.12), transparent 36%);
+        border-right: 1px solid rgba(86, 77, 146, 0.1);
+        overflow-y: auto;
+      }
+
+      .gr-sidebar::-webkit-scrollbar {
+        width: 10px;
+      }
+
+      .gr-sidebar::-webkit-scrollbar-track {
+        background: linear-gradient(180deg, #ffffff 0%, #f4efff 48%, #ffffff 100%);
+        border-radius: 999px;
+      }
+
+      .gr-sidebar::-webkit-scrollbar-thumb {
+        border: 2px solid rgba(255, 255, 255, 0.96);
+        border-radius: 999px;
+        background: linear-gradient(180deg, #ffffff 0%, #8958ff 50%, #5d2fff 100%);
+      }
+
+      .gr-brand {
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 14px;
+        direction: ltr;
+        margin-bottom: 38px;
+      }
+
+      .gr-brand img {
+        width: 54px;
+        height: 54px;
+        display: block;
+      }
+
+      .gr-brand strong {
+        display: block;
+        color: #121740;
+        font-size: 2.05rem;
+        font-weight: 800;
+      }
+
+      .gr-sidebar-nav {
+        display: grid;
+        gap: 24px;
+      }
+
+      .gr-nav-group {
+        display: grid;
+        gap: 10px;
+      }
+
+      .gr-nav-group p {
+        margin: 0;
+        color: #a1a7c2;
+        font-size: 0.95rem;
+        font-weight: 700;
+      }
+
+      .gr-nav-link {
+        min-height: 54px;
+        padding: 0 16px;
+        border-radius: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        color: #22284a;
+        font-size: 1.06rem;
+        font-weight: 800;
+        transition:
+          background 0.18s ease,
+          color 0.18s ease,
+          transform 0.18s ease,
+          box-shadow 0.18s ease;
+      }
+
+      .gr-nav-link:hover {
+        background: rgba(123, 60, 255, 0.06);
+        color: var(--gr-primary);
+        transform: translateX(-2px);
+      }
+
+      .gr-nav-link.is-active {
+        background: linear-gradient(180deg, rgba(169, 122, 255, 0.08), rgba(123, 60, 255, 0.03));
+        color: var(--gr-primary);
+        border: 1px solid rgba(123, 60, 255, 0.18);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.72);
+      }
+
+      .gr-nav-link span {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .gr-nav-link svg {
+        width: 20px;
+        height: 20px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 2;
+        flex: 0 0 auto;
+      }
+
+      .gr-toast {
+        position: fixed;
+        right: 24px;
+        bottom: 24px;
+        z-index: 90;
+        min-width: 220px;
+        max-width: 340px;
+        padding: 14px 18px;
+        border-radius: 18px;
+        background: rgba(22, 24, 53, 0.94);
+        color: #fff;
+        font-size: 0.98rem;
+        font-weight: 700;
+        box-shadow: 0 18px 36px rgba(20, 21, 46, 0.22);
+      }
+
+      .gr-toast[hidden] {
+        display: none;
+      }
+
+      @keyframes gr-menu-in {
+        from {
+          opacity: 0;
+          transform: translateY(-8px) scale(0.95);
         }
-        50% {
-          transform: translateX(48%);
-        }
-        100% {
-          transform: translateX(0);
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
         }
       }
 
-      @keyframes result-shimmer {
+      @keyframes gr-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      @keyframes gr-pulse {
+        0%,
+        100% {
+          box-shadow: 0 0 24px rgba(109, 53, 255, 0.18);
+        }
+        50% {
+          box-shadow: 0 0 36px rgba(109, 53, 255, 0.28);
+        }
+      }
+
+      @keyframes gr-result-in {
         from {
-          transform: translateX(-100%);
+          opacity: 0;
+          transform: scale(0.95);
         }
         to {
-          transform: translateX(100%);
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+
+      @media (max-width: 1390px) {
+        .gr-page {
+          grid-template-columns: minmax(0, 1fr) 252px;
+        }
+
+        .gr-latest-grid {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
         }
       }
 
       @media (max-width: 1100px) {
-        .result-page {
+        .gr-page {
           grid-template-columns: 1fr;
-          width: min(100%, calc(100% - 24px));
-          gap: 18px;
+          min-height: auto;
         }
 
-        .result-main {
-          padding: 10px 0 0;
+        .gr-sidebar {
+          display: none;
         }
 
-        .result-processing {
-          grid-template-columns: 1fr;
+        .gr-mobile-brand {
+          display: inline-flex;
         }
 
-        .result-similar-grid {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
+        .gr-main {
+          padding: 22px 20px 28px;
+        }
+
+        .gr-latest-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
         }
       }
 
-      @media (max-width: 720px) {
-        .result-topbar {
-          flex-wrap: wrap;
+      @media (max-width: 820px) {
+        .gr-page {
+          width: min(100%, calc(100% - 14px));
+          margin: 7px auto;
+          border-radius: 24px;
         }
 
-        .result-actions,
-        .result-rating-buttons {
+        .gr-back-button {
+          min-height: 50px;
+          padding-inline: 18px;
+          border-radius: 18px;
+        }
+
+        .gr-hero {
+          padding-inline: 0;
+        }
+
+        .gr-hero h1 {
+          font-size: clamp(2rem, 8vw, 2.8rem);
+        }
+
+        .gr-hero p {
+          font-size: 1.03rem;
+        }
+
+        .gr-result-card,
+        .gr-latest-card {
+          border-radius: 24px;
+          padding: 16px;
+        }
+
+        .gr-media-stage,
+        .gr-media-frame {
+          min-height: 360px;
+        }
+
+        .gr-media-frame {
+          padding: 18px;
+        }
+
+        .gr-media-frame img,
+        .gr-media-frame video {
+          max-height: 304px;
+        }
+
+        .gr-menu {
+          width: min(250px, calc(100vw - 44px));
+          right: -8px;
+        }
+
+        .gr-result-actions {
+          display: grid;
           grid-template-columns: 1fr;
         }
 
-        .result-similar-grid {
-          grid-template-columns: 1fr;
+        .gr-action {
+          width: 100%;
         }
 
-        .result-media-frame,
-        .result-processing-preview {
-          min-height: 340px;
+        .gr-latest-grid {
+          grid-auto-flow: column;
+          grid-auto-columns: minmax(190px, 78%);
+          grid-template-columns: none;
+          overflow-x: auto;
+          padding-bottom: 6px;
         }
 
-        .result-toast {
-          right: 12px;
+        .gr-latest-grid::-webkit-scrollbar {
+          height: 8px;
+        }
+
+        .gr-latest-grid::-webkit-scrollbar-thumb {
+          background: rgba(123, 60, 255, 0.25);
+          border-radius: 999px;
+        }
+      }
+
+      @media (max-width: 560px) {
+        .gr-main {
+          padding: 18px 14px 24px;
+        }
+
+        .gr-mobile-brand strong {
+          font-size: 1.58rem;
+        }
+
+        .gr-quality-badge {
           left: 12px;
-          width: auto;
-          max-width: none;
+          top: 12px;
+          padding: 8px 12px;
+          font-size: 0.92rem;
+        }
+
+        .gr-menu-anchor {
+          top: 12px;
+          right: 12px;
+        }
+
+        .gr-menu-button {
+          width: 40px;
+          height: 40px;
+        }
+
+        .gr-menu {
+          width: calc(100vw - 52px);
+        }
+
+        .gr-media-stage,
+        .gr-media-frame {
+          min-height: 320px;
+        }
+
+        .gr-empty-state,
+        .gr-processing-state {
+          padding: 24px 18px;
         }
       }
     </style>
   </head>
-  <body class="generation-result-page">
-    <div class="result-page" data-result-page>
-      <main class="result-main">
-        <div class="result-topbar">
-          <a class="result-back" href="/dashboard">
-            <span>←</span>
-            <span>رجوع</span>
-          </a>
-          <span class="result-status-pill" data-page-state-label>جاري التحميل...</span>
+  <body>
+    <svg class="gr-icons" aria-hidden="true">
+      <symbol id="gr-arrow-left" viewBox="0 0 24 24">
+        <path d="M19 12H5" />
+        <path d="m12 19-7-7 7-7" />
+      </symbol>
+      <symbol id="gr-dots" viewBox="0 0 24 24">
+        <circle cx="12" cy="5" r="2.2"></circle>
+        <circle cx="12" cy="12" r="2.2"></circle>
+        <circle cx="12" cy="19" r="2.2"></circle>
+      </symbol>
+      <symbol id="gr-heart" viewBox="0 0 24 24">
+        <path d="M20.8 5.7a5.5 5.5 0 0 0-7.8 0L12 6.8l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 22l8.8-8.5a5.5 5.5 0 0 0 0-7.8Z"></path>
+      </symbol>
+      <symbol id="gr-spark" viewBox="0 0 24 24">
+        <path d="m12 3 1.7 4.3L18 9l-4.3 1.7L12 15l-1.7-4.3L6 9l4.3-1.7Z"></path>
+        <path d="m18.5 14 .8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8Z"></path>
+      </symbol>
+      <symbol id="gr-copy" viewBox="0 0 24 24">
+        <rect x="9" y="9" width="11" height="11" rx="2"></rect>
+        <path d="M6 15H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1"></path>
+      </symbol>
+      <symbol id="gr-link" viewBox="0 0 24 24">
+        <path d="M10.5 13.5 13.5 10.5"></path>
+        <path d="M7 17a4 4 0 0 1 0-5.7l2.3-2.3a4 4 0 1 1 5.7 5.7L14 15"></path>
+        <path d="M17 7a4 4 0 0 1 0 5.7l-2.3 2.3a4 4 0 0 1-5.7-5.7L10 9"></path>
+      </symbol>
+      <symbol id="gr-home" viewBox="0 0 24 24">
+        <path d="m3 11 9-8 9 8"></path>
+        <path d="M5 10v10h14V10"></path>
+        <path d="M9 20v-6h6v6"></path>
+      </symbol>
+      <symbol id="gr-image" viewBox="0 0 24 24">
+        <rect x="3" y="4" width="18" height="16" rx="2"></rect>
+        <circle cx="9" cy="10" r="2"></circle>
+        <path d="m21 15-5-5L5 20"></path>
+      </symbol>
+      <symbol id="gr-video" viewBox="0 0 24 24">
+        <rect x="3" y="5" width="13" height="14" rx="2"></rect>
+        <path d="m16 10 5-3v10l-5-3z"></path>
+      </symbol>
+      <symbol id="gr-folder" viewBox="0 0 24 24">
+        <path d="M3 6h7l2 2h9v11H3z"></path>
+      </symbol>
+      <symbol id="gr-cube" viewBox="0 0 24 24">
+        <path d="m12 2 9 5-9 5-9-5z"></path>
+        <path d="m3 7 9 5 9-5v10l-9 5-9-5z"></path>
+        <path d="M12 12v10"></path>
+      </symbol>
+      <symbol id="gr-template" viewBox="0 0 24 24">
+        <rect x="3" y="4" width="18" height="16" rx="2"></rect>
+        <path d="M3 9h18M8 9v11"></path>
+      </symbol>
+      <symbol id="gr-wallet" viewBox="0 0 24 24">
+        <path d="M4 6h14a2 2 0 0 1 2 2v10H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h12"></path>
+        <path d="M16 11h6v4h-6a2 2 0 0 1 0-4Z"></path>
+      </symbol>
+      <symbol id="gr-receipt" viewBox="0 0 24 24">
+        <path d="M5 3h14v19l-3-2-4 2-4-2-3 2z"></path>
+        <path d="M9 8h6M9 12h6M9 16h4"></path>
+      </symbol>
+      <symbol id="gr-settings" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-1.6v-.2h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"></path>
+      </symbol>
+      <symbol id="gr-facebook" viewBox="0 0 24 24">
+        <path d="M14.2 8.5h2V5h-2.4C11 5 9.9 6.7 9.9 9.3V11H8v3.5h1.9V20h3.8v-5.5h2.2L16.3 11h-2.6V9.6c0-.7.2-1.1 1.1-1.1Z"></path>
+      </symbol>
+      <symbol id="gr-x" viewBox="0 0 24 24">
+        <path d="M18.7 4H21l-5.3 6.1L22 20h-5l-3.9-5.2L8.5 20H6.2l5.7-6.6L2 4h5.1l3.5 4.8L18.7 4Z"></path>
+      </symbol>
+      <symbol id="gr-whatsapp" viewBox="0 0 24 24">
+        <path d="M12 3.5a8.5 8.5 0 0 0-7.4 12.7L3.5 20.5l4.4-1.1A8.5 8.5 0 1 0 12 3.5Z"></path>
+        <path d="M9 8.8c.2-.4.4-.4.6-.4h.5c.1 0 .4 0 .5.3.2.4.8 1.9.9 2 .1.2.1.4 0 .6-.1.1-.2.3-.4.5-.2.2-.4.4-.2.7.2.3 1 1.7 2.5 2.3 1.3.6 1.5.4 1.8.3.3-.1 1-.9 1.1-1.2.1-.3.3-.2.5-.1l1.7.8c.2.1.4.2.4.4s-.1 1.1-.8 1.8c-.7.7-1.6 1-2.2 1.1-.6.1-1.4.1-2.2-.2-.4-.1-.9-.3-1.5-.6-2.6-1.1-4.2-3.8-4.3-4-.1-.2-1.1-1.5-1.1-2.8 0-1.3.7-1.9.9-2.2Z"></path>
+      </symbol>
+    </svg>
+
+    <div class="gr-page">
+      <main class="gr-main">
+        <div class="gr-mobile-brand" aria-hidden="true">
+          <img src="/ap-mark.svg" alt="" />
+          <strong>PixiGenI</strong>
         </div>
 
-        <section class="result-hero">
-          <h1 data-page-title>جارٍ إنشاء صورتك...</h1>
-          <p data-page-copy>الذكاء الاصطناعي يعمل الآن على تحويل فكرتك إلى نتيجة واضحة.</p>
+        <div class="gr-back-row">
+          <button class="gr-back-button" type="button" data-back-button>
+            <svg><use href="#gr-arrow-left"></use></svg>
+            <span>رجوع</span>
+          </button>
+        </div>
+
+        <header class="gr-hero">
+          <h1 data-page-title>جاري تحميل النتيجة...</h1>
+          <p data-page-copy>نجهز لك صفحة النتيجة الآن</p>
+        </header>
+
+        <section class="gr-result-card" aria-labelledby="generationResultTitle">
+          <div class="gr-media-stage">
+            <span class="gr-quality-badge" data-result-quality hidden>عادية</span>
+
+            <div class="gr-menu-anchor">
+              <button
+                class="gr-menu-button"
+                type="button"
+                data-menu-toggle
+                aria-haspopup="true"
+                aria-expanded="false"
+                aria-label="خيارات النتيجة"
+              >
+                <svg><use href="#gr-dots"></use></svg>
+              </button>
+              <div class="gr-menu" data-menu hidden></div>
+            </div>
+
+            <div class="gr-media-frame" data-media-frame>
+              <div class="gr-processing-state" role="status" aria-live="polite">
+                <div class="gr-spinner" aria-hidden="true"></div>
+                <h2 id="generationResultTitle">جاري تحميل النتيجة...</h2>
+                <p>نستدعي آخر حالة لهذا المشروع الآن.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="gr-result-actions">
+            <a class="gr-action primary" href="/dashboard#create" data-action-create-new>
+              <svg><use href="#gr-spark"></use></svg>
+              <span data-create-label>إنشاء صورة جديدة</span>
+            </a>
+            <button class="gr-action ghost" type="button" data-action-enhance>
+              <svg><use href="#gr-spark"></use></svg>
+              <span data-enhance-label>تحسين الصورة</span>
+            </button>
+            <button class="gr-action ghost" type="button" data-action-favorite data-active="false">
+              <svg><use href="#gr-heart"></use></svg>
+              <span data-favorite-label>إضافة للمفضلة</span>
+            </button>
+          </div>
         </section>
 
-        <div class="result-actions">
-          <a class="primary" href="#" data-action-download>تحميل الصورة</a>
-          <button type="button" data-action-regenerate>إعادة إنشاء</button>
-          <button type="button" data-action-copy>نسخ الرابط</button>
-          <button type="button" data-action-share>مشاركة</button>
-        </div>
-
-        <section class="result-shell" data-center-shell>
-          <article class="result-card">
-            <div class="result-media-card" data-media-card>
-              <button class="result-favorite" type="button" data-action-favorite aria-label="إضافة للمفضلة">♥</button>
-              <button class="result-arrow prev" type="button" data-action-prev aria-label="السابق">‹</button>
-              <button class="result-arrow next" type="button" data-action-next aria-label="التالي">›</button>
-              <div class="result-media-frame" data-media-frame>
-                <div class="result-placeholder">جاري تحميل النتيجة...</div>
-              </div>
-              <div class="result-badge" data-result-badge>عالية</div>
-            </div>
-          </article>
-
-          <section class="result-panel result-thumbs-shell">
-            <div class="result-thumbs-head">
-              <strong>النتائج الأخيرة</strong>
-              <button type="button" data-more-results>عرض المزيد</button>
-            </div>
-            <div class="result-thumbs" data-result-thumbs></div>
-          </section>
-
-          <section class="result-panel">
-            <div class="result-rating">
-              <div>
-                <h3>ما مدى رضاك عن النتيجة؟</h3>
-                <p>تقييمك يساعدنا على تحسين المخرجات القادمة.</p>
-              </div>
-              <div class="result-rating-buttons" role="group" aria-label="تقييم النتيجة" data-rating-buttons>
-                <button type="button" data-rating="mismatch" data-rating-label="غير راضٍ">غير راضٍ</button>
-                <button type="button" data-rating="mismatch" data-rating-label="غير جيد">غير جيد</button>
-                <button type="button" data-rating="acceptable" data-rating-label="مقبول">مقبول</button>
-                <button type="button" data-rating="acceptable" data-rating-label="جيد">جيد</button>
-                <button type="button" data-rating="excellent" data-rating-label="ممتاز">ممتاز</button>
-              </div>
-              <small data-rating-message></small>
-            </div>
-          </section>
-
-          <section class="result-panel result-similar">
-            <div>
-              <h3>مشاريع مشابهة</h3>
-              <p>قد تعجبك هذه النتائج من أعمالك الأخيرة.</p>
-            </div>
-            <div class="result-similar-grid" data-similar-grid></div>
-          </section>
+        <section class="gr-latest-card" data-latest-section>
+          <div class="gr-section-head">
+            <h2>أحدث الإبداعات</h2>
+            <a href="/dashboard#projects">عرض الكل</a>
+          </div>
+          <div class="gr-latest-grid" data-latest-grid>
+            <div class="gr-latest-empty">جارٍ تحميل الإبداعات الحديثة...</div>
+          </div>
         </section>
       </main>
 
-      <aside class="result-details">
-        <section class="result-panel">
-          <h2>تفاصيل الإنشاء</h2>
-          <dl class="result-details-list" data-details-list></dl>
-        </section>
+      <aside class="gr-sidebar" aria-label="قائمة لوحة المستخدم">
+        <a class="gr-brand" href="/dashboard" aria-label="PixiGenI">
+          <img src="/ap-mark.svg" alt="" />
+          <strong>PixiGenI</strong>
+        </a>
 
-        <section class="result-panel">
-          <h2>خيارات إضافية</h2>
-          <div class="result-extras">
-            <button type="button" data-extra-action="enhance">تحسين الجودة</button>
-            <button type="button" data-extra-action="remove-bg">إزالة الخلفية</button>
-            <button type="button" data-extra-action="colorize">تلوين الصورة</button>
-            <button type="button" data-extra-action="video">إنشاء فيديو من الصورة</button>
+        <nav class="gr-sidebar-nav">
+          <div class="gr-nav-group">
+            <a class="gr-nav-link is-active" href="/dashboard">
+              <span>لوحة التحكم</span>
+              <svg><use href="#gr-home"></use></svg>
+            </a>
           </div>
-        </section>
+
+          <div class="gr-nav-group">
+            <p>إنشاء جديد</p>
+            <a class="gr-nav-link" href="/dashboard#create">
+              <span>صورة</span>
+              <svg><use href="#gr-image"></use></svg>
+            </a>
+            <a class="gr-nav-link" href="/dashboard#create">
+              <span>فيديو</span>
+              <svg><use href="#gr-video"></use></svg>
+            </a>
+          </div>
+
+          <div class="gr-nav-group">
+            <p>المحتوى</p>
+            <a class="gr-nav-link" href="/dashboard#projects">
+              <span>مشاريعي</span>
+              <svg><use href="#gr-folder"></use></svg>
+            </a>
+            <a class="gr-nav-link" href="/dashboard#favorites">
+              <span>المفضلة</span>
+              <svg><use href="#gr-heart"></use></svg>
+            </a>
+            <a class="gr-nav-link" href="/dashboard#models">
+              <span>النماذج</span>
+              <svg><use href="#gr-cube"></use></svg>
+            </a>
+            <a class="gr-nav-link" href="/dashboard#templates">
+              <span>القوالب</span>
+              <svg><use href="#gr-template"></use></svg>
+            </a>
+          </div>
+
+          <div class="gr-nav-group">
+            <p>الحساب</p>
+            <a class="gr-nav-link" href="/dashboard#plan">
+              <span>باقتي</span>
+              <svg><use href="#gr-wallet"></use></svg>
+            </a>
+            <a class="gr-nav-link" href="/dashboard#transactions">
+              <span>معاملاتي</span>
+              <svg><use href="#gr-receipt"></use></svg>
+            </a>
+            <a class="gr-nav-link" href="/dashboard#settings">
+              <span>إعدادات الحساب</span>
+              <svg><use href="#gr-settings"></use></svg>
+            </a>
+          </div>
+        </nav>
       </aside>
     </div>
 
-    <div class="result-toast" data-toast hidden></div>
+    <div class="gr-toast" data-toast hidden></div>
 
     <script src="/config.js"></script>
-    <script src="/generation-page.js?v=20260621-result-v5"></script>
-    <script src="/assistant-widget.js?v=20260621-assistant-v3"></script>
+    <script src="/generation-page.js?v=20260621-generation-result-v2"></script>
   </body>
 </html>
