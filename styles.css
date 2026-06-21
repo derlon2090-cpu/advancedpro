@@ -16271,12 +16271,12 @@ html[data-theme="dark"] .create-chat-bubble__state {
   background:
     radial-gradient(circle at 8% 42%, rgba(41, 124, 255, 0.08), transparent 28%),
     radial-gradient(circle at 88% 30%, rgba(145, 50, 255, 0.1), transparent 30%),
-    repeating-linear-gradient(165deg, rgba(77, 103, 255, 0.025) 0 1px, transparent 1px 14px),
-    #fbfbff;
+    repeating-linear-gradient(165deg, rgba(77, 103, 255, 0.022) 0 1px, transparent 1px 14px),
+    linear-gradient(180deg, #fdfdff 0%, #f7f8ff 100%);
 }
 
 .activation-portal__page {
-  width: min(1180px, calc(100% - 36px));
+  width: min(1188px, calc(100% - 34px));
   margin: 0 auto;
   padding: 28px 0 34px;
   text-align: center;
@@ -16286,14 +16286,14 @@ html[data-theme="dark"] .create-chat-bubble__state {
   direction: ltr;
   display: inline-flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   color: #070b25;
   text-decoration: none;
 }
 
 .activation-portal__brand img {
-  width: 74px;
-  height: 74px;
+  width: 76px;
+  height: 76px;
   object-fit: contain;
 }
 
@@ -16303,7 +16303,7 @@ html[data-theme="dark"] .create-chat-bubble__state {
 }
 
 .activation-portal__brand strong {
-  font-size: clamp(34px, 4vw, 52px);
+  font-size: clamp(33px, 4vw, 52px);
   font-weight: 900;
   letter-spacing: -0.055em;
   line-height: 1;
@@ -16311,24 +16311,36 @@ html[data-theme="dark"] .create-chat-bubble__state {
 
 .activation-portal__brand small {
   margin-top: 8px;
-  color: #4f5876;
-  font-size: 18px;
+  color: #5b6382;
+  font-size: 16px;
   font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.activation-portal__brand small i {
+  width: 58px;
+  height: 1px;
+  display: inline-block;
+  background: linear-gradient(90deg, transparent, #d7dced, transparent);
 }
 
 .activation-portal__card {
   position: relative;
-  max-width: 1120px;
-  margin: 26px auto 0;
-  padding: clamp(44px, 6vw, 72px) clamp(28px, 8vw, 112px) 28px;
+  max-width: 1146px;
+  margin: 20px auto 0;
+  padding: 56px 72px 24px;
   overflow: hidden;
-  border: 1px solid rgba(109, 53, 255, 0.18);
-  border-radius: 34px;
+  border: 1px solid rgba(196, 201, 240, 0.68);
+  border-radius: 31px;
   background:
-    radial-gradient(circle at 0 50%, rgba(72, 126, 255, 0.1), transparent 26%),
-    radial-gradient(circle at 100% 42%, rgba(159, 50, 246, 0.12), transparent 28%),
-    rgba(255, 255, 255, 0.88);
-  box-shadow: 0 26px 70px rgba(35, 28, 97, 0.1);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.985), rgba(249, 250, 255, 0.95)),
+    radial-gradient(circle at 14% 48%, rgba(106, 154, 255, 0.11), transparent 28%),
+    radial-gradient(circle at 87% 45%, rgba(180, 98, 255, 0.12), transparent 29%);
+  box-shadow:
+    0 18px 54px rgba(59, 48, 146, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
   backdrop-filter: blur(18px);
 }
 
@@ -16336,56 +16348,124 @@ html[data-theme="dark"] .create-chat-bubble__state {
 .activation-portal__card::after {
   content: "";
   position: absolute;
-  width: 260px;
-  height: 260px;
-  border: 1px solid rgba(109, 53, 255, 0.08);
+  width: 356px;
+  height: 356px;
+  border: 1px solid rgba(149, 158, 224, 0.12);
   border-radius: 50%;
   pointer-events: none;
 }
 
 .activation-portal__card::before {
-  top: 30px;
-  left: -170px;
+  top: 42px;
+  left: -300px;
 }
 
 .activation-portal__card::after {
-  right: -170px;
-  bottom: 20px;
+  right: -302px;
+  top: 110px;
+}
+
+.activation-portal__glow {
+  position: absolute;
+  inset-block: 0;
+  width: 268px;
+  pointer-events: none;
+  opacity: 0.92;
+}
+
+.activation-portal__glow--left {
+  left: -20px;
+  background:
+    radial-gradient(circle at 24% 80%, rgba(89, 143, 255, 0.33), transparent 16%),
+    radial-gradient(circle at 30% 72%, rgba(255, 255, 255, 0.96), transparent 6%),
+    radial-gradient(circle at 36% 58%, rgba(180, 204, 255, 0.46), transparent 18%),
+    linear-gradient(145deg, transparent 38%, rgba(134, 131, 255, 0.16) 56%, transparent 70%);
+  filter: blur(0.6px);
+}
+
+.activation-portal__glow--right {
+  right: -20px;
+  background:
+    radial-gradient(circle at 73% 34%, rgba(195, 155, 255, 0.28), transparent 16%),
+    radial-gradient(circle at 69% 44%, rgba(255, 255, 255, 0.96), transparent 6%),
+    radial-gradient(circle at 66% 56%, rgba(232, 208, 255, 0.48), transparent 18%),
+    linear-gradient(215deg, transparent 38%, rgba(197, 133, 255, 0.16) 56%, transparent 70%);
+  filter: blur(0.6px);
+}
+
+.activation-portal__orb {
+  position: absolute;
+  width: 182px;
+  height: 182px;
+  border: 1px solid rgba(195, 204, 255, 0.34);
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+.activation-portal__orb::before {
+  content: "";
+  position: absolute;
+  inset: 28px;
+  border: 1px solid rgba(224, 218, 255, 0.46);
+  border-radius: inherit;
+}
+
+.activation-portal__orb--left {
+  left: -70px;
+  top: 156px;
+  transform: rotate(-22deg);
+}
+
+.activation-portal__orb--right {
+  right: -74px;
+  top: 154px;
+  transform: rotate(22deg);
 }
 
 .activation-portal__key {
-  width: 72px;
-  height: 72px;
-  margin: 0 auto 16px;
+  width: 86px;
+  height: 86px;
+  margin: 0 auto 14px;
   display: grid;
   place-items: center;
-  border: 8px solid rgba(109, 53, 255, 0.07);
+  border: 7px solid rgba(113, 62, 255, 0.08);
   border-radius: 50%;
-  color: #6d35ff;
+  color: #5f39ff;
   background: #fff;
-  box-shadow: 0 18px 38px rgba(109, 53, 255, 0.17);
-  font-size: 34px;
+  box-shadow:
+    0 18px 36px rgba(126, 78, 255, 0.16),
+    0 0 0 8px rgba(255, 255, 255, 0.55);
+}
+
+.activation-portal__key svg {
+  width: 40px;
+  height: 40px;
 }
 
 .activation-portal__card h1 {
   margin: 0;
   color: #070b25;
-  font-size: clamp(40px, 5vw, 66px);
+  font-size: clamp(44px, 5vw, 70px);
   font-weight: 900;
-  letter-spacing: -0.045em;
+  letter-spacing: -0.05em;
+  line-height: 1.1;
 }
 
 .activation-portal__card > p {
-  max-width: 720px;
-  margin: 10px auto 24px;
-  color: #59627e;
-  font-size: clamp(16px, 2vw, 21px);
-  font-weight: 650;
+  max-width: 710px;
+  margin: 10px auto 20px;
+  color: #5f6786;
+  font-size: clamp(16px, 2vw, 18px);
+  font-weight: 700;
+  line-height: 1.8;
 }
 
 .activation-portal__card form {
   display: grid;
   gap: 14px;
+  max-width: 918px;
+  margin: 0 auto;
 }
 
 .activation-portal__input {
@@ -16397,31 +16477,44 @@ html[data-theme="dark"] .create-chat-bubble__state {
   position: absolute;
   z-index: 2;
   top: 50%;
-  right: 24px;
-  color: #7235ff;
-  font-size: 28px;
+  right: 28px;
+  color: #6238ff;
   transform: translateY(-50%);
+}
+
+.activation-portal__input span svg {
+  width: 30px;
+  height: 30px;
+  display: block;
 }
 
 .activation-portal__input input {
   width: 100%;
-  height: 84px;
-  border: 1.5px solid #b7a1f7;
-  border-radius: 17px;
-  padding: 0 76px 0 24px;
-  color: #111633;
-  background: rgba(255, 255, 255, 0.96);
+  height: 80px;
+  border: 1.5px solid #bec3eb;
+  border-radius: 20px;
+  padding: 0 78px 0 28px;
+  color: #4f536a;
+  background: rgba(255, 255, 255, 0.985);
   outline: none;
-  text-align: center;
-  font: 800 25px/1 "IBM Plex Sans Arabic", sans-serif;
-  letter-spacing: 0.045em;
-  box-shadow: 0 12px 28px rgba(30, 20, 80, 0.08);
+  text-align: left;
+  direction: ltr;
+  font: 800 21px/1 "IBM Plex Sans Arabic", sans-serif;
+  letter-spacing: 0.03em;
+  box-shadow:
+    0 10px 24px rgba(34, 28, 100, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
   transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 
+.activation-portal__input input::placeholder {
+  color: #b5b7ce;
+  opacity: 1;
+}
+
 .activation-portal__input input:focus {
-  border-color: #5e36ff;
-  box-shadow: 0 0 0 5px rgba(109, 53, 255, 0.11), 0 16px 34px rgba(30, 20, 80, 0.1);
+  border-color: #6d3fff;
+  box-shadow: 0 0 0 4px rgba(109, 53, 255, 0.08), 0 15px 30px rgba(30, 20, 80, 0.1);
 }
 
 .activation-portal__input.is-shaking {
@@ -16435,18 +16528,35 @@ html[data-theme="dark"] .create-chat-bubble__state {
 
 .activation-portal__card form > button {
   width: 100%;
-  height: 76px;
+  height: 72px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 14px;
+  gap: 12px;
   border: 0;
-  border-radius: 16px;
+  border-radius: 18px;
   color: #fff;
-  background: linear-gradient(100deg, #087df6 0%, #3d50ff 44%, #9824f0 100%);
-  box-shadow: 0 18px 38px rgba(80, 55, 244, 0.27);
+  background: linear-gradient(90deg, #0c84f7 0%, #365bff 46%, #a022f0 100%);
+  box-shadow: 0 14px 28px rgba(74, 61, 237, 0.28);
   cursor: pointer;
-  font: 800 25px/1 "IBM Plex Sans Arabic", sans-serif;
+  font: 800 21px/1 "IBM Plex Sans Arabic", sans-serif;
+  transition: transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+}
+
+.activation-portal__card form > button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 18px 34px rgba(74, 61, 237, 0.3);
+}
+
+.activation-portal__card form > button b {
+  display: inline-flex;
+  color: rgba(255, 255, 255, 0.94);
+}
+
+.activation-portal__card form > button b svg {
+  width: 22px;
+  height: 22px;
+  display: block;
 }
 
 @keyframes keyShake {
@@ -16474,22 +16584,38 @@ html[data-theme="dark"] .create-chat-bubble__state {
 }
 
 .activation-portal__note {
-  margin-bottom: 0 !important;
+  margin: 16px auto 0 !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #59627e !important;
   font-size: 15px !important;
+  font-weight: 700 !important;
+}
+
+.activation-portal__note span {
+  color: #6372ff;
+  display: inline-flex;
+}
+
+.activation-portal__note span svg {
+  width: 22px;
+  height: 22px;
+  display: block;
 }
 
 .activation-portal__steps {
-  max-width: 1120px;
+  max-width: 1146px;
   margin: 18px auto 0;
-  padding: 24px 30px;
-  border: 1px solid #e5e5f2;
+  padding: 16px 30px 14px;
+  border: 1px solid #ececf5;
   border-radius: 26px;
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 18px 46px rgba(30, 20, 80, 0.07);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 14px 34px rgba(30, 20, 80, 0.045);
 }
 
 .activation-portal__steps h2 {
-  margin: 0 0 18px;
+  margin: 0 0 10px;
   color: #111633;
   font-size: 21px;
   font-weight: 900;
@@ -16502,13 +16628,13 @@ html[data-theme="dark"] .create-chat-bubble__state {
 
 .activation-portal__steps article {
   position: relative;
-  min-height: 104px;
+  min-height: 112px;
   display: grid;
-  grid-template-columns: 46px 1fr;
+  grid-template-columns: 64px 1fr;
   grid-template-areas: "icon title" "icon copy";
   align-content: center;
-  gap: 4px 13px;
-  padding: 0 32px;
+  gap: 6px 14px;
+  padding: 0 18px;
   text-align: right;
 }
 
@@ -16518,66 +16644,94 @@ html[data-theme="dark"] .create-chat-bubble__state {
 
 .activation-portal__steps article > i {
   position: absolute;
-  top: 4px;
-  right: 14px;
-  width: 24px;
-  height: 24px;
+  top: 10px;
+  right: 16px;
+  width: 28px;
+  height: 28px;
   display: grid;
   place-items: center;
   border-radius: 50%;
-  color: #6d35ff;
-  background: #eee8ff;
+  color: #6a3bff;
+  background: #f3edff;
   font-style: normal;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 900;
 }
 
 .activation-portal__steps article > span {
   grid-area: icon;
-  width: 46px;
-  height: 46px;
+  width: 58px;
+  height: 58px;
   display: grid;
   place-items: center;
   border-radius: 50%;
-  color: #5c3bff;
+  color: #5f39ff;
   background: #fff;
-  box-shadow: 0 10px 24px rgba(67, 50, 170, 0.13);
-  font-size: 24px;
+  box-shadow:
+    0 10px 22px rgba(74, 62, 178, 0.08),
+    0 0 0 1px rgba(228, 230, 244, 0.72);
+}
+
+.activation-portal__steps article > span svg {
+  width: 29px;
+  height: 29px;
+  display: block;
 }
 
 .activation-portal__steps article strong {
   grid-area: title;
   color: #171b3d;
-  font-size: 16px;
+  font-size: 18px;
+  font-weight: 900;
 }
 
 .activation-portal__steps article p {
   grid-area: copy;
   margin: 0;
-  color: #747c96;
-  font-size: 13px;
-  font-weight: 600;
+  color: #6f7790;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.72;
 }
 
 .activation-portal__trust {
-  max-width: 650px;
-  min-height: 54px;
-  margin: 20px auto 0;
+  max-width: 658px;
+  min-height: 60px;
+  margin: 16px auto 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 28px;
+  gap: 22px;
   border-radius: 999px;
   color: #55607f;
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.94);
   font-size: 14px;
   font-weight: 700;
-  box-shadow: 0 12px 32px rgba(30, 20, 80, 0.06);
+  box-shadow: 0 12px 28px rgba(30, 20, 80, 0.05);
 }
 
 .activation-portal__trust b {
   color: #4e55ff;
-  font-size: 23px;
+  display: inline-flex;
+}
+
+.activation-portal__trust b svg {
+  width: 34px;
+  height: 34px;
+  display: block;
+}
+
+.activation-portal__trust span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.activation-portal__trust span svg {
+  width: 22px;
+  height: 22px;
+  display: block;
+  color: #5b3fff;
 }
 
 /* Floating platform assistant */
@@ -16631,6 +16785,34 @@ html[data-theme="dark"] .create-chat-bubble__state {
   box-shadow: 0 8px 14px rgba(93, 77, 228, .24);
   font-size: 16px;
   line-height: 1;
+}
+
+.activation-portal .pixi-assistant {
+  right: 18px;
+  bottom: 18px;
+}
+
+.activation-portal .pixi-assistant__launcher {
+  width: 74px;
+  height: 74px;
+  border-color: rgba(255, 255, 255, 0.96);
+  box-shadow:
+    0 18px 32px rgba(87, 71, 231, 0.3),
+    0 0 0 6px rgba(96, 82, 238, 0.1);
+}
+
+.activation-portal .pixi-assistant__launcher img {
+  width: 74px;
+  height: 74px;
+}
+
+.activation-portal .pixi-assistant__collapse {
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  box-shadow: none;
 }
 
 .is-dashboard-assistant .pixi-assistant__collapse {
@@ -16823,12 +17005,23 @@ html[data-theme="dark"] .create-chat-bubble__state {
 
   .activation-portal__card {
     margin-top: 18px;
-    padding: 32px 16px 20px;
+    padding: 38px 18px 20px;
     border-radius: 25px;
   }
 
   .activation-portal__card h1 {
-    font-size: 36px;
+    font-size: 38px;
+  }
+
+  .activation-portal__card > p {
+    font-size: 15px;
+  }
+
+  .activation-portal__card::before,
+  .activation-portal__card::after,
+  .activation-portal__glow,
+  .activation-portal__orb {
+    opacity: 0.65;
   }
 
   .activation-portal__input input {
@@ -16839,7 +17032,11 @@ html[data-theme="dark"] .create-chat-bubble__state {
 
   .activation-portal__input span {
     right: 17px;
-    font-size: 22px;
+  }
+
+  .activation-portal__input span svg {
+    width: 22px;
+    height: 22px;
   }
 
   .activation-portal__card form > button {
@@ -16856,7 +17053,7 @@ html[data-theme="dark"] .create-chat-bubble__state {
   }
 
   .activation-portal__steps article {
-    padding: 18px 28px;
+    padding: 18px 20px;
   }
 
   .activation-portal__steps article + article {
@@ -16865,8 +17062,10 @@ html[data-theme="dark"] .create-chat-bubble__state {
   }
 
   .activation-portal__trust {
+    min-height: auto;
+    flex-wrap: wrap;
     gap: 10px;
-    padding: 0 14px;
+    padding: 12px 14px;
     font-size: 11px;
   }
 

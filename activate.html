@@ -11,23 +11,37 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800;900&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260620-activation-portal-v1" />
+    <link rel="stylesheet" href="/styles.css?v=20260621-activation-portal-v3" />
   </head>
   <body class="activate-page-v2 activation-portal" data-page="activate-key-v2">
     <main class="activation-portal__page">
       <a class="activation-portal__brand" href="/activate" aria-label="PixiGenI">
         <img src="/ap-mark.svg" alt="" />
-        <span><strong>PixiGenI</strong><small>بوابة التفعيل</small></span>
+        <span><strong>PixiGenI</strong><small><i></i>بوابة التفعيل<i></i></small></span>
       </a>
 
       <section class="activation-portal__card" aria-labelledby="activateTitle">
-        <div class="activation-portal__key" aria-hidden="true">🔑</div>
+        <div class="activation-portal__glow activation-portal__glow--left" aria-hidden="true"></div>
+        <div class="activation-portal__glow activation-portal__glow--right" aria-hidden="true"></div>
+        <div class="activation-portal__orb activation-portal__orb--left" aria-hidden="true"></div>
+        <div class="activation-portal__orb activation-portal__orb--right" aria-hidden="true"></div>
+        <div class="activation-portal__key" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="8.75" cy="15.25" r="3.75" stroke="currentColor" stroke-width="1.9"></circle>
+            <path d="M11.5 12.5 19 5m0 0v3m0-3h-3m1 7 2 2m-4 0 2 2" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.9"></path>
+          </svg>
+        </div>
         <h1 id="activateTitle">فعّل مفتاحك الرقمي</h1>
-        <p>أدخل كود التفعيل الخاص بك للوصول إلى منصة إنشاء الصور والفيديو بالذكاء الاصطناعي.</p>
+        <p>أدخل كود التفعيل الخاص بك للوصول إلى منصة<br />إنشاء الصور والفيديو بالذكاء الاصطناعي.</p>
 
         <form id="keyActivationForm" novalidate>
           <label class="activation-portal__input" for="keyCode">
-            <span aria-hidden="true">⌨</span>
+            <span aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <rect x="3.25" y="5.25" width="17.5" height="12.5" rx="2.75" stroke="currentColor" stroke-width="1.8"></rect>
+                <path d="M6.5 9.5h.01M9.75 9.5h.01M13 9.5h.01M16.25 9.5h.01M6.5 12.5h.01M9.75 12.5h.01M13 12.5h.01M16.25 12.5h.01M8 15.5h8" stroke="currentColor" stroke-linecap="round" stroke-width="1.8"></path>
+              </svg>
+            </span>
             <input
               id="keyCode"
               name="code"
@@ -45,28 +59,83 @@
 
           <button type="submit" data-submit-button>
             <span class="button-spinner" aria-hidden="true"></span>
-            <b aria-hidden="true">🔒</b>
+            <b aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <rect x="5.25" y="10.25" width="13.5" height="9.5" rx="2.5" stroke="currentColor" stroke-width="1.8"></rect>
+                <path d="M8.25 10.25V8.5a3.75 3.75 0 1 1 7.5 0v1.75m-3.75 3.25v2.25" stroke="currentColor" stroke-linecap="round" stroke-width="1.8"></path>
+              </svg>
+            </b>
             <span data-activation-label>تفعيل الكود الآن</span>
           </button>
 
           <p id="keyActivationMessage" class="activation-message-v2" aria-live="polite" hidden></p>
         </form>
 
-        <p class="activation-portal__note">يتم استهلاك الرصيد بعد تنفيذ أول عملية إنشاء ناجحة.</p>
+        <p class="activation-portal__note">
+          <span aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M12 3.75 18.5 6v5.25c0 4.4-2.7 7.38-6.5 8.95-3.8-1.57-6.5-4.55-6.5-8.95V6L12 3.75Z" stroke="currentColor" stroke-linejoin="round" stroke-width="1.85"></path>
+              <path d="m9.25 11.9 1.8 1.8 3.7-4.2" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.85"></path>
+            </svg>
+          </span>
+          يتم استهلاك الرصيد بعد تنفيذ أول عملية إنشاء ناجحة.
+        </p>
       </section>
 
       <section class="activation-portal__steps" aria-label="خطوات التفعيل">
         <h2>خطوات التفعيل</h2>
         <div>
-          <article><i>1</i><span>⌨</span><strong>أدخل الكود</strong><p>أدخل كود التفعيل في الحقل المخصص</p></article>
-          <article><i>2</i><span>♢</span><strong>التحقق من التفعيل</strong><p>يتم التحقق من صحة الكود بأمان</p></article>
-          <article><i>3</i><span>↗</span><strong>الوصول الفوري</strong><p>ابدأ استخدام المنصة مباشرة</p></article>
+          <article>
+            <i>1</i>
+            <span aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <rect x="3.25" y="5.25" width="17.5" height="12.5" rx="2.75" stroke="currentColor" stroke-width="1.8"></rect>
+                <path d="M6.5 9.5h.01M9.75 9.5h.01M13 9.5h.01M16.25 9.5h.01M6.5 12.5h.01M9.75 12.5h.01M13 12.5h.01M16.25 12.5h.01M8 15.5h8" stroke="currentColor" stroke-linecap="round" stroke-width="1.8"></path>
+              </svg>
+            </span>
+            <strong>أدخل الكود</strong>
+            <p>أدخل كود التفعيل<br />في الحقل المخصص</p>
+          </article>
+          <article>
+            <i>2</i>
+            <span aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M12 3.75 18.5 6v5.25c0 4.4-2.7 7.38-6.5 8.95-3.8-1.57-6.5-4.55-6.5-8.95V6L12 3.75Z" stroke="currentColor" stroke-linejoin="round" stroke-width="1.85"></path>
+                <path d="m9.25 11.9 1.8 1.8 3.7-4.2" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.85"></path>
+              </svg>
+            </span>
+            <strong>التحقق من التفعيل</strong>
+            <p>يتم التحقق من صحة<br />الكود بأمان</p>
+          </article>
+          <article>
+            <i>3</i>
+            <span aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M14.8 4.25c1.85.2 3.2 1.65 3.45 3.45l.2 1.55 1.3 1.3a1.6 1.6 0 0 1 0 2.25l-2.05 2.05-6.55-6.55 2.05-2.05a1.6 1.6 0 0 1 1.6-.4Z" stroke="currentColor" stroke-linejoin="round" stroke-width="1.8"></path>
+                <path d="M10.75 8.75 5.4 14.1a3.4 3.4 0 0 0-.92 3.08l.34 2.07 2.07.34a3.4 3.4 0 0 0 3.08-.92l5.35-5.35" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
+                <path d="m8.35 16.2-1.7-1.7m4-1.65-1.7-1.7" stroke="currentColor" stroke-linecap="round" stroke-width="1.8"></path>
+              </svg>
+            </span>
+            <strong>الوصول الفوري</strong>
+            <p>ابدأ استخدام المنصة<br />ببساطة</p>
+          </article>
         </div>
       </section>
 
       <footer class="activation-portal__trust">
-        <span>👥 آلاف المستخدمين يثقون بنا</span>
-        <b>◆</b>
+        <span>
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M15.5 11.25a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm-7 1.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" stroke="currentColor" stroke-width="1.8"></path>
+            <path d="M2.75 18.25c.55-2.55 2.95-4.25 5.75-4.25s5.2 1.7 5.75 4.25m-1.25 0c.36-1.75 2-2.95 3.95-2.95 1.8 0 3.34 1.03 3.84 2.55" stroke="currentColor" stroke-linecap="round" stroke-width="1.8"></path>
+          </svg>
+          آلاف المستخدمين يثقون بنا
+        </span>
+        <b aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M12 3.75 18.5 6v5.25c0 4.4-2.7 7.38-6.5 8.95-3.8-1.57-6.5-4.55-6.5-8.95V6L12 3.75Z" stroke="currentColor" stroke-linejoin="round" stroke-width="1.85"></path>
+            <path d="m9.25 11.9 1.8 1.8 3.7-4.2" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.85"></path>
+          </svg>
+        </b>
         <span>منصة موثوقة للجميع</span>
       </footer>
     </main>
@@ -91,7 +160,7 @@
     </div>
 
     <script src="/config.js"></script>
-    <script src="/key-activation-page.js?v=20260620-activation-portal-v1"></script>
+    <script src="/key-activation-page.js?v=20260621-activation-portal-v3"></script>
     <script src="/assistant-widget.js?v=20260621-assistant-v3"></script>
   </body>
 </html>
