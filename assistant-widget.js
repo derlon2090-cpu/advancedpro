@@ -46,6 +46,7 @@
   const submit = root.querySelector('form button[type="submit"]');
   const launcher = root.querySelector("[data-assistant-toggle]");
   const collapse = root.querySelector("[data-assistant-collapse]");
+  const closeButton = root.querySelector("[data-assistant-close]");
   const contactLink = isDashboardPage
     ? document.querySelector(".udv3-support-card a")
     : null;
@@ -57,6 +58,13 @@
 
   function setLauncherVisible(visible) {
     root.classList.toggle("is-hidden", !visible);
+  }
+
+  function closeAssistant() {
+    setOpen(false);
+    if (isDashboardPage) {
+      setLauncherVisible(false);
+    }
   }
 
   function escapeHtml(value) {
@@ -114,8 +122,8 @@
   }
 
   launcher.addEventListener("click", () => setOpen(panel.hidden));
-  root.querySelector("[data-assistant-close]").addEventListener("click", () => setOpen(false));
-  collapse.addEventListener("click", () => setOpen(false));
+  closeButton.addEventListener("click", closeAssistant);
+  collapse.addEventListener("click", closeAssistant);
   root.querySelectorAll("[data-assistant-quick]").forEach((button) => {
     button.addEventListener("click", () => sendMessage(button.dataset.assistantQuick));
   });
