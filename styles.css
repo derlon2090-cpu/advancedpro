@@ -16493,43 +16493,57 @@ html[data-theme="dark"] .create-chat-bubble__state {
 .pixi-assistant {
   position: fixed;
   z-index: 3000;
-  right: 20px;
-  bottom: 18px;
+  right: 18px;
+  bottom: 16px;
   display: grid;
   justify-items: center;
   gap: 2px;
   direction: rtl;
   font-family: "IBM Plex Sans Arabic", system-ui, sans-serif;
+  transition: opacity .18s ease, transform .18s ease;
+}
+
+.pixi-assistant.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px) scale(.96);
 }
 
 .pixi-assistant__launcher {
-  width: 66px;
-  height: 66px;
+  width: 72px;
+  height: 72px;
   display: grid;
   place-items: center;
   overflow: hidden;
-  border: 3px solid rgba(255, 255, 255, 0.95);
+  border: 2px solid #ffffff;
   border-radius: 50%;
-  background: linear-gradient(135deg, #145fff, #9c2df5);
-  box-shadow: 0 16px 34px rgba(77, 67, 230, 0.3);
+  background: radial-gradient(circle at 35% 28%, #edf0ff 0%, #dfe6ff 46%, #7b69ff 100%);
+  box-shadow:
+    0 16px 30px rgba(96, 78, 235, .28),
+    0 0 0 5px rgba(89, 76, 244, .08);
   cursor: pointer;
 }
 
 .pixi-assistant__launcher img {
-  width: 60px;
-  height: 60px;
+  width: 72px;
+  height: 72px;
 }
 
 .pixi-assistant__collapse {
-  width: 38px;
-  height: 20px;
+  width: 34px;
+  height: 18px;
   border: 0;
   border-radius: 0 0 20px 20px;
   color: #fff;
-  background: #5264e9;
+  background: linear-gradient(180deg, #7d67ff, #5c4ae7);
   cursor: pointer;
-  font-size: 18px;
+  box-shadow: 0 8px 14px rgba(93, 77, 228, .24);
+  font-size: 16px;
   line-height: 1;
+}
+
+.is-dashboard-assistant .pixi-assistant__collapse {
+  margin-top: -2px;
 }
 
 .pixi-assistant__panel {
@@ -16766,18 +16780,18 @@ html[data-theme="dark"] .create-chat-bubble__state {
   }
 
   .pixi-assistant {
-    right: 12px;
+    right: 10px;
     bottom: 10px;
   }
 
   .pixi-assistant__launcher {
-    width: 58px;
-    height: 58px;
+    width: 64px;
+    height: 64px;
   }
 
   .pixi-assistant__launcher img {
-    width: 52px;
-    height: 52px;
+    width: 64px;
+    height: 64px;
   }
 }
 

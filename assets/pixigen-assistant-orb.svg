@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title id="title">PixiGenI assistant orb</title>
+  <defs>
+    <linearGradient id="assistantRing" x1="20" y1="18" x2="108" y2="112" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3158ff"/>
+      <stop offset="0.55" stop-color="#6f42ff"/>
+      <stop offset="1" stop-color="#9d36f1"/>
+    </linearGradient>
+    <linearGradient id="assistantGlow" x1="32" y1="24" x2="98" y2="94" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f6f2ff"/>
+      <stop offset="1" stop-color="#e1ebff"/>
+    </linearGradient>
+    <linearGradient id="assistantBase" x1="42" y1="96" x2="86" y2="126" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7f57ff"/>
+      <stop offset="1" stop-color="#5b40e8"/>
+    </linearGradient>
+  </defs>
+  <circle cx="64" cy="54" r="42" fill="url(#assistantRing)"/>
+  <circle cx="64" cy="54" r="37" fill="url(#assistantGlow)" stroke="#fff" stroke-width="2.5"/>
+  <ellipse cx="64" cy="112" rx="21" ry="10" fill="url(#assistantBase)"/>
+  <path d="M43 103h42l-7 16H50l-7-16Z" fill="url(#assistantBase)"/>
+  <path d="M64 20v10" stroke="#8f39f7" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="64" cy="17" r="5" fill="#9b34f4"/>
+  <rect x="37" y="36" width="54" height="38" rx="15" fill="#fff"/>
+  <rect x="44" y="43" width="40" height="24" rx="9" fill="#1c1c3f"/>
+  <circle cx="57" cy="55" r="4.5" fill="#65ecff"/>
+  <circle cx="71" cy="55" r="4.5" fill="#65ecff"/>
+  <circle cx="56" cy="53.5" r="1.5" fill="#fff"/>
+  <circle cx="70" cy="53.5" r="1.5" fill="#fff"/>
+  <path d="M57 63c3.5 3.2 10.5 3.2 14 0" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+  <rect x="31" y="47" width="7" height="17" rx="3.5" fill="#8f39f7"/>
+  <rect x="90" y="47" width="7" height="17" rx="3.5" fill="#8f39f7"/>
+  <path d="M52 76h24l8 14H44l8-14Z" fill="#8f39f7"/>
+  <circle cx="64" cy="84" r="4.5" fill="#fff" opacity=".95"/>
+  <path d="M58 112h12" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+  <path d="M59 116.5 64 121l5-4.5" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

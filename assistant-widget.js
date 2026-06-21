@@ -2,19 +2,26 @@
   if (document.querySelector("[data-pixi-assistant]")) return;
 
   const API_BASE_URL = window.AdvancedProConfig?.apiBaseUrl || "";
+  const page = document.body?.dataset?.page || "";
+  const isActivationPage = page === "activate-key-v2";
+  const isDashboardPage = page === "dashboard-v4";
+  const shouldStartVisible = isActivationPage;
   const history = [];
   const root = document.createElement("div");
   root.className = "pixi-assistant";
+  if (isDashboardPage) {
+    root.classList.add("is-dashboard-assistant");
+  }
   root.dataset.pixiAssistant = "";
   root.innerHTML = `
     <section class="pixi-assistant__panel" data-assistant-panel hidden aria-label="مساعد PixiGenI">
       <header>
-        <img src="/assets/pixigen-robot-avatar.svg" alt="" />
+        <img src="/assets/pixigen-assistant-orb.svg" alt="" />
         <div><strong>إيسو</strong><span>ذكاء المنصة <i></i></span></div>
         <button type="button" data-assistant-close aria-label="إغلاق">×</button>
       </header>
       <div class="pixi-assistant__messages" data-assistant-messages>
-        <article class="is-assistant"><img src="/assets/pixigen-robot-avatar.svg" alt="" /><p>مرحبًا، أنا إيسو. اسألني عن التفعيل، الرصيد، التوليد أو أقسام المنصة.</p></article>
+        <article class="is-assistant"><img src="/assets/pixigen-assistant-orb.svg" alt="" /><p>مرحبًا، أنا إيسو. اسألني عن التفعيل، الرصيد، التوليد أو أقسام المنصة.</p></article>
       </div>
       <div class="pixi-assistant__quick">
         <button type="button" data-assistant-quick="كيف أفعّل مفتاحي؟">تفعيل المفتاح</button>
@@ -27,7 +34,7 @@
       <small>لا تشارك كلمات المرور أو المفاتيح السرية.</small>
     </section>
     <button class="pixi-assistant__launcher" type="button" data-assistant-toggle aria-label="فتح المساعد">
-      <img src="/assets/pixigen-robot-avatar.svg" alt="" />
+      <img src="/assets/pixigen-assistant-orb.svg" alt="" />
     </button>
     <button class="pixi-assistant__collapse" type="button" data-assistant-collapse aria-label="إغلاق المساعد">⌄</button>
   `;
@@ -37,10 +44,19 @@
   const input = root.querySelector("[data-assistant-input]");
   const messages = root.querySelector("[data-assistant-messages]");
   const submit = root.querySelector('form button[type="submit"]');
+  const launcher = root.querySelector("[data-assistant-toggle]");
+  const collapse = root.querySelector("[data-assistant-collapse]");
+  const contactLink = isDashboardPage
+    ? document.querySelector(".udv3-support-card a")
+    : null;
 
   function setOpen(open) {
     panel.hidden = !open;
     root.classList.toggle("is-open", open);
+  }
+
+  function setLauncherVisible(visible) {
+    root.classList.toggle("is-hidden", !visible);
   }
 
   function escapeHtml(value) {
@@ -56,7 +72,7 @@
     const article = document.createElement("article");
     article.className = role === "assistant" ? "is-assistant" : "is-user";
     article.innerHTML = role === "assistant"
-      ? `<img src="/assets/pixigen-robot-avatar.svg" alt="" /><p>${escapeHtml(content)}</p>`
+      ? `<img src="/assets/pixigen-assistant-orb.svg" alt="" /><p>${escapeHtml(content)}</p>`
       : `<p>${escapeHtml(content)}</p>`;
     messages.appendChild(article);
     messages.scrollTop = messages.scrollHeight;
@@ -70,7 +86,7 @@
     submit.disabled = true;
     const pending = document.createElement("article");
     pending.className = "is-assistant is-pending";
-    pending.innerHTML = `<img src="/assets/pixigen-robot-avatar.svg" alt="" /><p>أفكر في أفضل إجابة...</p>`;
+    pending.innerHTML = `<img src="/assets/pixigen-assistant-orb.svg" alt="" /><p>أفكر في أفضل إجابة...</p>`;
     messages.appendChild(pending);
     messages.scrollTop = messages.scrollHeight;
 
@@ -97,9 +113,9 @@
     }
   }
 
-  root.querySelector("[data-assistant-toggle]").addEventListener("click", () => setOpen(panel.hidden));
+  launcher.addEventListener("click", () => setOpen(panel.hidden));
   root.querySelector("[data-assistant-close]").addEventListener("click", () => setOpen(false));
-  root.querySelector("[data-assistant-collapse]").addEventListener("click", () => setOpen(false));
+  collapse.addEventListener("click", () => setOpen(false));
   root.querySelectorAll("[data-assistant-quick]").forEach((button) => {
     button.addEventListener("click", () => sendMessage(button.dataset.assistantQuick));
   });
@@ -107,4 +123,15 @@
     event.preventDefault();
     sendMessage(input.value);
   });
+
+  if (contactLink) {
+    setLauncherVisible(false);
+    contactLink.addEventListener("click", (event) => {
+      event.preventDefault();
+      setLauncherVisible(true);
+      setOpen(true);
+    });
+  } else {
+    setLauncherVisible(shouldStartVisible || !isDashboardPage);
+  }
 })();
