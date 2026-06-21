@@ -441,6 +441,8 @@
   gap: 10px;
   min-height: 43px;
   font-size: 13px;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(34, 20, 90, .14);
 }
 
 .user-dashboard-v3 .udv3-submit-spinner {
@@ -451,6 +453,10 @@
   border-top-color: #fff;
   border-radius: 50%;
   animation: udv3-submit-spin .9s linear infinite;
+}
+
+.user-dashboard-v3 .udv3-cost-card button [data-submit-label] {
+  color: #fff;
 }
 
 .user-dashboard-v3 .udv3-cost-card button.is-loading .udv3-submit-spinner {
@@ -993,6 +999,10 @@
     z-index: 2;
     pointer-events: auto;
     touch-action: manipulation;
+    width: 100%;
+    min-height: 48px;
+    font-size: 14px;
+    font-weight: 800;
   }
 }
 
