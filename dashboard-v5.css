@@ -884,6 +884,12 @@
 }
 
 @media (max-width: 640px) {
+  html.is-sidebar-open,
+  body.is-sidebar-open {
+    overflow: hidden;
+    touch-action: none;
+  }
+
   .user-dashboard-v3 {
     display: block;
     width: 100vw;
@@ -950,6 +956,10 @@
     display: block;
   }
 
+  .user-dashboard-v3 .udv3-support-card {
+    display: grid;
+  }
+
   .user-dashboard-v3 .udv3-topbar {
     padding-inline: 14px;
   }
@@ -1004,6 +1014,10 @@
     font-size: 14px;
     font-weight: 800;
   }
+
+  .user-dashboard-v3 .udv3-add-button {
+    display: none;
+  }
 }
 
 @media (max-width: 560px) {
@@ -1029,11 +1043,7 @@
   }
 
   .user-dashboard-v3 .udv3-add-button {
-    display: inline-grid;
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    font-size: 24px;
+    display: none;
   }
 
   .user-dashboard-v3 .udv3-widgets,

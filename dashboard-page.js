@@ -57,6 +57,22 @@
     return `${API_BASE_URL}${path}`;
   }
 
+  function sanitizeUserMessage(message, fallback = "تعذر إتمام الطلب مؤقتًا، حاول لاحقًا.") {
+    const text = String(message || "").trim();
+    if (!text) return fallback;
+    if (
+      /<\s*(!doctype|html|body|svg|path|div|section|main|header|footer)\b/i.test(text) ||
+      /<\/?(html|body|svg|path|div|section|main|header|footer)>/i.test(text) ||
+      /(?:\bM\d+(?:\.\d+)?\s+\d+(?:\.\d+)?\b.*\bd=)/i.test(text)
+    ) {
+      return fallback;
+    }
+    if (/api[_-\s]*key|gemini|wavespeed|prompt_translation|deepseek|env\b|process\.env/i.test(text)) {
+      return fallback;
+    }
+    return text;
+  }
+
   async function requestJson(path, options = {}) {
     const response = await fetch(apiUrl(path), {
       credentials: "include",
@@ -69,14 +85,29 @@
       },
     });
 
+    const contentType = String(response.headers.get("content-type") || "").toLowerCase();
     const text = await response.text();
     let data = {};
     if (text) {
-      try {
-        data = JSON.parse(text);
-      } catch {
-        data = { message: text };
+      if (contentType.includes("application/json")) {
+        try {
+          data = JSON.parse(text);
+        } catch {
+          data = { message: "تعذر إتمام الطلب مؤقتًا، حاول لاحقًا." };
+        }
+      } else {
+        data = { message: sanitizeUserMessage(text) };
       }
+    }
+
+    if (!response.ok && !contentType.includes("application/json") && text) {
+      console.warn("NON_JSON_API_RESPONSE", {
+        path,
+        status: response.status,
+        contentType,
+        preview: text.slice(0, 400),
+      });
+      data = { message: "تعذر إتمام الطلب مؤقتًا، حاول لاحقًا." };
     }
 
     if (!response.ok) {
@@ -84,6 +115,16 @@
       error.status = response.status;
       error.data = data;
       throw error;
+    }
+
+    if (!contentType.includes("application/json")) {
+      console.warn("UNEXPECTED_NON_JSON_SUCCESS_RESPONSE", {
+        path,
+        status: response.status,
+        contentType,
+        preview: text.slice(0, 400),
+      });
+      throw new Error("تعذر إتمام الطلب مؤقتًا، حاول لاحقًا.");
     }
 
     return data;
@@ -1785,6 +1826,7 @@
 
     const setSidebarOpen = (open) => {
       document.body.classList.toggle("is-sidebar-open", open);
+      document.documentElement.classList.toggle("is-sidebar-open", open);
       const backdrop = $("[data-sidebar-backdrop]");
       if (backdrop) backdrop.hidden = !open;
     };
