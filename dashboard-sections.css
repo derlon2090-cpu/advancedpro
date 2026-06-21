@@ -517,10 +517,7 @@
 }
 
 .user-dashboard-v3 .udv6-model-title {
-  background: linear-gradient(135deg, #5b2ff4 0%, #8a46ff 48%, #ff8a32 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: inherit;
   display: inline-block;
 }
 

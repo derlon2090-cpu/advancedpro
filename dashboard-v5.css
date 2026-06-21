@@ -55,7 +55,7 @@
   background: rgba(255, 255, 255, .98);
   box-shadow: none;
   scrollbar-width: thin;
-  scrollbar-color: #8a4dff #ffffff;
+  scrollbar-color: #6b32ff #ffffff;
 }
 
 .user-dashboard-v3 .udv3-sidebar::-webkit-scrollbar {
@@ -70,12 +70,12 @@
 .user-dashboard-v3 .udv3-sidebar::-webkit-scrollbar-thumb {
   border: 2px solid rgba(255, 255, 255, .96);
   border-radius: 999px;
-  background: linear-gradient(180deg, #6f35f4 0%, #a877ff 58%, #ffffff 100%);
+  background: linear-gradient(180deg, #02b9ff 0%, #315cff 48%, #a42dff 100%);
   box-shadow: 0 4px 12px rgba(113, 56, 244, .18);
 }
 
 .user-dashboard-v3 .udv3-sidebar::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #6530e9 0%, #9b68ff 56%, #fcfbff 100%);
+  background: linear-gradient(180deg, #27c8ff 0%, #4a72ff 48%, #b24cff 100%);
 }
 
 .user-dashboard-v3 .udv3-app {
