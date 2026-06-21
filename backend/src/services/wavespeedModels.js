@@ -43,6 +43,49 @@ export const VIDEO_MODELS = {
   },
 };
 
+export const USER_FACING_MODEL_NAMES = {
+  image: {
+    normal: "وميض",
+    high: "رؤية",
+    ultra: "إتقان برو",
+  },
+  video: {
+    normal: "وميض موشن",
+    high: "رؤية موشن",
+    ultra: "إتقان موشن",
+  },
+};
+
+const RAW_MODEL_NAME_PATTERNS = [
+  ["wavespeed-ai/z-image/turbo", USER_FACING_MODEL_NAMES.image.normal],
+  ["wavespeed-ai/z-image-turbo", USER_FACING_MODEL_NAMES.image.normal],
+  ["bytedance/seedream-v4.5", USER_FACING_MODEL_NAMES.image.high],
+  ["bytedance/seedream-4.5", USER_FACING_MODEL_NAMES.image.high],
+  ["google/nano-banana-pro", USER_FACING_MODEL_NAMES.image.ultra],
+  ["google/nano-banana/pro", USER_FACING_MODEL_NAMES.image.ultra],
+  ["wavespeed-ai/wan-2.2/t2v-480p-ultra-fast", USER_FACING_MODEL_NAMES.video.normal],
+  ["wan-2.2/t2v-480p-ultra-fast", USER_FACING_MODEL_NAMES.video.normal],
+  ["wavespeed-ai/wan-2.2-animate/text-to-video", USER_FACING_MODEL_NAMES.video.high],
+  ["wavespeed-ai/wan-2.7/text-to-video", USER_FACING_MODEL_NAMES.video.high],
+  ["wan-2.2-animate", USER_FACING_MODEL_NAMES.video.high],
+  ["wan-2.7", USER_FACING_MODEL_NAMES.video.high],
+  ["kwaivgi/kling-v3.0-std/text-to-video", USER_FACING_MODEL_NAMES.video.ultra],
+  ["kling-v3.0-std", USER_FACING_MODEL_NAMES.video.ultra],
+];
+
+export function resolveUserFacingModelName(model, { type = "image", quality = "high" } = {}) {
+  const raw = String(model || "").trim().toLowerCase();
+  if (raw) {
+    const matched = RAW_MODEL_NAME_PATTERNS.find(([pattern]) => raw.includes(pattern));
+    if (matched) {
+      return matched[1];
+    }
+  }
+
+  const group = USER_FACING_MODEL_NAMES[type] || USER_FACING_MODEL_NAMES.image;
+  return group[quality] || group.high || USER_FACING_MODEL_NAMES.image.high;
+}
+
 export const VIDEO_DURATIONS = [5, 8];
 
 export const MAX_VIDEO_DURATION_BY_QUALITY = {

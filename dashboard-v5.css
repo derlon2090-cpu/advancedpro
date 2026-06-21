@@ -435,8 +435,36 @@
 }
 
 .user-dashboard-v3 .udv3-cost-card button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
   min-height: 43px;
   font-size: 13px;
+}
+
+.user-dashboard-v3 .udv3-submit-spinner {
+  width: 18px;
+  height: 18px;
+  display: none;
+  border: 2.5px solid rgba(255, 255, 255, .34);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: udv3-submit-spin .9s linear infinite;
+}
+
+.user-dashboard-v3 .udv3-cost-card button.is-loading .udv3-submit-spinner {
+  display: inline-block;
+}
+
+.user-dashboard-v3 .udv3-cost-card button.is-loading [data-submit-label] {
+  white-space: nowrap;
+}
+
+@keyframes udv3-submit-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .user-dashboard-v3 .udv3-prompt-actions {

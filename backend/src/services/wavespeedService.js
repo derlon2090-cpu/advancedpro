@@ -1113,6 +1113,10 @@ function getPromptTranslationModels() {
     .filter((value, index, list) => value && list.indexOf(value) === index);
 }
 
+function serverTranslationEnabled() {
+  return String(process.env.SERVER_PROMPT_TRANSLATION_ENABLED || "false").trim().toLowerCase() === "true";
+}
+
 function extractTranslatedPrompt(payload) {
   const candidates = Array.isArray(payload?.candidates) ? payload.candidates : [];
   for (const candidate of candidates) {
@@ -1169,7 +1173,7 @@ function semanticTranslationIssue(source, translated) {
 function assertSemanticTranslation(source, translated) {
   const issue = semanticTranslationIssue(source, translated);
   if (issue) {
-    throw serviceError("تعذر فهم الوصف بدقة الآن. أعد المحاولة بصياغة أوضح، ولم يتم خصم أي رصيد.", 422);
+    throw serviceError(`تعذر فهم الوصف بدقة الآن. أعد المحاولة بصياغة أوضح، ولم يتم خصم أي رصيد. [${issue}]`, 422);
   }
   return String(translated || "").trim();
 }
@@ -1177,6 +1181,10 @@ function assertSemanticTranslation(source, translated) {
 async function translateArabicPromptForGeneration(userPrompt) {
   const text = String(userPrompt || "").trim();
   if (!hasArabicText(text)) return "";
+
+  if (!serverTranslationEnabled()) {
+    return "";
+  }
 
   const apiKey = getPromptTranslationKey();
   if (!apiKey) {
@@ -1216,7 +1224,7 @@ async function translateArabicPromptForGeneration(userPrompt) {
 
   for (const model of getPromptTranslationModels()) {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 12_000);
+    const timeout = setTimeout(() => controller.abort(), 4_500);
     try {
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
@@ -2149,7 +2157,7 @@ export function buildFinalImagePrompt(userPrompt, quality = "normal", style = ""
 }
 
 function imageResultValidationEnabled() {
-  return String(process.env.IMAGE_RESULT_VALIDATION_ENABLED || "true").trim().toLowerCase() !== "false";
+  return String(process.env.IMAGE_RESULT_VALIDATION_ENABLED || "false").trim().toLowerCase() === "true";
 }
 
 function imageResultValidationRequired() {
@@ -2157,8 +2165,8 @@ function imageResultValidationRequired() {
 }
 
 function imageResultValidationAttempts() {
-  const value = Number(process.env.IMAGE_RESULT_VALIDATION_ATTEMPTS || 2);
-  return Math.min(Math.max(Number.isFinite(value) ? Math.floor(value) : 2, 1), 3);
+  const value = Number(process.env.IMAGE_RESULT_VALIDATION_ATTEMPTS || 1);
+  return Math.min(Math.max(Number.isFinite(value) ? Math.floor(value) : 1, 1), 2);
 }
 
 export function parseImageValidationPayload(payload) {
@@ -2191,7 +2199,7 @@ export function parseImageValidationPayload(payload) {
 
 async function downloadImageForValidation(resultUrl) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 20_000);
+  const timeout = setTimeout(() => controller.abort(), 8_000);
 
   try {
     const response = await fetch(resultUrl, {
@@ -2241,7 +2249,7 @@ async function validateGeneratedImageAgainstPrompt({ resultUrl, userPrompt, fina
       "gemini-3.1-flash-lite"
   ).trim();
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 25_000);
+  const timeout = setTimeout(() => controller.abort(), 8_000);
 
   try {
     const response = await fetch(

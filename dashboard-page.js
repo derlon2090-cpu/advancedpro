@@ -26,6 +26,7 @@
     refreshTimer: null,
     autoOpenGenerationId: null,
     autoOpenGenerationHandled: false,
+    pendingGenerationId: null,
     generationsHydrated: false,
   };
 
@@ -36,6 +37,18 @@
   };
   const VIDEO_DURATIONS = [5, 8];
   const MAX_VIDEO_DURATION_BY_QUALITY = { normal: 8, high: 8, ultra: 8 };
+  const USER_FACING_MODEL_NAMES = {
+    image: {
+      normal: "وميض",
+      high: "رؤية",
+      ultra: "إتقان برو",
+    },
+    video: {
+      normal: "وميض موشن",
+      high: "رؤية موشن",
+      ultra: "إتقان موشن",
+    },
+  };
 
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -110,6 +123,25 @@
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#039;");
+  }
+
+  function resolveUserFacingModelName(model, { type = "image", quality = "high" } = {}) {
+    const raw = String(model || "").trim().toLowerCase();
+    if (raw.includes("z-image")) return USER_FACING_MODEL_NAMES.image.normal;
+    if (raw.includes("seedream")) return USER_FACING_MODEL_NAMES.image.high;
+    if (raw.includes("nano-banana")) return USER_FACING_MODEL_NAMES.image.ultra;
+    if (raw.includes("wan-2.2/t2v-480p-ultra-fast") || raw.includes("wan-2.2-ultra-fast")) {
+      return USER_FACING_MODEL_NAMES.video.normal;
+    }
+    if (raw.includes("wan-2.2-animate") || raw.includes("wan-2.7")) {
+      return USER_FACING_MODEL_NAMES.video.high;
+    }
+    if (raw.includes("kling-v3.0-std") || raw.includes("kling-3.0-std")) {
+      return USER_FACING_MODEL_NAMES.video.ultra;
+    }
+
+    const group = USER_FACING_MODEL_NAMES[type] || USER_FACING_MODEL_NAMES.image;
+    return group[quality] || group.high || USER_FACING_MODEL_NAMES.image.high;
   }
 
   function keyCredits() {
@@ -288,7 +320,10 @@
       aspectRatio: item.aspectRatio || item.aspect || "16:9",
       duration: item.duration,
       provider: item.provider,
-      model: item.model || (item.type === "video" ? "PixiGen Motion" : "PixiGen Pro v2"),
+      model: resolveUserFacingModelName(item.model, {
+        type: item.type || "image",
+        quality: item.quality || "high",
+      }),
       seed: item.seed,
       creditsUsed: Number(item.creditsUsed ?? item.credits_used ?? item.xpCost ?? item.cost ?? calculateCredits()),
       createdAt: item.createdAt || item.created_at || new Date().toISOString(),
@@ -361,34 +396,34 @@
   function setLoading(isLoading) {
     state.loading = isLoading;
     const button = $("[data-submit-button]");
+    const buttonLabel = $("[data-submit-label]");
     const enhanceButton = $("[data-smart-enhance]");
     button.disabled = isLoading;
+    button.classList.toggle("is-loading", isLoading);
     if (enhanceButton) enhanceButton.disabled = isLoading;
     if (isLoading) {
       const labels =
         state.type === "video"
-          ? ["جاري إنشاء الفيديو...", "جاري تجهيز الفيديو...", "جاري معالجة الطلب..."]
-          : ["جاري إنشاء الصورة...", "جاري تجهيز الصورة...", "جاري معالجة الطلب..."];
+          ? ["جاري إنشاء الفيديو...", "جاري تجهيز الفيديو...", "جاري تحسين الفيديو...", "الإنشاء مستمر..."]
+          : ["جاري إنشاء الصورة...", "جاري تجهيز الصورة...", "جاري تحسين الصورة...", "الإنشاء مستمر..."];
       let index = 0;
-      button.textContent = labels[index];
+      if (buttonLabel) {
+        buttonLabel.textContent = labels[index];
+      }
       clearInterval(setLoading.labelTimer);
       setLoading.labelTimer = setInterval(() => {
         index = (index + 1) % labels.length;
-        button.textContent = labels[index];
-      }, 1700);
-      clearTimeout(setLoading.releaseTimer);
-      setLoading.releaseTimer = setTimeout(() => {
-        clearInterval(setLoading.labelTimer);
-        if (state.loading && button) {
-          button.textContent = labels[labels.length - 1];
+        if (buttonLabel) {
+          buttonLabel.textContent = labels[index];
         }
-      }, 5000);
+      }, 1600);
       return;
     }
 
     clearInterval(setLoading.labelTimer);
-    clearTimeout(setLoading.releaseTimer);
-    button.textContent = "إنشاء الآن ✨";
+    if (buttonLabel) {
+      buttonLabel.textContent = "إنشاء الآن ✨";
+    }
   }
 
   function confirmAction(message = "هل أنت متأكد؟") {
@@ -767,14 +802,14 @@
     ];
     return `
       <div class="udv6-section-shell">
-        <header class="udv6-section-head"><div><h1>النماذج</h1><p>اختر مستوى الجودة الأنسب لفكرتك وميزانيتك.</p></div></header>
+        <header class="udv6-section-head"><div><h1>نماذجنا</h1><p>اختر مستوى الجودة الأنسب لفكرتك وميزانيتك.</p></div></header>
         <section class="udv6-panel">
           <div class="udv6-model-list">
             ${models.map((model) => `
               <article class="udv6-model-card">
                 <div class="udv6-model-visual">${model.icon}</div>
                 <div>
-                  <h3>${model.name} <small>${model.level}</small></h3>
+                  <h3><span class="udv6-model-title">${model.name}</span> <small>${model.level}</small></h3>
                   <p>${model.copy}</p>
                   <div class="udv6-model-tags"><span>نسبة النجاح ${model.success}%</span><span>${formatNumber(model.uses)} استخدام</span><span>★ ${model.rating}</span></div>
                 </div>
@@ -1538,6 +1573,7 @@
       }
       state.autoOpenGenerationId = String(generation.id);
       state.autoOpenGenerationHandled = false;
+      state.pendingGenerationId = String(generation.id);
       sessionStorage.setItem("pixigen:active-generation", String(generation.id));
       setMessage(
         generation.type === "video"
@@ -1566,7 +1602,9 @@
     } finally {
       state.activeRequestId = null;
       state.abortController = null;
-      setLoading(false);
+      if (!state.pendingGenerationId) {
+        setLoading(false);
+      }
     }
   }
 
@@ -1612,9 +1650,15 @@
           String(completed.id) === String(state.autoOpenGenerationId) &&
           !state.autoOpenGenerationHandled
         ) {
+          state.pendingGenerationId = null;
+          setLoading(false);
           state.autoOpenGenerationHandled = true;
           window.location.assign(`/generation?id=${encodeURIComponent(completed.id)}`);
           return;
+        }
+        if (state.pendingGenerationId && String(completed.id) === String(state.pendingGenerationId)) {
+          state.pendingGenerationId = null;
+          setLoading(false);
         }
       }
 
@@ -1629,6 +1673,8 @@
         state.autoOpenGenerationId &&
         String(failed.id) === String(state.autoOpenGenerationId)
       ) {
+        state.pendingGenerationId = null;
+        setLoading(false);
         state.autoOpenGenerationHandled = true;
         state.autoOpenGenerationId = null;
         setMessage("تعذر إتمام الطلب مؤقتًا، حاول مرة أخرى بعد قليل. لم يتم خصم أي رصيد.", "error");

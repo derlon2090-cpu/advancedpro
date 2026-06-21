@@ -11,11 +11,13 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800;900&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260618-generation-shell-v1" />
+    <link rel="stylesheet" href="/styles.css?v=20260621-generation-reference-v2" />
     <style>
       body.generation-result-page {
         margin: 0;
-        background: #fafaff;
+        background:
+          radial-gradient(circle at 50% 0%, rgba(130, 97, 255, 0.08), transparent 24%),
+          #fafaff;
         color: #10163f;
         font-family: "IBM Plex Sans Arabic", system-ui, sans-serif;
       }
@@ -23,104 +25,17 @@
       .result-page {
         min-height: 100vh;
         display: grid;
-        grid-template-columns: 260px minmax(0, 1fr) 330px;
-        direction: ltr;
-      }
-
-      .result-sidebar,
-      .result-main,
-      .result-details {
+        grid-template-columns: minmax(0, 1fr) 320px;
         direction: rtl;
-      }
-
-      .result-sidebar {
-        position: sticky;
-        top: 0;
-        align-self: start;
-        min-height: 100vh;
-        padding: 28px 22px;
-        background: #fff;
-        border-inline-end: 1px solid #e8eaf3;
-        display: flex;
-        flex-direction: column;
-        gap: 18px;
-      }
-
-      .result-brand {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        color: #10163f;
-        text-decoration: none;
-        font-weight: 900;
-        font-size: 18px;
-      }
-
-      .result-brand-mark {
-        width: 42px;
-        height: 42px;
-        object-fit: contain;
-        flex: 0 0 42px;
-      }
-
-      .result-nav {
-        display: grid;
-        gap: 8px;
-      }
-
-      .result-nav a {
-        min-height: 46px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 0 14px;
-        border-radius: 14px;
-        color: #475069;
-        text-decoration: none;
-        font-weight: 800;
-        background: transparent;
-      }
-
-      .result-nav a.is-active,
-      .result-nav a:hover {
-        color: #6d35ff;
-        background: #f4f0ff;
-      }
-
-      .result-support {
-        margin-top: auto;
-        border: 1px solid #e8eaf3;
-        border-radius: 20px;
-        padding: 18px;
-        background: linear-gradient(180deg, #fff, #faf9ff);
-      }
-
-      .result-support strong,
-      .result-support span,
-      .result-support a {
-        display: block;
-      }
-
-      .result-support strong {
-        margin-bottom: 6px;
-        color: #10163f;
-      }
-
-      .result-support span {
-        margin-bottom: 14px;
-        color: #667085;
-        font-size: 13px;
-      }
-
-      .result-support a {
-        color: #6d35ff;
-        text-decoration: none;
-        font-weight: 800;
+        gap: 28px;
+        width: min(1380px, calc(100% - 32px));
+        margin: 0 auto;
+        padding: 18px 0 28px;
       }
 
       .result-main {
-        padding: 28px 30px 32px;
         min-width: 0;
+        padding: 14px 0 0;
       }
 
       .result-topbar {
@@ -128,49 +43,55 @@
         align-items: center;
         justify-content: space-between;
         gap: 18px;
-        margin-bottom: 18px;
+        margin-bottom: 34px;
       }
 
       .result-back {
-        min-height: 40px;
+        min-height: 46px;
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        padding: 0 14px;
+        padding: 0 18px;
         border: 1px solid #e8eaf3;
-        border-radius: 12px;
+        border-radius: 16px;
         color: #475069;
         text-decoration: none;
         background: #fff;
         font-weight: 800;
+        box-shadow: 0 8px 24px rgba(30, 20, 80, 0.04);
       }
 
       .result-hero {
         display: flex;
         flex-direction: column;
         gap: 8px;
-        margin-bottom: 18px;
+        margin-bottom: 20px;
+        text-align: center;
+        align-items: center;
       }
 
       .result-hero h1 {
         margin: 0;
         color: #10163f;
-        font-size: clamp(24px, 2.5vw, 36px);
+        font-size: clamp(32px, 3vw, 56px);
         font-weight: 900;
         line-height: 1.2;
+        letter-spacing: -0.04em;
       }
 
       .result-hero p {
         margin: 0;
         color: #667085;
         font-weight: 700;
+        font-size: 16px;
       }
 
       .result-actions {
         display: flex;
         flex-wrap: wrap;
         gap: 10px;
-        margin-bottom: 18px;
+        margin-bottom: 20px;
+        justify-content: center;
       }
 
       .result-actions a,
@@ -515,6 +436,15 @@
         box-shadow: 0 14px 40px rgba(30, 20, 80, 0.05);
       }
 
+      .result-details {
+        position: sticky;
+        top: 18px;
+        align-self: start;
+        display: grid;
+        gap: 16px;
+        padding-top: 2px;
+      }
+
       .result-panel h2,
       .result-panel h3 {
         margin: 0 0 16px;
@@ -691,15 +621,12 @@
       @media (max-width: 1100px) {
         .result-page {
           grid-template-columns: 1fr;
-        }
-
-        .result-sidebar,
-        .result-details {
-          display: none;
+          width: min(100%, calc(100% - 24px));
+          gap: 18px;
         }
 
         .result-main {
-          padding: 16px;
+          padding: 10px 0 0;
         }
 
         .result-processing {
@@ -741,25 +668,6 @@
   </head>
   <body class="generation-result-page">
     <div class="result-page" data-result-page>
-      <aside class="result-sidebar" aria-label="الشريط الجانبي">
-        <a class="result-brand" href="/dashboard" aria-label="PixiGenI">
-          <img class="result-brand-mark" src="/ap-mark.svg" alt="" />
-          <strong>PixiGenI</strong>
-        </a>
-        <nav class="result-nav">
-          <a href="/dashboard">لوحة التحكم</a>
-          <a href="/dashboard#projects">مشاريعي</a>
-          <a href="/dashboard#favorites">المفضلة</a>
-          <a href="/dashboard#templates">القوالب</a>
-          <a href="/dashboard#settings">إعدادات الحساب</a>
-        </nav>
-        <section class="result-support">
-          <strong>مركز الدعم</strong>
-          <span>إذا احتجت أي مساعدة، راسلنا أو ارجع للوحة التحكم.</span>
-          <a href="mailto:support@advancedpro.com">تواصل معنا</a>
-        </section>
-      </aside>
-
       <main class="result-main">
         <div class="result-topbar">
           <a class="result-back" href="/dashboard">
@@ -850,7 +758,7 @@
     <div class="result-toast" data-toast hidden></div>
 
     <script src="/config.js"></script>
-    <script src="/generation-page.js?v=20260621-result-v4"></script>
+    <script src="/generation-page.js?v=20260621-result-v5"></script>
     <script src="/assistant-widget.js?v=20260621-assistant-v3"></script>
   </body>
 </html>

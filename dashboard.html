@@ -15,8 +15,8 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/styles.css?v=20260605-brand-v9" />
-    <link rel="stylesheet" href="/dashboard-v5.css?v=20260619-mobile-create-v2" />
-    <link rel="stylesheet" href="/dashboard-sections.css?v=20260619-mobile-create-v2" />
+    <link rel="stylesheet" href="/dashboard-v5.css?v=20260621-generation-speed-v1" />
+    <link rel="stylesheet" href="/dashboard-sections.css?v=20260621-generation-speed-v1" />
   </head>
   <body class="user-dashboard-v3" data-page="dashboard-v4">
     <svg class="udv5-symbols" aria-hidden="true">
@@ -209,7 +209,10 @@
                   <span>التكلفة المتوقعة</span>
                   <strong data-cost-value>10 XP</strong>
                   <p data-cost-label>صورة عالية الدقة</p>
-                  <button type="submit" data-submit-button>إنشاء الآن ✨</button>
+                  <button type="submit" data-submit-button>
+                    <span class="udv3-submit-spinner" aria-hidden="true"></span>
+                    <span data-submit-label>إنشاء الآن ✨</span>
+                  </button>
                 </aside>
               </div>
 
@@ -383,7 +386,7 @@
     </div>
 
     <script src="/config.js"></script>
-    <script src="/dashboard-page.js?v=20260621-nonblocking-generation-v5"></script>
+    <script src="/dashboard-page.js?v=20260621-generation-speed-v1"></script>
     <script src="/assistant-widget.js?v=20260621-assistant-v3"></script>
   </body>
 </html>

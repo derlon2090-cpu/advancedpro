@@ -516,6 +516,14 @@
   font-size: 18px;
 }
 
+.user-dashboard-v3 .udv6-model-title {
+  background: linear-gradient(135deg, #5b2ff4 0%, #8a46ff 48%, #ff8a32 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  display: inline-block;
+}
+
 .user-dashboard-v3 .udv6-model-card h3 small {
   display: inline-flex;
   margin-inline-start: 7px;

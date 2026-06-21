@@ -9,6 +9,18 @@
     currentIndex: 0,
     similarIndex: 0,
   };
+  const USER_FACING_MODEL_NAMES = {
+    image: {
+      normal: "وميض",
+      high: "رؤية",
+      ultra: "إتقان برو",
+    },
+    video: {
+      normal: "وميض موشن",
+      high: "رؤية موشن",
+      ultra: "إتقان موشن",
+    },
+  };
 
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
@@ -89,6 +101,25 @@
     return value === "video" ? "فيديو" : "صورة";
   }
 
+  function resolveUserFacingModelName(model, { type = "image", quality = "high" } = {}) {
+    const raw = String(model || "").trim().toLowerCase();
+    if (raw.includes("z-image")) return USER_FACING_MODEL_NAMES.image.normal;
+    if (raw.includes("seedream")) return USER_FACING_MODEL_NAMES.image.high;
+    if (raw.includes("nano-banana")) return USER_FACING_MODEL_NAMES.image.ultra;
+    if (raw.includes("wan-2.2/t2v-480p-ultra-fast") || raw.includes("wan-2.2-ultra-fast")) {
+      return USER_FACING_MODEL_NAMES.video.normal;
+    }
+    if (raw.includes("wan-2.2-animate") || raw.includes("wan-2.7")) {
+      return USER_FACING_MODEL_NAMES.video.high;
+    }
+    if (raw.includes("kling-v3.0-std") || raw.includes("kling-3.0-std")) {
+      return USER_FACING_MODEL_NAMES.video.ultra;
+    }
+
+    const group = USER_FACING_MODEL_NAMES[type] || USER_FACING_MODEL_NAMES.image;
+    return group[quality] || group.high || USER_FACING_MODEL_NAMES.image.high;
+  }
+
   function getGenerationId() {
     const params = new URLSearchParams(window.location.search);
     const queryId = params.get("id");
@@ -124,7 +155,10 @@
       style: item?.style || "realistic",
       aspectRatio: item?.aspectRatio || item?.aspect_ratio || item?.aspect || "16:9",
       duration: item?.duration || item?.durationSeconds || null,
-      model: item?.model || "PixiGen Pro v2",
+      model: resolveUserFacingModelName(item?.model, {
+        type: item?.type || "image",
+        quality: item?.quality || "high",
+      }),
       seed: item?.seed || null,
       creditsUsed: Number(item?.creditsUsed ?? item?.credits_used ?? item?.xpCost ?? item?.cost ?? 10),
       createdAt: item?.createdAt || item?.created_at || null,
@@ -249,7 +283,7 @@
     if (!list || !result) return;
     list.innerHTML = `
       <div class="result-detail"><dt>الوصف المستخدم</dt><dd>${escapeHtml(result.prompt || "-")}</dd></div>
-      <div class="result-detail"><dt>النموذج</dt><dd>${escapeHtml(result.model || "-")}</dd></div>
+      <div class="result-detail"><dt>النموذج</dt><dd>${escapeHtml(result.model || "من نماذجنا")}</dd></div>
       <div class="result-detail"><dt>الجودة</dt><dd>${escapeHtml(qualityLabel(result.quality))}</dd></div>
       <div class="result-detail"><dt>الأبعاد</dt><dd>${escapeHtml(result.aspectRatio || "-")}</dd></div>
       <div class="result-detail"><dt>التكلفة</dt><dd>${formatNumber(result.creditsUsed)} XP</dd></div>
@@ -294,13 +328,13 @@
         ? `تم إنشاء ${isVideo ? "الفيديو" : "صورتك"} بنجاح!`
         : result?.status === "failed"
           ? "فشل الإنشاء"
-          : `النتيجة قيد التجهيز`;
+          : `يتم الآن إنشاء ${isVideo ? "الفيديو" : "الصورة"}...`;
     copy.textContent =
       result?.status === "completed"
         ? `تم إنشاء ${isVideo ? "الفيديو" : "الصورة"} بناءً على وصفك`
         : result?.status === "failed"
           ? "تعذر إتمام الطلب مؤقتًا. يمكنك إعادة المحاولة الآن."
-          : "افتح هذه الصفحة بعد اكتمال الإنشاء من لوحة التحكم.";
+          : "يرجى الانتظار، سننقلك لهذه النتيجة فور اكتمال الإنشاء.";
     download.textContent = isVideo ? "تحميل الفيديو" : "تحميل الصورة";
     page.dataset.resultState = result?.status || "loading";
   }
