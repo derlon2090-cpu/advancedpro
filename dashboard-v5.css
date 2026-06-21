@@ -475,6 +475,7 @@
 
 .user-dashboard-v3 .udv3-recent-card {
   padding: 16px;
+  min-height: 284px;
 }
 
 .user-dashboard-v3 .udv3-card-header {
@@ -502,6 +503,15 @@
 .user-dashboard-v3.is-dashboard-loading .udv3-main,
 .user-dashboard-v3.is-dashboard-loading .udv3-widgets {
   min-height: 520px;
+}
+
+.user-dashboard-v3 .udv3-creations-grid {
+  min-height: 208px;
+  align-items: start;
+}
+
+.user-dashboard-v3 .udv3-transactions-widget {
+  min-height: 210px;
 }
 
 .user-dashboard-v3 .udv3-creation-preview {

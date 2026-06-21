@@ -11449,9 +11449,100 @@ html[data-theme="dark"] .create-chat-bubble__state {
   font-weight: 900;
 }
 
+.udv3-empty-state--recent {
+  min-height: 208px;
+}
+
+.udv3-empty-state--transactions {
+  min-height: 116px;
+}
+
 .udv3-empty-state.is-compact {
   min-height: 92px;
   padding: 18px;
+}
+
+.udv3-creation-card--skeleton {
+  pointer-events: none;
+}
+
+.udv3-skeleton-box {
+  display: block;
+  border-radius: 14px;
+  background: linear-gradient(90deg, #f2f3f9 0%, #ecefff 45%, #f2f3f9 100%);
+  background-size: 200% 100%;
+  animation: udv3-skeleton-shimmer 1.2s linear infinite;
+}
+
+.udv3-skeleton-box--media {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 12px;
+}
+
+.udv3-skeleton-box--title {
+  width: 88%;
+  height: 18px;
+}
+
+.udv3-skeleton-box--meta {
+  width: 58%;
+  height: 12px;
+}
+
+.udv3-skeleton-box--menu {
+  width: 24px;
+  height: 24px;
+  border-radius: 10px;
+}
+
+.udv3-skeleton-box--icon {
+  width: 27px;
+  height: 27px;
+  border-radius: 9px;
+}
+
+.udv3-skeleton-box--line {
+  width: 160px;
+  height: 12px;
+}
+
+.udv3-skeleton-box--line.is-short {
+  width: 108px;
+  margin-top: 6px;
+}
+
+.udv3-skeleton-box--amount {
+  width: 76px;
+  height: 14px;
+}
+
+.udv3-transaction-skeleton {
+  display: grid;
+  grid-template-columns: 27px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--udv3-border);
+}
+
+.udv3-transaction-skeleton:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.udv3-skeleton-stack {
+  display: grid;
+  gap: 0;
+}
+
+@keyframes udv3-skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 .udv3-creation-card {

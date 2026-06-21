@@ -26,6 +26,7 @@
     refreshTimer: null,
     autoOpenGenerationId: null,
     autoOpenGenerationHandled: false,
+    generationsHydrated: false,
   };
 
   const IMAGE_XP_COST = { normal: 5, high: 10, ultra: 20 };
@@ -446,10 +447,25 @@
 
   function renderRecent() {
     const grid = $("[data-recent-grid]");
+    if (!state.generationsHydrated) {
+      grid.innerHTML = Array.from({ length: 5 }, () => `
+        <article class="udv3-creation-card udv3-creation-card--skeleton" aria-hidden="true">
+          <span class="udv3-skeleton-box udv3-skeleton-box--media"></span>
+          <div class="udv3-creation-body">
+            <span class="udv3-skeleton-box udv3-skeleton-box--title"></span>
+            <div class="udv3-creation-meta">
+              <span class="udv3-skeleton-box udv3-skeleton-box--meta"></span>
+              <span class="udv3-skeleton-box udv3-skeleton-box--menu"></span>
+            </div>
+          </div>
+        </article>
+      `).join("");
+      return;
+    }
     const list = state.results.slice(0, 5);
     grid.innerHTML = list.length
       ? list.map(renderCreationCardFixed).join("")
-      : `<div class="udv3-empty-state">لم تنشئ أي محتوى بعد. ابدأ الآن بإنشاء أول صورة أو فيديو.</div>`;
+      : `<div class="udv3-empty-state udv3-empty-state--recent">لم تنشئ أي محتوى بعد. ابدأ الآن بإنشاء أول صورة أو فيديو.</div>`;
   }
 
   function renderCreationCard(item) {
@@ -1194,6 +1210,21 @@
   }
 
   function renderTransactions() {
+    const container = $("[data-transactions-list]");
+    if (!state.generationsHydrated) {
+      container.innerHTML = Array.from({ length: 3 }, () => `
+        <article class="udv3-transaction-skeleton" aria-hidden="true">
+          <span class="udv3-skeleton-box udv3-skeleton-box--icon"></span>
+          <span class="udv3-skeleton-stack">
+            <span class="udv3-skeleton-box udv3-skeleton-box--line"></span>
+            <span class="udv3-skeleton-box udv3-skeleton-box--line is-short"></span>
+          </span>
+          <span class="udv3-skeleton-box udv3-skeleton-box--amount"></span>
+        </article>
+      `).join("");
+      return;
+    }
+
     const recent = state.results.slice(0, 2).map((item) => ({
       label: `إنشاء ${typeLabel(item.type)} ${qualityLabel(item.quality)}`,
       time: relativeTime(item.createdAt),
@@ -1204,7 +1235,7 @@
 
     const list = recent.slice(0, 3);
 
-    $("[data-transactions-list]").innerHTML = list.length
+    container.innerHTML = list.length
       ? list
           .map(
             (item) => `
@@ -1216,7 +1247,7 @@
         `
           )
           .join("")
-      : `<div class="udv3-empty-state is-compact">لا توجد معاملات توليد حتى الآن.</div>`;
+      : `<div class="udv3-empty-state is-compact udv3-empty-state--transactions">لا توجد معاملات توليد حتى الآن.</div>`;
   }
 
   function updateUsageUi() {
@@ -1612,6 +1643,7 @@
         renderAll();
       }
     } finally {
+      state.generationsHydrated = true;
       scheduleGenerationsRefresh();
     }
   }
