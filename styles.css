@@ -16493,49 +16493,49 @@ html[data-theme="dark"] .create-chat-bubble__state {
 .pixi-assistant {
   position: fixed;
   z-index: 3000;
-  right: 24px;
-  bottom: 20px;
+  right: 20px;
+  bottom: 18px;
   display: grid;
   justify-items: center;
-  gap: 4px;
+  gap: 2px;
   direction: rtl;
   font-family: "IBM Plex Sans Arabic", system-ui, sans-serif;
 }
 
 .pixi-assistant__launcher {
-  width: 72px;
-  height: 72px;
+  width: 66px;
+  height: 66px;
   display: grid;
   place-items: center;
   overflow: hidden;
-  border: 4px solid rgba(255, 255, 255, 0.95);
+  border: 3px solid rgba(255, 255, 255, 0.95);
   border-radius: 50%;
   background: linear-gradient(135deg, #145fff, #9c2df5);
-  box-shadow: 0 20px 42px rgba(77, 67, 230, 0.32);
+  box-shadow: 0 16px 34px rgba(77, 67, 230, 0.3);
   cursor: pointer;
 }
 
 .pixi-assistant__launcher img {
-  width: 68px;
-  height: 68px;
+  width: 60px;
+  height: 60px;
 }
 
 .pixi-assistant__collapse {
-  width: 42px;
-  height: 22px;
+  width: 38px;
+  height: 20px;
   border: 0;
   border-radius: 0 0 20px 20px;
   color: #fff;
   background: #5264e9;
   cursor: pointer;
-  font-size: 20px;
+  font-size: 18px;
   line-height: 1;
 }
 
 .pixi-assistant__panel {
   position: absolute;
   right: 0;
-  bottom: 98px;
+  bottom: 88px;
   width: min(370px, calc(100vw - 28px));
   overflow: hidden;
   border: 1px solid rgba(109, 53, 255, 0.28);
@@ -16766,18 +16766,18 @@ html[data-theme="dark"] .create-chat-bubble__state {
   }
 
   .pixi-assistant {
-    right: 14px;
-    bottom: 12px;
+    right: 12px;
+    bottom: 10px;
   }
 
   .pixi-assistant__launcher {
-    width: 62px;
-    height: 62px;
+    width: 58px;
+    height: 58px;
   }
 
   .pixi-assistant__launcher img {
-    width: 58px;
-    height: 58px;
+    width: 52px;
+    height: 52px;
   }
 }
 

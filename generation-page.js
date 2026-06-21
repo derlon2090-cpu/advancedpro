@@ -171,7 +171,7 @@
     if (result.status === "failed") {
       frame.innerHTML = `
         <div class="result-placeholder">
-          تعذر إكمال الإنشاء. لم يتم خصم أي رصيد، ويمكنك إعادة المحاولة من لوحة التحكم.
+          تعذر إتمام الطلب مؤقتًا. لم يتم خصم أي رصيد، ويمكنك إعادة المحاولة من لوحة التحكم.
         </div>
       `;
       return;
@@ -179,22 +179,10 @@
 
     if (result.status !== "completed" || !result.resultUrl) {
       frame.innerHTML = `
-        <div class="result-processing">
-          <div class="result-processing-preview">
-            <img src="${escapeHtml(result.thumbnailUrl || result.resultUrl || "/ap-mark.svg")}" alt="${escapeHtml(result.prompt || "جاري الإنشاء")}" />
-            <div class="result-processing-overlay">
-              <strong>جاري المعالجة...</strong>
-              <div class="result-progress" aria-hidden="true"><i></i></div>
-              <small>${escapeHtml(currentStageLabel())}</small>
-              <small>${escapeHtml(expectedTimeLabel(result))}</small>
-            </div>
-          </div>
-          <div class="result-processing-steps">
-            <div class="result-stage-list" data-stage-list></div>
-          </div>
+        <div class="result-placeholder">
+          النتيجة ليست جاهزة للعرض بعد. سيتم تحويلك لهذه الصفحة عند اكتمال الإنشاء من لوحة التحكم.
         </div>
       `;
-      renderStages(result);
       return;
     }
 
@@ -306,13 +294,13 @@
         ? `تم إنشاء ${isVideo ? "الفيديو" : "صورتك"} بنجاح!`
         : result?.status === "failed"
           ? "فشل الإنشاء"
-          : `جارٍ إنشاء ${isVideo ? "الفيديو" : "صورتك"}...`;
+          : `النتيجة قيد التجهيز`;
     copy.textContent =
       result?.status === "completed"
         ? `تم إنشاء ${isVideo ? "الفيديو" : "الصورة"} بناءً على وصفك`
         : result?.status === "failed"
-          ? "تعذر إكمال الإنشاء. يمكنك إعادة المحاولة الآن."
-          : "الذكاء الاصطناعي يعمل الآن على تحويل فكرتك إلى صورة أو فيديو.";
+          ? "تعذر إتمام الطلب مؤقتًا. يمكنك إعادة المحاولة الآن."
+          : "افتح هذه الصفحة بعد اكتمال الإنشاء من لوحة التحكم.";
     download.textContent = isVideo ? "تحميل الفيديو" : "تحميل الصورة";
     page.dataset.resultState = result?.status || "loading";
   }

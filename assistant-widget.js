@@ -41,7 +41,6 @@
   function setOpen(open) {
     panel.hidden = !open;
     root.classList.toggle("is-open", open);
-    if (open) setTimeout(() => input.focus(), 40);
   }
 
   function escapeHtml(value) {
@@ -95,7 +94,6 @@
       appendMessage("assistant", error.message || "تعذر الحصول على رد الآن. حاول بعد قليل.");
     } finally {
       submit.disabled = false;
-      input.focus();
     }
   }
 

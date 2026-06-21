@@ -24,6 +24,8 @@
     activeMenuScope: null,
     favorites: new Set(),
     refreshTimer: null,
+    autoOpenGenerationId: null,
+    autoOpenGenerationHandled: false,
   };
 
   const IMAGE_XP_COST = { normal: 5, high: 10, ultra: 20 };
@@ -361,11 +363,31 @@
     const enhanceButton = $("[data-smart-enhance]");
     button.disabled = isLoading;
     if (enhanceButton) enhanceButton.disabled = isLoading;
-    button.textContent = isLoading
-      ? state.type === "video"
-        ? "جاري إنشاء الفيديو..."
-        : "جاري إنشاء الصورة..."
-      : "إنشاء الآن ✨";
+    if (isLoading) {
+      const labels =
+        state.type === "video"
+          ? ["جاري إنشاء الفيديو...", "جاري تجهيز الفيديو...", "جاري معالجة الطلب..."]
+          : ["جاري إنشاء الصورة...", "جاري تجهيز الصورة...", "جاري معالجة الطلب..."];
+      let index = 0;
+      button.textContent = labels[index];
+      clearInterval(setLoading.labelTimer);
+      setLoading.labelTimer = setInterval(() => {
+        index = (index + 1) % labels.length;
+        button.textContent = labels[index];
+      }, 1700);
+      clearTimeout(setLoading.releaseTimer);
+      setLoading.releaseTimer = setTimeout(() => {
+        clearInterval(setLoading.labelTimer);
+        if (state.loading && button) {
+          button.textContent = labels[labels.length - 1];
+        }
+      }, 5000);
+      return;
+    }
+
+    clearInterval(setLoading.labelTimer);
+    clearTimeout(setLoading.releaseTimer);
+    button.textContent = "إنشاء الآن ✨";
   }
 
   function confirmAction(message = "هل أنت متأكد؟") {
@@ -1483,8 +1505,23 @@
       } catch {
         // Ignore storage failures; the API remains the source of truth.
       }
+      state.autoOpenGenerationId = String(generation.id);
+      state.autoOpenGenerationHandled = false;
       sessionStorage.setItem("pixigen:active-generation", String(generation.id));
-      window.location.assign(`/generation?id=${encodeURIComponent(generation.id)}`);
+      setMessage(
+        generation.type === "video"
+          ? "تم بدء إنشاء الفيديو. يمكنك متابعة استخدام اللوحة، وسنفتح النتيجة تلقائيًا عند الاكتمال."
+          : "تم بدء إنشاء الصورة. يمكنك متابعة استخدام اللوحة، وسنفتح النتيجة تلقائيًا عند الاكتمال.",
+        "success"
+      );
+      showToast(
+        generation.type === "video"
+          ? "تم بدء إنشاء الفيديو"
+          : "تم بدء إنشاء الصورة",
+        "success"
+      );
+      renderAll();
+      scheduleGenerationsRefresh();
       return;
     } catch (error) {
       if (error.name === "AbortError") {
@@ -1539,6 +1576,32 @@
             : "🎉 تم إنشاء الصورة بنجاح. نتيجتك جاهزة الآن."
         );
         await refreshKey({ silent: true });
+        if (
+          state.autoOpenGenerationId &&
+          String(completed.id) === String(state.autoOpenGenerationId) &&
+          !state.autoOpenGenerationHandled
+        ) {
+          state.autoOpenGenerationHandled = true;
+          window.location.assign(`/generation?id=${encodeURIComponent(completed.id)}`);
+          return;
+        }
+      }
+
+      const failed = state.results.find(
+        (item) =>
+          item.status === "failed" &&
+          previousStatuses.has(String(item.id)) &&
+          previousStatuses.get(String(item.id)) !== "failed"
+      );
+      if (
+        failed &&
+        state.autoOpenGenerationId &&
+        String(failed.id) === String(state.autoOpenGenerationId)
+      ) {
+        state.autoOpenGenerationHandled = true;
+        state.autoOpenGenerationId = null;
+        setMessage("تعذر إتمام الطلب مؤقتًا، حاول مرة أخرى بعد قليل. لم يتم خصم أي رصيد.", "error");
+        showToast("تعذر إتمام الطلب مؤقتًا، حاول لاحقًا.", "error");
       }
       if (!state.activeMenuId) {
         renderAll();

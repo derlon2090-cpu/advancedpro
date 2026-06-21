@@ -2153,7 +2153,7 @@ function imageResultValidationEnabled() {
 }
 
 function imageResultValidationRequired() {
-  return String(process.env.IMAGE_RESULT_VALIDATION_REQUIRED || "true").trim().toLowerCase() !== "false";
+  return String(process.env.IMAGE_RESULT_VALIDATION_REQUIRED || "false").trim().toLowerCase() !== "false";
 }
 
 function imageResultValidationAttempts() {
@@ -2392,6 +2392,7 @@ export async function generateImageWithWaveSpeed({
     ? imageResultValidationAttempts()
     : 1;
   let lastValidation = null;
+  let lastGeneratedResult = null;
 
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     const attemptSeed = attempt === 1 ? safeSeed : randomSeed();
@@ -2419,6 +2420,11 @@ export async function generateImageWithWaveSpeed({
       initial: request.initial,
       mediaType: "image",
     });
+    lastGeneratedResult = {
+      request,
+      resultUrl,
+      seed: attemptSeed,
+    };
 
     console.log("NEW RESULT URL:", resultUrl);
 
@@ -2458,6 +2464,29 @@ export async function generateImageWithWaveSpeed({
         raw: request.initial,
       };
     }
+  }
+
+  if (lastValidation && !imageResultValidationRequired()) {
+    console.warn("IMAGE_RESULT_VALIDATION_BYPASS:", {
+      reason: lastValidation.reason || "validation_not_passed",
+      unexpectedElements: lastValidation.unexpectedElements || [],
+      missingElements: lastValidation.missingElements || [],
+    });
+    if (!lastGeneratedResult) {
+      throw serviceError("تعذر إتمام الطلب مؤقتًا، حاول لاحقًا. لم يتم خصم أي رصيد.", 502);
+    }
+    return {
+      provider: "wavespeed",
+      model: lastGeneratedResult.request.model,
+      finalPrompt,
+      seed: lastGeneratedResult.seed,
+      resultUrl: lastGeneratedResult.resultUrl,
+      validation: {
+        ...lastValidation,
+        bypassed: true,
+      },
+      raw: lastGeneratedResult.request.initial,
+    };
   }
 
   throw serviceError(
