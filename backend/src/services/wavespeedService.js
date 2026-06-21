@@ -109,6 +109,7 @@ const COLOR_TERMS = {
   black: ["\u0623\u0633\u0648\u062f", "\u0627\u0633\u0648\u062f", "\u0633\u0648\u062f\u0627\u0621", "black"],
   white: ["\u0623\u0628\u064a\u0636", "\u0627\u0628\u064a\u0636", "\u0628\u064a\u0636\u0627\u0621", "white"],
   yellow: ["\u0623\u0635\u0641\u0631", "\u0627\u0635\u0641\u0631", "\u0635\u0641\u0631\u0627\u0621", "yellow"],
+  gold: ["\u0630\u0647\u0628\u064a", "\u0630\u0647\u0628\u064a\u0629", "\u0630\u0647\u0628\u064a\u064b\u0627", "gold", "golden"],
   green: ["\u0623\u062e\u0636\u0631", "\u0627\u062e\u0636\u0631", "\u062e\u0636\u0631\u0627\u0621", "green"],
   red: ["\u0623\u062d\u0645\u0631", "\u0627\u062d\u0645\u0631", "\u062d\u0645\u0631\u0627\u0621", "red"],
   blue: ["\u0623\u0632\u0631\u0642", "\u0627\u0632\u0631\u0642", "\u0632\u0631\u0642\u0627\u0621", "blue"],
@@ -117,6 +118,9 @@ const COLOR_TERMS = {
 const ENTITY_TERMS = {
   cat: ["\u0642\u0637\u0629", "\u0642\u0637", "cat"],
   dog: ["\u0643\u0644\u0628", "dog"],
+  bird: ["\u0637\u0627\u0626\u0631", "\u0637\u064a\u0631", "\u0639\u0635\u0641\u0648\u0631", "\u0639\u0635\u0641\u0648\u0631\u0629", "bird", "birds"],
+  falcon: ["\u0635\u0642\u0631", "\u0635\u0642\u0648\u0631", "falcon", "falcons"],
+  eagle: ["\u0646\u0633\u0631", "\u0646\u0633\u0648\u0631", "eagle", "eagles"],
   person: [
     "\u0631\u062c\u0644",
     "\u0627\u0645\u0631\u0623\u0629",
@@ -572,6 +576,9 @@ function analyzePromptV3(userPrompt) {
   const hasSpace = includesAny(lower, ENTITY_TERMS.space);
   const hasRobot = includesAny(lower, ENTITY_TERMS.robot);
   const hasRobots = includesAny(lower, ["\u0631\u0648\u0628\u0648\u062a\u0627\u062a", "\u0631\u0628\u0648\u062a\u0627\u062a", "robots"]);
+  const hasFalcon = includesAny(lower, ENTITY_TERMS.falcon);
+  const hasEagle = includesAny(lower, ENTITY_TERMS.eagle);
+  const hasBird = hasFalcon || hasEagle || includesAny(lower, ENTITY_TERMS.bird);
   const hasYellow = includesAny(lower, COLOR_TERMS.yellow);
   const hasGreen = includesAny(lower, COLOR_TERMS.green);
   const hasBeside = includesAny(lower, ["\u0628\u062c\u0627\u0646\u0628", "\u0645\u0639", "next to", "beside"]);
@@ -592,9 +599,53 @@ function analyzePromptV3(userPrompt) {
   const hasWoman = includesAny(lower, ["\u0627\u0645\u0631\u0623\u0629", "\u0627\u0645\u0631\u0627\u0629", "\u0633\u064a\u062f\u0629", "woman", "female"]);
   const catColor = detectColorForEntity(lower, "cat") || (hasCat ? firstDetectedColor(lower) : null);
   const dogColor = detectColorForEntity(lower, "dog") || (hasDog ? firstDetectedColor(lower) : null);
+  const birdColor =
+    (hasFalcon ? detectColorForEntity(lower, "falcon") : null) ||
+    (hasEagle ? detectColorForEntity(lower, "eagle") : null) ||
+    (hasBird ? detectColorForEntity(lower, "bird") : null) ||
+    (hasBird ? firstDetectedColor(lower) : null);
   const chickenColor =
     detectColorForEntity(lower, "chicken") || (hasChicken && hasWhite ? "white" : hasChicken ? firstDetectedColor(lower) : null);
   const houseColor = detectColorForEntity(lower, "house") || (hasHouse && hasYellow ? "yellow" : null);
+
+  if (hasBird) {
+    const birdLabel = hasFalcon ? "falcon" : hasEagle ? "eagle" : "bird";
+    const displayBirdColor = birdColor === "gold" ? "golden" : birdColor;
+    const coloredBird = displayBirdColor ? `${displayBirdColor} ${birdLabel}` : birdLabel;
+
+    return {
+      subject: birdLabel,
+      subjectColor: birdColor,
+      object: "natural background",
+      objectColor: null,
+      relation: "single main subject",
+      enhancedPrompt: `\u0635\u0648\u0631\u0629 \u0648\u0627\u0642\u0639\u064a\u0629 \u0648\u0627\u0636\u062d\u0629 \u0644${hasFalcon ? "\u0635\u0642\u0631" : hasEagle ? "\u0646\u0633\u0631" : "\u0637\u0627\u0626\u0631"} \u064a\u0638\u0647\u0631 \u0643\u0627\u0645\u0644\u064b\u0627 \u0648\u0628\u0644\u0648\u0646\u0647 \u0627\u0644\u0645\u0637\u0644\u0648\u0628 \u0628\u062f\u0642\u0629 \u062f\u0627\u062e\u0644 \u0627\u0644\u0625\u0637\u0627\u0631.`,
+      finalPrompt: [
+        `A realistic detailed image of one ${coloredBird} as the clear main subject.`,
+        `Show the full ${birdLabel} clearly inside the frame with accurate anatomy and visible feathers.`,
+        displayBirdColor ? `Keep the ${birdLabel} ${displayBirdColor}.` : `Keep the ${birdLabel} appearance natural and clear.`,
+        "Use a clean natural background that does not distract from the main subject.",
+        "No humans, no office, no meeting room, no food, no text, no watermark, no logo.",
+      ].join(" "),
+      negativeRules: [
+        "humans",
+        "businessman",
+        "office",
+        "meeting room",
+        "conference room",
+        "food",
+        "text",
+        "watermark",
+        "logo",
+      ],
+      debug: {
+        subjects: [birdLabel],
+        relations: ["single centered subject"],
+        scene: "clean natural background",
+        style: "realistic wildlife subject",
+      },
+    };
+  }
 
   if (hasWolf) {
     const familyDescription = hasWolfPups
@@ -1112,6 +1163,11 @@ function translateArabicToEnglish(userPrompt) {
     return text;
   }
 
+  const normalizedText = text.replace(
+    /^\s*(?:\u0627\u0639\u0645\u0644|\u0627\u0646\u0634\u0626|\u0623\u0646\u0634\u0626|\u0627\u0635\u0646\u0639|\u0627\u0631\u0633\u0645|\u0635\u0645\u0645|\u0633\u0648\u064a|\u0633\u0648|\u0623\u0628\u063a\u0649|\u0627\u0628\u063a\u0649|\u0623\u0628\u064a|\u0627\u0628\u064a)(?:\s+\u0644\u064a)?\s+/,
+    ""
+  );
+
   const dictionary = [
     ["\u0648\u0644\u062f \u0635\u063a\u064a\u0631 \u062c\u062f\u0627", "very young little boy"],
     ["\u0648\u0644\u062f \u0635\u063a\u064a\u0631 \u062c\u062f\u064b\u0627", "very young little boy"],
@@ -1131,6 +1187,14 @@ function translateArabicToEnglish(userPrompt) {
     ["\u0636\u0627\u0628\u0637 \u0634\u0631\u0637\u0629", "police officer"],
     ["\u0631\u0627\u0626\u062f\u0629 \u0641\u0636\u0627\u0621", "astronaut"],
     ["\u0631\u0627\u0626\u062f \u0641\u0636\u0627\u0621", "astronaut"],
+    ["\u0635\u0642\u0631", "falcon"],
+    ["\u0635\u0642\u0648\u0631", "falcons"],
+    ["\u0646\u0633\u0631", "eagle"],
+    ["\u0646\u0633\u0648\u0631", "eagles"],
+    ["\u0637\u0627\u0626\u0631", "bird"],
+    ["\u0637\u064a\u0631", "bird"],
+    ["\u0639\u0635\u0641\u0648\u0631", "bird"],
+    ["\u0639\u0635\u0641\u0648\u0631\u0629", "bird"],
     ["\u064a\u0637\u064a\u0631 \u0641\u0648\u0642", "flying above"],
     ["\u062a\u0637\u064a\u0631 \u0641\u0648\u0642", "flying above"],
     ["\u064a\u062c\u0644\u0633 \u0639\u0644\u0649", "sitting on"],
@@ -1220,6 +1284,8 @@ function translateArabicToEnglish(userPrompt) {
     ["\u0633\u0648\u062f\u0627\u0621", "black"],
     ["\u0628\u064a\u0636\u0627\u0621", "white"],
     ["\u0635\u0641\u0631\u0627\u0621", "yellow"],
+    ["\u0630\u0647\u0628\u064a\u0629", "golden"],
+    ["\u0630\u0647\u0628\u064a", "golden"],
     ["\u062e\u0636\u0631\u0627\u0621", "green"],
     ["\u062d\u0645\u0631\u0627\u0621", "red"],
     ["\u0632\u0631\u0642\u0627\u0621", "blue"],
@@ -1267,7 +1333,7 @@ function translateArabicToEnglish(userPrompt) {
     ["\u0644\u064a\u0644", "night"],
   ];
 
-  let translated = text;
+  let translated = normalizedText;
   for (const [arabic, english] of dictionary) {
     translated = translated.replaceAll(arabic, ` ${english} `);
   }
@@ -1311,7 +1377,14 @@ function getPromptTranslationModels() {
 }
 
 function serverTranslationEnabled() {
-  return String(process.env.SERVER_PROMPT_TRANSLATION_ENABLED || "false").trim().toLowerCase() === "true";
+  const flag = String(process.env.SERVER_PROMPT_TRANSLATION_ENABLED || "").trim().toLowerCase();
+  if (["true", "1", "yes", "on"].includes(flag)) {
+    return true;
+  }
+  if (["false", "0", "no", "off"].includes(flag)) {
+    return false;
+  }
+  return Boolean(getPromptTranslationKey());
 }
 
 function extractTranslatedPrompt(payload) {
@@ -1421,7 +1494,7 @@ async function translateArabicPromptForGeneration(userPrompt) {
 
   for (const model of getPromptTranslationModels()) {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4_500);
+    const timeout = setTimeout(() => controller.abort(), 8_000);
     try {
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,

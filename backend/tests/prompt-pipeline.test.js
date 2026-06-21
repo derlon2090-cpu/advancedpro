@@ -230,6 +230,26 @@ test("unknown Arabic vocabulary uses semantic server translation instead of bein
   assert.equal(result.debug.translationMode, "server-semantic");
 });
 
+test("simple Arabic falcon prompts no longer fail when server translation is unavailable", () => {
+  const goldenFalcon = buildSmartPromptEnhancement({
+    userPrompt: "صقر ذهبي",
+    quality: "high",
+    style: "realistic",
+    type: "image",
+  });
+  const whiteFalcon = buildSmartPromptEnhancement({
+    userPrompt: "اعمل صقر أبيض",
+    quality: "high",
+    style: "realistic",
+    type: "image",
+  });
+
+  assert.match(goldenFalcon.finalPrompt, /golden falcon/i);
+  assert.match(whiteFalcon.finalPrompt, /white falcon/i);
+  assert.doesNotMatch(goldenFalcon.finalPrompt, /[\u0600-\u06ff]/);
+  assert.doesNotMatch(whiteFalcon.finalPrompt, /[\u0600-\u06ff]/);
+});
+
 test("semantic translation preserves arbitrary Arabic subjects, actions, and relations", async () => {
   const result = await buildSmartPromptEnhancementAsync(
     {
