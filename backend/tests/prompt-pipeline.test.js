@@ -250,6 +250,22 @@ test("simple Arabic falcon prompts no longer fail when server translation is una
   assert.doesNotMatch(whiteFalcon.finalPrompt, /[\u0600-\u06ff]/);
 });
 
+test("simple animal prompts explicitly forbid grid and collage style outputs", () => {
+  const result = buildSmartPromptEnhancement({
+    userPrompt: "white chicken standing on a farm",
+    quality: "high",
+    style: "realistic",
+    type: "image",
+  });
+
+  assert.match(result.finalPrompt, /one natural single image/i);
+  assert.match(result.finalPrompt, /tiled layout|segmented frame|split-screen composition/i);
+  assert.match(result.finalPrompt, /white separator lines|white borders/i);
+  assert.match(result.negativePrompt, /photo grid/i);
+  assert.match(result.negativePrompt, /collage/i);
+  assert.match(result.negativePrompt, /mosaic/i);
+});
+
 test("semantic translation preserves arbitrary Arabic subjects, actions, and relations", async () => {
   const result = await buildSmartPromptEnhancementAsync(
     {

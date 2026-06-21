@@ -1601,6 +1601,21 @@ function buildNegativeRules(userPrompt) {
     "watermark",
     "logo",
     "grid lines",
+    "photo grid",
+    "tiled layout",
+    "segmented image",
+    "split screen",
+    "split panel",
+    "multi-panel composition",
+    "collage",
+    "contact sheet",
+    "storyboard",
+    "mosaic",
+    "window panes",
+    "window frame",
+    "white borders",
+    "thick white lines",
+    "framed tiles",
     "captions",
     "subtitles",
     "duplicate subjects",
@@ -1637,6 +1652,15 @@ function buildNegativeRules(userPrompt) {
   }
 
   return [...new Set(rules)];
+}
+
+function buildNegativePromptText(userPrompt, analysis) {
+  return [
+    ...new Set([
+      ...buildNegativeRules(userPrompt),
+      ...(Array.isArray(analysis?.negativeRules) ? analysis.negativeRules : []),
+    ]),
+  ].join(", ");
 }
 
 function buildColorRules(userPrompt, analysis) {
@@ -1821,7 +1845,9 @@ function buildFinalPrompt({
     "- Render only the requested subjects, actions, and environment.",
     "- Do not introduce any unrequested subject, object, or secondary scene.",
     "- Use one coherent full-frame scene only.",
-    "- No inset image, picture-in-picture, collage, split panel, poster, framed photo, or overlay.",
+    "- The output must be one natural single image, not a designed layout.",
+    "- No inset image, picture-in-picture, collage, split panel, poster, framed photo, overlay, contact sheet, storyboard, mosaic, tiled layout, segmented frame, or split-screen composition.",
+    "- No window-pane layout, panel dividers, thick white borders, or white separator lines across the image.",
     "- Do not add extra subjects beyond the requested count.",
     "- Keep every requested subject fully inside the frame. Do not crop or duplicate subjects.",
     "- No text, no watermark, no logo, no UI overlay, no grid lines.",
@@ -1846,15 +1872,12 @@ export function buildSmartPromptEnhancement({ userPrompt, quality = "normal", st
       "لا تضف عناصر عشوائية أو نصوصًا أو شعارات.",
     ].join(" ");
   const finalPrompt = buildFinalPrompt({ userPrompt: prompt, quality, style, type });
-  const negativePrompt = [
-    ...buildNegativeRules(prompt),
-    ...(Array.isArray(analysis?.negativeRules) ? analysis.negativeRules : []),
-  ];
+  const negativePrompt = buildNegativePromptText(prompt, analysis);
 
   return {
     enhancedPrompt,
     finalPrompt,
-    negativePrompt: [...new Set(negativePrompt)].join(", "),
+    negativePrompt,
     debug: analysis?.debug || null,
   };
 }
@@ -1884,15 +1907,12 @@ export async function buildSmartPromptEnhancementAsync(
     type,
     translatedPromptOverride,
   });
-  const negativePrompt = [
-    ...buildNegativeRules(prompt),
-    ...(Array.isArray(analysis?.negativeRules) ? analysis.negativeRules : []),
-  ];
+  const negativePrompt = buildNegativePromptText(prompt, analysis);
 
   return {
     enhancedPrompt,
     finalPrompt,
-    negativePrompt: [...new Set(negativePrompt)].join(", "),
+    negativePrompt,
     debug: {
       ...(analysis?.debug || {}),
       translationMode: translatedPromptOverride ? "server-semantic" : analysis ? "local-structured" : "local-dictionary",
@@ -2258,6 +2278,11 @@ function validateDuration(model, endpoint, duration) {
   return normalizedDuration;
 }
 
+function providerRejectsNegativePrompt(error) {
+  const haystack = `${error?.message || ""} ${stringifyForLog(error?.providerData || "")}`.toLowerCase();
+  return /negative[_\s-]*prompt/.test(haystack) && /(unknown|unsupported|invalid|unexpected|extra|not allowed|not permitted)/.test(haystack);
+}
+
 async function postWaveSpeed({ apiKey, endpoint, body }) {
   console.log("WAVESPEED ENDPOINT:", endpoint);
   console.log("WAVESPEED BODY:", stringifyForLog({ ...body, prompt: compactForLog(body?.prompt) }));
@@ -2305,6 +2330,18 @@ async function postWaveSpeedWithFallback({ apiKey, endpoint, body, mediaType, qu
       usedFallback: false,
     };
   } catch (error) {
+    if (body?.negative_prompt && providerRejectsNegativePrompt(error)) {
+      const fallbackBody = { ...body };
+      delete fallbackBody.negative_prompt;
+      console.warn("WAVESPEED RETRY WITHOUT NEGATIVE_PROMPT:", endpoint);
+      return {
+        initial: await postWaveSpeed({ apiKey, endpoint, body: fallbackBody }),
+        endpoint,
+        model,
+        usedFallback: false,
+      };
+    }
+
     if (!isModelNotFoundError(error)) {
       throw error;
     }
@@ -2427,7 +2464,14 @@ export function buildFinalImagePrompt(userPrompt, quality = "normal", style = ""
 }
 
 function imageResultValidationEnabled() {
-  return String(process.env.IMAGE_RESULT_VALIDATION_ENABLED || "false").trim().toLowerCase() === "true";
+  const flag = String(process.env.IMAGE_RESULT_VALIDATION_ENABLED || "").trim().toLowerCase();
+  if (["true", "1", "yes", "on"].includes(flag)) {
+    return true;
+  }
+  if (["false", "0", "no", "off"].includes(flag)) {
+    return false;
+  }
+  return Boolean(getPromptTranslationKey());
 }
 
 function imageResultValidationRequired() {
@@ -2543,6 +2587,7 @@ async function validateGeneratedImageAgainstPrompt({ resultUrl, userPrompt, fina
                     "Compare the generated image with the current user request and final English prompt.",
                     "Reject the image when a main requested subject, action, count, color, size, or spatial relationship is missing or materially wrong.",
                     "Reject any human, office, business meeting, food, inset image, picture-in-picture, collage, framed photo, poster, caption, or unrelated secondary scene unless the current request explicitly asks for it.",
+                    "Reject any tiled layout, multi-panel composition, contact sheet, storyboard, segmented image, split-screen composition, window-pane layout, mosaic, visible panel dividers, thick white separator lines, or white borders that divide the frame into parts.",
                     "Reject duplicated or substituted subjects.",
                     "Minor artistic differences are acceptable only when every requested concept remains correct.",
                     `Current user request: ${String(userPrompt || "").trim()}`,
@@ -2636,6 +2681,7 @@ export async function generateImageWithWaveSpeed({
   const model = String(modelOverride || baseConfig.model || "").trim();
   const endpoint = String(endpointOverride || (modelOverride ? buildEndpointFromModelPath(modelOverride) : baseConfig.endpoint) || "").trim();
   const translatedPromptOverride = await translateArabicPromptForGeneration(prompt);
+  const analysis = analyzePromptV3(prompt);
   const finalPrompt = buildFinalPrompt({
     userPrompt: prompt,
     quality: normalizedQuality,
@@ -2643,9 +2689,11 @@ export async function generateImageWithWaveSpeed({
     type: "image",
     translatedPromptOverride,
   });
+  const negativePrompt = buildNegativePromptText(prompt, analysis);
   const safeSeed = randomSeed(seed);
   const body = {
     prompt: finalPrompt,
+    negative_prompt: negativePrompt,
     aspect_ratio: normalizeAspectRatio(aspectRatio),
     seed: safeSeed,
     enable_base64_output: false,
@@ -2663,6 +2711,7 @@ export async function generateImageWithWaveSpeed({
     JSON.stringify({
       ...body,
       prompt: promptVerboseLogsEnabled() ? compactForLog(body.prompt) : "[redacted]",
+      negative_prompt: promptVerboseLogsEnabled() ? body.negative_prompt : "[redacted]",
     })
   );
 
