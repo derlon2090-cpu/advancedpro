@@ -46,6 +46,10 @@
       "destination": "/generation.html?id=:id"
     },
     {
+      "source": "/generation",
+      "destination": "/generation.html"
+    },
+    {
       "source": "/create",
       "destination": "/dashboard.html"
     },

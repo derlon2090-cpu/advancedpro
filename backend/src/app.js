@@ -201,13 +201,12 @@ app.use((err, req, res, _next) => {
 
   if (err?.code === "P2021") {
     statusCode = 500;
-    message =
-      "جداول قاعدة البيانات غير موجودة. شغّل prisma db push في Render لإنشائها.";
+    message = "تعذر تجهيز قاعدة البيانات مؤقتًا. حاول مرة أخرى بعد قليل.";
   }
 
   if (err?.code === "P1000" || err?.code === "P1001") {
     statusCode = 500;
-    message = "تعذر الاتصال بقاعدة البيانات. تحقق من DATABASE_URL.";
+    message = "تعذر الاتصال بالخادم مؤقتًا. حاول مرة أخرى بعد قليل.";
   }
 
   if (err?.code === "LIMIT_FILE_SIZE") {

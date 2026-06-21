@@ -677,7 +677,7 @@ router.get(
     const now = new Date();
     const sevenDaysAgo = startOfDay(new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000));
 
-    const [codes, usageLogs, projects] = await Promise.all([
+    const [codes, usageLogs, projects, generationTotals] = await Promise.all([
       prisma.activationCode.findMany({
         orderBy: { createdAt: "desc" },
         take: 500,
@@ -688,6 +688,16 @@ router.get(
         take: 500,
       }),
       getProjectRows(),
+      prisma.$queryRaw`
+        SELECT
+          COALESCE(SUM(credits_used), 0)::int AS xp_used,
+          COUNT(*) FILTER (WHERE type = 'image' AND status = 'completed')::int AS images_created,
+          COUNT(*) FILTER (WHERE type = 'video' AND status = 'completed')::int AS videos_created,
+          COUNT(*) FILTER (WHERE status = 'completed')::int AS completed_generations,
+          COUNT(*)::int AS total_generations
+        FROM generations
+        WHERE deleted_at IS NULL
+      `.catch(() => []),
     ]);
 
     const counters = {
@@ -743,9 +753,15 @@ router.get(
       if (project.type === "image") bucket.images += 1;
     }
 
-    const totalProjects = projects.length;
-    const completedProjects = projects.filter((project) => project.status !== "failed").length;
-    const totalUsage = counters.imagesUsed + counters.videosUsed;
+    const generationSummary = generationTotals?.[0] || {};
+    const totalProjects = Number(generationSummary.total_generations || projects.length);
+    const completedProjects = Number(
+      generationSummary.completed_generations ||
+      projects.filter((project) => project.status !== "failed").length
+    );
+    const totalUsage = Number(generationSummary.xp_used || 0);
+    counters.imagesUsed = Number(generationSummary.images_created || counters.imagesUsed);
+    counters.videosUsed = Number(generationSummary.videos_created || counters.videosUsed);
     const successRate =
       totalProjects > 0 ? Math.round((completedProjects / totalProjects) * 1000) / 10 : 100;
 
@@ -789,6 +805,7 @@ router.get(
       expiredKeys: counters.expiredKeys,
       disabledKeys: counters.disabledKeys,
       totalUsage,
+      xpUsed: totalUsage,
       imagesUsed: counters.imagesUsed,
       videosUsed: counters.videosUsed,
       totalProjects,
@@ -1960,12 +1977,12 @@ router.post(
       }
       if (error?.code === "P2021") {
         return res.status(500).json({
-          message: "جداول قاعدة البيانات غير موجودة. شغّل prisma db push في Render.",
+          message: "تعذر تجهيز قاعدة البيانات مؤقتًا. حاول مرة أخرى بعد قليل.",
         });
       }
       if (error?.code === "P1000" || error?.code === "P1001") {
         return res.status(500).json({
-          message: "تعذر الاتصال بقاعدة البيانات. تحقق من DATABASE_URL.",
+          message: "تعذر الاتصال بالخادم مؤقتًا. حاول مرة أخرى بعد قليل.",
         });
       }
       return res.status(500).json({ message: "تعذر حفظ الكود. حاول مرة أخرى." });

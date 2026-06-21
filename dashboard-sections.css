@@ -222,6 +222,11 @@
   transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
 }
 
+.user-dashboard-v3 .udv6-work-card.is-menu-open,
+.user-dashboard-v3 .udv3-creation-card.is-menu-open {
+  z-index: 220;
+}
+
 .user-dashboard-v3 .udv6-work-card.is-processing .udv6-work-media img,
 .user-dashboard-v3 .udv6-work-card.is-processing .udv6-work-media video {
   filter: blur(6px);
@@ -289,6 +294,28 @@
   backdrop-filter: blur(10px);
 }
 
+.user-dashboard-v3 .udv6-favorite-button {
+  position: absolute;
+  z-index: 5;
+  top: 12px;
+  left: 12px;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  color: #7a45ff;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 8px 22px rgba(30, 20, 80, 0.12);
+  font-size: 19px;
+  cursor: pointer;
+}
+
+.user-dashboard-v3 .udv6-favorite-button[data-active="true"] {
+  color: #ed2f62;
+}
+
 .user-dashboard-v3 .udv6-work-media b {
   right: 12px;
   color: #fff;
@@ -327,7 +354,7 @@
 
 .user-dashboard-v3 .udv6-card-menu-wrap {
   position: relative;
-  z-index: 70;
+  z-index: 230;
 }
 
 .user-dashboard-v3 .udv6-card-menu-button {
@@ -350,8 +377,8 @@
 
 .user-dashboard-v3 .udv6-menu {
   position: absolute;
-  z-index: 80;
-  right: 14px;
+  z-index: 260;
+  right: 0;
   top: calc(100% + 8px);
   left: auto;
   bottom: auto;
@@ -364,6 +391,18 @@
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
   transform-origin: top right;
   animation: udv6-menu-pop 150ms ease both;
+}
+
+.user-dashboard-v3 .udv6-panel,
+.user-dashboard-v3 .udv6-card-grid {
+  overflow: visible;
+}
+
+.user-dashboard-v3 .udv3-creations-grid,
+.user-dashboard-v3 .udv3-recent-card,
+.user-dashboard-v3 .udv6-section-view,
+.user-dashboard-v3 .udv6-section-shell {
+  overflow: visible;
 }
 
 .user-dashboard-v3 .udv6-menu[hidden] {

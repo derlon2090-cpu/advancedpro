@@ -99,7 +99,7 @@
       ["المفاتيح النشطة", stats.activeKeys || 0, "+8% عن الشهر الماضي", "✓", ""],
       ["المفاتيح غير المستخدمة", stats.unusedKeys || 0, "-4% عن الشهر الماضي", "⌛", ""],
       ["المفاتيح المنتهية", stats.expiredKeys || 0, "+5% عن الشهر الماضي", "⏱", ""],
-      ["إجمالي الاستخدام", stats.totalUsage || 0, "كل العمليات", "〽", "is-featured"],
+      ["إجمالي XP المستخدم", stats.xpUsed || stats.totalUsage || 0, "رصيد التوليد المستهلك", "〽", "is-featured"],
     ];
 
     target.innerHTML = cards
@@ -249,8 +249,8 @@
     const target = $("[data-admin-usage-summary]");
     if (!target) return;
     const items = [
-      ["الصور المستخدمة", stats.imagesUsed || 0],
-      ["الفيديوهات المستخدمة", stats.videosUsed || 0],
+      ["XP المستخدم", stats.xpUsed || stats.totalUsage || 0],
+      ["عمليات التوليد المكتملة", (stats.imagesUsed || 0) + (stats.videosUsed || 0)],
       ["إجمالي المشاريع", stats.totalProjects || 0],
       ["معدل النجاح", `${stats.successRate ?? 100}%`],
     ];

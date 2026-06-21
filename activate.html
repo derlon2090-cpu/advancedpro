@@ -3,66 +3,33 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>تفعيل المفتاح | PixiGenl</title>
-    <meta
-      name="description"
-      content="أدخل مفتاح PixiGenl الرقمي لتفعيل حسابك والوصول إلى جميع المميزات."
-    />
+    <title>بوابة التفعيل | PixiGenI</title>
+    <meta name="description" content="فعّل مفتاح PixiGenI الرقمي للوصول إلى منصة إنشاء الصور والفيديو." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800;900&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260617-activate-restore" />
+    <link rel="stylesheet" href="/styles.css?v=20260620-activation-portal-v1" />
   </head>
-  <body class="activate-page-v2" data-page="activate-key-v2">
-    <header class="activate-header">
-      <a class="activate-brand pixigenl-brand" href="/activate" aria-label="PixiGenl">
-        <span class="pixigenl-mark" aria-hidden="true">✧</span>
-        <span>
-          <strong>PixiGenl</strong>
-          <small>المفاتيح الرقمية</small>
-        </span>
+  <body class="activate-page-v2 activation-portal" data-page="activate-key-v2">
+    <main class="activation-portal__page">
+      <a class="activation-portal__brand" href="/activate" aria-label="PixiGenI">
+        <img src="/ap-mark.svg" alt="" />
+        <span><strong>PixiGenI</strong><small>بوابة التفعيل</small></span>
       </a>
 
-      <a class="contact-button" href="mailto:support@advancedpro.com">
-        <span aria-hidden="true">☊</span>
-        تواصل معنا
-      </a>
-    </header>
+      <section class="activation-portal__card" aria-labelledby="activateTitle">
+        <div class="activation-portal__key" aria-hidden="true">🔑</div>
+        <h1 id="activateTitle">فعّل مفتاحك الرقمي</h1>
+        <p>أدخل كود التفعيل الخاص بك للوصول إلى منصة إنشاء الصور والفيديو بالذكاء الاصطناعي.</p>
 
-    <main class="activate-content">
-      <section class="activate-hero" aria-labelledby="activateTitle">
-        <div class="activate-hero-icon" aria-hidden="true">
-          <span>⚿</span>
-        </div>
-        <h1 id="activateTitle" class="activate-title">تفعيل المفتاح</h1>
-        <p class="activate-subtitle">أدخل مفتاحك الرقمي لتفعيل حسابك والوصول إلى جميع المميزات</p>
-      </section>
-
-      <section class="activation-card-v2" aria-label="تفعيل المفتاح الرقمي">
-        <div class="activation-visual" aria-hidden="true">
-          <div class="activation-visual-orbit">
-            <span class="orbit-dot orbit-dot-a"></span>
-            <span class="orbit-dot orbit-dot-b"></span>
-            <span class="orbit-dot orbit-dot-c"></span>
-          </div>
-          <div class="activation-shield">
-            <span class="shield-icon">⌘</span>
-            <span class="key-icon">⚿</span>
-          </div>
-          <span class="activation-check">✓</span>
-        </div>
-
-        <form id="keyActivationForm" class="activation-form-v2" novalidate>
-          <h2>أدخل مفتاحك الرقمي</h2>
-
-          <label class="key-input-wrap" for="keyCode">
-            <span aria-hidden="true">⚿</span>
+        <form id="keyActivationForm" novalidate>
+          <label class="activation-portal__input" for="keyCode">
+            <span aria-hidden="true">⌨</span>
             <input
               id="keyCode"
-              class="key-input"
               name="code"
               type="text"
               inputmode="latin"
@@ -76,53 +43,33 @@
             />
           </label>
 
-          <button class="activate-button" type="submit" data-submit-button>
+          <button type="submit" data-submit-button>
             <span class="button-spinner" aria-hidden="true"></span>
-            <span data-activation-label>ابدأ تفعيل الكود الآن</span>
+            <b aria-hidden="true">🔒</b>
+            <span data-activation-label>تفعيل الكود الآن</span>
           </button>
 
           <p id="keyActivationMessage" class="activation-message-v2" aria-live="polite" hidden></p>
-
-          <p class="activate-note">
-            <span aria-hidden="true">♢</span>
-            يتم خصم الرصيد بعد الاستخدام الأول للمفتاح.
-          </p>
         </form>
+
+        <p class="activation-portal__note">يتم استهلاك الرصيد بعد تنفيذ أول عملية إنشاء ناجحة.</p>
       </section>
 
-      <section class="feature-grid" aria-label="مميزات تفعيل المفتاح">
-        <article class="feature-card">
-          <span class="feature-icon">◈</span>
-          <div>
-            <h3>آمن وموثوق</h3>
-            <p>تشفير وحماية متقدمة</p>
-          </div>
-          <b>✓</b>
-        </article>
-        <article class="feature-card">
-          <span class="feature-icon">☊</span>
-          <div>
-            <h3>دعم فني</h3>
-            <p>متوفر على مدار الساعة</p>
-          </div>
-          <b>✓</b>
-        </article>
-        <article class="feature-card">
-          <span class="feature-icon">ϟ</span>
-          <div>
-            <h3>تفعيل فوري</h3>
-            <p>استمتع بجميع المميزات فورًا</p>
-          </div>
-          <b>✓</b>
-        </article>
+      <section class="activation-portal__steps" aria-label="خطوات التفعيل">
+        <h2>خطوات التفعيل</h2>
+        <div>
+          <article><i>1</i><span>⌨</span><strong>أدخل الكود</strong><p>أدخل كود التفعيل في الحقل المخصص</p></article>
+          <article><i>2</i><span>♢</span><strong>التحقق من التفعيل</strong><p>يتم التحقق من صحة الكود بأمان</p></article>
+          <article><i>3</i><span>↗</span><strong>الوصول الفوري</strong><p>ابدأ استخدام المنصة مباشرة</p></article>
+        </div>
       </section>
+
+      <footer class="activation-portal__trust">
+        <span>👥 آلاف المستخدمين يثقون بنا</span>
+        <b>◆</b>
+        <span>منصة موثوقة للجميع</span>
+      </footer>
     </main>
-
-    <footer class="activate-footer">
-      <span></span>
-      <strong>© 2026 PixiGenl. جميع الحقوق محفوظة.</strong>
-      <span></span>
-    </footer>
 
     <div class="activation-toast-stack" data-toast-stack aria-live="polite"></div>
 
@@ -132,18 +79,9 @@
         <h2 id="successTitle">تم تفعيل المفتاح بنجاح 🎉</h2>
         <p>تم تجهيز حسابك وسيتم تحويلك للوحة التحكم خلال لحظات.</p>
         <div class="success-summary">
-          <article>
-            <span>الباقة</span>
-            <strong data-success-plan>إبداع</strong>
-          </article>
-          <article>
-            <span>الرصيد</span>
-            <strong data-success-xp>1200 XP</strong>
-          </article>
-          <article>
-            <span>تاريخ الانتهاء</span>
-            <strong data-success-expiry>90 يوم</strong>
-          </article>
+          <article><span>الباقة</span><strong data-success-plan>إبداع</strong></article>
+          <article><span>الرصيد</span><strong data-success-xp>1200 XP</strong></article>
+          <article><span>الصلاحية</span><strong data-success-expiry>90 يوم</strong></article>
         </div>
         <div class="success-actions">
           <a href="/dashboard" data-dashboard-link>الدخول إلى لوحة التحكم</a>
@@ -153,6 +91,7 @@
     </div>
 
     <script src="/config.js"></script>
-    <script src="/key-activation-page.js?v=20260617-activate-restore"></script>
+    <script src="/key-activation-page.js?v=20260620-activation-portal-v1"></script>
+    <script src="/assistant-widget.js?v=20260620-assistant-v1"></script>
   </body>
 </html>

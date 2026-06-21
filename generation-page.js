@@ -346,7 +346,7 @@
       if (!result.resultUrl) return;
       if (navigator.share) {
         await navigator.share({
-          title: "PixiGenl",
+          title: "PixiGenI",
           text: result.prompt,
           url: result.resultUrl,
         }).catch(() => {});
@@ -414,11 +414,15 @@
   async function refreshGenerationSilently() {
     if (!state.result?.id) return;
     try {
-      const data = await requestJson(`/api/generations/${encodeURIComponent(state.result.id)}`);
+      const statusPath = ["queued", "processing"].includes(state.result.status)
+        ? `/api/generations/${encodeURIComponent(state.result.id)}/status`
+        : `/api/generations/${encodeURIComponent(state.result.id)}`;
+      const data = await requestJson(statusPath);
       const next = normalizeGeneration(data.generation || data.result || data);
       state.result = { ...state.result, ...next };
       if (["completed", "failed"].includes(state.result.status)) {
         stopPolling();
+        await loadRecentGenerations();
       }
       renderCurrent();
     } catch (error) {

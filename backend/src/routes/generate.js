@@ -64,26 +64,22 @@ function httpError(message, statusCode = 400) {
 }
 
 function providerFailureMessage(error, type) {
-  const fallback = "فشل التوليد، لم يتم خصم أي رصيد.";
+  const fallback = "تعذر إتمام الطلب مؤقتًا، حاول لاحقًا. لم يتم خصم أي رصيد.";
   const raw = String(error?.message || "").trim();
 
   if (!raw) {
     return fallback;
   }
 
-  if (raw.includes("WAVESPEED_API_KEY")) {
-    return raw;
-  }
-
   if (/unauthorized|invalid api|invalid key|api key|forbidden|401|403/i.test(raw)) {
-    return "مفتاح WaveSpeed غير صحيح أو غير مفعل في Render. لم يتم خصم أي رصيد.";
+    return fallback;
   }
 
   if (error?.statusCode && error.statusCode < 500) {
-    return `${raw} لم يتم خصم أي رصيد.`;
+    return fallback;
   }
 
-  return `${fallback} السبب: ${raw}`;
+  return fallback;
 }
 
 function getKeyId(req) {

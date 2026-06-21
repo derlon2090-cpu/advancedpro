@@ -70,7 +70,7 @@
     input.disabled = isBusy;
     submitButton.classList.toggle("is-loading", isBusy);
     submitButton.setAttribute("aria-busy", isBusy ? "true" : "false");
-    submitLabel.textContent = isBusy ? "جارِ التحقق..." : "تفعيل الحساب";
+    submitLabel.textContent = isBusy ? "جارِ التحقق..." : "تفعيل الكود الآن";
   }
 
   function setInlineMessage(text, tone = "error") {
@@ -100,7 +100,7 @@
   }
 
   function shakeInput() {
-    const target = document.querySelector(".key-input-wrap");
+    const target = document.querySelector(".activation-portal__input") || document.querySelector(".key-input-wrap");
     if (!target) return;
     target.classList.remove("is-shaking");
     void target.offsetWidth;

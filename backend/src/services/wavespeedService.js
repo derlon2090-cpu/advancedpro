@@ -40,7 +40,7 @@ function requireApiKey() {
   const apiKey = String(process.env.WAVESPEED_API_KEY || "").trim();
   if (!apiKey) {
     throw serviceError(
-      "مفتاح WaveSpeed غير مضبوط في الخادم. أضف WAVESPEED_API_KEY في Render Environment Variables.",
+      "تعذر إتمام الطلب مؤقتًا، حاول لاحقًا.",
       500
     );
   }
@@ -1086,7 +1086,10 @@ function getPromptTranslationKey() {
   const aliases = [
     "PROMPT_TRANSLATION_API_KEY",
     "GEMINI_API_KEY",
+    "GEMINI_IMAGE_API_KEY",
     "GOOGLE_API_KEY",
+    "GOOGLE_IMAGE_API_KEY",
+    "GOOGLE_IMAGEN_API_KEY",
     "GOOGLE_GENERATIVE_AI_API_KEY",
     "GENAI_API_KEY",
   ];
@@ -1097,6 +1100,17 @@ function getPromptTranslationKey() {
   }
 
   return "";
+}
+
+function getPromptTranslationModels() {
+  return [
+    process.env.PROMPT_TRANSLATION_MODEL,
+    "gemini-2.5-flash-lite",
+    "gemini-2.5-flash",
+    "gemini-3.1-flash-lite-preview",
+  ]
+    .map((value) => String(value || "").trim())
+    .filter((value, index, list) => value && list.indexOf(value) === index);
 }
 
 function extractTranslatedPrompt(payload) {
@@ -1155,10 +1169,7 @@ function semanticTranslationIssue(source, translated) {
 function assertSemanticTranslation(source, translated) {
   const issue = semanticTranslationIssue(source, translated);
   if (issue) {
-    throw serviceError(
-      `رفض النظام ترجمة غير مطابقة للوصف (${issue}). أعد المحاولة، ولم يتم خصم أي رصيد.`,
-      422
-    );
+    throw serviceError("تعذر فهم الوصف بدقة الآن. أعد المحاولة بصياغة أوضح، ولم يتم خصم أي رصيد.", 422);
   }
   return String(translated || "").trim();
 }
@@ -1173,75 +1184,84 @@ async function translateArabicPromptForGeneration(userPrompt) {
     return "";
   }
 
-  const model = String(process.env.PROMPT_TRANSLATION_MODEL || "gemini-3.1-flash-lite").trim();
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 10_000);
-
-  try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+  const translationBody = {
+    contents: [
       {
-        method: "POST",
-        cache: "no-store",
-        signal: controller.signal,
-        headers: {
-          "Content-Type": "application/json",
-          "Cache-Control": "no-store",
-          "x-goog-api-key": apiKey,
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: [
-                    "You are a strict Arabic-to-English visual prompt compiler.",
-                    "Convert the Arabic request below into one precise standalone English visual prompt.",
-                    "Preserve every requested noun, subject, species, count, color, size, material, action, pose, spatial relationship, location, time, and negation.",
-                    "Resolve Arabic pronouns and possessives accurately, including معه، بجانبه، صغاره، فوقه، خلفه، داخلها.",
-                    "Treat intensifiers such as كبير جدًا، صغير للغاية، عملاق، ضخم as mandatory visual scale requirements.",
-                    "Never reuse subjects or scenes from earlier requests. This request is independent and stateless.",
-                    "Do not add humans, business scenes, offices, meetings, food, flowers, text, logos, or any object not requested.",
-                    "Make every requested subject clearly visible in the same frame when possible.",
-                    "Silently verify that the English output contains all requested elements before answering.",
-                    "Return only the final English visual prompt. No explanation, labels, JSON, markdown, or Arabic.",
-                    "Arabic request starts:",
-                    text,
-                    "Arabic request ends.",
-                  ].join("\n"),
-                },
-              ],
-            },
-          ],
-          generationConfig: {
-            temperature: 0,
-            maxOutputTokens: 350,
+        parts: [
+          {
+            text: [
+              "You are a strict Arabic-to-English visual prompt compiler.",
+              "Convert the Arabic request below into one precise standalone English visual prompt.",
+              "Preserve every requested noun, subject, species, count, color, size, material, action, pose, spatial relationship, location, time, and negation.",
+              "Resolve Arabic pronouns and possessives accurately, including معه، بجانبه، صغاره، فوقه، خلفه، داخلها.",
+              "Treat intensifiers such as كبير جدًا، صغير للغاية، عملاق، ضخم as mandatory visual scale requirements.",
+              "Never reuse subjects or scenes from earlier requests. This request is independent and stateless.",
+              "Do not add humans, business scenes, offices, meetings, food, flowers, text, logos, or any object not requested.",
+              "Make every requested subject clearly visible in the same frame when possible.",
+              "Silently verify that the English output contains all requested elements before answering.",
+              "Return only the final English visual prompt. No explanation, labels, JSON, markdown, or Arabic.",
+              "Arabic request starts:",
+              text,
+              "Arabic request ends.",
+            ].join("\n"),
           },
-        }),
+        ],
+      },
+    ],
+    generationConfig: {
+      temperature: 0,
+      maxOutputTokens: 350,
+    },
+  };
+
+  for (const model of getPromptTranslationModels()) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12_000);
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+        {
+          method: "POST",
+          cache: "no-store",
+          signal: controller.signal,
+          headers: {
+            "Content-Type": "application/json",
+            "Cache-Control": "no-store",
+            "x-goog-api-key": apiKey,
+          },
+          body: JSON.stringify(translationBody),
+        }
+      );
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        console.warn(
+          "PROMPT_TRANSLATION_ERROR:",
+          model,
+          response.status,
+          payload?.error?.message || payload?.message || "unknown"
+        );
+        continue;
       }
-    );
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      console.warn("PROMPT_TRANSLATION_ERROR:", response.status, payload?.error?.message || payload?.message || "unknown");
-      return "";
-    }
 
-    const translated = extractTranslatedPrompt(payload);
-    const issue = semanticTranslationIssue(text, translated);
-    if (issue) {
-      console.warn("PROMPT_TRANSLATION_INVALID:", compactForLog(translated || "empty"));
-      return "";
-    }
+      const translated = extractTranslatedPrompt(payload);
+      const issue = semanticTranslationIssue(text, translated);
+      if (issue) {
+        console.warn("PROMPT_TRANSLATION_INVALID:", model, compactForLog(translated || "empty"));
+        continue;
+      }
 
-    console.log("PROMPT_TRANSLATION_MODE:", "server");
-    console.log("TRANSLATED_PROMPT:", compactForLog(translated));
-    return assertSemanticTranslation(text, translated);
-  } catch (error) {
-    console.warn("PROMPT_TRANSLATION_ERROR:", error?.name || "error", error?.message || error);
-    return "";
-  } finally {
-    clearTimeout(timeout);
+      console.log("PROMPT_TRANSLATION_MODE:", "server");
+      console.log("PROMPT_TRANSLATION_MODEL:", model);
+      console.log("TRANSLATED_PROMPT:", compactForLog(translated));
+      return assertSemanticTranslation(text, translated);
+    } catch (error) {
+      console.warn("PROMPT_TRANSLATION_ERROR:", model, error?.name || "error", error?.message || error);
+    } finally {
+      clearTimeout(timeout);
+    }
   }
+
+  return "";
 }
 
 function buildNegativeRules(userPrompt) {
@@ -1484,7 +1504,7 @@ function buildFinalPrompt({
     translateArabicToEnglish(userPrompt);
   if (!translatedPrompt || hasArabicText(translatedPrompt)) {
     throw serviceError(
-      "\u062a\u0639\u0630\u0631 \u062a\u0631\u062c\u0645\u0629 \u0627\u0644\u0648\u0635\u0641 \u0627\u0644\u0639\u0631\u0628\u064a \u062a\u0644\u0642\u0627\u0626\u064a\u064b\u0627. \u062a\u062d\u0642\u0642 \u0645\u0646 \u0625\u0639\u062f\u0627\u062f PROMPT_TRANSLATION_API_KEY \u0641\u064a \u0627\u0644\u062e\u0627\u062f\u0645\u060c \u0648\u0644\u0645 \u064a\u062a\u0645 \u062e\u0635\u0645 \u0623\u064a \u0631\u0635\u064a\u062f.",
+      "تعذر فهم الوصف العربي بدقة الآن. أعد المحاولة بصياغة أوضح، ولم يتم خصم أي رصيد.",
       422
     );
   }
@@ -2441,7 +2461,7 @@ export async function generateImageWithWaveSpeed({
   }
 
   throw serviceError(
-    `تم رفض النتيجة لأنها لم تطابق الوصف بدقة (${lastValidation?.reason || "visual_mismatch"}). لم يتم خصم أي رصيد.`,
+    "تعذر إخراج نتيجة مطابقة للوصف بدقة في الوقت الحالي. لم يتم خصم أي رصيد.",
     422
   );
 }

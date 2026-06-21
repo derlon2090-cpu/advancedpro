@@ -57,11 +57,9 @@ function resolveKey(aliasNames) {
   return null;
 }
 
-function requireKey(resolved, label, aliasNames) {
+function requireKey(resolved, _label, _aliasNames) {
   if (!resolved) {
-    const error = new Error(
-      `مفتاح ${label} غير مضبوط في الخادم. أضف أحد المتغيرات التالية: ${aliasNames.join(" أو ")}`
-    );
+    const error = new Error("تعذر إتمام الطلب مؤقتًا، حاول لاحقًا.");
     error.statusCode = 500;
     error.code = "AI_KEY_MISSING";
     throw error;
@@ -135,7 +133,7 @@ function buildMockImageDataUrl(prompt) {
           .replaceAll(">", "&gt;")}
       </text>
       <text x="640" y="430" text-anchor="middle" fill="#eef4ff" font-size="22" font-family="Arial, sans-serif">
-        أضف GOOGLE_API_KEY أو GEMINI_API_KEY لتفعيل التوليد الحقيقي
+        وضع معاينة محلي مؤقت
       </text>
     </svg>
   `.trim();

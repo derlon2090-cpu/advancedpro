@@ -480,6 +480,14 @@
           <span class="udv3-creation-media">${media}</span>
           <b>${isProcessing ? "جاري الإنشاء..." : typeLabel(item.type)}</b>
         </a>
+        <button
+          class="udv6-favorite-button"
+          type="button"
+          data-generation-action="favorite"
+          data-generation-id="${escapeHtml(item.id)}"
+          data-active="${String(Boolean(item.isFavorite))}"
+          aria-label="${item.isFavorite ? "إزالة من المفضلة" : "إضافة إلى المفضلة"}"
+        >${item.isFavorite ? "♥" : "♡"}</button>
         <div class="udv3-creation-body">
           <h3>${prompt}</h3>
           <div class="udv3-creation-meta">
@@ -633,8 +641,15 @@
         <a class="udv6-work-media" href="${targetUrl}" data-generation-link="${escapeHtml(item.id)}">
           ${generationMedia(item)}
           <b>${typeLabel(item.type)}</b>
-          ${favoriteView || item.isFavorite ? "<em>♥</em>" : ""}
         </a>
+        <button
+          class="udv6-favorite-button"
+          type="button"
+          data-generation-action="favorite"
+          data-generation-id="${escapeHtml(item.id)}"
+          data-active="${String(Boolean(favoriteView || item.isFavorite))}"
+          aria-label="${favoriteView || item.isFavorite ? "إزالة من المفضلة" : "إضافة إلى المفضلة"}"
+        >${favoriteView || item.isFavorite ? "♥" : "♡"}</button>
         <div class="udv6-work-body">
           <h3>${escapeHtml(item.prompt)}</h3>
           <div class="udv6-work-meta">
@@ -906,7 +921,7 @@
     return state.results.find((item) => String(item.id) === String(id));
   }
 
-  function switchToCreate({ type = "image", prompt = "" } = {}) {
+  function switchToCreate({ type = "image", prompt = "", shouldScroll = true, shouldFocus = true } = {}) {
     setDashboardView("home");
     setType(type);
     const input = $("[data-prompt-input]");
@@ -914,9 +929,14 @@
       input.value = prompt;
       $("[data-char-count]").textContent = prompt.length;
     }
+    if (!shouldScroll && !shouldFocus) return;
     setTimeout(() => {
-      $("#create")?.scrollIntoView({ behavior: "smooth", block: "start" });
-      input?.focus({ preventScroll: true });
+      if (shouldScroll) {
+        $("#create")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      if (shouldFocus) {
+        input?.focus({ preventScroll: true });
+      }
     }, 40);
   }
 
@@ -942,6 +962,21 @@
       anchor.click();
     } else if (action === "copy") {
       await copyText(item.resultUrl, "تم نسخ الرابط");
+    } else if (action === "favorite") {
+      const nextValue = !Boolean(item.isFavorite);
+      try {
+        const payload = await requestJson(`/api/generations/${encodeURIComponent(item.id)}/favorite`, {
+          method: "PATCH",
+          body: JSON.stringify({ isFavorite: nextValue }),
+        });
+        item.isFavorite = Boolean(payload.isFavorite);
+        if (item.isFavorite) state.favorites.add(String(item.id));
+        else state.favorites.delete(String(item.id));
+        saveFavorites();
+        showToast(item.isFavorite ? "تمت الإضافة للمفضلة" : "تمت الإزالة من المفضلة");
+      } catch (error) {
+        showToast(error.message || "تعذر تحديث المفضلة.", "error");
+      }
     } else if (action === "delete") {
       const confirmed = await confirmAction("هل أنت متأكد؟ سيتم حذف هذا المشروع نهائيًا.");
       if (!confirmed) return;
@@ -970,6 +1005,7 @@
     });
     $$("[data-menu-generation-id]").forEach((button) => {
       button.setAttribute("aria-expanded", "false");
+      button.closest(".udv6-work-card, .udv3-creation-card")?.classList.remove("is-menu-open");
     });
   }
 
@@ -983,6 +1019,7 @@
     state.activeMenuScope = menuButton.dataset.menuScope || null;
     menu.hidden = false;
     menuButton.setAttribute("aria-expanded", "true");
+    menuButton.closest(".udv6-work-card, .udv3-creation-card")?.classList.add("is-menu-open");
   }
 
   function bindSectionEvents() {
@@ -1034,7 +1071,7 @@
             (template) => template.id === templateButton.dataset.useTemplate
           );
           if (item) {
-            switchToCreate({ prompt: item.prompt });
+            switchToCreate({ prompt: item.prompt, shouldScroll: false, shouldFocus: false });
             showToast("تم استخدام القالب");
           }
           return;
@@ -1087,7 +1124,11 @@
         return;
       }
 
-      if (state.activeMenuId && !event.target.closest("[data-generation-menu]")) {
+      if (
+        state.activeMenuId &&
+        !event.target.closest("[data-generation-menu]") &&
+        !event.target.closest("[data-menu-generation-id]")
+      ) {
         closeAllMenus();
       }
     });
@@ -1096,9 +1137,6 @@
       if (!event.target.matches("[data-section-search]")) return;
       state.sectionSearch = event.target.value;
       renderDashboardSection();
-      const input = $("[data-section-search]");
-      input?.focus();
-      input?.setSelectionRange(input.value.length, input.value.length);
     });
 
     document.addEventListener(
@@ -1445,17 +1483,9 @@
       } catch {
         // Ignore storage failures; the API remains the source of truth.
       }
-      promptInput.value = "";
-      $("[data-char-count]").textContent = "0";
-      resetEnhancedPromptState();
-      renderAll();
-      showToast(
-        state.type === "video"
-          ? "✨ تم بدء إنشاء الفيديو. سيتم إشعارك عند الانتهاء."
-          : "✨ تم بدء إنشاء الصورة. الوقت المتوقع حوالي 15 ثانية."
-      );
-      await refreshKey({ silent: true });
-      await refreshGenerations({ silent: true });
+      sessionStorage.setItem("pixigen:active-generation", String(generation.id));
+      window.location.assign(`/generation?id=${encodeURIComponent(generation.id)}`);
+      return;
     } catch (error) {
       if (error.name === "AbortError") {
         setMessage("تم إلغاء الإنشاء. لم يتم خصم أي رصيد.", "info");
@@ -1510,10 +1540,14 @@
         );
         await refreshKey({ silent: true });
       }
-      renderAll();
+      if (!state.activeMenuId) {
+        renderAll();
+      }
     } catch (error) {
       if (!silent) console.warn("GENERATIONS LOAD WARNING:", error);
-      renderAll();
+      if (!state.activeMenuId) {
+        renderAll();
+      }
     } finally {
       scheduleGenerationsRefresh();
     }
@@ -1629,9 +1663,14 @@
     bindSectionEvents();
     setType("image");
     setDashboardView(window.location.hash.slice(1) || "home", { updateHistory: false });
+    document.body.classList.add("is-dashboard-loading");
     renderAll();
-    await refreshKey();
-    await refreshGenerations({ silent: true });
+    await Promise.all([
+      refreshKey({ silent: true }),
+      refreshGenerations({ silent: true }),
+    ]);
+    document.body.classList.remove("is-dashboard-loading");
+    renderAll();
   }
 
   init();

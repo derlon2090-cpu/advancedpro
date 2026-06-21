@@ -499,6 +499,11 @@
   gap: 5px;
 }
 
+.user-dashboard-v3.is-dashboard-loading .udv3-main,
+.user-dashboard-v3.is-dashboard-loading .udv3-widgets {
+  min-height: 520px;
+}
+
 .user-dashboard-v3 .udv3-creation-preview {
   position: relative;
   overflow: hidden;
@@ -535,7 +540,7 @@
 
 .user-dashboard-v3 .udv3-card-menu-wrap {
   position: relative;
-  z-index: 70;
+  z-index: 190;
 }
 
 .user-dashboard-v3 .udv3-creation-card h3 {
@@ -562,6 +567,11 @@
   color: #15162f;
   font-size: 15px;
   line-height: 1;
+  cursor: pointer;
+}
+
+.user-dashboard-v3 .udv3-creation-card.is-menu-open {
+  z-index: 220;
 }
 
 .user-dashboard-v3 .udv3-card-menu:focus-visible {

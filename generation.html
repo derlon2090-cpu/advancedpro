@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>تم إنشاء صورتك بنجاح! | PixiGenl</title>
-    <meta name="description" content="صفحة نتيجة إنشاء الصور والفيديوهات داخل PixiGenl." />
+    <title>تم إنشاء صورتك بنجاح! | PixiGenI</title>
+    <meta name="description" content="صفحة نتيجة إنشاء الصور والفيديوهات داخل PixiGenI." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -59,12 +59,8 @@
       .result-brand-mark {
         width: 42px;
         height: 42px;
-        display: grid;
-        place-items: center;
-        border-radius: 14px;
-        color: #6d35ff;
-        background: #f4f0ff;
-        font-size: 20px;
+        object-fit: contain;
+        flex: 0 0 42px;
       }
 
       .result-nav {
@@ -746,9 +742,9 @@
   <body class="generation-result-page">
     <div class="result-page" data-result-page>
       <aside class="result-sidebar" aria-label="الشريط الجانبي">
-        <a class="result-brand" href="/dashboard" aria-label="PixiGenl">
-          <span class="result-brand-mark">✦</span>
-          <strong>PixiGenl</strong>
+        <a class="result-brand" href="/dashboard" aria-label="PixiGenI">
+          <img class="result-brand-mark" src="/ap-mark.svg" alt="" />
+          <strong>PixiGenI</strong>
         </a>
         <nav class="result-nav">
           <a href="/dashboard">لوحة التحكم</a>
@@ -855,5 +851,6 @@
 
     <script src="/config.js"></script>
     <script src="/generation-page.js?v=20260619-result-v3"></script>
+    <script src="/assistant-widget.js?v=20260620-assistant-v1"></script>
   </body>
 </html>

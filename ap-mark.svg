@@ -1,61 +1,25 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
   <defs>
-    <linearGradient id="apStroke" x1="52" y1="18" x2="99" y2="108" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#2F80FF" />
-      <stop offset="0.52" stop-color="#7B61FF" />
-      <stop offset="1" stop-color="#E85AAE" />
+    <linearGradient id="pixiGradient" x1="20" y1="16" x2="108" y2="112" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#02B9FF"/>
+      <stop offset=".48" stop-color="#315CFF"/>
+      <stop offset="1" stop-color="#A42DFF"/>
     </linearGradient>
-    <linearGradient id="orbitGlow" x1="46" y1="16" x2="76" y2="48" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#A8C7FF" />
-      <stop offset="1" stop-color="#4B6BFF" />
+    <linearGradient id="pixiGlow" x1="38" y1="22" x2="92" y2="104" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6FE2FF"/>
+      <stop offset="1" stop-color="#6B32FF"/>
     </linearGradient>
-    <filter id="logoShadow" x="12" y="10" width="104" height="112" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-      <feDropShadow dx="0" dy="12" stdDeviation="10" flood-color="#5669A9" flood-opacity="0.14" />
+    <filter id="pixiShadow" x="-30%" y="-30%" width="170%" height="180%">
+      <feDropShadow dx="0" dy="12" stdDeviation="10" flood-color="#4F46E5" flood-opacity=".2"/>
     </filter>
   </defs>
-
-  <g filter="url(#logoShadow)">
-    <path
-      d="M35 103L55 34"
-      stroke="#14182A"
-      stroke-width="12"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    />
-    <path
-      d="M55 34C70 51 83 77 93 103"
-      stroke="url(#apStroke)"
-      stroke-width="12"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    />
-    <path
-      d="M45 73H72"
-      stroke="#14182A"
-      stroke-width="9"
-      stroke-linecap="round"
-    />
-
-    <path
-      d="M69 35C81 36 89 45 89 56C89 66 82 73 72 75"
-      stroke="url(#apStroke)"
-      stroke-width="8"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    />
-
-    <circle cx="60" cy="28" r="12.5" fill="#F5FAFF" stroke="url(#orbitGlow)" stroke-width="7" />
-    <circle cx="60" cy="28" r="4.5" fill="#121526" />
-    <circle cx="57" cy="24.5" r="1.9" fill="#FFFFFF" fill-opacity="0.96" />
-
-    <circle cx="84" cy="22" r="4.2" fill="#6B88FF" fill-opacity="0.92" />
-    <circle cx="84" cy="22" r="1.2" fill="#FFFFFF" fill-opacity="0.92" />
-    <path
-      d="M72 24.5C75.5 21.5 78.5 20 82 20"
-      stroke="url(#orbitGlow)"
-      stroke-width="3"
-      stroke-linecap="round"
-      opacity="0.9"
-    />
+  <g filter="url(#pixiShadow)">
+    <path d="M38 23h34c22 0 37 13 37 33S94 90 72 90H57v20H38V23Z" fill="url(#pixiGradient)"/>
+    <path d="M57 41h14c11 0 18 5 18 15s-7 16-18 16H57V41Z" fill="#fff" fill-opacity=".92"/>
+    <path d="M38 78h20v32H38V78Z" fill="url(#pixiGlow)"/>
+    <rect x="14" y="38" width="10" height="10" rx="2" fill="#7A39FF"/>
+    <rect x="5" y="55" width="13" height="13" rx="2.5" fill="#4D67FF"/>
+    <rect x="18" y="72" width="8" height="8" rx="2" fill="#0AAEFF"/>
+    <rect x="27" y="51" width="7" height="7" rx="1.5" fill="#9B32FF"/>
   </g>
 </svg>
