@@ -1,6 +1,7 @@
-import { Router } from "express";
+﻿import { Router } from "express";
 import { randomUUID } from "node:crypto";
 import { prisma } from "../lib/prisma.js";
+import { getAuthWorkspace } from "../middleware/auth.js";
 import { aiLimiter } from "../middleware/rateLimit.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { withDbRetry } from "../utils/dbRetry.js";
@@ -22,6 +23,12 @@ import {
   upsertGenerationFeedback,
   upsertPromptAnalytics,
 } from "../services/generationFeedback.js";
+import {
+  buildGenerationStorageKey,
+  downloadRemoteAsset,
+  uploadBufferToB2,
+} from "../services/b2Storage.js";
+import { ensureWorkspacesTable } from "../services/workspaces.js";
 import {
   assertAllowedGenerationContent,
   assertValidPrompt,
@@ -65,7 +72,7 @@ function httpError(message, statusCode = 400) {
 }
 
 function providerFailureMessage(error, type) {
-  const fallback = "تعذر إتمام الطلب مؤقتًا، حاول لاحقًا. لم يتم خصم أي رصيد.";
+  const fallback = "طھط¹ط°ط± ط¥طھظ…ط§ظ… ط§ظ„ط·ظ„ط¨ ظ…ط¤ظ‚طھظ‹ط§طŒ ط­ط§ظˆظ„ ظ„ط§ط­ظ‚ظ‹ط§. ظ„ظ… ظٹطھظ… ط®طµظ… ط£ظٹ ط±طµظٹط¯.";
   const raw = String(error?.message || "").trim();
 
   if (!raw) {
@@ -86,7 +93,7 @@ function providerFailureMessage(error, type) {
 function getKeyId(req) {
   const keyId = Number(req.cookies?.key_session);
   if (!Number.isFinite(keyId)) {
-    httpError("أدخل مفتاحك أولًا للوصول إلى التوليد.", 401);
+    httpError("ط£ط¯ط®ظ„ ظ…ظپطھط§ط­ظƒ ط£ظˆظ„ظ‹ط§ ظ„ظ„ظˆطµظˆظ„ ط¥ظ„ظ‰ ط§ظ„طھظˆظ„ظٹط¯.", 401);
   }
   return keyId;
 }
@@ -104,12 +111,12 @@ function getRemainingSlots(key, type) {
 function isComplexGenerationPrompt(prompt) {
   const text = String(prompt || "").toLowerCase();
   const relationWords = [
-    "بجانب",
-    "فوق",
-    "داخل",
-    "يمسك",
-    "يرتدي",
-    "يقود",
+    "ط¨ط¬ط§ظ†ط¨",
+    "ظپظˆظ‚",
+    "ط¯ط§ط®ظ„",
+    "ظٹظ…ط³ظƒ",
+    "ظٹط±طھط¯ظٹ",
+    "ظٹظ‚ظˆط¯",
     "with",
     "next to",
     "inside",
@@ -118,18 +125,18 @@ function isComplexGenerationPrompt(prompt) {
     "\u0645\u0639",
   ];
   const colorWords = [
-    "أسود",
-    "اسود",
-    "أبيض",
-    "ابيض",
-    "أحمر",
-    "احمر",
-    "أخضر",
-    "اخضر",
-    "أصفر",
-    "اصفر",
-    "أزرق",
-    "ازرق",
+    "ط£ط³ظˆط¯",
+    "ط§ط³ظˆط¯",
+    "ط£ط¨ظٹط¶",
+    "ط§ط¨ظٹط¶",
+    "ط£ط­ظ…ط±",
+    "ط§ط­ظ…ط±",
+    "ط£ط®ط¶ط±",
+    "ط§ط®ط¶ط±",
+    "ط£طµظپط±",
+    "ط§طµظپط±",
+    "ط£ط²ط±ظ‚",
+    "ط§ط²ط±ظ‚",
     "black",
     "white",
     "red",
@@ -138,16 +145,16 @@ function isComplexGenerationPrompt(prompt) {
     "blue",
   ];
   const subjectWords = [
-    "رجل",
-    "امرأة",
-    "شخص",
-    "كلب",
-    "قط",
-    "قطة",
-    "روبوت",
-    "سيارة",
-    "منزل",
-    "قمر",
+    "ط±ط¬ظ„",
+    "ط§ظ…ط±ط£ط©",
+    "ط´ط®طµ",
+    "ظƒظ„ط¨",
+    "ظ‚ط·",
+    "ظ‚ط·ط©",
+    "ط±ظˆط¨ظˆطھ",
+    "ط³ظٹط§ط±ط©",
+    "ظ…ظ†ط²ظ„",
+    "ظ‚ظ…ط±",
     "man",
     "woman",
     "dog",
@@ -168,8 +175,8 @@ function isComplexGenerationPrompt(prompt) {
   const relations = relationWords.filter((word) => text.includes(word)).length;
   const colors = colorWords.filter((word) => text.includes(word)).length;
   const subjects = subjectWords.filter((word) => text.includes(word)).length;
-  const hasPersonAndAnimal = /(رجل|امرأة|شخص|man|woman|person)/.test(text) && /(كلب|قط|قطة|dog|cat)/.test(text);
-  const hasRobotFantasy = /(روبوت|robot)/.test(text) && /(قمر|فضاء|moon|space)/.test(text);
+  const hasPersonAndAnimal = /(ط±ط¬ظ„|ط§ظ…ط±ط£ط©|ط´ط®طµ|man|woman|person)/.test(text) && /(ظƒظ„ط¨|ظ‚ط·|ظ‚ط·ط©|dog|cat)/.test(text);
+  const hasRobotFantasy = /(ط±ظˆط¨ظˆطھ|robot)/.test(text) && /(ظ‚ظ…ط±|ظپط¶ط§ط،|moon|space)/.test(text);
 
   return subjects > 2 || relations > 0 || colors > 1 || hasPersonAndAnimal || hasRobotFantasy;
 }
@@ -345,6 +352,8 @@ function serializeKeyBalance(key) {
 }
 
 function serializeGeneration(row) {
+  const stableResultUrl = row.storage_url || row.result_url;
+  const stableThumbnailUrl = row.thumbnail_url || row.storage_url || row.result_url;
   return {
     id: row.id,
     requestId: row.request_id,
@@ -364,7 +373,12 @@ function serializeGeneration(row) {
     creditsUsed: Number(row.credits_used || 0),
     xpCost: Number(row.credits_used || 0),
     status: row.status,
-    resultUrl: row.result_url,
+    resultUrl: stableResultUrl,
+    storageUrl: row.storage_url || null,
+    storageKey: row.storage_key || null,
+    thumbnailUrl: stableThumbnailUrl || null,
+    mimeType: row.mime_type || null,
+    fileSize: row.file_size == null ? null : Number(row.file_size),
     isFavorite: Boolean(row.is_favorite),
     createdAt: row.created_at,
     completedAt: row.completed_at,
@@ -375,10 +389,11 @@ function serializeGeneration(row) {
   };
 }
 
-async function loadCompletedGenerationById({ keyId, generationId }) {
+async function loadCompletedGenerationById({ keyId, workspaceId, generationId }) {
   const rows = await withDbRetry(() =>
     prisma.$queryRaw`
       SELECT g.id,
+             g.workspace_id,
              g.request_id,
              g.type,
              g.prompt,
@@ -395,6 +410,11 @@ async function loadCompletedGenerationById({ keyId, generationId }) {
              g.credits_used,
              g.status,
              g.result_url,
+             g.storage_url,
+             g.storage_key,
+             g.thumbnail_url,
+             g.mime_type,
+             g.file_size,
              g.is_favorite,
              g.created_at,
              g.completed_at,
@@ -403,10 +423,10 @@ async function loadCompletedGenerationById({ keyId, generationId }) {
              gf.score AS quality_score
       FROM generations g
       LEFT JOIN generation_feedback gf ON gf.generation_id = g.id
-      WHERE g.key_id = ${keyId}
+      WHERE (g.workspace_id = ${workspaceId} OR (g.workspace_id IS NULL AND g.key_id = ${keyId}))
         AND g.id = ${generationId}
         AND g.status = 'completed'
-        AND g.result_url IS NOT NULL
+        AND COALESCE(g.storage_url, g.result_url) IS NOT NULL
         AND g.deleted_at IS NULL
       LIMIT 1
     `
@@ -422,6 +442,7 @@ async function ensureGenerationTable() {
         id SERIAL PRIMARY KEY,
         user_id INTEGER,
         key_id INTEGER,
+        workspace_id INTEGER,
         type VARCHAR(32) NOT NULL,
         prompt TEXT NOT NULL,
         quality VARCHAR(32),
@@ -436,11 +457,17 @@ async function ensureGenerationTable() {
         credits_used INTEGER NOT NULL DEFAULT 0,
         status VARCHAR(32) NOT NULL DEFAULT 'queued',
         result_url TEXT,
+        storage_url TEXT,
+        storage_key TEXT,
+        thumbnail_url TEXT,
+        mime_type VARCHAR(120),
+        file_size BIGINT,
         error_message TEXT,
         created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
         completed_at TIMESTAMP(3)
       )
     `,
+    `ALTER TABLE generations ADD COLUMN IF NOT EXISTS workspace_id INTEGER`,
     `ALTER TABLE generations ADD COLUMN IF NOT EXISTS provider VARCHAR(64)`,
     `ALTER TABLE generations ADD COLUMN IF NOT EXISTS model VARCHAR(128)`,
     `ALTER TABLE generations ADD COLUMN IF NOT EXISTS final_prompt TEXT`,
@@ -453,6 +480,12 @@ async function ensureGenerationTable() {
     `ALTER TABLE generations ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP(3)`,
     `ALTER TABLE generations ADD COLUMN IF NOT EXISTS is_favorite BOOLEAN NOT NULL DEFAULT FALSE`,
     `ALTER TABLE generations ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP(3)`,
+    `ALTER TABLE generations ADD COLUMN IF NOT EXISTS storage_url TEXT`,
+    `ALTER TABLE generations ADD COLUMN IF NOT EXISTS storage_key TEXT`,
+    `ALTER TABLE generations ADD COLUMN IF NOT EXISTS thumbnail_url TEXT`,
+    `ALTER TABLE generations ADD COLUMN IF NOT EXISTS mime_type VARCHAR(120)`,
+    `ALTER TABLE generations ADD COLUMN IF NOT EXISTS file_size BIGINT`,
+    `CREATE INDEX IF NOT EXISTS generations_workspace_id_idx ON generations (workspace_id)`,
   ];
 
   for (const statement of statements) {
@@ -486,20 +519,43 @@ async function ensureProjectsTable(tx = prisma) {
     CREATE TABLE IF NOT EXISTS projects (
       id SERIAL PRIMARY KEY,
       key_id INTEGER NOT NULL,
+      workspace_id INTEGER,
+      generation_id INTEGER,
       type VARCHAR(32) NOT NULL,
       prompt TEXT NOT NULL,
       duration INTEGER,
       quality VARCHAR(32),
       style VARCHAR(64),
+      model VARCHAR(128),
       result_url TEXT,
+      storage_url TEXT,
+      thumbnail_url TEXT,
+      mime_type VARCHAR(120),
+      file_size BIGINT,
       status VARCHAR(32) NOT NULL DEFAULT 'completed',
       created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  const statements = [
+    `ALTER TABLE projects ADD COLUMN IF NOT EXISTS workspace_id INTEGER`,
+    `ALTER TABLE projects ADD COLUMN IF NOT EXISTS generation_id INTEGER`,
+    `ALTER TABLE projects ADD COLUMN IF NOT EXISTS model VARCHAR(128)`,
+    `ALTER TABLE projects ADD COLUMN IF NOT EXISTS storage_url TEXT`,
+    `ALTER TABLE projects ADD COLUMN IF NOT EXISTS thumbnail_url TEXT`,
+    `ALTER TABLE projects ADD COLUMN IF NOT EXISTS mime_type VARCHAR(120)`,
+    `ALTER TABLE projects ADD COLUMN IF NOT EXISTS file_size BIGINT`,
+    `CREATE INDEX IF NOT EXISTS projects_workspace_id_idx ON projects (workspace_id)`,
+  ];
+
+  for (const statement of statements) {
+    await tx.$executeRawUnsafe(statement);
+  }
 }
 
 async function createGenerationRecord({
   keyId,
+  workspaceId,
   type,
   prompt,
   quality,
@@ -517,8 +573,8 @@ async function createGenerationRecord({
 }) {
   const rows = await withDbRetry(() =>
     prisma.$queryRaw`
-      INSERT INTO generations (key_id, type, prompt, quality, duration, provider, model, final_prompt, request_id, style, aspect_ratio, credits_used, status)
-      VALUES (${keyId}, ${type}, ${prompt}, ${quality}, ${duration}, ${provider}, ${model}, ${finalPrompt}, ${requestId}, ${style}, ${aspectRatio}, ${creditsUsed}, ${status})
+      INSERT INTO generations (key_id, workspace_id, type, prompt, quality, duration, provider, model, final_prompt, request_id, style, aspect_ratio, credits_used, status)
+      VALUES (${keyId}, ${workspaceId}, ${type}, ${prompt}, ${quality}, ${duration}, ${provider}, ${model}, ${finalPrompt}, ${requestId}, ${style}, ${aspectRatio}, ${creditsUsed}, ${status})
       RETURNING id
     `
   );
@@ -545,7 +601,7 @@ async function markGenerationFailed({ generationId, message }) {
   await withDbRetry(() =>
     prisma.$executeRaw`
       UPDATE generations
-      SET status = 'failed', error_message = ${message || "فشل التوليد"}
+      SET status = 'failed', error_message = ${message || "ظپط´ظ„ ط§ظ„طھظˆظ„ظٹط¯"}
       WHERE id = ${generationId}
     `
   ).catch((error) => logError(error, { scope: "markGenerationFailed", generationId }));
@@ -554,6 +610,7 @@ async function markGenerationFailed({ generationId, message }) {
 async function completeGenerationAndDeduct({
   generationId,
   keyId,
+  workspaceId,
   type,
   prompt,
   duration,
@@ -561,6 +618,11 @@ async function completeGenerationAndDeduct({
   style,
   creditsUsed,
   resultUrl,
+  storageUrl,
+  storageKey,
+  thumbnailUrl,
+  mimeType,
+  fileSize,
   provider,
   model,
   finalPrompt,
@@ -578,19 +640,20 @@ async function completeGenerationAndDeduct({
         SELECT status
         FROM generations
         WHERE id = ${generationId}
+          AND (workspace_id = ${workspaceId} OR (workspace_id IS NULL AND key_id = ${keyId}))
         FOR UPDATE
       `;
 
       if (!generationRows.length) {
-        httpError("سجل التوليد غير موجود.", 500);
+        httpError("ط³ط¬ظ„ ط§ظ„طھظˆظ„ظٹط¯ ط؛ظٹط± ظ…ظˆط¬ظˆط¯.", 500);
       }
 
       if (generationRows[0].status === "completed") {
-        httpError("تم خصم رصيد هذا الطلب مسبقًا.", 409);
+        httpError("طھظ… ط®طµظ… ط±طµظٹط¯ ظ‡ط°ط§ ط§ظ„ط·ظ„ط¨ ظ…ط³ط¨ظ‚ظ‹ط§.", 409);
       }
 
       if (!["queued", "processing"].includes(generationRows[0].status)) {
-        httpError("تم إلغاء هذا الطلب أو فشل سابقًا، ولن يتم خصم أي رصيد.", 409);
+        httpError("طھظ… ط¥ظ„ط؛ط§ط، ظ‡ط°ط§ ط§ظ„ط·ظ„ط¨ ط£ظˆ ظپط´ظ„ ط³ط§ط¨ظ‚ظ‹ط§طŒ ظˆظ„ظ† ظٹطھظ… ط®طµظ… ط£ظٹ ط±طµظٹط¯.", 409);
       }
 
       const current = await tx.activationCode.findUnique({
@@ -598,17 +661,17 @@ async function completeGenerationAndDeduct({
       });
 
       if (!current) {
-        httpError("جلسة المفتاح غير صالحة.", 401);
+        httpError("ط¬ظ„ط³ط© ط§ظ„ظ…ظپطھط§ط­ ط؛ظٹط± طµط§ظ„ط­ط©.", 401);
       }
 
       const creditsRemaining = Number(current.balance || 0);
       if (creditsRemaining < creditsUsed) {
-        httpError("رصيدك غير كافٍ لإتمام هذا الطلب.");
+        httpError("ط±طµظٹط¯ظƒ ط؛ظٹط± ظƒط§ظپظچ ظ„ط¥طھظ…ط§ظ… ظ‡ط°ط§ ط§ظ„ط·ظ„ط¨.");
       }
 
       const slotField = type === "video" ? "videoUsed" : "imageUsed";
       if (getRemainingSlots(current, type) < 1) {
-        httpError(type === "video" ? "لا يوجد رصيد فيديو كافٍ" : "لا يوجد رصيد صور كافٍ");
+        httpError(type === "video" ? "ظ„ط§ ظٹظˆط¬ط¯ ط±طµظٹط¯ ظپظٹط¯ظٹظˆ ظƒط§ظپظچ" : "ظ„ط§ ظٹظˆط¬ط¯ ط±طµظٹط¯ طµظˆط± ظƒط§ظپظچ");
       }
 
       const updateResult = await tx.activationCode.updateMany({
@@ -624,7 +687,7 @@ async function completeGenerationAndDeduct({
       });
 
       if (updateResult.count !== 1) {
-        httpError("رصيدك غير كافٍ لإتمام هذا الطلب.");
+        httpError("ط±طµظٹط¯ظƒ ط؛ظٹط± ظƒط§ظپظچ ظ„ط¥طھظ…ط§ظ… ظ‡ط°ط§ ط§ظ„ط·ظ„ط¨.");
       }
 
       const updatedKey = await tx.activationCode.findUnique({
@@ -634,7 +697,13 @@ async function completeGenerationAndDeduct({
       await tx.$executeRaw`
         UPDATE generations
         SET status = 'completed',
+            workspace_id = ${workspaceId},
             result_url = ${resultUrl},
+            storage_url = ${storageUrl || resultUrl},
+            storage_key = ${storageKey || null},
+            thumbnail_url = ${thumbnailUrl || storageUrl || resultUrl},
+            mime_type = ${mimeType || null},
+            file_size = ${fileSize ?? null},
             provider = ${provider},
             model = ${model},
             final_prompt = ${finalPrompt || prompt},
@@ -654,12 +723,44 @@ async function completeGenerationAndDeduct({
 
       await tx.$executeRaw`
         INSERT INTO credit_transactions (user_id, key_id, amount, type, reason, generation_id)
-        VALUES (NULL, ${keyId}, ${-creditsUsed}, 'generation', ${reason}, ${generationId})
+        VALUES (NULL, ${keyId}, ${-creditsUsed}, 'debit', ${reason}, ${generationId})
       `;
 
       await tx.$executeRaw`
-        INSERT INTO projects (key_id, type, prompt, duration, quality, style, result_url, status)
-        VALUES (${keyId}, ${type}, ${prompt}, ${duration}, ${quality}, ${style}, ${resultUrl}, 'completed')
+        INSERT INTO projects (
+          key_id,
+          workspace_id,
+          generation_id,
+          type,
+          prompt,
+          duration,
+          quality,
+          style,
+          model,
+          result_url,
+          storage_url,
+          thumbnail_url,
+          mime_type,
+          file_size,
+          status
+        )
+        VALUES (
+          ${keyId},
+          ${workspaceId},
+          ${generationId},
+          ${type},
+          ${prompt},
+          ${duration},
+          ${quality},
+          ${style},
+          ${model || null},
+          ${storageUrl || resultUrl},
+          ${storageUrl || resultUrl},
+          ${thumbnailUrl || storageUrl || resultUrl},
+          ${mimeType || null},
+          ${fileSize ?? null},
+          'completed'
+        )
       `;
 
       return updatedKey;
@@ -678,6 +779,7 @@ function scheduleGenerationCompletion(task) {
 async function runGenerationCompletionTask({
   generationId,
   keyId,
+  workspaceId,
   type,
   prompt,
   duration,
@@ -730,7 +832,43 @@ async function runGenerationCompletionTask({
   }
 
   if (!result?.resultUrl) {
-    await markGenerationFailed({ generationId, message: "لم يرجع مزود التوليد رابط نتيجة." });
+    await markGenerationFailed({ generationId, message: "ظ„ظ… ظٹط±ط¬ط¹ ظ…ط²ظˆط¯ ط§ظ„طھظˆظ„ظٹط¯ ط±ط§ط¨ط· ظ†طھظٹط¬ط©." });
+    return;
+  }
+
+  let persistedAsset = null;
+  try {
+    const asset = await downloadRemoteAsset(result.resultUrl);
+    const storageKey = buildGenerationStorageKey({
+      workspaceId,
+      generationId,
+      mimeType: asset.mimeType,
+    });
+    const uploaded = await uploadBufferToB2({
+      key: storageKey,
+      bytes: asset.bytes,
+      mimeType: asset.mimeType,
+    });
+
+    persistedAsset = {
+      storageKey: uploaded.storageKey,
+      storageUrl: uploaded.storageUrl,
+      thumbnailUrl: type === "image" ? uploaded.storageUrl : null,
+      mimeType: asset.mimeType,
+      fileSize: asset.fileSize,
+    };
+  } catch (error) {
+    await markGenerationFailed({
+      generationId,
+      message: "طھط¹ط°ط± ط­ظپط¸ ط§ظ„ظ†طھظٹط¬ط© ظپظٹ ط§ظ„طھط®ط²ظٹظ† ط§ظ„ط¯ط§ط¦ظ…. ظ„ظ… ظٹطھظ… ط®طµظ… ط£ظٹ ط±طµظٹط¯.",
+    });
+    logError(error, {
+      scope: "persistGenerationAsset",
+      keyId,
+      workspaceId,
+      generationId,
+      sourceUrl: result.resultUrl,
+    });
     return;
   }
 
@@ -738,6 +876,7 @@ async function runGenerationCompletionTask({
     const updatedKey = await completeGenerationAndDeduct({
       generationId,
       keyId,
+      workspaceId,
       type,
       prompt,
       duration,
@@ -746,6 +885,11 @@ async function runGenerationCompletionTask({
       aspectRatio,
       creditsUsed,
       resultUrl: result.resultUrl,
+      storageUrl: persistedAsset.storageUrl,
+      storageKey: persistedAsset.storageKey,
+      thumbnailUrl: persistedAsset.thumbnailUrl,
+      mimeType: persistedAsset.mimeType,
+      fileSize: persistedAsset.fileSize,
       provider: result.provider,
       model: result.model,
       finalPrompt: result.finalPrompt || prompt,
@@ -780,7 +924,7 @@ async function runGenerationCompletionTask({
     console.log("REMAINING BALANCE:", Number(updatedKey.balance || 0));
   } catch (error) {
     if (error.statusCode !== 409) {
-      await markGenerationFailed({ generationId, message: "تم إنشاء النتيجة لكن تعذر حفظها أو خصم الرصيد." });
+      await markGenerationFailed({ generationId, message: "طھظ… ط¥ظ†ط´ط§ط، ط§ظ„ظ†طھظٹط¬ط© ظ„ظƒظ† طھط¹ط°ط± ط­ظپط¸ظ‡ط§ ط£ظˆ ط®طµظ… ط§ظ„ط±طµظٹط¯." });
     }
     logError(error, {
       scope: "completeGenerationAndDeduct",
@@ -799,20 +943,20 @@ async function loadAndValidateKey({ keyId, type, creditsUsed }) {
   );
 
   if (!key) {
-    httpError("جلسة المفتاح غير صالحة.", 401);
+    httpError("ط¬ظ„ط³ط© ط§ظ„ظ…ظپطھط§ط­ ط؛ظٹط± طµط§ظ„ط­ط©.", 401);
   }
 
   const isExpired = key.expiresAt && new Date(key.expiresAt).getTime() < Date.now();
   if (!key.isActive || isExpired) {
-    httpError("هذا المفتاح غير متاح أو انتهت صلاحيته.");
+    httpError("ظ‡ط°ط§ ط§ظ„ظ…ظپطھط§ط­ ط؛ظٹط± ظ…طھط§ط­ ط£ظˆ ط§ظ†طھظ‡طھ طµظ„ط§ط­ظٹطھظ‡.");
   }
 
   if (getRemainingSlots(key, type) < 1) {
-    httpError(type === "video" ? "لا يوجد رصيد فيديو كافٍ" : "لا يوجد رصيد صور كافٍ");
+    httpError(type === "video" ? "ظ„ط§ ظٹظˆط¬ط¯ ط±طµظٹط¯ ظپظٹط¯ظٹظˆ ظƒط§ظپظچ" : "ظ„ط§ ظٹظˆط¬ط¯ ط±طµظٹط¯ طµظˆط± ظƒط§ظپظچ");
   }
 
   if (Number(key.balance || 0) < creditsUsed) {
-    httpError("رصيدك غير كافٍ لإتمام هذا الطلب.");
+    httpError("ط±طµظٹط¯ظƒ ط؛ظٹط± ظƒط§ظپظچ ظ„ط¥طھظ…ط§ظ… ظ‡ط°ط§ ط§ظ„ط·ظ„ط¨.");
   }
 
   return key;
@@ -824,45 +968,136 @@ router.get(
     await ensureGenerationTable();
     await ensureGenerationFeedbackInfrastructure();
 
-    const keyId = getKeyId(req);
-    const rows = await withDbRetry(() =>
-      prisma.$queryRaw`
-        SELECT g.id,
-               g.request_id,
-               g.type,
-               g.prompt,
-               g.quality,
-               g.style,
-               g.aspect_ratio,
-               g.duration,
-               g.provider,
-               g.model,
-               g.seed,
-               g.final_prompt,
-               g.enhanced_prompt,
-               g.negative_prompt,
-               g.credits_used,
-               g.status,
-               g.result_url,
-               g.is_favorite,
-               g.created_at,
-               g.completed_at,
-               EXTRACT(EPOCH FROM (g.completed_at - g.created_at)) * 1000 AS generation_time_ms,
-               gf.rating AS user_rating,
-               gf.score AS quality_score
-        FROM generations g
-        LEFT JOIN generation_feedback gf ON gf.generation_id = g.id
-        WHERE g.key_id = ${keyId}
-          AND g.status IN ('queued', 'processing', 'completed', 'failed')
-          AND g.deleted_at IS NULL
-        ORDER BY g.created_at DESC
-        LIMIT 60
-      `
-    );
+    const auth = await getAuthWorkspace(req);
+    const keyId = auth.activationKeyId;
+    const workspaceId = auth.workspaceId;
+    const page = Math.max(Number(req.query.page || 1), 1);
+    const limit = Math.min(Math.max(Number(req.query.limit || 60), 1), 60);
+    const offset = (page - 1) * limit;
+    const requestedType = String(req.query.type || "all").trim().toLowerCase();
+    const typeFilter = requestedType === "image" || requestedType === "video" ? requestedType : "all";
+
+    const countRows =
+      typeFilter === "all"
+        ? await withDbRetry(() =>
+            prisma.$queryRaw`
+              SELECT COUNT(*)::INT AS total
+              FROM generations g
+              WHERE (g.workspace_id = ${workspaceId} OR (g.workspace_id IS NULL AND g.key_id = ${keyId}))
+                AND g.status IN ('queued', 'processing', 'completed', 'failed')
+                AND g.deleted_at IS NULL
+            `
+          )
+        : await withDbRetry(() =>
+            prisma.$queryRaw`
+              SELECT COUNT(*)::INT AS total
+              FROM generations g
+              WHERE (g.workspace_id = ${workspaceId} OR (g.workspace_id IS NULL AND g.key_id = ${keyId}))
+                AND g.type = ${typeFilter}
+                AND g.status IN ('queued', 'processing', 'completed', 'failed')
+                AND g.deleted_at IS NULL
+            `
+          );
+
+    const rows =
+      typeFilter === "all"
+        ? await withDbRetry(() =>
+            prisma.$queryRaw`
+              SELECT g.id,
+                     g.workspace_id,
+                     g.request_id,
+                     g.type,
+                     g.prompt,
+                     g.quality,
+                     g.style,
+                     g.aspect_ratio,
+                     g.duration,
+                     g.provider,
+                     g.model,
+                     g.seed,
+                     g.final_prompt,
+                     g.enhanced_prompt,
+                     g.negative_prompt,
+                     g.credits_used,
+                     g.status,
+                     g.result_url,
+                     g.storage_url,
+                     g.storage_key,
+                     g.thumbnail_url,
+                     g.mime_type,
+                     g.file_size,
+                     g.is_favorite,
+                     g.created_at,
+                     g.completed_at,
+                     EXTRACT(EPOCH FROM (g.completed_at - g.created_at)) * 1000 AS generation_time_ms,
+                     gf.rating AS user_rating,
+                     gf.score AS quality_score
+              FROM generations g
+              LEFT JOIN generation_feedback gf ON gf.generation_id = g.id
+              WHERE (g.workspace_id = ${workspaceId} OR (g.workspace_id IS NULL AND g.key_id = ${keyId}))
+                AND g.status IN ('queued', 'processing', 'completed', 'failed')
+                AND g.deleted_at IS NULL
+              ORDER BY g.created_at DESC
+              LIMIT ${limit}
+              OFFSET ${offset}
+            `
+          )
+        : await withDbRetry(() =>
+            prisma.$queryRaw`
+              SELECT g.id,
+                     g.workspace_id,
+                     g.request_id,
+                     g.type,
+                     g.prompt,
+                     g.quality,
+                     g.style,
+                     g.aspect_ratio,
+                     g.duration,
+                     g.provider,
+                     g.model,
+                     g.seed,
+                     g.final_prompt,
+                     g.enhanced_prompt,
+                     g.negative_prompt,
+                     g.credits_used,
+                     g.status,
+                     g.result_url,
+                     g.storage_url,
+                     g.storage_key,
+                     g.thumbnail_url,
+                     g.mime_type,
+                     g.file_size,
+                     g.is_favorite,
+                     g.created_at,
+                     g.completed_at,
+                     EXTRACT(EPOCH FROM (g.completed_at - g.created_at)) * 1000 AS generation_time_ms,
+                     gf.rating AS user_rating,
+                     gf.score AS quality_score
+              FROM generations g
+              LEFT JOIN generation_feedback gf ON gf.generation_id = g.id
+              WHERE (g.workspace_id = ${workspaceId} OR (g.workspace_id IS NULL AND g.key_id = ${keyId}))
+                AND g.type = ${typeFilter}
+                AND g.status IN ('queued', 'processing', 'completed', 'failed')
+                AND g.deleted_at IS NULL
+              ORDER BY g.created_at DESC
+              LIMIT ${limit}
+              OFFSET ${offset}
+            `
+          );
+
+    const generations = rows.map(serializeGeneration);
+    const total = Number(countRows?.[0]?.total || generations.length);
 
     return res.json({
       success: true,
-      generations: rows.map(serializeGeneration),
+      generations,
+      projects: generations,
+      pagination: {
+        page,
+        limit,
+        total,
+        hasMore: page * limit < total,
+      },
     });
   })
 );
@@ -884,15 +1119,17 @@ router.post(
     await ensureGenerationTable();
     await ensureGenerationFeedbackInfrastructure();
 
-    const keyId = getKeyId(req);
+    const auth = await getAuthWorkspace(req);
+    const keyId = auth.activationKeyId;
+    const workspaceId = auth.workspaceId;
     const generationId = Number(req.params.id);
     if (!Number.isFinite(generationId)) {
-      httpError("معرف النتيجة غير صالح.", 400);
+      httpError("ظ…ط¹ط±ظپ ط§ظ„ظ†طھظٹط¬ط© ط؛ظٹط± طµط§ظ„ط­.", 400);
     }
 
-    const generation = await loadCompletedGenerationById({ keyId, generationId });
+    const generation = await loadCompletedGenerationById({ keyId, workspaceId, generationId });
     if (!generation) {
-      httpError("لم يتم العثور على النتيجة المطلوبة.", 404);
+      httpError("ظ„ظ… ظٹطھظ… ط§ظ„ط¹ط«ظˆط± ط¹ظ„ظ‰ ط§ظ„ظ†طھظٹط¬ط© ط§ظ„ظ…ط·ظ„ظˆط¨ط©.", 404);
     }
 
     const feedback = await upsertGenerationFeedback({
@@ -925,10 +1162,12 @@ router.patch(
   asyncHandler(async (req, res) => {
     await ensureGenerationTable();
 
-    const keyId = getKeyId(req);
+    const auth = await getAuthWorkspace(req);
+    const keyId = auth.activationKeyId;
+    const workspaceId = auth.workspaceId;
     const generationId = Number(req.params.id);
     if (!Number.isFinite(generationId)) {
-      httpError("معرف النتيجة غير صالح.", 400);
+      httpError("ظ…ط¹ط±ظپ ط§ظ„ظ†طھظٹط¬ط© ط؛ظٹط± طµط§ظ„ط­.", 400);
     }
 
     const isFavorite = Boolean(req.body?.isFavorite);
@@ -937,14 +1176,14 @@ router.patch(
         UPDATE generations
         SET is_favorite = ${isFavorite}
         WHERE id = ${generationId}
-          AND key_id = ${keyId}
+          AND (workspace_id = ${workspaceId} OR (workspace_id IS NULL AND key_id = ${keyId}))
           AND deleted_at IS NULL
         RETURNING id, is_favorite
       `
     );
 
     if (!rows.length) {
-      httpError("لم يتم العثور على النتيجة المطلوبة.", 404);
+      httpError("ظ„ظ… ظٹطھظ… ط§ظ„ط¹ط«ظˆط± ط¹ظ„ظ‰ ط§ظ„ظ†طھظٹط¬ط© ط§ظ„ظ…ط·ظ„ظˆط¨ط©.", 404);
     }
 
     return res.json({
@@ -960,10 +1199,12 @@ router.delete(
   asyncHandler(async (req, res) => {
     await ensureGenerationTable();
 
-    const keyId = getKeyId(req);
+    const auth = await getAuthWorkspace(req);
+    const keyId = auth.activationKeyId;
+    const workspaceId = auth.workspaceId;
     const generationId = Number(req.params.id);
     if (!Number.isFinite(generationId)) {
-      httpError("معرف النتيجة غير صالح.", 400);
+      httpError("ظ…ط¹ط±ظپ ط§ظ„ظ†طھظٹط¬ط© ط؛ظٹط± طµط§ظ„ط­.", 400);
     }
 
     const rows = await withDbRetry(() =>
@@ -972,14 +1213,14 @@ router.delete(
         SET deleted_at = NOW(),
             is_favorite = FALSE
         WHERE id = ${generationId}
-          AND key_id = ${keyId}
+          AND (workspace_id = ${workspaceId} OR (workspace_id IS NULL AND key_id = ${keyId}))
           AND deleted_at IS NULL
         RETURNING id
       `
     );
 
     if (!rows.length) {
-      httpError("لم يتم العثور على النتيجة المطلوبة.", 404);
+      httpError("ظ„ظ… ظٹطھظ… ط§ظ„ط¹ط«ظˆط± ط¹ظ„ظ‰ ط§ظ„ظ†طھظٹط¬ط© ط§ظ„ظ…ط·ظ„ظˆط¨ط©.", 404);
     }
 
     return res.json({
@@ -995,19 +1236,21 @@ router.get(
     await ensureGenerationTable();
     await ensureGenerationFeedbackInfrastructure();
 
-    const keyId = getKeyId(req);
+    const auth = await getAuthWorkspace(req);
+    const keyId = auth.activationKeyId;
+    const workspaceId = auth.workspaceId;
     const generationId = Number(req.params.id);
 
     if (!Number.isFinite(generationId)) {
-      httpError("معرف النتيجة غير صالح.", 400);
+      httpError("ظ…ط¹ط±ظپ ط§ظ„ظ†طھظٹط¬ط© ط؛ظٹط± طµط§ظ„ط­.", 400);
     }
 
     console.log("GET GENERATION ID:", generationId);
 
-    const generation = await loadCompletedGenerationById({ keyId, generationId });
+    const generation = await loadCompletedGenerationById({ keyId, workspaceId, generationId });
 
     if (!generation) {
-      httpError("لم يتم العثور على النتيجة المطلوبة.", 404);
+      httpError("ظ„ظ… ظٹطھظ… ط§ظ„ط¹ط«ظˆط± ط¹ظ„ظ‰ ط§ظ„ظ†طھظٹط¬ط© ط§ظ„ظ…ط·ظ„ظˆط¨ط©.", 404);
     }
 
     console.log("GET GENERATION RESULT ID:", generation.id);
@@ -1025,16 +1268,19 @@ router.get(
   asyncHandler(async (req, res) => {
     await ensureGenerationTable();
 
-    const keyId = getKeyId(req);
+    const auth = await getAuthWorkspace(req);
+    const keyId = auth.activationKeyId;
+    const workspaceId = auth.workspaceId;
     const generationId = Number(req.params.id);
 
     if (!Number.isFinite(generationId)) {
-      httpError("معرف النتيجة غير صالح.", 400);
+      httpError("ظ…ط¹ط±ظپ ط§ظ„ظ†طھظٹط¬ط© ط؛ظٹط± طµط§ظ„ط­.", 400);
     }
 
     const rows = await withDbRetry(() =>
       prisma.$queryRaw`
         SELECT g.id,
+               g.workspace_id,
                g.request_id,
                g.type,
                g.prompt,
@@ -1051,12 +1297,17 @@ router.get(
                g.credits_used,
                g.status,
                g.result_url,
+               g.storage_url,
+               g.storage_key,
+               g.thumbnail_url,
+               g.mime_type,
+               g.file_size,
                g.is_favorite,
                g.created_at,
                g.completed_at,
                EXTRACT(EPOCH FROM (g.completed_at - g.created_at)) * 1000 AS generation_time_ms
         FROM generations g
-        WHERE g.key_id = ${keyId}
+        WHERE (g.workspace_id = ${workspaceId} OR (g.workspace_id IS NULL AND g.key_id = ${keyId}))
           AND g.id = ${generationId}
           AND g.deleted_at IS NULL
         LIMIT 1
@@ -1064,7 +1315,7 @@ router.get(
     );
 
     if (!rows.length) {
-      httpError("لم يتم العثور على النتيجة المطلوبة.", 404);
+      httpError("ظ„ظ… ظٹطھظ… ط§ظ„ط¹ط«ظˆط± ط¹ظ„ظ‰ ط§ظ„ظ†طھظٹط¬ط© ط§ظ„ظ…ط·ظ„ظˆط¨ط©.", 404);
     }
 
     return res.json({
@@ -1079,9 +1330,12 @@ router.post(
   aiLimiter,
   asyncHandler(async (req, res) => {
     await ensureGenerationTable();
+    await ensureWorkspacesTable();
     await ensureGenerationFeedbackInfrastructure();
 
-    const keyId = getKeyId(req);
+    const auth = await getAuthWorkspace(req);
+    const keyId = auth.activationKeyId;
+    const workspaceId = auth.workspaceId;
     const type = normalizeGenerationType(req.body.type || "image");
     let quality = normalizeQuality(req.body.quality || "normal");
     const duration = type === "video" ? normalizeDuration(req.body.durationSeconds || req.body.duration || 5) : null;
@@ -1092,10 +1346,12 @@ router.post(
     const requestId = String(req.body.requestId || "").trim().slice(0, 80) || randomUUID();
     const providedSeed = Number(req.body.seed);
     const seed = Number.isFinite(providedSeed) ? providedSeed : Math.floor(Math.random() * 999999999);
+
     console.log("PROMPT_COMPLEXITY:", {
       requestId,
       ...analyzePromptComplexity(prompt),
     });
+
     const routing = await resolveQualityForPrompt({ type, quality, prompt });
     if (routing.blocked) {
       console.log("MODEL_QUALITY_BLOCKED:", {
@@ -1105,8 +1361,9 @@ router.post(
         reason: routing.reason,
         model: routing.model,
       });
-      httpError("هذا الموديل لم يجتز اختبارات الجودة المطلوبة بعد. شغّل اختبارات الموديلات من لوحة الأدمن أو عطّل وضع الاعتماد الصارم مؤقتًا.", 503);
+      httpError("هذا النموذج لم يجتز اختبارات الجودة المطلوبة بعد. فعّل نموذجًا معتمدًا من لوحة الأدمن ثم أعد المحاولة.", 503);
     }
+
     if (routing.routed) {
       console.log("MODEL_QUALITY_SMART_ROUTING:", {
         type,
@@ -1117,6 +1374,7 @@ router.post(
       });
       quality = routing.quality;
     }
+
     const creditsUsed = calculateRequiredCredits(type, quality, duration || 5);
     const promptDiagnostics = buildSmartPromptEnhancement({
       userPrompt: prompt,
@@ -1131,6 +1389,7 @@ router.post(
       requestId,
       seed,
     });
+
     console.log("REQUEST_ID:", requestId);
     console.log("SEED:", seed);
     console.log("SELECTED TYPE:", type);
@@ -1139,6 +1398,7 @@ router.post(
 
     logInfo("GENERATION_REQUEST", {
       keyId,
+      workspaceId,
       type,
       quality,
       duration,
@@ -1152,6 +1412,7 @@ router.post(
 
     const generationId = await createGenerationRecord({
       keyId,
+      workspaceId,
       type,
       prompt,
       quality,
@@ -1168,6 +1429,7 @@ router.post(
     scheduleGenerationCompletion({
       generationId,
       keyId,
+      workspaceId,
       type,
       prompt,
       duration,
@@ -1200,156 +1462,6 @@ router.post(
         status: "processing",
         createdAt: new Date().toISOString(),
       },
-    });
-
-    let result;
-
-    try {
-      if (type === "image") {
-        result = await generateImageWithWaveSpeed({
-          prompt,
-          quality,
-          aspectRatio,
-          style,
-          requestId,
-          seed,
-        });
-      } else {
-        result = await generateVideoWithWaveSpeed({
-          prompt,
-          duration,
-          quality,
-          aspectRatio,
-          style,
-          requestId,
-          seed,
-        });
-      }
-
-      console.log("RESULT_URL:", result?.resultUrl || "");
-      console.log("NEW RESULT URL:", result?.resultUrl || "");
-      console.log("GENERATION_ID:", generationId);
-
-      logInfo("GENERATION_PROVIDER_RESULT", {
-        keyId,
-        generationId,
-        type,
-        provider: result?.provider,
-        model: result?.model,
-        seed: result?.seed,
-        finalPrompt: result?.finalPrompt || prompt,
-        resultUrl: result?.resultUrl,
-      });
-    } catch (error) {
-      await markGenerationFailed({ generationId, message: error.message });
-      await upsertPromptAnalytics({
-        generationId,
-        prompt,
-        enhancedPrompt: promptDiagnostics.enhancedPrompt || null,
-        finalPrompt: promptDiagnostics.finalPrompt || prompt,
-        negativePrompt: promptDiagnostics.negativePrompt || null,
-        model: modelForQuality(type, quality),
-        success: false,
-      }).catch((analyticsError) => {
-        logError(analyticsError, { scope: "upsertPromptAnalyticsFailedGeneration", generationId });
-      });
-      logError(error, { scope: "generateProvider", keyId, generationId, type });
-      httpError(providerFailureMessage(error, type), error.statusCode || 502);
-      httpError("فشل التوليد، لم يتم خصم أي رصيد.", error.statusCode || 502);
-    }
-
-    if (!result?.resultUrl) {
-      await markGenerationFailed({ generationId, message: "لم يرجع مزود التوليد رابط نتيجة." });
-      httpError("فشل التوليد، لم يتم خصم أي رصيد. السبب: لم يرجع مزود التوليد رابط نتيجة.", 502);
-    }
-
-    let updatedKey;
-    try {
-      updatedKey = await completeGenerationAndDeduct({
-        generationId,
-        keyId,
-        type,
-        prompt,
-        duration,
-        quality,
-        style,
-        aspectRatio,
-        creditsUsed,
-        resultUrl: result.resultUrl,
-        provider: result.provider,
-        model: result.model,
-        finalPrompt: result.finalPrompt || prompt,
-        enhancedPrompt: promptDiagnostics.enhancedPrompt || null,
-        negativePrompt: promptDiagnostics.negativePrompt || null,
-        seed: result.seed,
-      });
-    } catch (error) {
-      if (error.statusCode !== 409) {
-        await markGenerationFailed({ generationId, message: "تم إنشاء النتيجة لكن تعذر حفظها أو خصم الرصيد." });
-      }
-      logError(error, {
-        scope: "completeGenerationAndDeduct",
-        keyId,
-        generationId,
-        resultUrl: result.resultUrl,
-      });
-      httpError("تم إنشاء النتيجة لكن تعذر حفظها. لم يتم خصم الرصيد، وتم تسجيل الخطأ للمراجعة.", 500);
-    }
-
-    console.log("SAVED GENERATION ID:", generationId);
-    console.log("SAVED RESULT URL:", result.resultUrl);
-
-    await upsertPromptAnalytics({
-      generationId,
-      prompt,
-      enhancedPrompt: promptDiagnostics.enhancedPrompt || null,
-      finalPrompt: result.finalPrompt || promptDiagnostics.finalPrompt || prompt,
-      negativePrompt: promptDiagnostics.negativePrompt || null,
-      model: result.model,
-      success: true,
-    }).catch((error) => {
-      logError(error, { scope: "upsertPromptAnalytics", generationId });
-    });
-
-    const savedGenerationRow = await loadCompletedGenerationById({ keyId, generationId });
-    if (!savedGenerationRow) {
-      httpError("تم إنشاء النتيجة لكن تعذر جلب السجل المحفوظ من قاعدة البيانات.", 500);
-    }
-
-    const savedGeneration = serializeGeneration(savedGenerationRow);
-    console.log("SAVED GENERATION:", JSON.stringify(serializeBigInt(savedGeneration)));
-
-    logInfo("GENERATION_COMPLETED", {
-      keyId,
-      generationId,
-      type,
-      creditsUsed,
-      provider: result.provider,
-      seed: result.seed,
-    });
-
-    console.log("GENERATION_RESPONSE_BINDING:", {
-      requestId: savedGeneration.requestId,
-      generationId: savedGeneration.id,
-      userPrompt: savedGeneration.userPrompt,
-      finalPrompt: savedGeneration.finalPrompt,
-      resultUrl: savedGeneration.resultUrl,
-      model: savedGeneration.model,
-      seed: savedGeneration.seed,
-    });
-
-    return res.json({
-      success: true,
-      message: "تم الإنشاء بنجاح.",
-      generationId,
-      requestId,
-      resultUrl: result.resultUrl,
-      status: "completed",
-      creditsUsed,
-      creditsRemaining: Number(updatedKey.balance || 0),
-      newXpBalance: Number(updatedKey.balance || 0),
-      accessCode: serializeKeyBalance(updatedKey),
-      generation: savedGeneration,
     });
   })
 );
