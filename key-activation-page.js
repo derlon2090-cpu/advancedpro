@@ -82,7 +82,7 @@
 
   function getFriendlyErrorMessage(errorCode) {
     if (errorCode === "SERVER_ERROR") {
-      return "تأكد أنك مسجل الدخول وأن الكود صحيح، ثم أعد المحاولة.";
+      return "تعذر التحقق من الكود حاليًا. تأكد من صحة الكود واتصالك ثم أعد المحاولة.";
     }
     if (errorCode === "INVALID_KEY") {
       return "أدخل الكود بشكل صحيح ثم أعد المحاولة.";
@@ -161,7 +161,7 @@
   }
 
   async function activateKey(code) {
-    const routes = ["/api/public/keys/activate", "/api/activate-key", "/api/activate", "/api/user/code/activate"];
+    const routes = ["/api/public/keys/activate", "/api/keys/activate"];
     let lastError = null;
 
     for (const path of routes) {
@@ -198,9 +198,7 @@
         lastError = error;
         const canRetry =
           !error?.code ||
-          error.code === "SERVER_ERROR" ||
-          error.status === 401 ||
-          error.status === 403;
+          error.code === "SERVER_ERROR";
 
         if (!canRetry) {
           throw error;

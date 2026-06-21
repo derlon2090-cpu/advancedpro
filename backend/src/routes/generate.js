@@ -553,6 +553,111 @@ async function ensureProjectsTable(tx = prisma) {
   }
 }
 
+async function backfillLegacyProjectsForWorkspace({ keyId, workspaceId }) {
+  await ensureGenerationTable();
+  await ensureProjectsTable();
+
+  await withDbRetry(() =>
+    prisma.$executeRaw`
+      WITH legacy_projects AS (
+        SELECT
+          p.id,
+          p.key_id,
+          COALESCE(p.workspace_id, ${workspaceId}) AS workspace_id,
+          p.type,
+          p.prompt,
+          p.duration,
+          p.quality,
+          p.style,
+          p.model,
+          p.result_url,
+          p.storage_url,
+          p.thumbnail_url,
+          p.mime_type,
+          p.file_size,
+          p.status,
+          p.created_at,
+          CASE
+            WHEN p.status = 'completed' THEN COALESCE(p.created_at, CURRENT_TIMESTAMP)
+            ELSE NULL
+          END AS completed_at
+        FROM projects p
+        WHERE p.key_id = ${keyId}
+          AND NOT EXISTS (
+            SELECT 1
+            FROM generations g
+            WHERE g.request_id = CONCAT('legacy-project-', p.id::text)
+          )
+      )
+      INSERT INTO generations (
+        key_id,
+        workspace_id,
+        type,
+        prompt,
+        quality,
+        duration,
+        provider,
+        model,
+        final_prompt,
+        request_id,
+        style,
+        credits_used,
+        status,
+        result_url,
+        storage_url,
+        thumbnail_url,
+        mime_type,
+        file_size,
+        created_at,
+        completed_at
+      )
+      SELECT
+        lp.key_id,
+        lp.workspace_id,
+        lp.type,
+        lp.prompt,
+        lp.quality,
+        lp.duration,
+        'legacy-projects',
+        lp.model,
+        lp.prompt,
+        CONCAT('legacy-project-', lp.id::text),
+        lp.style,
+        0,
+        COALESCE(NULLIF(lp.status, ''), 'completed'),
+        COALESCE(lp.storage_url, lp.result_url),
+        COALESCE(lp.storage_url, lp.result_url),
+        COALESCE(lp.thumbnail_url, lp.storage_url, lp.result_url),
+        lp.mime_type,
+        lp.file_size,
+        COALESCE(lp.created_at, CURRENT_TIMESTAMP),
+        lp.completed_at
+      FROM legacy_projects lp
+    `
+  );
+
+  await withDbRetry(() =>
+    prisma.$executeRaw`
+      UPDATE projects p
+      SET workspace_id = COALESCE(p.workspace_id, ${workspaceId}),
+          generation_id = COALESCE(
+            p.generation_id,
+            (
+              SELECT g.id
+              FROM generations g
+              WHERE g.request_id = CONCAT('legacy-project-', p.id::text)
+              LIMIT 1
+            )
+          )
+      WHERE p.key_id = ${keyId}
+        AND (
+          p.workspace_id IS NULL OR
+          p.generation_id IS NULL
+        )
+    `
+  );
+}
+
 async function createGenerationRecord({
   keyId,
   workspaceId,
@@ -971,6 +1076,7 @@ router.get(
     const auth = await getAuthWorkspace(req);
     const keyId = auth.activationKeyId;
     const workspaceId = auth.workspaceId;
+    await backfillLegacyProjectsForWorkspace({ keyId, workspaceId });
     const page = Math.max(Number(req.query.page || 1), 1);
     const limit = Math.min(Math.max(Number(req.query.limit || 60), 1), 60);
     const offset = (page - 1) * limit;
@@ -1240,6 +1346,7 @@ router.get(
     const keyId = auth.activationKeyId;
     const workspaceId = auth.workspaceId;
     const generationId = Number(req.params.id);
+    await backfillLegacyProjectsForWorkspace({ keyId, workspaceId });
 
     if (!Number.isFinite(generationId)) {
       httpError("ظ…ط¹ط±ظپ ط§ظ„ظ†طھظٹط¬ط© ط؛ظٹط± طµط§ظ„ط­.", 400);
@@ -1272,6 +1379,7 @@ router.get(
     const keyId = auth.activationKeyId;
     const workspaceId = auth.workspaceId;
     const generationId = Number(req.params.id);
+    await backfillLegacyProjectsForWorkspace({ keyId, workspaceId });
 
     if (!Number.isFinite(generationId)) {
       httpError("ظ…ط¹ط±ظپ ط§ظ„ظ†طھظٹط¬ط© ط؛ظٹط± طµط§ظ„ط­.", 400);
