@@ -43,8 +43,17 @@ test("generation UI uses one submit path and keeps background jobs inside the da
   );
   assert.doesNotMatch(dashboardScript, /history\.replaceState\([^)]*\/generation\?id=/);
   assert.match(dashboardScript, /\["queued", "processing"\]\.includes\(item\.status\)/);
-  assert.match(resultScript, /updateActions\(result\)/);
-  assert.match(resultScript, /\["completed", "failed"\]\.includes\(state\.result\.status\)/);
+  assert.match(
+    resultScript,
+    /requestJson\(`\/api\/generations\/\$\{encodeURIComponent\(state\.currentId\)\}`\)/
+  );
+  assert.match(
+    resultScript,
+    /requestJson\(`\/api\/generations\/\$\{encodeURIComponent\(state\.currentId\)\}\/status`\)/
+  );
+  assert.match(resultScript, /if \(isPending\(state\.result\)\) startPolling\(\)/);
+  assert.match(resultScript, /if \(wasPending && isCompleted\(state\.result\)\)/);
+  assert.match(resultScript, /if \(wasPending && isFailed\(state\.result\)\)/);
 });
 
 test("explicit sexual prompts are rejected with the safe educational message", () => {
@@ -116,6 +125,16 @@ test("common robot misspelling in space never falls back to a businessman scene"
   assert.match(result.negativePrompt, /businessman/i);
   assert.match(result.negativePrompt, /meeting room/i);
   assert.match(result.negativePrompt, /office/i);
+});
+
+test("simple Arabic child prompt is generated locally instead of being rejected", () => {
+  const result = build("اعمل صورة ولد صغير جدا");
+
+  assert.match(result.finalPrompt, /very young little boy|young boy|boy/i);
+  assert.match(result.finalPrompt, /realistic high-quality portrait/i);
+  assert.match(result.negativePrompt, /extra people/i);
+  assert.match(result.negativePrompt, /office/i);
+  assert.doesNotMatch(result.finalPrompt, /[\u0600-\u06ff]/);
 });
 
 test("unknown Arabic prompt is blocked instead of leaking raw Arabic to the provider", () => {

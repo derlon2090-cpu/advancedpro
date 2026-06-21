@@ -117,6 +117,29 @@ const COLOR_TERMS = {
 const ENTITY_TERMS = {
   cat: ["\u0642\u0637\u0629", "\u0642\u0637", "cat"],
   dog: ["\u0643\u0644\u0628", "dog"],
+  person: [
+    "\u0631\u062c\u0644",
+    "\u0627\u0645\u0631\u0623\u0629",
+    "\u0627\u0645\u0631\u0627\u0629",
+    "\u0633\u064a\u062f\u0629",
+    "\u0634\u062e\u0635",
+    "\u0625\u0646\u0633\u0627\u0646",
+    "\u0627\u0646\u0633\u0627\u0646",
+    "\u0648\u0644\u062f",
+    "\u0635\u0628\u064a",
+    "\u0637\u0641\u0644",
+    "\u0628\u0646\u062a",
+    "\u0641\u062a\u0627\u0629",
+    "\u0637\u0641\u0644\u0629",
+    "man",
+    "woman",
+    "person",
+    "human",
+    "boy",
+    "girl",
+    "child",
+    "kid",
+  ],
   wolf: ["\u0630\u0626\u0628", "\u0630\u064a\u0628", "\u0630\u0626\u0627\u0628", "\u0630\u064a\u0627\u0628", "wolf", "wolves"],
   snake: ["\u062b\u0639\u0628\u0627\u0646", "\u062b\u0639\u0627\u0628\u064a\u0646", "\u0623\u0641\u0639\u0649", "\u0627\u0641\u0639\u0649", "\u0623\u0641\u0639\u0649", "snake", "snakes"],
   chicken: ["\u062f\u062c\u0627\u062c\u0629", "\u062f\u062c\u0627\u062c", "\u0641\u0631\u062e\u0629", "\u0643\u062a\u0643\u0648\u062a", "chicken", "hen", "rooster", "chick"],
@@ -185,8 +208,39 @@ const COUNTABLE_ENTITIES = [
   {
     singular: "person",
     plural: "people",
-    terms: ["\u0623\u0634\u062e\u0627\u0635", "\u0627\u0634\u062e\u0627\u0635", "\u0634\u062e\u0635", "people", "persons", "person"],
-    dualTerms: ["\u0634\u062e\u0635\u0627\u0646", "\u0634\u062e\u0635\u064a\u0646"],
+    terms: [
+      "\u0623\u0634\u062e\u0627\u0635",
+      "\u0627\u0634\u062e\u0627\u0635",
+      "\u0634\u062e\u0635",
+      "\u0631\u062c\u0644",
+      "\u0627\u0645\u0631\u0623\u0629",
+      "\u0627\u0645\u0631\u0627\u0629",
+      "\u0633\u064a\u062f\u0629",
+      "\u0648\u0644\u062f",
+      "\u0635\u0628\u064a",
+      "\u0637\u0641\u0644",
+      "\u0628\u0646\u062a",
+      "\u0641\u062a\u0627\u0629",
+      "\u0637\u0641\u0644\u0629",
+      "people",
+      "persons",
+      "person",
+      "man",
+      "woman",
+      "boy",
+      "girl",
+      "child",
+    ],
+    dualTerms: [
+      "\u0634\u062e\u0635\u0627\u0646",
+      "\u0634\u062e\u0635\u064a\u0646",
+      "\u0648\u0644\u062f\u0627\u0646",
+      "\u0648\u0644\u062f\u064a\u0646",
+      "\u0628\u0646\u062a\u0627\u0646",
+      "\u0628\u0646\u062a\u064a\u0646",
+      "\u0637\u0641\u0644\u0627\u0646",
+      "\u0637\u0641\u0644\u064a\u0646",
+    ],
   },
 ];
 
@@ -431,6 +485,9 @@ function analyzePromptV3(userPrompt) {
 
   const hasCat = includesAny(lower, ["\u0642\u0637", "cat"]);
   const hasDog = includesAny(lower, ["\u0643\u0644\u0628", "dog"]);
+  const hasBoy = includesAny(lower, ["\u0648\u0644\u062f", "\u0635\u0628\u064a", "boy"]);
+  const hasGirl = includesAny(lower, ["\u0628\u0646\u062a", "\u0641\u062a\u0627\u0629", "\u0637\u0641\u0644\u0629", "girl"]);
+  const hasChild = includesAny(lower, ["\u0637\u0641\u0644", "\u0648\u0644\u062f", "\u0635\u0628\u064a", "\u0628\u0646\u062a", "\u0641\u062a\u0627\u0629", "\u0637\u0641\u0644\u0629", "child", "kid", "boy", "girl"]);
   const hasChicken = includesAny(lower, ENTITY_TERMS.chicken);
   const hasTurtle = includesAny(lower, ENTITY_TERMS.turtle);
   const hasWolf = includesAny(lower, ENTITY_TERMS.wolf);
@@ -490,6 +547,24 @@ function analyzePromptV3(userPrompt) {
     "oversized",
     "massive",
   ]);
+  const hasVerySmallHuman = includesAny(lower, [
+    "\u0635\u063a\u064a\u0631 \u062c\u062f\u0627",
+    "\u0635\u063a\u064a\u0631 \u062c\u062f\u064b\u0627",
+    "\u0635\u063a\u064a\u0631\u0629 \u062c\u062f\u0627",
+    "\u0635\u063a\u064a\u0631\u0629 \u062c\u062f\u064b\u0627",
+    "very small",
+    "very young",
+    "tiny",
+  ]);
+  const hasYoungHuman = includesAny(lower, [
+    "\u0635\u063a\u064a\u0631",
+    "\u0635\u063a\u064a\u0631\u0629",
+    "\u0634\u0627\u0628",
+    "\u0634\u0627\u0628\u0629",
+    "young",
+    "little",
+    "small",
+  ]);
   const hasBlack = includesAny(lower, COLOR_TERMS.black);
   const hasWhite = includesAny(lower, COLOR_TERMS.white);
   const hasGarden = includesAny(lower, ["\u062d\u062f\u064a\u0642\u0629", "garden"]);
@@ -514,6 +589,7 @@ function analyzePromptV3(userPrompt) {
   const hasTop = includesAny(lower, ["\u0641\u0648\u0642", "\u0639\u0644\u0649 \u0633\u0637\u062d", "\u0633\u0637\u062d", "on top", "above", "roof"]);
   const hasInFront = includesAny(lower, ["\u0623\u0645\u0627\u0645", "\u0627\u0645\u0627\u0645", "in front"]);
   const hasInside = includesAny(lower, ["\u062f\u0627\u062e\u0644", "\u0641\u064a \u062f\u0627\u062e\u0644", "inside"]);
+  const hasWoman = includesAny(lower, ["\u0627\u0645\u0631\u0623\u0629", "\u0627\u0645\u0631\u0627\u0629", "\u0633\u064a\u062f\u0629", "woman", "female"]);
   const catColor = detectColorForEntity(lower, "cat") || (hasCat ? firstDetectedColor(lower) : null);
   const dogColor = detectColorForEntity(lower, "dog") || (hasDog ? firstDetectedColor(lower) : null);
   const chickenColor =
@@ -818,6 +894,103 @@ function analyzePromptV3(userPrompt) {
     };
   }
 
+  if ((hasBoy || hasGirl || hasChild || hasWoman || hasMan) && !profession && !hasSuit && !hasOffice && !hasCar && !hasCat && !hasDog && !hasChicken && !hasTurtle && !hasWolf && !hasSnake && !hasRobot) {
+    const subjectLabel = hasBoy
+      ? hasVerySmallHuman
+        ? "very young little boy"
+        : hasYoungHuman
+          ? "young boy"
+          : "boy"
+      : hasGirl
+        ? hasVerySmallHuman
+          ? "very young little girl"
+          : hasYoungHuman
+            ? "young girl"
+            : "girl"
+        : hasChild
+          ? hasVerySmallHuman
+            ? "very young child"
+            : hasYoungHuman
+              ? "young child"
+              : "child"
+          : hasWoman
+            ? hasYoungHuman
+              ? "young woman"
+              : "woman"
+            : hasYoungHuman
+              ? "young man"
+              : "man";
+    const scene = hasGarden
+      ? "inside a clean garden scene"
+      : hasBeach
+        ? "on a natural beach"
+        : "in a clean simple portrait scene";
+
+    return {
+      subject: subjectLabel,
+      subjectColor: null,
+      object: hasGarden ? "garden" : hasBeach ? "beach" : null,
+      objectColor: null,
+      relation: hasGarden ? "inside" : hasBeach ? "on" : null,
+      enhancedPrompt: [
+        hasBoy
+          ? hasVerySmallHuman
+            ? "صورة واقعية لولد صغير جدًا يكون هو العنصر الرئيسي الوحيد داخل الإطار."
+            : "صورة واقعية لولد صغير يكون هو العنصر الرئيسي الوحيد داخل الإطار."
+          : hasGirl
+            ? hasVerySmallHuman
+              ? "صورة واقعية لبنت صغيرة جدًا تكون هي العنصر الرئيسي الوحيد داخل الإطار."
+              : "صورة واقعية لبنت صغيرة تكون هي العنصر الرئيسي الوحيد داخل الإطار."
+            : hasChild
+              ? hasVerySmallHuman
+                ? "صورة واقعية لطفل صغير جدًا يكون هو العنصر الرئيسي الوحيد داخل الإطار."
+                : "صورة واقعية لطفل صغير يكون هو العنصر الرئيسي الوحيد داخل الإطار."
+              : hasWoman
+                ? "صورة واقعية لشخصية نسائية واضحة داخل الإطار."
+                : "صورة واقعية لشخص واضح داخل الإطار.",
+        hasGarden
+          ? "تظهر الشخصية داخل حديقة نظيفة وواضحة."
+          : hasBeach
+            ? "تظهر الشخصية على شاطئ طبيعي واضح."
+            : "خلفية نظيفة وبسيطة بدون عناصر مشتتة.",
+        "لا تضف أشخاصًا إضافيين أو مكاتب أو اجتماعات أو طعامًا أو نصوصًا أو شعارات.",
+      ].join(" "),
+      finalPrompt: [
+        `A realistic high-quality portrait of one ${subjectLabel} ${scene}.`,
+        hasVerySmallHuman
+          ? "The subject must clearly look very young and small in age, with childlike facial proportions and body scale."
+          : hasYoungHuman || hasBoy || hasGirl || hasChild
+            ? "The subject must clearly look young."
+            : "The requested human subject must be clearly visible.",
+        "The requested person must remain the only main subject in the frame.",
+        "Keep the face, body proportions, and age appearance natural and realistic.",
+        hasGarden ? "The garden must stay visible as a clean secondary background." : "",
+        hasBeach ? "The beach must stay visible as a clean natural background." : "",
+        "Do not add extra people, offices, meetings, business scenes, tables, food, text, watermark, logo, or grid lines.",
+        "Professional lighting, clean composition, realistic skin and clothing details.",
+      ].filter(Boolean).join(" "),
+      negativeRules: [
+        "extra people",
+        "business meeting",
+        "meeting room",
+        "office",
+        "desk",
+        "food",
+        "restaurant",
+        "text",
+        "watermark",
+        "logo",
+        "grid lines",
+      ],
+      debug: {
+        subjects: [subjectLabel],
+        relations: [scene],
+        scene,
+        style: "realistic portrait",
+      },
+    };
+  }
+
   if (hasMan && hasWearing && hasSuit) {
     const translatedRequest = translateArabicToEnglish(userPrompt);
     return {
@@ -940,6 +1113,18 @@ function translateArabicToEnglish(userPrompt) {
   }
 
   const dictionary = [
+    ["\u0648\u0644\u062f \u0635\u063a\u064a\u0631 \u062c\u062f\u0627", "very young little boy"],
+    ["\u0648\u0644\u062f \u0635\u063a\u064a\u0631 \u062c\u062f\u064b\u0627", "very young little boy"],
+    ["\u0635\u0628\u064a \u0635\u063a\u064a\u0631 \u062c\u062f\u0627", "very young little boy"],
+    ["\u0635\u0628\u064a \u0635\u063a\u064a\u0631 \u062c\u062f\u064b\u0627", "very young little boy"],
+    ["\u0637\u0641\u0644 \u0635\u063a\u064a\u0631 \u062c\u062f\u0627", "very young child"],
+    ["\u0637\u0641\u0644 \u0635\u063a\u064a\u0631 \u062c\u062f\u064b\u0627", "very young child"],
+    ["\u0628\u0646\u062a \u0635\u063a\u064a\u0631\u0629 \u062c\u062f\u0627", "very young little girl"],
+    ["\u0628\u0646\u062a \u0635\u063a\u064a\u0631\u0629 \u062c\u062f\u064b\u0627", "very young little girl"],
+    ["\u0641\u062a\u0627\u0629 \u0635\u063a\u064a\u0631\u0629 \u062c\u062f\u0627", "very young little girl"],
+    ["\u0641\u062a\u0627\u0629 \u0635\u063a\u064a\u0631\u0629 \u062c\u062f\u064b\u0627", "very young little girl"],
+    ["\u0637\u0641\u0644\u0629 \u0635\u063a\u064a\u0631\u0629 \u062c\u062f\u0627", "very young little girl"],
+    ["\u0637\u0641\u0644\u0629 \u0635\u063a\u064a\u0631\u0629 \u062c\u062f\u064b\u0627", "very young little girl"],
     ["\u0631\u062c\u0644 \u0623\u0639\u0645\u0627\u0644", "businessman"],
     ["\u0631\u062c\u0644 \u0627\u0639\u0645\u0627\u0644", "businessman"],
     ["\u0631\u062c\u0644 \u0631\u0633\u0645\u064a", "formal businessman"],
@@ -1020,6 +1205,18 @@ function translateArabicToEnglish(userPrompt) {
     ["\u0645\u062f\u0631\u0633", "teacher"],
     ["\u0634\u0631\u0637\u064a\u0629", "police officer"],
     ["\u0634\u0631\u0637\u064a", "police officer"],
+    ["\u0648\u0644\u062f", "boy"],
+    ["\u0635\u0628\u064a", "boy"],
+    ["\u0637\u0641\u0644", "child"],
+    ["\u0628\u0646\u062a", "girl"],
+    ["\u0641\u062a\u0627\u0629", "girl"],
+    ["\u0637\u0641\u0644\u0629", "girl"],
+    ["\u0635\u063a\u064a\u0631 \u062c\u062f\u0627", "very small"],
+    ["\u0635\u063a\u064a\u0631 \u062c\u062f\u064b\u0627", "very small"],
+    ["\u0635\u063a\u064a\u0631\u0629 \u062c\u062f\u0627", "very small"],
+    ["\u0635\u063a\u064a\u0631\u0629 \u062c\u062f\u064b\u0627", "very small"],
+    ["\u0635\u063a\u064a\u0631", "young"],
+    ["\u0635\u063a\u064a\u0631\u0629", "young"],
     ["\u0633\u0648\u062f\u0627\u0621", "black"],
     ["\u0628\u064a\u0636\u0627\u0621", "white"],
     ["\u0635\u0641\u0631\u0627\u0621", "yellow"],
@@ -1143,7 +1340,7 @@ function semanticTranslationIssue(source, translated) {
 
   const conceptChecks = [
     {
-      sourceTerms: ["رجل", "امرأة", "شخص", "إنسان", "انسان", "طفل", "ناس", "people", "person", "human"],
+      sourceTerms: ["رجل", "امرأة", "امراة", "سيدة", "شخص", "إنسان", "انسان", "طفل", "طفلة", "ولد", "صبي", "بنت", "فتاة", "ناس", "people", "person", "human", "boy", "girl", "child"],
       translatedTerms: ["businessman", "businesswoman", " man ", " woman ", "people", "person", "human", "employee"],
       issue: "unrequested_people",
     },
