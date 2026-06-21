@@ -47,6 +47,7 @@
         background: var(--gr-page-bg);
         color: var(--gr-text);
         font-family: "IBM Plex Sans Arabic", sans-serif;
+        overflow-x: hidden;
       }
 
       a {
@@ -85,15 +86,15 @@
       }
 
       .gr-page {
-        width: min(1580px, calc(100% - 32px));
-        min-height: calc(100vh - 32px);
-        margin: 16px auto;
+        width: min(1580px, 100%);
+        min-height: 100vh;
+        margin: 0 auto;
         display: grid;
         grid-template-columns: minmax(0, 1fr) 278px;
         direction: ltr;
         background: rgba(255, 255, 255, 0.94);
-        border: 1px solid rgba(98, 85, 170, 0.12);
-        border-radius: 34px;
+        border-inline: 1px solid rgba(98, 85, 170, 0.12);
+        border-radius: 0;
         overflow: hidden;
         box-shadow: var(--gr-shadow);
         backdrop-filter: blur(18px);
@@ -850,9 +851,10 @@
 
       @media (max-width: 820px) {
         .gr-page {
-          width: min(100%, calc(100% - 14px));
-          margin: 7px auto;
-          border-radius: 24px;
+          width: 100%;
+          margin: 0;
+          border-inline: 0;
+          border-radius: 0;
         }
 
         .gr-back-button {

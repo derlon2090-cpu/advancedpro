@@ -132,6 +132,27 @@ function maskAccessCode(code) {
   return `APRO-XXXX-XXXX-${suffix}`;
 }
 
+function resolvePlanName(accessCode) {
+  const directPlan = String(accessCode?.planName || "").trim();
+  if (directPlan) {
+    return directPlan;
+  }
+
+  const notePlan = String(accessCode?.notes || "")
+    .match(/(?:^|[;,\s])plan:([^;,\n]+)/i)?.[1]
+    ?.trim();
+  if (notePlan) {
+    return notePlan;
+  }
+
+  const ownerName = String(accessCode?.ownerName || "").trim();
+  if (ownerName) {
+    return ownerName;
+  }
+
+  return "الباقة الحالية";
+}
+
 app.get(
   "/api/me/key",
   asyncHandler(async (req, res) => {
@@ -163,7 +184,7 @@ app.get(
 
     return res.json({
       customerName,
-      planName: accessCode.planName || "مفتاح رقمي",
+      planName: resolvePlanName(accessCode),
       codeMasked: maskAccessCode(accessCode.code),
       creditsRemaining: Math.max(Number(accessCode.creditsRemaining || 0), 0),
       imagesLimit,
