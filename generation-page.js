@@ -81,10 +81,18 @@
   }
 
   function mediaUrlWithVersion(item) {
-    const base = item?.resultUrl || item?.thumbnailUrl || "";
+    const base = item?.resultUrl || item?.originalResultUrl || item?.thumbnailUrl || item?.storageUrl || "";
     if (!base) return "";
     const version = encodeURIComponent(item.requestId || item.id || Date.now());
     return `${base}${base.includes("?") ? "&" : "?"}v=${version}`;
+  }
+
+  function safeMediaAlt(item) {
+    const prompt = String(item?.prompt || "").trim();
+    if (!prompt) {
+      return item?.type === "video" ? "فيديو تم إنشاؤه" : "صورة تم إنشاؤها";
+    }
+    return prompt.length > 140 ? `${prompt.slice(0, 137)}...` : prompt;
   }
 
   function isPending(result) {
@@ -120,6 +128,8 @@
       status: raw.status || (raw.resultUrl || raw.result_url ? "completed" : "processing"),
       resultUrl:
         raw.resultUrl ||
+        raw.originalResultUrl ||
+        raw.original_result_url ||
         raw.result_url ||
         raw.url ||
         raw.outputUrl ||
@@ -130,12 +140,15 @@
       thumbnailUrl:
         raw.thumbnailUrl ||
         raw.thumbnail_url ||
+        raw.originalResultUrl ||
+        raw.original_result_url ||
         raw.resultUrl ||
         raw.result_url ||
         raw.outputUrl ||
         raw.output_url ||
         raw.url ||
         "",
+      storageUrl: raw.storageUrl || raw.storage_url || "",
       createdAt: raw.createdAt || raw.created_at || null,
       completedAt: raw.completedAt || raw.completed_at || null,
       isFavorite: Boolean(raw.isFavorite || raw.is_favorite),
@@ -467,7 +480,7 @@
       const previewMedia = mediaUrlWithVersion(result)
         ? result.type === "video"
           ? `<video src="${escapeHtml(mediaUrlWithVersion(result))}" muted playsinline preload="metadata"></video>`
-          : `<img src="${escapeHtml(mediaUrlWithVersion(result))}" alt="${escapeHtml(result.prompt)}" loading="eager" />`
+          : `<img src="${escapeHtml(mediaUrlWithVersion(result))}" alt="${escapeHtml(safeMediaAlt(result))}" loading="eager" />`
         : "";
 
       frame.innerHTML = `
@@ -491,7 +504,7 @@
     frame.innerHTML =
       result.type === "video"
         ? `<video class="gr-ready-asset" src="${escapeHtml(assetUrl)}" controls playsinline preload="metadata"></video>`
-        : `<img class="gr-ready-asset" src="${escapeHtml(assetUrl)}" alt="${escapeHtml(result.prompt)}" loading="eager" />`;
+        : `<img class="gr-ready-asset" src="${escapeHtml(assetUrl)}" alt="${escapeHtml(safeMediaAlt(result))}" loading="eager" />`;
   }
 
   function renderLatestGrid() {
@@ -512,7 +525,7 @@
       .map((item) => {
         const media = item.type === "video"
           ? `<video src="${escapeHtml(mediaUrlWithVersion(item))}" muted playsinline preload="metadata"></video>`
-          : `<img src="${escapeHtml(mediaUrlWithVersion(item))}" alt="${escapeHtml(item.prompt)}" loading="lazy" />`;
+          : `<img src="${escapeHtml(mediaUrlWithVersion(item))}" alt="${escapeHtml(safeMediaAlt(item))}" loading="lazy" />`;
 
         return `
           <article class="gr-latest-item">

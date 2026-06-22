@@ -352,8 +352,8 @@ function serializeKeyBalance(key) {
 }
 
 function serializeGeneration(row) {
-  const stableResultUrl = row.storage_url || row.result_url;
-  const stableThumbnailUrl = row.thumbnail_url || row.storage_url || row.result_url;
+  const stableResultUrl = row.result_url || row.storage_url;
+  const stableThumbnailUrl = row.thumbnail_url || row.result_url || row.storage_url;
   return {
     id: row.id,
     requestId: row.request_id,
@@ -374,6 +374,7 @@ function serializeGeneration(row) {
     xpCost: Number(row.credits_used || 0),
     status: row.status,
     resultUrl: stableResultUrl,
+    originalResultUrl: row.result_url || null,
     storageUrl: row.storage_url || null,
     storageKey: row.storage_key || null,
     thumbnailUrl: stableThumbnailUrl || null,
