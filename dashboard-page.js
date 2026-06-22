@@ -551,7 +551,7 @@
     const targetUrl = `/generation?id=${encodeURIComponent(item.id)}`;
     const isProcessing = item.status !== "completed" || !item.resultUrl;
     const media = isProcessing
-      ? `<div class="udv3-creation-placeholder"><strong>جاري الإنشاء...</strong><span>${escapeHtml(item.prompt || "نحن نحضر نتيجتك الآن")}</span><i></i></div>`
+      ? `<div class="udv3-creation-placeholder"><strong>جاري الإنشاء...</strong><span>${escapeHtml(item.prompt || "نحن نحضر نتيجتك الآن")}</span><i></i><small>يتم حفظ النتيجة تلقائيًا داخل حسابك</small></div>`
       : item.type === "video"
         ? `<video src="${escapeHtml(mediaUrl)}" muted playsinline preload="metadata"></video>`
         : `<img src="${escapeHtml(mediaUrl)}" alt="${prompt}" loading="lazy" />`;
@@ -583,7 +583,7 @@
     const targetUrl = `/generation?id=${encodeURIComponent(item.id)}`;
     const isProcessing = item.status !== "completed" || !item.resultUrl;
     const media = isProcessing
-      ? `<div class="udv6-creation-placeholder"><strong>جاري الإنشاء...</strong><span>${escapeHtml(item.prompt || "نحن نحضر نتيجتك الآن")}</span><i></i></div>`
+      ? `<div class="udv6-creation-placeholder"><strong>جاري الإنشاء...</strong><span>${escapeHtml(item.prompt || "نحن نحضر نتيجتك الآن")}</span><i></i><small>يتم حفظ النتيجة تلقائيًا داخل حسابك</small></div>`
       : item.type === "video"
         ? `<video src="${escapeHtml(mediaUrl)}" muted playsinline preload="metadata"></video>`
         : `<img src="${escapeHtml(mediaUrl)}" alt="${prompt}" loading="lazy" />`;
@@ -703,7 +703,7 @@
     const resultUrl = escapeHtml(item.resultUrl || item.thumbnailUrl || "/ap-mark.svg");
     const thumbnailUrl = escapeHtml(item.thumbnailUrl || "");
     if (!item.resultUrl && !item.thumbnailUrl) {
-      return `<div class="udv6-media-placeholder">جاري الإنشاء...</div>`;
+      return `<div class="udv6-media-placeholder"><span>جاري الإنشاء...</span><i></i><small>سيظهر المشروع هنا فور اكتماله</small></div>`;
     }
     if (item.type === "video") {
       return `<video src="${resultUrl}"${thumbnailUrl && thumbnailUrl !== resultUrl ? ` poster="${thumbnailUrl}"` : ""} muted playsinline preload="metadata"></video>`;

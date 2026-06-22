@@ -889,6 +889,16 @@ function analyzePromptV3(userPrompt) {
   const hasFalcon = includesAny(lower, ENTITY_TERMS.falcon);
   const hasEagle = includesAny(lower, ENTITY_TERMS.eagle);
   const hasBird = hasFalcon || hasEagle || includesAny(lower, ENTITY_TERMS.bird);
+  const hasNest = includesAny(lower, [
+    "\u0639\u0634",
+    "\u0639\u0634\u0647",
+    "\u0639\u0634\u0647\u0627",
+    "\u0639\u0634\u0647\u0645",
+    "\u0639\u0634\u0634",
+    "nest",
+    "inside its nest",
+    "in its nest",
+  ]);
   const hasYellow = includesAny(lower, COLOR_TERMS.yellow);
   const hasGreen = includesAny(lower, COLOR_TERMS.green);
   const hasBeside = includesAny(lower, ["\u0628\u062c\u0627\u0646\u0628", "\u0645\u0639", "next to", "beside"]);
@@ -1170,22 +1180,33 @@ function analyzePromptV3(userPrompt) {
     const birdLabel = hasFalcon ? "falcon" : hasEagle ? "eagle" : "bird";
     const displayBirdColor = birdColor === "gold" ? "golden" : birdColor;
     const coloredBird = displayBirdColor ? `${displayBirdColor} ${birdLabel}` : birdLabel;
+    const birdScene = hasNest
+      ? "inside its natural nest"
+      : "in a clean outdoor wildlife setting";
+    const birdObject = hasNest ? "natural nest" : "natural background";
 
     return {
       subject: birdLabel,
       subjectColor: birdColor,
-      object: "natural background",
+      object: birdObject,
       objectColor: null,
-      relation: "single main subject",
-      enhancedPrompt: `\u0635\u0648\u0631\u0629 \u0648\u0627\u0642\u0639\u064a\u0629 \u0648\u0627\u0636\u062d\u0629 \u0644${hasFalcon ? "\u0635\u0642\u0631" : hasEagle ? "\u0646\u0633\u0631" : "\u0637\u0627\u0626\u0631"} \u064a\u0638\u0647\u0631 \u0643\u0627\u0645\u0644\u064b\u0627 \u0648\u0628\u0644\u0648\u0646\u0647 \u0627\u0644\u0645\u0637\u0644\u0648\u0628 \u0628\u062f\u0642\u0629 \u062f\u0627\u062e\u0644 \u0627\u0644\u0625\u0637\u0627\u0631.`,
+      relation: hasNest ? "inside its nest" : "single main subject",
+      enhancedPrompt: hasNest
+        ? `\u0635\u0648\u0631\u0629 \u0648\u0627\u0642\u0639\u064a\u0629 \u0648\u0627\u0636\u062d\u0629 \u0644${hasFalcon ? "\u0635\u0642\u0631" : hasEagle ? "\u0646\u0633\u0631" : "\u0637\u0627\u0626\u0631"} \u064a\u0638\u0647\u0631 \u0643\u0627\u0645\u0644\u064b\u0627 \u062f\u0627\u062e\u0644 \u0639\u0634\u0647 \u0627\u0644\u0637\u0628\u064a\u0639\u064a \u0628\u0648\u0636\u0648\u062d \u0645\u0639 \u0627\u0644\u0639\u0634 \u0646\u0641\u0633\u0647 \u062f\u0627\u062e\u0644 \u0627\u0644\u0625\u0637\u0627\u0631.`
+        : `\u0635\u0648\u0631\u0629 \u0648\u0627\u0642\u0639\u064a\u0629 \u0648\u0627\u0636\u062d\u0629 \u0644${hasFalcon ? "\u0635\u0642\u0631" : hasEagle ? "\u0646\u0633\u0631" : "\u0637\u0627\u0626\u0631"} \u064a\u0638\u0647\u0631 \u0643\u0627\u0645\u0644\u064b\u0627 \u0648\u0628\u0644\u0648\u0646\u0647 \u0627\u0644\u0645\u0637\u0644\u0648\u0628 \u0628\u062f\u0642\u0629 \u062f\u0627\u062e\u0644 \u0627\u0644\u0625\u0637\u0627\u0631.`,
       finalPrompt: [
-        `A realistic detailed image of one ${coloredBird} as the clear main subject.`,
+        `A realistic detailed image of one ${coloredBird} ${birdScene}.`,
         `Show the full ${birdLabel} clearly inside the frame with accurate anatomy and visible feathers.`,
         displayBirdColor ? `Keep the ${birdLabel} ${displayBirdColor}.` : `Keep the ${birdLabel} appearance natural and clear.`,
-        "Use a clean outdoor wildlife background with one continuous natural scene only, such as open sky, distant trees, soft rocks, or blurred nature.",
+        hasNest
+          ? `The ${birdLabel} must be clearly inside its natural nest, and the nest itself must also be clearly visible in the same frame.`
+          : "Use a clean outdoor wildlife background with one continuous natural scene only, such as open sky, distant trees, soft rocks, or blurred nature.",
+        hasNest
+          ? "Use a believable nest made of twigs, grass, or natural fibers. Do not place the bird near the nest; it must be visibly inside it."
+          : "",
         "Do not place the bird in front of windows, tiled panels, geometric rectangles, white divider bars, framed sections, or any segmented background.",
         "No humans, no office, no meeting room, no food, no text, no watermark, no logo, no grid lines.",
-      ].join(" "),
+      ].filter(Boolean).join(" "),
       negativeRules: [
         "humans",
         "businessman",
@@ -1211,11 +1232,14 @@ function analyzePromptV3(userPrompt) {
         "split screen",
         "collage",
         "mosaic",
+        "bird outside nest",
+        "missing nest",
+        "perched beside nest",
       ],
       debug: {
         subjects: [birdLabel],
-        relations: ["single centered subject"],
-        scene: "clean natural background",
+        relations: [hasNest ? "bird inside its natural nest" : "single centered subject"],
+        scene: hasNest ? "natural nest scene" : "clean natural background",
         style: "realistic wildlife subject",
       },
     };

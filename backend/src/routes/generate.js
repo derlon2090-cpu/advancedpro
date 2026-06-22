@@ -351,8 +351,8 @@ function serializeKeyBalance(key) {
 }
 
 function serializeGeneration(row) {
-  const stableResultUrl = row.result_url || row.storage_url;
-  const stableThumbnailUrl = row.thumbnail_url || row.result_url || row.storage_url;
+  const stableResultUrl = row.storage_url || row.result_url;
+  const stableThumbnailUrl = row.thumbnail_url || row.storage_url || row.result_url;
   return {
     id: row.id,
     requestId: row.request_id,
