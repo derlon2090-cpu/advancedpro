@@ -214,6 +214,12 @@ router.post(
       .trim()
       .toLowerCase();
     const ownerPassword = process.env.OWNER_PASSWORD || process.env.ADMIN_PASSWORD || "";
+    const normalizedEmail = values.email.toLowerCase();
+    const isEnvOwnerLogin =
+      Boolean(ownerEmail) &&
+      Boolean(ownerPassword) &&
+      normalizedEmail === ownerEmail &&
+      values.password === ownerPassword;
     let ownerBootstrapResult = null;
 
     try {
@@ -222,16 +228,34 @@ router.post(
       console.error("OWNER_BOOTSTRAP_ON_LOGIN_ERROR", error);
     }
 
-    const admin = await prisma.user.findFirst({
+    let admin = await prisma.user.findFirst({
       where: {
-        email: values.email.toLowerCase(),
+        email: normalizedEmail,
         role: { in: ["admin", "owner"] },
         status: "active",
       },
     });
 
+    if (isEnvOwnerLogin && (!admin || ownerBootstrapResult?.action)) {
+      try {
+        await upsertOwnerFromEnv(prisma, { info: () => {} });
+        admin = await prisma.user.findFirst({
+          where: {
+            email: normalizedEmail,
+            role: { in: ["admin", "owner"] },
+            status: "active",
+          },
+        });
+      } catch (error) {
+        console.error("OWNER_ENV_LOGIN_RECOVERY_ERROR", error);
+        return res.status(503).json({
+          message: "تعذر تهيئة حساب المالك من متغيرات البيئة. تحقق من قاعدة البيانات ثم أعد المحاولة.",
+        });
+      }
+    }
+
     if (!admin) {
-      if (values.email.toLowerCase() === "owner@advancedpro.com" && (!ownerEmail || !ownerPassword)) {
+      if (normalizedEmail === "owner@advancedpro.com" && (!ownerEmail || !ownerPassword)) {
         return res.status(503).json({
           message: "بيانات OWNER_EMAIL و OWNER_PASSWORD غير مفعلة في السيرفر.",
         });
@@ -239,9 +263,15 @@ router.post(
       return res.status(401).json({ message: "البريد أو كلمة المرور غير صحيحة." });
     }
 
-    const isValid = await bcrypt.compare(values.password, admin.passwordHash);
+    let isValid = false;
+    if (isEnvOwnerLogin) {
+      isValid = true;
+    } else {
+      isValid = await bcrypt.compare(values.password, admin.passwordHash);
+    }
+
     if (!isValid) {
-      if (values.email.toLowerCase() === ownerEmail && ownerBootstrapResult?.skipped) {
+      if (normalizedEmail === ownerEmail && ownerBootstrapResult?.skipped) {
         return res.status(503).json({
           message: "بيانات OWNER_EMAIL و OWNER_PASSWORD غير مفعلة في السيرفر.",
         });
