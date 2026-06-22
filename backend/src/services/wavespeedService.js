@@ -156,6 +156,20 @@ async function setCachedPromptTranslation(prompt, translation) {
   await persistPromptTranslationCache();
 }
 
+async function deleteCachedPromptTranslation(prompt) {
+  const cleanPrompt = String(prompt || "").trim();
+  if (!cleanPrompt) {
+    return;
+  }
+
+  await ensurePromptTranslationCacheLoaded();
+  const key = normalizePromptTranslationCacheKey(cleanPrompt);
+  if (!promptTranslationCache.delete(key)) {
+    return;
+  }
+  await persistPromptTranslationCache();
+}
+
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -248,6 +262,7 @@ const COLOR_TERMS = {
 const ENTITY_TERMS = {
   cat: ["\u0642\u0637\u0629", "\u0642\u0637", "cat"],
   dog: ["\u0643\u0644\u0628", "dog"],
+  bear: ["\u062f\u0628", "\u062f\u0628\u0629", "\u062f\u0628\u0628\u0629", "\u062f\u0628\u0628", "bear", "bears"],
   fish: ["\u0633\u0645\u0643\u0629", "\u0633\u0645\u0643", "fish", "fishes"],
   shark: ["\u0642\u0631\u0634", "\u0642\u0631\u0634\u0629", "\u0642\u0631\u0648\u0634", "shark", "sharks"],
   whale: ["\u062d\u0648\u062a", "\u062d\u064a\u062a\u0627\u0646", "whale", "whales"],
@@ -289,6 +304,7 @@ const ENTITY_TERMS = {
   space: ["\u0627\u0644\u0641\u0636\u0627\u0621", "\u0641\u0636\u0627\u0621", "\u0641\u0636\u0627\u0626\u064a", "\u0641\u0636\u0627\u0626\u064a\u0629", "outer space", "space"],
   garden: ["\u062d\u062f\u064a\u0642\u0629", "garden"],
   beach: ["\u0627\u0644\u0634\u0627\u0637\u0626", "\u0634\u0627\u0637\u0626", "\u0634\u0627\u0637\u064a", "\u0627\u0644\u0628\u062d\u0631", "\u0628\u062d\u0631", "beach", "seashore"],
+  forest: ["\u0627\u0644\u063a\u0627\u0628\u0629", "\u063a\u0627\u0628\u0629", "\u0627\u0644\u063a\u0627\u0628\u0627\u062a", "\u063a\u0627\u0628\u0627\u062a", "forest", "woods", "woodland", "jungle"],
 };
 
 const PROFESSION_TERMS = {
@@ -440,6 +456,7 @@ const SINGLE_SUBJECT_KEYWORDS = [
   { key: "chicken", terms: ["\u062f\u062c\u0627\u062c\u0629", "\u0641\u0631\u062e\u0629", "\u0643\u062a\u0643\u0648\u062a", "chicken", "hen", "rooster", "chick"] },
   { key: "cat", terms: ["\u0642\u0637\u0629", "\u0642\u0637", "cat"] },
   { key: "dog", terms: ["\u0643\u0644\u0628", "dog"] },
+  { key: "bear", terms: ["\u062f\u0628", "\u062f\u0628\u0629", "bear"] },
   { key: "person", terms: ["\u0631\u062c\u0644", "\u0627\u0645\u0631\u0623\u0629", "\u0627\u0645\u0631\u0627\u0629", "\u0634\u062e\u0635", "\u0625\u0646\u0633\u0627\u0646", "\u0627\u0646\u0633\u0627\u0646", "man", "woman", "person", "human"] },
   { key: "robot", terms: ["\u0631\u0648\u0628\u0648\u062a", "\u0631\u0628\u0648\u062a", "\u0631\u064a\u0628\u0648\u062a", "\u0631\u0648\u0628\u0637", "robot"] },
   { key: "car", terms: ["\u0633\u064a\u0627\u0631\u0629", "\u0639\u0631\u0628\u0629", "car", "vehicle"] },
@@ -771,6 +788,7 @@ function analyzePromptV3(userPrompt) {
 
   const hasCat = includesAny(lower, ["\u0642\u0637", "cat"]);
   const hasDog = includesAny(lower, ["\u0643\u0644\u0628", "dog"]);
+  const hasBear = includesAny(lower, ENTITY_TERMS.bear);
   const hasBoy = includesAny(lower, ["\u0648\u0644\u062f", "\u0635\u0628\u064a", "boy"]);
   const hasGirl = includesAny(lower, ["\u0628\u0646\u062a", "\u0641\u062a\u0627\u0629", "\u0637\u0641\u0644\u0629", "girl"]);
   const hasChild = includesAny(lower, ["\u0637\u0641\u0644", "\u0648\u0644\u062f", "\u0635\u0628\u064a", "\u0628\u0646\u062a", "\u0641\u062a\u0627\u0629", "\u0637\u0641\u0644\u0629", "child", "kid", "boy", "girl"]);
@@ -884,6 +902,7 @@ function analyzePromptV3(userPrompt) {
   const hasGarden = includesAny(lower, ["\u062d\u062f\u064a\u0642\u0629", "garden"]);
   const hasMoon = includesAny(lower, ENTITY_TERMS.moon);
   const hasSpace = includesAny(lower, ENTITY_TERMS.space);
+  const hasForest = includesAny(lower, ENTITY_TERMS.forest);
   const hasRobot = includesAny(lower, ENTITY_TERMS.robot);
   const hasRobots = includesAny(lower, ["\u0631\u0648\u0628\u0648\u062a\u0627\u062a", "\u0631\u0628\u0648\u062a\u0627\u062a", "robots"]);
   const hasFalcon = includesAny(lower, ENTITY_TERMS.falcon);
@@ -926,6 +945,7 @@ function analyzePromptV3(userPrompt) {
     (hasBird ? firstDetectedColor(lower) : null);
   const chickenColor =
     detectColorForEntity(lower, "chicken") || (hasChicken && hasWhite ? "white" : hasChicken ? firstDetectedColor(lower) : null);
+  const bearColor = detectColorForEntity(lower, "bear") || (hasBear ? firstDetectedColor(lower) : null);
   const fishColor = detectColorForEntity(lower, "fish") || (hasFish ? firstDetectedColor(lower) : null);
   const sharkColor = detectColorForEntity(lower, "shark") || (hasShark ? firstDetectedColor(lower) : null);
   const whaleColor = detectColorForEntity(lower, "whale") || (hasWhale ? firstDetectedColor(lower) : null);
@@ -1017,7 +1037,7 @@ function analyzePromptV3(userPrompt) {
     promptRules.unshift(`Show ${subjectSummary} ${relationText} in ${scene}.`);
     promptRules.push(`Every requested marine animal must be fully visible in the same frame, including ${visibilitySummary}.`);
     promptRules.push("Keep the entire result inside one coherent full-frame composition with no cropped or separated animals.");
-    promptRules.push("Do not create a collage, contact sheet, photo grid, split-screen, framed tiles, or repeated copies of any animal.");
+    promptRules.push("No collage, no split frames, no photo grid, no contact sheet, no framed tiles, and no repeated copies of any animal.");
 
     return {
       subject: "marine animals",
@@ -1477,6 +1497,100 @@ function analyzePromptV3(userPrompt) {
     };
   }
 
+  if (hasBear) {
+    const hasLargeBear = includesAny(lower, [
+      "\u062f\u0628 \u0643\u0628\u064a\u0631",
+      "\u062f\u0628 \u0636\u062e\u0645",
+      "\u062f\u0628\u0629 \u0643\u0628\u064a\u0631\u0629",
+      "\u062f\u0628\u0629 \u0636\u062e\u0645\u0629",
+      "large bear",
+      "big bear",
+      "huge bear",
+    ]);
+    const humanSubject = hasBoy
+      ? hasVerySmallHuman
+        ? "very young little boy"
+        : hasYoungHuman
+          ? "young boy"
+          : "boy"
+      : hasGirl
+        ? hasVerySmallHuman
+          ? "very young little girl"
+          : hasYoungHuman
+            ? "young girl"
+            : "girl"
+        : hasChild
+          ? hasVerySmallHuman
+            ? "very young child"
+            : hasYoungHuman
+              ? "young child"
+              : "child"
+          : hasWoman
+            ? hasYoungHuman
+              ? "young woman"
+              : "woman"
+            : hasMan
+              ? hasYoungHuman
+                ? "young man"
+                : "man"
+              : null;
+    const bearSize = hasVeryLargeSize ? "very large " : hasLargeBear || hasLargeSize ? "large " : "";
+    const bearColorLabel = bearColor === "gold" ? "golden" : bearColor;
+    const scene = hasForest
+      ? "in a natural forest"
+      : hasGarden
+        ? "in a natural garden"
+        : "in a natural outdoor wildlife setting";
+    const relation = humanSubject
+      ? hasNearbyRelation
+        ? "standing next to"
+        : "standing near"
+      : "standing in";
+
+    return {
+      subject: humanSubject || "bear",
+      subjectColor: null,
+      object: humanSubject ? "bear" : scene,
+      objectColor: bearColor,
+      relation,
+      finalPrompt: [
+        humanSubject
+          ? `A realistic wildlife scene of one ${humanSubject} standing next to one ${bearSize}${bearColorLabel ? `${bearColorLabel} ` : ""}bear ${scene}.`
+          : `A realistic wildlife scene of one ${bearSize}${bearColorLabel ? `${bearColorLabel} ` : ""}bear ${scene}.`,
+        humanSubject
+          ? `Both the ${humanSubject} and the bear must be fully visible in the same frame.`
+          : "The bear must be the only main subject and must be fully visible in the frame.",
+        bearColorLabel ? `Keep the bear clearly ${bearColorLabel}.` : "Keep the bear anatomically accurate and clearly visible.",
+        hasVeryLargeSize || hasLargeSize ? "The bear must visibly look large and powerful." : "",
+        hasForest ? "Keep the forest clearly visible as the natural background." : "",
+        hasNearbyRelation && humanSubject ? "Keep the person and the bear beside each other in one coherent natural scene." : "",
+        "Do not add offices, meetings, business scenes, restaurant elements, text, watermark, logo, or unrelated extra subjects.",
+        "Use one continuous natural composition only, with realistic lighting and sharp details.",
+      ].filter(Boolean).join(" "),
+      negativeRules: [
+        "office",
+        "business meeting",
+        "meeting room",
+        "conference room",
+        "restaurant",
+        "food",
+        "text",
+        "watermark",
+        "logo",
+        "duplicate bear",
+        "extra people",
+        "collage",
+        "photo grid",
+      ],
+      debug: {
+        subjects: humanSubject ? [humanSubject, `${bearSize}${bearColorLabel ? `${bearColorLabel} ` : ""}bear`.trim()] : ["bear"],
+        relations: [humanSubject ? relation : "single wildlife subject"],
+        scene,
+        style: "realistic wildlife scene",
+      },
+    };
+  }
+
   if (hasCat && hasHouse && hasTop) {
     const subjectColor = catColor || "clearly visible";
     const objectColor = houseColor || "clearly visible";
@@ -1557,7 +1671,7 @@ function analyzePromptV3(userPrompt) {
     };
   }
 
-  if ((hasBoy || hasGirl || hasChild || hasWoman || hasMan) && !profession && !hasSuit && !hasOffice && !hasCar && !hasCat && !hasDog && !hasChicken && !hasTurtle && !hasWolf && !hasSnake && !hasRobot) {
+  if ((hasBoy || hasGirl || hasChild || hasWoman || hasMan) && !profession && !hasSuit && !hasOffice && !hasCar && !hasCat && !hasDog && !hasBear && !hasChicken && !hasTurtle && !hasWolf && !hasSnake && !hasRobot) {
     const subjectLabel = hasBoy
       ? hasVerySmallHuman
         ? "very young little boy"
@@ -1781,6 +1895,16 @@ function translateArabicToEnglish(userPrompt) {
   );
 
   const dictionary = [
+    ["\u0628\u062c\u0627\u0646\u0628\u0647", "next to him"],
+    ["\u0628\u062c\u0627\u0646\u0628\u0647\u0627", "next to her"],
+    ["\u0628\u062c\u0627\u0646\u0628\u0647\u0645", "next to them"],
+    ["\u0645\u0639\u0647", "with him"],
+    ["\u0645\u0639\u0647\u0627", "with her"],
+    ["\u0645\u0639\u0647\u0645", "with them"],
+    ["\u0641\u064a \u0627\u0644\u063a\u0627\u0628\u0629", "in the forest"],
+    ["\u0628\u0627\u0644\u063a\u0627\u0628\u0629", "in the forest"],
+    ["\u0644\u0648\u0646\u0647", "its color is"],
+    ["\u0644\u0648\u0646\u0647\u0627", "its color is"],
     ["\u0648\u0644\u062f \u0635\u063a\u064a\u0631 \u062c\u062f\u0627", "very young little boy"],
     ["\u0648\u0644\u062f \u0635\u063a\u064a\u0631 \u062c\u062f\u064b\u0627", "very young little boy"],
     ["\u0635\u0628\u064a \u0635\u063a\u064a\u0631 \u062c\u062f\u0627", "very young little boy"],
@@ -1845,6 +1969,10 @@ function translateArabicToEnglish(userPrompt) {
     ["\u0627\u0644\u0634\u0627\u0637\u0626", "the beach"],
     ["\u0634\u0627\u0637\u0626", "beach"],
     ["\u0634\u0627\u0637\u064a", "beach"],
+    ["\u062f\u0628\u0628\u0629", "bears"],
+    ["\u062f\u0628", "bear"],
+    ["\u0627\u0644\u063a\u0627\u0628\u0629", "the forest"],
+    ["\u063a\u0627\u0628\u0629", "forest"],
     ["\u0643\u0628\u064a\u0631\u0629 \u0627\u0644\u062d\u062c\u0645", "large"],
     ["\u0643\u0628\u064a\u0631 \u0627\u0644\u062d\u062c\u0645", "large"],
     ["\u0627\u0644\u0641\u0636\u0627\u0621", "outer space"],
@@ -1949,6 +2077,14 @@ function translateArabicToEnglish(userPrompt) {
   for (const [arabic, english] of dictionary) {
     translated = translated.replaceAll(arabic, ` ${english} `);
   }
+
+  translated = translated
+    .replace(/\bits color is\s+(yellow|red|blue|green|black|white|golden)\b/gi, "$1")
+    .replace(/\bman\s+next to him\s+(?:is\s+a\s+)?/gi, "man next to a ")
+    .replace(/\bwoman\s+next to her\s+(?:is\s+a\s+)?/gi, "woman next to a ")
+    .replace(/\bboy\s+next to him\s+(?:is\s+a\s+)?/gi, "boy next to a ")
+    .replace(/\bgirl\s+next to her\s+(?:is\s+a\s+)?/gi, "girl next to a ")
+    .replace(/\bchild\s+next to (?:him|her)\s+(?:is\s+a\s+)?/gi, "child next to a ");
 
   if (hasArabicText(translated)) {
     return "";
@@ -2066,13 +2202,42 @@ async function translateArabicPromptForGeneration(userPrompt) {
 
   const cachedTranslation = await getCachedPromptTranslation(text);
   if (cachedTranslation) {
-    console.log("PROMPT_TRANSLATION_MODE:", "cache");
-    console.log("TRANSLATED_PROMPT:", compactForLog(cachedTranslation));
-    return assertSemanticTranslation(text, cachedTranslation);
+    const cachedIssue = semanticTranslationIssue(text, cachedTranslation);
+    if (!cachedIssue) {
+      console.log("PROMPT_TRANSLATION_MODE:", "cache");
+      console.log("TRANSLATED_PROMPT:", compactForLog(cachedTranslation));
+      return assertSemanticTranslation(text, cachedTranslation);
+    }
+    console.warn("PROMPT_TRANSLATION_CACHE_INVALID:", cachedIssue, compactForLog(cachedTranslation));
+    await deleteCachedPromptTranslation(text);
+  }
+
+  const structuredLocalTranslation = extractPositiveTranslationCandidate(
+    String(analyzePromptV3(text)?.finalPrompt || "").trim()
+  );
+  if (structuredLocalTranslation && !hasArabicText(structuredLocalTranslation)) {
+    const structuredIssue = semanticTranslationIssue(text, structuredLocalTranslation);
+    if (!structuredIssue) {
+      console.log("PROMPT_TRANSLATION_MODE:", "local-structured");
+      console.log("TRANSLATED_PROMPT:", compactForLog(structuredLocalTranslation));
+      await setCachedPromptTranslation(text, structuredLocalTranslation);
+      return assertSemanticTranslation(text, structuredLocalTranslation);
+    }
   }
 
   if (!serverTranslationEnabled()) {
-    return "";
+    const localTranslation = translateArabicToEnglish(text);
+    if (!localTranslation) {
+      return "";
+    }
+    const localIssue = semanticTranslationIssue(text, localTranslation);
+    if (localIssue) {
+      return "";
+    }
+    console.log("PROMPT_TRANSLATION_MODE:", "local-fallback");
+    console.log("TRANSLATED_PROMPT:", compactForLog(localTranslation));
+    await setCachedPromptTranslation(text, localTranslation);
+    return assertSemanticTranslation(text, localTranslation);
   }
 
   const apiKey = getPromptTranslationKey();
@@ -2156,6 +2321,17 @@ async function translateArabicPromptForGeneration(userPrompt) {
       console.warn("PROMPT_TRANSLATION_ERROR:", model, error?.name || "error", error?.message || error);
     } finally {
       clearTimeout(timeout);
+    }
+  }
+
+  const localTranslation = translateArabicToEnglish(text);
+  if (localTranslation) {
+    const localIssue = semanticTranslationIssue(text, localTranslation);
+    if (!localIssue) {
+      console.log("PROMPT_TRANSLATION_MODE:", "local-fallback");
+      console.log("TRANSLATED_PROMPT:", compactForLog(localTranslation));
+      await setCachedPromptTranslation(text, localTranslation);
+      return assertSemanticTranslation(text, localTranslation);
     }
   }
 
@@ -2548,6 +2724,26 @@ function buildFinalPrompt({
   ].join("\n");
 }
 
+function extractPositiveTranslationCandidate(prompt) {
+  const normalized = String(prompt || "").replace(/\s+/g, " ").trim();
+  if (!normalized) {
+    return "";
+  }
+
+  const segments = normalized.split(/(?<=[.!?])\s+/);
+  const kept = [];
+
+  for (const segment of segments) {
+    const trimmed = segment.trim();
+    if (!trimmed) continue;
+    if (/^(strict rules:|- )/i.test(trimmed)) break;
+    if (/^(do not|don't|no\b|without\b|avoid\b|never\b)/i.test(trimmed)) break;
+    kept.push(trimmed);
+  }
+
+  return kept.join(" ").trim() || normalized;
+}
+
 export function buildWaveSpeedPrompt(options) {
   return buildFinalPrompt(options);
 }
@@ -2555,6 +2751,10 @@ export function buildWaveSpeedPrompt(options) {
 export function buildSmartPromptEnhancement({ userPrompt, quality = "normal", style = "", type = "image" }) {
   const prompt = String(userPrompt || "").trim();
   const analysis = analyzePromptV3(prompt);
+  const positiveStructuredPrompt =
+    analysis?.finalPrompt && !hasArabicText(analysis.finalPrompt)
+      ? extractPositiveTranslationCandidate(analysis.finalPrompt)
+      : "";
   const enhancedPrompt =
     analysis?.enhancedPrompt ||
     [
@@ -2568,8 +2768,7 @@ export function buildSmartPromptEnhancement({ userPrompt, quality = "normal", st
     quality,
     style,
     type,
-    translatedPromptOverride:
-      analysis?.finalPrompt && !hasArabicText(analysis.finalPrompt) ? analysis.finalPrompt : "",
+    translatedPromptOverride: positiveStructuredPrompt,
   });
   const negativePrompt = buildNegativePromptText(prompt, analysis);
 
@@ -2587,18 +2786,26 @@ export async function buildSmartPromptEnhancementAsync(
 ) {
   const prompt = String(userPrompt || "").trim();
   const analysis = analyzePromptV3(prompt);
+  const positiveStructuredPrompt =
+    analysis?.finalPrompt && !hasArabicText(analysis.finalPrompt)
+      ? extractPositiveTranslationCandidate(analysis.finalPrompt)
+      : "";
   const hasStructuredLocalPrompt =
     type === "image" &&
     normalizeQuality(quality) === "normal" &&
-    Boolean(analysis?.finalPrompt && !hasArabicText(analysis.finalPrompt)) &&
+    Boolean(positiveStructuredPrompt) &&
     !analysis?.promptRules?.length &&
     Boolean(detectSingleSubjectIntent(prompt));
   const translatedPromptOverride =
     hasStructuredLocalPrompt
-      ? analysis.finalPrompt
+      ? positiveStructuredPrompt
       : hasArabicText(prompt)
         ? await translatePrompt(prompt)
         : "";
+  const usedStructuredLocalTranslation =
+    hasArabicText(prompt) &&
+    Boolean(translatedPromptOverride) &&
+    translatedPromptOverride === positiveStructuredPrompt;
   if (translatedPromptOverride) {
     assertSemanticTranslation(prompt, translatedPromptOverride);
   }
@@ -2625,9 +2832,11 @@ export async function buildSmartPromptEnhancementAsync(
       negativePrompt,
       debug: {
         ...(analysis?.debug || {}),
-        translationMode: translatedPromptOverride
-          ? "server-semantic"
-          : hasStructuredLocalPrompt
+        translationMode: usedStructuredLocalTranslation
+          ? "local-structured"
+          : translatedPromptOverride
+            ? "server-semantic"
+            : hasStructuredLocalPrompt
             ? "local-structured"
             : "translation-unavailable",
       },

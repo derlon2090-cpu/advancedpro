@@ -337,6 +337,22 @@ test("semantic translation preserves arbitrary Arabic subjects, actions, and rel
   assert.doesNotMatch(result.finalPrompt, /[\u0600-\u06ff]/);
 });
 
+test("Arabic man beside a large yellow bear in the forest preserves every requested concept", async () => {
+  const result = await buildSmartPromptEnhancementAsync({
+    userPrompt: "رجل بجانبه دب كبير لونه اصفر في الغابة",
+    quality: "high",
+    style: "realistic",
+    type: "image",
+  });
+
+  assert.match(result.finalPrompt, /man/i);
+  assert.match(result.finalPrompt, /large yellow bear|yellow large bear/i);
+  assert.match(result.finalPrompt, /forest/i);
+  assert.match(result.finalPrompt, /next to|beside/i);
+  assert.doesNotMatch(result.finalPrompt, /business meeting|modern office|conference room|corporate office/i);
+  assert.equal(result.debug.translationMode, "local-structured");
+});
+
 test("multi-subject marine prompts preserve dolphins beside a huge whale in one frame", () => {
   const result = buildSmartPromptEnhancement({
     userPrompt: "من فضلك اعمل دلافين جنبهم حوت ضخم",
