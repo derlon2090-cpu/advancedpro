@@ -8,7 +8,6 @@ import { withDbRetry } from "../utils/dbRetry.js";
 import { logError, logInfo } from "../utils/logger.js";
 import { serializeBigInt } from "../utils/serializeBigInt.js";
 import {
-  buildSmartPromptEnhancement,
   buildSmartPromptEnhancementAsync,
   generateImageWithWaveSpeed,
   generateVideoWithWaveSpeed,
@@ -1485,7 +1484,7 @@ router.post(
     }
 
     const creditsUsed = calculateRequiredCredits(type, quality, duration || 5);
-    const promptDiagnostics = buildSmartPromptEnhancement({
+    const promptDiagnostics = await buildSmartPromptEnhancementAsync({
       userPrompt: prompt,
       type,
       quality,

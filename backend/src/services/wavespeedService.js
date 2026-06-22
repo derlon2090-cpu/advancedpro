@@ -1,3 +1,6 @@
+import { createHash } from "node:crypto";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import path from "node:path";
 import {
   ALLOWED_NATIVE_DURATIONS_BY_MODEL,
   IMAGE_MODELS,
@@ -25,6 +28,133 @@ const STYLE_LABELS = {
   "3d": "3D rendered style",
   commercial: "premium commercial advertising style",
 };
+
+const PROMPT_TRANSLATION_CACHE_LIMIT = 400;
+const promptTranslationCache = new Map();
+let promptTranslationCacheLoaded = false;
+let promptTranslationCacheLoadPromise = null;
+
+function promptTranslationCacheFilePath() {
+  return path.join(process.cwd(), ".cache", "prompt-translation-cache.json");
+}
+
+function normalizePromptTranslationCacheKey(prompt) {
+  const normalized = String(prompt || "").trim().replace(/\s+/g, " ").toLowerCase();
+  return createHash("sha1").update(normalized).digest("hex");
+}
+
+function prunePromptTranslationCache() {
+  if (promptTranslationCache.size <= PROMPT_TRANSLATION_CACHE_LIMIT) {
+    return;
+  }
+
+  const entries = Array.from(promptTranslationCache.entries()).sort((a, b) => {
+    const left = Date.parse(a[1]?.updatedAt || a[1]?.createdAt || 0) || 0;
+    const right = Date.parse(b[1]?.updatedAt || b[1]?.createdAt || 0) || 0;
+    return right - left;
+  });
+
+  promptTranslationCache.clear();
+  for (const [key, value] of entries.slice(0, PROMPT_TRANSLATION_CACHE_LIMIT)) {
+    promptTranslationCache.set(key, value);
+  }
+}
+
+async function ensurePromptTranslationCacheLoaded() {
+  if (promptTranslationCacheLoaded) {
+    return;
+  }
+
+  if (!promptTranslationCacheLoadPromise) {
+    promptTranslationCacheLoadPromise = (async () => {
+      try {
+        const filePath = promptTranslationCacheFilePath();
+        const raw = await readFile(filePath, "utf8");
+        const parsed = JSON.parse(raw);
+        const entries = Array.isArray(parsed?.entries) ? parsed.entries : [];
+
+        for (const entry of entries) {
+          const prompt = String(entry?.prompt || "").trim();
+          const translation = String(entry?.translation || "").trim();
+          if (!prompt || !translation) continue;
+          promptTranslationCache.set(String(entry.key || normalizePromptTranslationCacheKey(prompt)), {
+            prompt,
+            translation,
+            createdAt: entry.createdAt || null,
+            updatedAt: entry.updatedAt || null,
+          });
+        }
+        prunePromptTranslationCache();
+      } catch (_error) {
+        // Best-effort local cache only.
+      } finally {
+        promptTranslationCacheLoaded = true;
+      }
+    })();
+  }
+
+  await promptTranslationCacheLoadPromise;
+}
+
+async function persistPromptTranslationCache() {
+  try {
+    await ensurePromptTranslationCacheLoaded();
+    const filePath = promptTranslationCacheFilePath();
+    await mkdir(path.dirname(filePath), { recursive: true });
+    prunePromptTranslationCache();
+    await writeFile(
+      filePath,
+      JSON.stringify(
+        {
+          entries: Array.from(promptTranslationCache.entries()).map(([key, value]) => ({
+            key,
+            prompt: value.prompt,
+            translation: value.translation,
+            createdAt: value.createdAt || null,
+            updatedAt: value.updatedAt || null,
+          })),
+        },
+        null,
+        2
+      ),
+      "utf8"
+    );
+  } catch (error) {
+    console.warn("PROMPT_TRANSLATION_CACHE_WRITE_ERROR:", error?.message || error);
+  }
+}
+
+async function getCachedPromptTranslation(prompt) {
+  await ensurePromptTranslationCacheLoaded();
+  const key = normalizePromptTranslationCacheKey(prompt);
+  const entry = promptTranslationCache.get(key);
+  if (!entry?.translation) {
+    return "";
+  }
+
+  entry.updatedAt = new Date().toISOString();
+  return String(entry.translation || "").trim();
+}
+
+async function setCachedPromptTranslation(prompt, translation) {
+  const cleanPrompt = String(prompt || "").trim();
+  const cleanTranslation = String(translation || "").trim();
+  if (!cleanPrompt || !cleanTranslation) {
+    return;
+  }
+
+  await ensurePromptTranslationCacheLoaded();
+  const key = normalizePromptTranslationCacheKey(cleanPrompt);
+  const existing = promptTranslationCache.get(key);
+  const now = new Date().toISOString();
+  promptTranslationCache.set(key, {
+    prompt: cleanPrompt,
+    translation: cleanTranslation,
+    createdAt: existing?.createdAt || now,
+    updatedAt: now,
+  });
+  await persistPromptTranslationCache();
+}
 
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -1482,6 +1612,13 @@ async function translateArabicPromptForGeneration(userPrompt) {
   const text = String(userPrompt || "").trim();
   if (!hasArabicText(text)) return "";
 
+  const cachedTranslation = await getCachedPromptTranslation(text);
+  if (cachedTranslation) {
+    console.log("PROMPT_TRANSLATION_MODE:", "cache");
+    console.log("TRANSLATED_PROMPT:", compactForLog(cachedTranslation));
+    return assertSemanticTranslation(text, cachedTranslation);
+  }
+
   if (!serverTranslationEnabled()) {
     return "";
   }
@@ -1561,6 +1698,7 @@ async function translateArabicPromptForGeneration(userPrompt) {
       console.log("PROMPT_TRANSLATION_MODE:", "server");
       console.log("PROMPT_TRANSLATION_MODEL:", model);
       console.log("TRANSLATED_PROMPT:", compactForLog(translated));
+      await setCachedPromptTranslation(text, translated);
       return assertSemanticTranslation(text, translated);
     } catch (error) {
       console.warn("PROMPT_TRANSLATION_ERROR:", model, error?.name || "error", error?.message || error);
@@ -1838,10 +1976,11 @@ function buildFinalPrompt({
   translatedPromptOverride = "",
 }) {
   const analysis = analyzePromptV3(userPrompt);
+  const arabicPrompt = hasArabicText(userPrompt);
+  const prefersStructuredLocalPrompt = !arabicPrompt && analysis?.finalPrompt && !hasArabicText(analysis.finalPrompt);
   const translatedPrompt =
     String(translatedPromptOverride || "").trim() ||
-    analysis?.finalPrompt ||
-    translateArabicToEnglish(userPrompt);
+    (prefersStructuredLocalPrompt ? analysis.finalPrompt : !arabicPrompt ? String(userPrompt || "").trim() : "");
   if (!translatedPrompt || hasArabicText(translatedPrompt)) {
     throw serviceError(
       "تعذر فهم الوصف العربي بدقة الآن. أعد المحاولة بصياغة أوضح، ولم يتم خصم أي رصيد.",
@@ -1909,7 +2048,14 @@ export function buildSmartPromptEnhancement({ userPrompt, quality = "normal", st
       "حافظ على الألوان والعلاقات المذكورة بدقة، ولا تحذف أي عنصر مطلوب.",
       "لا تضف عناصر عشوائية أو نصوصًا أو شعارات.",
     ].join(" ");
-  const finalPrompt = buildFinalPrompt({ userPrompt: prompt, quality, style, type });
+  const finalPrompt = buildFinalPrompt({
+    userPrompt: prompt,
+    quality,
+    style,
+    type,
+    translatedPromptOverride:
+      analysis?.finalPrompt && !hasArabicText(analysis.finalPrompt) ? analysis.finalPrompt : "",
+  });
   const negativePrompt = buildNegativePromptText(prompt, analysis);
 
   return {
@@ -1947,15 +2093,15 @@ export async function buildSmartPromptEnhancementAsync(
   });
   const negativePrompt = buildNegativePromptText(prompt, analysis);
 
-  return {
-    enhancedPrompt,
-    finalPrompt,
-    negativePrompt,
-    debug: {
-      ...(analysis?.debug || {}),
-      translationMode: translatedPromptOverride ? "server-semantic" : analysis ? "local-structured" : "local-dictionary",
-    },
-  };
+    return {
+      enhancedPrompt,
+      finalPrompt,
+      negativePrompt,
+      debug: {
+        ...(analysis?.debug || {}),
+        translationMode: translatedPromptOverride ? "server-semantic" : analysis?.finalPrompt ? "local-structured" : "translation-unavailable",
+      },
+    };
 }
 
 function isHttpUrl(value) {
