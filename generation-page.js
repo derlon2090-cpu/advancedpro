@@ -119,35 +119,40 @@
 
   function normalizeGeneration(item) {
     const raw = item?.generation || item?.result || item || {};
+    const generationId = raw.id || raw.generationId || raw.generation_id || null;
+    const rawResultUrl =
+      raw.resultUrl ||
+      raw.originalResultUrl ||
+      raw.original_result_url ||
+      raw.result_url ||
+      raw.url ||
+      raw.outputUrl ||
+      raw.output_url ||
+      raw.imageUrl ||
+      raw.videoUrl ||
+      "";
+    const rawThumbnailUrl =
+      raw.thumbnailUrl ||
+      raw.thumbnail_url ||
+      raw.originalResultUrl ||
+      raw.original_result_url ||
+      raw.resultUrl ||
+      raw.result_url ||
+      raw.outputUrl ||
+      raw.output_url ||
+      raw.url ||
+      "";
+    const protectedDownloadUrl = generationId ? `/api/download/${encodeURIComponent(generationId)}?inline=1` : "";
     return {
-      id: raw.id || raw.generationId || raw.generation_id || null,
+      id: generationId,
       requestId: raw.requestId || raw.request_id || null,
       type: raw.type === "video" ? "video" : "image",
       prompt: raw.userPrompt || raw.prompt || raw.description || "",
       quality: raw.quality || "normal",
-      status: raw.status || (raw.resultUrl || raw.result_url ? "completed" : "processing"),
-      resultUrl:
-        raw.resultUrl ||
-        raw.originalResultUrl ||
-        raw.original_result_url ||
-        raw.result_url ||
-        raw.url ||
-        raw.outputUrl ||
-        raw.output_url ||
-        raw.imageUrl ||
-        raw.videoUrl ||
-        "",
-      thumbnailUrl:
-        raw.thumbnailUrl ||
-        raw.thumbnail_url ||
-        raw.originalResultUrl ||
-        raw.original_result_url ||
-        raw.resultUrl ||
-        raw.result_url ||
-        raw.outputUrl ||
-        raw.output_url ||
-        raw.url ||
-        "",
+      status: raw.status || ((rawResultUrl || protectedDownloadUrl) ? "completed" : "processing"),
+      resultUrl: protectedDownloadUrl || rawResultUrl,
+      thumbnailUrl: protectedDownloadUrl || rawThumbnailUrl || rawResultUrl,
+      originalResultUrl: rawResultUrl,
       storageUrl: raw.storageUrl || raw.storage_url || "",
       createdAt: raw.createdAt || raw.created_at || null,
       completedAt: raw.completedAt || raw.completed_at || null,

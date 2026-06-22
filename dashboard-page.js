@@ -350,8 +350,12 @@
   }
 
   function normalizeGeneration(item) {
+    const generationId = item.id || item.generationId || crypto.randomUUID();
+    const rawResultUrl = item.resultUrl || item.url || item.outputUrl || item.imageUrl || item.videoUrl || "";
+    const rawThumbnailUrl = item.thumbnailUrl || item.resultUrl || item.url || item.outputUrl || "";
+    const protectedDownloadUrl = generationId ? `/api/download/${encodeURIComponent(generationId)}?inline=1` : "";
     return {
-      id: item.id || item.generationId || crypto.randomUUID(),
+      id: generationId,
       requestId: item.requestId,
       type: item.type || "image",
       prompt: item.userPrompt || item.prompt || item.description || "نتيجة جديدة",
@@ -368,10 +372,12 @@
       seed: item.seed,
       creditsUsed: Number(item.creditsUsed ?? item.credits_used ?? item.xpCost ?? item.cost ?? calculateCredits()),
       createdAt: item.createdAt || item.created_at || new Date().toISOString(),
-      resultUrl: item.resultUrl || item.url || item.outputUrl || item.imageUrl || item.videoUrl || "",
-      thumbnailUrl: item.thumbnailUrl || item.resultUrl || item.url || item.outputUrl || "",
-      status: item.status || (item.resultUrl ? "completed" : "processing"),
-      isFavorite: Boolean(item.isFavorite || state.favorites.has(String(item.id || item.generationId))),
+      resultUrl: protectedDownloadUrl || rawResultUrl,
+      thumbnailUrl: protectedDownloadUrl || rawThumbnailUrl || rawResultUrl,
+      rawResultUrl,
+      rawThumbnailUrl,
+      status: item.status || ((rawResultUrl || protectedDownloadUrl) ? "completed" : "processing"),
+      isFavorite: Boolean(item.isFavorite || state.favorites.has(String(generationId))),
     };
   }
 

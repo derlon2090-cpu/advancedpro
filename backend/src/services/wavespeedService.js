@@ -2453,6 +2453,29 @@ function buildRelationshipExactness(userPrompt) {
   return "Follow the subject exactly and do not reuse previous subjects.";
 }
 
+function buildLocationAnchorRules(userPrompt) {
+  const lower = String(userPrompt || "").toLowerCase();
+  const rules = [];
+
+  if (includesAny(lower, ["\u062f\u0627\u062e\u0644", "\u0641\u064a \u062f\u0627\u062e\u0644", "inside", "within"])) {
+    rules.push("If the request says inside something, clearly show the subject inside that exact place or object, not merely near it.");
+  }
+
+  if (includesAny(lower, ["\u0639\u0634", "\u0639\u0634\u0647", "\u0639\u0634\u0647\u0627", "\u0639\u0634\u0647\u0645", "nest"])) {
+    rules.push("If a nest is requested, the nest itself must be clearly visible together with the bird in the same frame.");
+  }
+
+  if (includesAny(lower, ["\u0641\u0648\u0642", "\u0639\u0644\u0649 \u0633\u0637\u062d", "\u0633\u0637\u062d", "on top", "above"])) {
+    rules.push("When a top/above relation is requested, keep the supporting object fully visible beneath the subject.");
+  }
+
+  if (includesAny(lower, ["\u062e\u0644\u0641", "behind"])) {
+    rules.push("When a behind relation is requested, keep both the front and back subjects visible with clear depth.");
+  }
+
+  return rules;
+}
+
 function buildFinalPrompt({
   userPrompt,
   quality = "normal",
@@ -2478,6 +2501,7 @@ function buildFinalPrompt({
   const countRules = buildCountRules(userPrompt);
   const singleSubjectRules = buildSingleSubjectRules(userPrompt);
   const analysisRules = Array.isArray(analysis?.promptRules) ? analysis.promptRules.filter(Boolean) : [];
+  const locationAnchorRules = buildLocationAnchorRules(userPrompt);
   const exactness = buildRelationshipExactness(userPrompt);
 
   if (analysis) {
@@ -2502,12 +2526,14 @@ function buildFinalPrompt({
     ...countRules.map((rule) => `- ${rule}`),
     ...singleSubjectRules.map((rule) => `- ${rule}`),
     ...analysisRules.map((rule) => `- ${rule}`),
+    ...locationAnchorRules.map((rule) => `- ${rule}`),
     ...colorRules.map((rule) => `- ${rule}`),
     "Mandatory composition rules:",
     "- All requested subjects must appear.",
     "- Do not remove any requested subject.",
     "- Keep all requested colors accurate.",
     "- The main subjects must be centered and fully visible.",
+    "- Keep every requested object, place, container, or support element visible when it is part of the description.",
     "- Render only the requested subjects, actions, and environment.",
     "- Do not introduce any unrequested subject, object, or secondary scene.",
     "- Use one coherent full-frame scene only.",
