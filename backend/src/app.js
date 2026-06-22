@@ -55,8 +55,24 @@ function sanitizePayload(payload) {
   );
 }
 
-const originEnv = process.env.FRONTEND_ORIGIN || "*";
-const allowedOrigins = originEnv.split(",").map((value) => value.trim());
+const defaultAllowedOrigins = [
+  "https://pixigenl.com",
+  "https://www.pixigenl.com",
+  "https://advancedpro.onrender.com",
+  "https://www.advancedpro.onrender.com",
+  "http://localhost:5173",
+  "http://localhost:4173",
+  "http://localhost:3000",
+];
+const originEnv = process.env.FRONTEND_ORIGIN || "";
+const allowedOrigins = Array.from(
+  new Set(
+    [
+      ...defaultAllowedOrigins,
+      ...originEnv.split(",").map((value) => value.trim()).filter(Boolean),
+    ].filter(Boolean)
+  )
+);
 
 app.use(
   cors({
