@@ -337,6 +337,24 @@ test("semantic translation preserves arbitrary Arabic subjects, actions, and rel
   assert.doesNotMatch(result.finalPrompt, /[\u0600-\u06ff]/);
 });
 
+test("multi-subject marine prompts preserve dolphins beside a huge whale in one frame", () => {
+  const result = buildSmartPromptEnhancement({
+    userPrompt: "من فضلك اعمل دلافين جنبهم حوت ضخم",
+    quality: "high",
+    style: "realistic",
+    type: "image",
+  });
+
+  assert.match(result.finalPrompt, /dolphins/i);
+  assert.match(result.finalPrompt, /whale/i);
+  assert.match(result.finalPrompt, /huge whale|whale must look clearly huge/i);
+  assert.match(result.finalPrompt, /same frame|one coherent full-frame composition/i);
+  assert.match(result.finalPrompt, /no collage|no split frames|no photo grid/i);
+  assert.match(result.negativePrompt, /extra dolphins/i);
+  assert.match(result.negativePrompt, /extra whales/i);
+  assert.match(result.negativePrompt, /duplicate subjects/i);
+});
+
 const unusualArabicCases = [
   {
     prompt: "جمل شفاف يحمل مكتبة صغيرة فوق ظهره في صحراء زرقاء",

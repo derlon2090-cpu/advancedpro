@@ -616,6 +616,10 @@ function buildSingleSubjectRules(userPrompt) {
   ];
 }
 
+function pluralMarineKeywordRequested(text, singular, plural) {
+  return includesAny(text, [plural, `${plural}s`, `${singular}s`]);
+}
+
 function detectColorForEntity(text, entityKey) {
   const entityTerms = ENTITY_TERMS[entityKey] || [];
   if (!includesAny(text, entityTerms)) return null;
@@ -821,6 +825,20 @@ function analyzePromptV3(userPrompt) {
     "sea",
     "water",
   ]);
+  const hasNearbyRelation = includesAny(lower, [
+    "\u0628\u062c\u0627\u0646\u0628",
+    "\u062c\u0646\u0628\u0647",
+    "\u062c\u0646\u0628\u0647\u0627",
+    "\u062c\u0646\u0628\u0647\u0645",
+    "\u0628\u062c\u0648\u0627\u0631",
+    "\u0628\u062c\u0648\u0627\u0631\u0647",
+    "\u0628\u062c\u0648\u0627\u0631\u0647\u0627",
+    "\u0628\u062c\u0648\u0627\u0631\u0647\u0645",
+    "\u0645\u0639",
+    "next to",
+    "beside",
+    "alongside",
+  ]);
   const hasLargeSize = includesAny(lower, [
     "\u0643\u0628\u064a\u0631\u0629 \u0627\u0644\u062d\u062c\u0645",
     "\u0643\u0628\u064a\u0631 \u0627\u0644\u062d\u062c\u0645",
@@ -905,6 +923,154 @@ function analyzePromptV3(userPrompt) {
   const houseColor = detectColorForEntity(lower, "house") || (hasHouse && hasYellow ? "yellow" : null);
   const requestedCount = detectRequestedCount(userPrompt);
   const singleSubjectIntent = detectSingleSubjectIntent(userPrompt);
+  const hasPluralFish = pluralMarineKeywordRequested(lower, "fish", "\u0633\u0645\u0643\u0627\u062a");
+  const hasPluralSharks = pluralMarineKeywordRequested(lower, "shark", "\u0642\u0631\u0648\u0634");
+  const hasPluralWhales = pluralMarineKeywordRequested(lower, "whale", "\u062d\u064a\u062a\u0627\u0646");
+  const hasPluralDolphins = pluralMarineKeywordRequested(lower, "dolphin", "\u062f\u0644\u0627\u0641\u064a\u0646");
+  const marineSubjectKinds = [hasFish, hasShark, hasWhale, hasDolphin].filter(Boolean).length;
+  const marinePluralRequested =
+    hasPluralFish ||
+    hasPluralSharks ||
+    hasPluralWhales ||
+    hasPluralDolphins ||
+    (requestedCount &&
+      requestedCount.count > 1 &&
+      ["fish", "shark", "whale", "dolphin"].includes(requestedCount.singular));
+
+  if ((marineSubjectKinds > 1 || marinePluralRequested) && (hasFish || hasShark || hasWhale || hasDolphin)) {
+    const subjectPhrases = [];
+    const requiredVisibility = [];
+    const promptRules = [];
+
+    if (hasFish) {
+      const fishPhrase = hasPluralFish || requestedCount?.plural === "fish"
+        ? `multiple ${fishColor ? `${fishColor} ` : ""}fish`
+        : `one ${fishColor ? `${fishColor} ` : ""}fish`;
+      subjectPhrases.push(fishPhrase);
+      requiredVisibility.push(hasPluralFish || requestedCount?.plural === "fish" ? "all requested fish" : "the fish");
+      if (hasPluralFish || requestedCount?.plural === "fish") {
+        promptRules.push("Show multiple fish, not a single fish.");
+      }
+    }
+
+    if (hasShark) {
+      const sharkSize = hasVeryLargeSize || hasLargeSize ? "huge " : "";
+      const sharkPhrase = hasPluralSharks || requestedCount?.plural === "sharks"
+        ? `multiple ${sharkColor ? `${sharkColor} ` : ""}${sharkSize}sharks`
+        : `one ${sharkColor ? `${sharkColor} ` : ""}${sharkSize}shark`;
+      subjectPhrases.push(sharkPhrase.trim());
+      requiredVisibility.push(hasPluralSharks || requestedCount?.plural === "sharks" ? "all requested sharks" : "the shark");
+      if (hasPluralSharks || requestedCount?.plural === "sharks") {
+        promptRules.push("Show multiple sharks, not a single shark.");
+      }
+    }
+
+    if (hasWhale) {
+      const whaleSize = hasVeryLargeSize || hasLargeSize ? "huge " : "";
+      const whalePhrase = hasPluralWhales || requestedCount?.plural === "whales"
+        ? `multiple ${whaleColor ? `${whaleColor} ` : ""}${whaleSize}whales`
+        : `one ${whaleColor ? `${whaleColor} ` : ""}${whaleSize}whale`;
+      subjectPhrases.push(whalePhrase.trim());
+      requiredVisibility.push(hasPluralWhales || requestedCount?.plural === "whales" ? "all requested whales" : "the whale");
+      if (hasPluralWhales || requestedCount?.plural === "whales") {
+        promptRules.push("Show multiple whales, not a single whale.");
+      } else {
+        promptRules.push("Show one whale only, unless multiple whales are explicitly requested.");
+      }
+      if (hasVeryLargeSize || hasLargeSize) {
+        promptRules.push("The whale must look clearly huge and visually dominant in size.");
+      }
+    }
+
+    if (hasDolphin) {
+      const dolphinPhrase = hasPluralDolphins || requestedCount?.plural === "dolphins"
+        ? `multiple ${dolphinColor ? `${dolphinColor} ` : ""}dolphins`
+        : `one ${dolphinColor ? `${dolphinColor} ` : ""}dolphin`;
+      subjectPhrases.push(dolphinPhrase);
+      requiredVisibility.push(hasPluralDolphins || requestedCount?.plural === "dolphins" ? "all requested dolphins" : "the dolphin");
+      if (hasPluralDolphins || requestedCount?.plural === "dolphins") {
+        promptRules.push("Show at least two dolphins, not a single dolphin.");
+      }
+    }
+
+    const relationText = hasNearbyRelation
+      ? "swimming next to each other"
+      : "swimming together";
+    const scene = hasWaterScene || hasBeach
+      ? "one natural underwater sea scene"
+      : "one natural aquatic scene";
+    const subjectSummary = subjectPhrases.join(" and ");
+    const visibilitySummary = requiredVisibility.length > 1
+      ? `${requiredVisibility.slice(0, -1).join(", ")} and ${requiredVisibility.at(-1)}`
+      : requiredVisibility[0] || "every requested marine animal";
+
+    promptRules.unshift(`Show ${subjectSummary} ${relationText} in ${scene}.`);
+    promptRules.push(`Every requested marine animal must be fully visible in the same frame, including ${visibilitySummary}.`);
+    promptRules.push("Keep the entire result inside one coherent full-frame composition with no cropped or separated animals.");
+    promptRules.push("Do not create a collage, contact sheet, photo grid, split-screen, framed tiles, or repeated copies of any animal.");
+
+    return {
+      subject: "marine animals",
+      subjectColor: null,
+      object: hasWaterScene || hasBeach ? "sea environment" : "aquatic environment",
+      objectColor: null,
+      relation: relationText,
+      enhancedPrompt: [
+        "\u0635\u0648\u0631\u0629 \u0648\u0627\u0642\u0639\u064a\u0629 \u0644\u062d\u064a\u0648\u0627\u0646\u0627\u062a \u0628\u062d\u0631\u064a\u0629 \u0645\u0637\u0644\u0648\u0628\u0629 \u0643\u0644\u0647\u0627 \u0641\u064a \u0646\u0641\u0633 \u0627\u0644\u0645\u0634\u0647\u062f.",
+        hasNearbyRelation
+          ? "\u064a\u062c\u0628 \u0623\u0646 \u062a\u0638\u0647\u0631 \u0627\u0644\u062d\u064a\u0648\u0627\u0646\u0627\u062a \u0627\u0644\u0628\u062d\u0631\u064a\u0629 \u0628\u062c\u0627\u0646\u0628 \u0628\u0639\u0636\u0647\u0627 \u0641\u064a \u0646\u0641\u0633 \u0627\u0644\u0625\u0637\u0627\u0631."
+          : "\u064a\u062c\u0628 \u0623\u0646 \u062a\u0638\u0647\u0631 \u0627\u0644\u062d\u064a\u0648\u0627\u0646\u0627\u062a \u0627\u0644\u0628\u062d\u0631\u064a\u0629 \u0645\u0639\u064b\u0627 \u0641\u064a \u0646\u0641\u0633 \u0627\u0644\u0625\u0637\u0627\u0631.",
+        "\u0645\u0645\u0646\u0648\u0639 \u062a\u0642\u0633\u064a\u0645 \u0627\u0644\u0635\u0648\u0631\u0629 \u0623\u0648 \u062a\u0643\u0631\u0627\u0631 \u0627\u0644\u062d\u064a\u0648\u0627\u0646\u0627\u062a \u0623\u0648 \u0625\u0636\u0627\u0641\u0629 \u0645\u0634\u0627\u0647\u062f \u062c\u0627\u0646\u0628\u064a\u0629.",
+      ].join(" "),
+      finalPrompt: [
+        `A realistic underwater wildlife image of ${subjectSummary} ${relationText}.`,
+        `Use ${scene} only.`,
+        "Every requested marine animal must be clearly visible in the same frame.",
+        hasPluralDolphins ? "Show at least two dolphins, not a single dolphin." : "",
+        hasPluralWhales ? "Show multiple whales, not a single whale." : "",
+        hasPluralSharks ? "Show multiple sharks, not a single shark." : "",
+        hasPluralFish ? "Show multiple fish, not a single fish." : "",
+        hasWhale && (hasVeryLargeSize || hasLargeSize) ? "The whale must look clearly huge and dominant in size." : "",
+        "No collage, no split frames, no photo grid, no duplicated animals, and no repeated copies.",
+        "Professional wildlife photography, natural water lighting, sharp details, clean composition.",
+      ].filter(Boolean).join(" "),
+      promptRules,
+      negativeRules: [
+        "collage",
+        "contact sheet",
+        "multiple images",
+        "grid layout",
+        "photo grid",
+        "tiled images",
+        "split screen",
+        "split panel",
+        "panel dividers",
+        "white borders",
+        "white separator lines",
+        "duplicate subjects",
+        "repeated animals",
+        "extra fish",
+        "extra sharks",
+        "extra whales",
+        "extra dolphins",
+        "humans",
+        "people",
+        "boats",
+        "business meeting",
+        "office",
+        "food",
+        "text",
+        "watermark",
+        "logo",
+      ],
+      debug: {
+        subjects: subjectPhrases,
+        relations: [relationText],
+        scene,
+        style: "realistic underwater wildlife photo",
+      },
+    };
+  }
 
   if (
     (
@@ -2241,6 +2407,25 @@ function buildRelationshipExactness(userPrompt) {
     ].join(" ");
   }
 
+  if (
+    includesAny(lower, [
+      "\u062c\u0646\u0628\u0647",
+      "\u062c\u0646\u0628\u0647\u0627",
+      "\u062c\u0646\u0628\u0647\u0645",
+      "\u0628\u062c\u0648\u0627\u0631",
+      "\u0628\u062c\u0648\u0627\u0631\u0647",
+      "\u0628\u062c\u0648\u0627\u0631\u0647\u0627",
+      "\u0628\u062c\u0648\u0627\u0631\u0647\u0645",
+      "alongside",
+    ])
+  ) {
+    return [
+      "If multiple subjects are requested, keep them next to each other in the same frame.",
+      "Every requested subject must remain clearly visible at the same time.",
+      "Do not separate the subjects into different panels, scenes, or repeated layouts.",
+    ].join(" ");
+  }
+
   return "Follow the subject exactly and do not reuse previous subjects.";
 }
 
@@ -2268,6 +2453,7 @@ function buildFinalPrompt({
   const colorRules = buildColorRules(userPrompt, analysis);
   const countRules = buildCountRules(userPrompt);
   const singleSubjectRules = buildSingleSubjectRules(userPrompt);
+  const analysisRules = Array.isArray(analysis?.promptRules) ? analysis.promptRules.filter(Boolean) : [];
   const exactness = buildRelationshipExactness(userPrompt);
 
   if (analysis) {
@@ -2291,6 +2477,7 @@ function buildFinalPrompt({
     `- ${exactness}`,
     ...countRules.map((rule) => `- ${rule}`),
     ...singleSubjectRules.map((rule) => `- ${rule}`),
+    ...analysisRules.map((rule) => `- ${rule}`),
     ...colorRules.map((rule) => `- ${rule}`),
     "Mandatory composition rules:",
     "- All requested subjects must appear.",
