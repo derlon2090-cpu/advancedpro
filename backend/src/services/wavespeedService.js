@@ -624,8 +624,9 @@ function analyzePromptV3(userPrompt) {
         `A realistic detailed image of one ${coloredBird} as the clear main subject.`,
         `Show the full ${birdLabel} clearly inside the frame with accurate anatomy and visible feathers.`,
         displayBirdColor ? `Keep the ${birdLabel} ${displayBirdColor}.` : `Keep the ${birdLabel} appearance natural and clear.`,
-        "Use a clean natural background that does not distract from the main subject.",
-        "No humans, no office, no meeting room, no food, no text, no watermark, no logo.",
+        "Use a clean outdoor wildlife background with one continuous natural scene only, such as open sky, distant trees, soft rocks, or blurred nature.",
+        "Do not place the bird in front of windows, tiled panels, geometric rectangles, white divider bars, framed sections, or any segmented background.",
+        "No humans, no office, no meeting room, no food, no text, no watermark, no logo, no grid lines.",
       ].join(" "),
       negativeRules: [
         "humans",
@@ -637,6 +638,21 @@ function analyzePromptV3(userPrompt) {
         "text",
         "watermark",
         "logo",
+        "grid lines",
+        "photo grid",
+        "window panes",
+        "window frame",
+        "window",
+        "glass wall",
+        "glass panels",
+        "panel dividers",
+        "rectangular panels",
+        "geometric background",
+        "checkerboard background",
+        "white separator lines",
+        "split screen",
+        "collage",
+        "mosaic",
       ],
       debug: {
         subjects: [birdLabel],
@@ -837,6 +853,7 @@ function analyzePromptV3(userPrompt) {
         `A realistic photo of a ${subjectColor === "clearly visible" ? "" : `${subjectColor} `}chicken ${place}.`,
         subjectColor !== "clearly visible" ? `The chicken must be ${subjectColor}.` : "The chicken must be clearly visible.",
         "The chicken is the main subject and must be fully visible in the frame.",
+        "Use one continuous outdoor farm or garden background only, with no windows, no tiled panels, no geometric rectangles, and no white separator bars.",
         "Do not generate people, employees, meetings, offices, conference rooms, restaurants, food plates, or business scenes.",
         "No extra animals unless requested, no text, no watermark, no logo, no grid lines.",
         "Natural lighting, realistic photography, clean composition.",
@@ -855,6 +872,19 @@ function analyzePromptV3(userPrompt) {
         "text",
         "watermark",
         "logo",
+        "window panes",
+        "window frame",
+        "window",
+        "glass wall",
+        "glass panels",
+        "panel dividers",
+        "rectangular panels",
+        "geometric background",
+        "checkerboard background",
+        "white separator lines",
+        "split screen",
+        "collage",
+        "mosaic",
       ],
       debug: {
         subjects: ["chicken"],
@@ -1613,8 +1643,16 @@ function buildNegativeRules(userPrompt) {
     "mosaic",
     "window panes",
     "window frame",
+    "window",
+    "glass wall",
+    "glass panels",
+    "panel dividers",
+    "rectangular panels",
+    "geometric background",
+    "checkerboard background",
     "white borders",
     "thick white lines",
+    "white separator lines",
     "framed tiles",
     "captions",
     "subtitles",
@@ -2479,8 +2517,22 @@ function imageResultValidationRequired() {
 }
 
 function imageResultValidationAttempts() {
-  const value = Number(process.env.IMAGE_RESULT_VALIDATION_ATTEMPTS || 1);
+  const value = Number(process.env.IMAGE_RESULT_VALIDATION_ATTEMPTS || 2);
   return Math.min(Math.max(Number.isFinite(value) ? Math.floor(value) : 1, 1), 2);
+}
+
+function validationIndicatesPanelArtifact(validation) {
+  const haystack = [
+    validation?.reason || "",
+    ...(Array.isArray(validation?.unexpectedElements) ? validation.unexpectedElements : []),
+    ...(Array.isArray(validation?.missingElements) ? validation.missingElements : []),
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  return /(grid|photo grid|window-pane|window pane|window|panel|divider|separator|split screen|split-screen|split panel|collage|mosaic|checkerboard|white border|white line|rectangular)/i.test(
+    haystack
+  );
 }
 
 export function parseImageValidationPayload(payload) {
@@ -2793,7 +2845,7 @@ export async function generateImageWithWaveSpeed({
     }
   }
 
-  if (lastValidation && !imageResultValidationRequired()) {
+  if (lastValidation && !imageResultValidationRequired() && !validationIndicatesPanelArtifact(lastValidation)) {
     console.warn("IMAGE_RESULT_VALIDATION_BYPASS:", {
       reason: lastValidation.reason || "validation_not_passed",
       unexpectedElements: lastValidation.unexpectedElements || [],
