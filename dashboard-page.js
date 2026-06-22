@@ -1,12 +1,12 @@
 (function () {
   const API_BASE_URL = window.AdvancedProConfig?.apiBaseUrl || "";
-  const BUILD_VERSION = "2026.06.20-background-generation-v4";
+  const BUILD_VERSION = "2026.06.22-generation-fix-v2";
   console.info("PIXIGEN_BUILD:", BUILD_VERSION);
 
   const state = {
     key: null,
     type: "image",
-    quality: "high",
+    quality: "normal",
     style: "realistic",
     aspect: "16:9",
     duration: 5,
@@ -674,6 +674,11 @@
     } catch {
       state.favorites = new Set();
     }
+    const settings = getSettings();
+    state.quality =
+      settings.explicitQualityPreference && ["normal", "high", "ultra"].includes(settings.quality)
+        ? settings.quality
+        : "normal";
     restoreCachedKey();
     hydrateCachedGenerations();
   }
@@ -1049,13 +1054,20 @@
     try {
       return {
         language: "ar",
-        quality: "high",
+        quality: "normal",
+        explicitQualityPreference: false,
         emailNotifications: true,
         systemNotifications: true,
         ...JSON.parse(localStorage.getItem("pixigen:settings") || "{}"),
       };
     } catch {
-      return { language: "ar", quality: "high", emailNotifications: true, systemNotifications: true };
+      return {
+        language: "ar",
+        quality: "normal",
+        explicitQualityPreference: false,
+        emailNotifications: true,
+        systemNotifications: true,
+      };
     }
   }
 
@@ -1376,6 +1388,7 @@
     const form = new FormData(formElement);
     const settings = getSettings();
     settings.quality = form.get("quality") || settings.quality;
+    settings.explicitQualityPreference = true;
     settings.language = form.get("language") || settings.language;
     localStorage.setItem("pixigen:settings", JSON.stringify(settings));
     state.key = {

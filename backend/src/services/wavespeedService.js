@@ -13,6 +13,8 @@ import {
   WAVE_VIDEO_MODEL_CANDIDATES,
   WAVE_VIDEO_MODELS,
 } from "./wavespeedModels.js";
+import { generateImage as generateImageWithGemini } from "./aiProvider.js";
+import { analyzePromptComplexity } from "../utils/promptComplexity.js";
 
 const QUALITY_LABELS = {
   normal: "normal",
@@ -1267,7 +1269,7 @@ function analyzePromptV3(userPrompt) {
 
   if (hasWolf) {
     const familyDescription = hasWolfPups
-      ? "one large adult wolf together with multiple young wolf pups"
+      ? "one large wolf together with multiple young wolf pups"
       : `${hasLargeSize || hasVeryLargeSize ? "one large adult " : "one adult "}wolf`;
 
     return {
@@ -2151,9 +2153,73 @@ function extractTranslatedPrompt(payload) {
   return "";
 }
 
+async function getValidCachedPromptTranslation(text) {
+  const cachedTranslation = await getCachedPromptTranslation(text);
+  if (!cachedTranslation) {
+    return "";
+  }
+
+  const cachedIssue = semanticTranslationIssue(text, cachedTranslation);
+  if (cachedIssue) {
+    console.warn("PROMPT_TRANSLATION_CACHE_INVALID:", cachedIssue, compactForLog(cachedTranslation));
+    await deleteCachedPromptTranslation(text);
+    return "";
+  }
+
+  console.log("PROMPT_TRANSLATION_MODE:", "cache");
+  console.log("TRANSLATED_PROMPT:", compactForLog(cachedTranslation));
+  return assertSemanticTranslation(text, cachedTranslation);
+}
+
+async function getValidStructuredLocalTranslation(text, { cacheResult = true } = {}) {
+  const structuredLocalTranslation = extractPositiveTranslationCandidate(
+    String(analyzePromptV3(text)?.finalPrompt || "").trim()
+  );
+  if (!structuredLocalTranslation || hasArabicText(structuredLocalTranslation)) {
+    return "";
+  }
+
+  const structuredIssue = semanticTranslationIssue(text, structuredLocalTranslation);
+  if (structuredIssue) {
+    return "";
+  }
+
+  console.log("PROMPT_TRANSLATION_MODE:", "local-structured");
+  console.log("TRANSLATED_PROMPT:", compactForLog(structuredLocalTranslation));
+  if (cacheResult) {
+    await setCachedPromptTranslation(text, structuredLocalTranslation);
+  }
+  return assertSemanticTranslation(text, structuredLocalTranslation);
+}
+
+async function getValidLocalFallbackTranslation(text, { cacheResult = true } = {}) {
+  const localTranslation = translateArabicToEnglish(text);
+  if (!localTranslation) {
+    return "";
+  }
+
+  const localIssue = semanticTranslationIssue(text, localTranslation);
+  if (localIssue) {
+    return "";
+  }
+
+  console.log("PROMPT_TRANSLATION_MODE:", "local-fallback");
+  console.log("TRANSLATED_PROMPT:", compactForLog(localTranslation));
+  if (cacheResult) {
+    await setCachedPromptTranslation(text, localTranslation);
+  }
+  return assertSemanticTranslation(text, localTranslation);
+}
+
 function semanticTranslationIssue(source, translated) {
   const sourceText = String(source || "").toLowerCase();
-  const translatedText = String(translated || "").toLowerCase();
+  const translatedPositiveText =
+    extractPositiveTranslationCandidate(translated) || String(translated || "").trim();
+  const translatedText = translatedPositiveText
+    .replace(/\b(?:do not|don't|no|without|avoid|never|not)\b[^.!?\n]*/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
 
   if (!translatedText || hasArabicText(translatedText)) {
     return "empty_or_arabic_output";
@@ -2196,55 +2262,121 @@ function assertSemanticTranslation(source, translated) {
   return String(translated || "").trim();
 }
 
+async function translateArabicPromptWithServer(text, apiKey) {
+  const translationBody = {
+    contents: [
+      {
+        parts: [
+          {
+            text: [
+              "You are a strict Arabic-to-English visual prompt compiler.",
+              "Convert the Arabic request below into one precise standalone English visual prompt.",
+              "Preserve every requested noun, subject, species, count, color, size, material, action, pose, spatial relationship, location, time, and negation.",
+              "Resolve Arabic pronouns and possessives accurately, including ظ…ط¹ظ‡طŒ ط¨ط¬ط§ظ†ط¨ظ‡طŒ طµط؛ط§ط±ظ‡طŒ ظپظˆظ‚ظ‡طŒ ط®ظ„ظپظ‡طŒ ط¯ط§ط®ظ„ظ‡ط§.",
+              "Treat intensifiers such as ظƒط¨ظٹط± ط¬ط¯ظ‹ط§طŒ طµط؛ظٹط± ظ„ظ„ط؛ط§ظٹط©طŒ ط¹ظ…ظ„ط§ظ‚طŒ ط¶ط®ظ… as mandatory visual scale requirements.",
+              "Never reuse subjects or scenes from earlier requests. This request is independent and stateless.",
+              "Do not add humans, business scenes, offices, meetings, food, flowers, text, logos, or any object not requested.",
+              "Make every requested subject clearly visible in the same frame when possible.",
+              "Silently verify that the English output contains all requested elements before answering.",
+              "Return only the final English visual prompt. No explanation, labels, JSON, markdown, or Arabic.",
+              "Arabic request starts:",
+              text,
+              "Arabic request ends.",
+            ].join("\n"),
+          },
+        ],
+      },
+    ],
+    generationConfig: {
+      temperature: 0,
+      maxOutputTokens: 350,
+    },
+  };
+
+  for (const model of getPromptTranslationModels()) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8_000);
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+        {
+          method: "POST",
+          cache: "no-store",
+          signal: controller.signal,
+          headers: {
+            "Content-Type": "application/json",
+            "Cache-Control": "no-store",
+            "x-goog-api-key": apiKey,
+          },
+          body: JSON.stringify(translationBody),
+        }
+      );
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        console.warn(
+          "PROMPT_TRANSLATION_ERROR:",
+          model,
+          response.status,
+          payload?.error?.message || payload?.message || "unknown"
+        );
+        continue;
+      }
+
+      const translated = extractTranslatedPrompt(payload);
+      const issue = semanticTranslationIssue(text, translated);
+      if (issue) {
+        console.warn("PROMPT_TRANSLATION_INVALID:", model, compactForLog(translated || "empty"));
+        continue;
+      }
+
+      console.log("PROMPT_TRANSLATION_MODE:", "server");
+      console.log("PROMPT_TRANSLATION_MODEL:", model);
+      console.log("TRANSLATED_PROMPT:", compactForLog(translated));
+      await setCachedPromptTranslation(text, translated);
+      return assertSemanticTranslation(text, translated);
+    } catch (error) {
+      console.warn("PROMPT_TRANSLATION_ERROR:", model, error?.name || "error", error?.message || error);
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  return "";
+}
+
 async function translateArabicPromptForGeneration(userPrompt) {
   const text = String(userPrompt || "").trim();
   if (!hasArabicText(text)) return "";
 
-  const cachedTranslation = await getCachedPromptTranslation(text);
-  if (cachedTranslation) {
-    const cachedIssue = semanticTranslationIssue(text, cachedTranslation);
-    if (!cachedIssue) {
-      console.log("PROMPT_TRANSLATION_MODE:", "cache");
-      console.log("TRANSLATED_PROMPT:", compactForLog(cachedTranslation));
-      return assertSemanticTranslation(text, cachedTranslation);
-    }
-    console.warn("PROMPT_TRANSLATION_CACHE_INVALID:", cachedIssue, compactForLog(cachedTranslation));
-    await deleteCachedPromptTranslation(text);
-  }
-
-  const structuredLocalTranslation = extractPositiveTranslationCandidate(
-    String(analyzePromptV3(text)?.finalPrompt || "").trim()
-  );
-  if (structuredLocalTranslation && !hasArabicText(structuredLocalTranslation)) {
-    const structuredIssue = semanticTranslationIssue(text, structuredLocalTranslation);
-    if (!structuredIssue) {
-      console.log("PROMPT_TRANSLATION_MODE:", "local-structured");
-      console.log("TRANSLATED_PROMPT:", compactForLog(structuredLocalTranslation));
-      await setCachedPromptTranslation(text, structuredLocalTranslation);
-      return assertSemanticTranslation(text, structuredLocalTranslation);
-    }
-  }
-
-  if (!serverTranslationEnabled()) {
-    const localTranslation = translateArabicToEnglish(text);
-    if (!localTranslation) {
-      return "";
-    }
-    const localIssue = semanticTranslationIssue(text, localTranslation);
-    if (localIssue) {
-      return "";
-    }
-    console.log("PROMPT_TRANSLATION_MODE:", "local-fallback");
-    console.log("TRANSLATED_PROMPT:", compactForLog(localTranslation));
-    await setCachedPromptTranslation(text, localTranslation);
-    return assertSemanticTranslation(text, localTranslation);
-  }
-
   const apiKey = getPromptTranslationKey();
+  const preferServer = serverTranslationEnabled() && apiKey;
+  if (preferServer) {
+    const serverTranslation = await translateArabicPromptWithServer(text, apiKey);
+    if (serverTranslation) {
+      return serverTranslation;
+    }
+  }
+
+  const cachedTranslation = await getValidCachedPromptTranslation(text);
+  if (cachedTranslation) {
+    return cachedTranslation;
+  }
+
+  const structuredTranslation = await getValidStructuredLocalTranslation(text);
+  if (structuredTranslation) {
+    return structuredTranslation;
+  }
+
+  const localFallbackTranslation = await getValidLocalFallbackTranslation(text);
+  if (localFallbackTranslation) {
+    return localFallbackTranslation;
+  }
+
   if (!apiKey) {
     console.warn("PROMPT_TRANSLATION_UNAVAILABLE:", "No server translation key is configured.");
-    return "";
   }
+
+  return "";
 
   const translationBody = {
     contents: [
@@ -2786,28 +2918,70 @@ export async function buildSmartPromptEnhancementAsync(
 ) {
   const prompt = String(userPrompt || "").trim();
   const analysis = analyzePromptV3(prompt);
+  const complexity = analyzePromptComplexity(prompt);
+  const usingCustomTranslator = translatePrompt !== translateArabicPromptForGeneration;
   const positiveStructuredPrompt =
     analysis?.finalPrompt && !hasArabicText(analysis.finalPrompt)
       ? extractPositiveTranslationCandidate(analysis.finalPrompt)
       : "";
-  const hasStructuredLocalPrompt =
-    type === "image" &&
-    normalizeQuality(quality) === "normal" &&
+  const localStructuredIsSimple =
+    complexity.subjects <= 1 &&
+    complexity.relations === 0 &&
+    complexity.colors <= 1 &&
+    complexity.wordCount <= 6;
+  const preferStructuredLocalTranslation =
     Boolean(positiveStructuredPrompt) &&
-    !analysis?.promptRules?.length &&
-    Boolean(detectSingleSubjectIntent(prompt));
-  const translatedPromptOverride =
-    hasStructuredLocalPrompt
-      ? positiveStructuredPrompt
-      : hasArabicText(prompt)
-        ? await translatePrompt(prompt)
-        : "";
-  const usedStructuredLocalTranslation =
-    hasArabicText(prompt) &&
-    Boolean(translatedPromptOverride) &&
-    translatedPromptOverride === positiveStructuredPrompt;
-  if (translatedPromptOverride) {
-    assertSemanticTranslation(prompt, translatedPromptOverride);
+    !usingCustomTranslator &&
+    Boolean(
+      localStructuredIsSimple &&
+        (detectSingleSubjectIntent(prompt) ||
+          (analysis?.subject &&
+            !analysis?.object &&
+            !analysis?.relation &&
+            (!Array.isArray(analysis?.promptRules) || analysis.promptRules.length <= 2)))
+    );
+  let translatedPromptOverride = "";
+  let translationMode = "translation-unavailable";
+
+  if (hasArabicText(prompt)) {
+    const tryStructuredLocal = () => {
+      if (!positiveStructuredPrompt) return false;
+      translatedPromptOverride = assertSemanticTranslation(prompt, positiveStructuredPrompt);
+      translationMode = "local-structured";
+      return true;
+    };
+
+    if (preferStructuredLocalTranslation) {
+      tryStructuredLocal();
+    }
+
+    if (!translatedPromptOverride) {
+      try {
+        const translated = await translatePrompt(prompt);
+        if (translated) {
+          translatedPromptOverride = assertSemanticTranslation(prompt, translated);
+          translationMode =
+            translatedPromptOverride === positiveStructuredPrompt ? "local-structured" : "server-semantic";
+        }
+      } catch (error) {
+        if (usingCustomTranslator && error?.statusCode === 422) {
+          throw error;
+        }
+        console.warn("PROMPT_TRANSLATION_CHAIN_ERROR:", error?.message || error);
+      }
+    }
+
+    if (!translatedPromptOverride && !preferStructuredLocalTranslation) {
+      tryStructuredLocal();
+    }
+
+    if (!translatedPromptOverride) {
+      const localFallbackTranslation = await getValidLocalFallbackTranslation(prompt, { cacheResult: false });
+      if (localFallbackTranslation) {
+        translatedPromptOverride = localFallbackTranslation;
+        translationMode = "local-fallback";
+      }
+    }
   }
   const enhancedPrompt =
     analysis?.enhancedPrompt ||
@@ -2832,13 +3006,7 @@ export async function buildSmartPromptEnhancementAsync(
       negativePrompt,
       debug: {
         ...(analysis?.debug || {}),
-        translationMode: usedStructuredLocalTranslation
-          ? "local-structured"
-          : translatedPromptOverride
-            ? "server-semantic"
-            : hasStructuredLocalPrompt
-            ? "local-structured"
-            : "translation-unavailable",
+        translationMode,
       },
     };
 }
@@ -3408,12 +3576,24 @@ function imageResultValidationEnabled() {
 }
 
 function imageResultValidationRequired() {
-  return String(process.env.IMAGE_RESULT_VALIDATION_REQUIRED || "false").trim().toLowerCase() !== "false";
+  const flag = String(process.env.IMAGE_RESULT_VALIDATION_REQUIRED || "").trim().toLowerCase();
+  if (["true", "1", "yes", "on"].includes(flag)) {
+    return true;
+  }
+  if (["false", "0", "no", "off"].includes(flag)) {
+    return false;
+  }
+  return imageResultValidationEnabled();
+}
+
+function imageResultValidationBypassEnabled() {
+  const flag = String(process.env.IMAGE_RESULT_VALIDATION_BYPASS || "").trim().toLowerCase();
+  return ["true", "1", "yes", "on"].includes(flag);
 }
 
 function imageResultValidationAttempts() {
-  const value = Number(process.env.IMAGE_RESULT_VALIDATION_ATTEMPTS || 2);
-  return Math.min(Math.max(Number.isFinite(value) ? Math.floor(value) : 1, 1), 2);
+  const value = Number(process.env.IMAGE_RESULT_VALIDATION_ATTEMPTS || 3);
+  return Math.min(Math.max(Number.isFinite(value) ? Math.floor(value) : 1, 1), 3);
 }
 
 function validationIndicatesPanelArtifact(validation) {
@@ -3622,25 +3802,22 @@ export async function generateImageWithWaveSpeed({
   endpointOverride = "",
   allowFallback = true,
 }) {
-  const apiKey = requireApiKey();
   const normalizedQuality = normalizeQuality(quality);
   const baseConfig = getImageConfig(normalizedQuality);
   const model = String(modelOverride || baseConfig.model || "").trim();
   const endpoint = String(endpointOverride || (modelOverride ? buildEndpointFromModelPath(modelOverride) : baseConfig.endpoint) || "").trim();
-  const analysis = analyzePromptV3(prompt);
-  const hasStructuredLocalPrompt = Boolean(analysis?.finalPrompt && !hasArabicText(analysis.finalPrompt));
-  const translatedPromptOverride = hasStructuredLocalPrompt
-    ? analysis.finalPrompt
-    : await translateArabicPromptForGeneration(prompt);
-  const finalPrompt = buildFinalPrompt({
+  const promptPipeline = await buildSmartPromptEnhancementAsync({
     userPrompt: prompt,
     quality: normalizedQuality,
     style,
     type: "image",
-    translatedPromptOverride,
   });
-  const negativePrompt = buildNegativePromptText(prompt, analysis);
+  const analysis = analyzePromptV3(prompt);
+  const finalPrompt = promptPipeline.finalPrompt;
+  const negativePrompt = promptPipeline.negativePrompt;
+  const usedStructuredLocalTranslation = promptPipeline.debug?.translationMode === "local-structured";
   const safeSeed = randomSeed(seed);
+  const apiKey = String(process.env.WAVESPEED_API_KEY || "").trim();
   const body = {
     prompt: finalPrompt,
     negative_prompt: negativePrompt,
@@ -3648,9 +3825,11 @@ export async function generateImageWithWaveSpeed({
     seed: safeSeed,
     enable_base64_output: false,
   };
+  const strictValidationActive = Boolean(getPromptTranslationKey() && imageResultValidationEnabled());
   const shouldSkipValidation =
+    !strictValidationActive &&
     normalizedQuality === "normal" &&
-    hasStructuredLocalPrompt &&
+    usedStructuredLocalTranslation &&
     !analysis?.promptRules?.length &&
     detectSingleSubjectIntent(prompt);
 
@@ -3661,6 +3840,7 @@ export async function generateImageWithWaveSpeed({
   console.log("WAVESPEED MODEL:", model);
   console.log("REQUEST_ID:", requestId);
   logPromptDiagnostics({ userPrompt: prompt, finalPrompt });
+  console.log("PROMPT_TRANSLATION_CHAIN_MODE:", promptPipeline.debug?.translationMode || "translation-unavailable");
   console.log("IMAGE_VALIDATION_MODE:", shouldSkipValidation ? "fast-path-skip" : "standard");
   console.log(
     "WAVESPEED BODY SENT:",
@@ -3671,121 +3851,180 @@ export async function generateImageWithWaveSpeed({
     })
   );
 
-  const attempts = !shouldSkipValidation && getPromptTranslationKey() && imageResultValidationEnabled()
-    ? imageResultValidationAttempts()
-    : 1;
-  let lastValidation = null;
-  let lastGeneratedResult = null;
+  if (apiKey) {
+    const attempts = !shouldSkipValidation && strictValidationActive
+      ? imageResultValidationAttempts()
+      : 1;
+    let lastValidation = null;
+    let lastGeneratedResult = null;
 
-  for (let attempt = 1; attempt <= attempts; attempt += 1) {
-    const attemptSeed = attempt === 1 ? safeSeed : randomSeed();
-    const attemptBody = {
-      ...body,
-      seed: attemptSeed,
-    };
-    const request = allowFallback
-      ? await postWaveSpeedWithFallback({
-          apiKey,
-          endpoint,
-          body: attemptBody,
-          mediaType: "image",
-          quality: normalizedQuality,
-          model,
-        })
-      : {
-          initial: await postWaveSpeed({ apiKey, endpoint, body: attemptBody }),
-          endpoint,
-          model,
-          usedFallback: false,
-        };
-    const resultUrl = await pollWaveSpeedResult({
-      apiKey,
-      initial: request.initial,
-      mediaType: "image",
-    });
-    lastGeneratedResult = {
-      request,
-      resultUrl,
-      seed: attemptSeed,
-    };
-
-    console.log("NEW RESULT URL:", resultUrl);
-
-    if (shouldSkipValidation) {
-      lastValidation = {
-        checked: false,
-        passed: true,
-        reason: "fast_path_simple_single_subject",
-        unexpectedElements: [],
-        missingElements: [],
+    for (let attempt = 1; attempt <= attempts; attempt += 1) {
+      const attemptSeed = attempt === 1 ? safeSeed : randomSeed();
+      const attemptBody = {
+        ...body,
+        seed: attemptSeed,
       };
-    } else {
-      try {
-        lastValidation = await validateGeneratedImageAgainstPrompt({
-          resultUrl,
-          userPrompt: prompt,
-          finalPrompt,
-        });
-      } catch (error) {
-        console.warn("IMAGE_RESULT_VALIDATION_ERROR:", error?.message || error);
+      const request = allowFallback
+        ? await postWaveSpeedWithFallback({
+            apiKey,
+            endpoint,
+            body: attemptBody,
+            mediaType: "image",
+            quality: normalizedQuality,
+            model,
+          })
+        : {
+            initial: await postWaveSpeed({ apiKey, endpoint, body: attemptBody }),
+            endpoint,
+            model,
+            usedFallback: false,
+          };
+      const resultUrl = await pollWaveSpeedResult({
+        apiKey,
+        initial: request.initial,
+        mediaType: "image",
+      });
+      lastGeneratedResult = {
+        request,
+        resultUrl,
+        seed: attemptSeed,
+      };
+
+      console.log("NEW RESULT URL:", resultUrl);
+
+      if (shouldSkipValidation) {
         lastValidation = {
           checked: false,
-          passed: !imageResultValidationRequired(),
-          reason: "validator_error",
+          passed: true,
+          reason: "fast_path_simple_single_subject",
           unexpectedElements: [],
           missingElements: [],
+        };
+      } else {
+        try {
+          lastValidation = await validateGeneratedImageAgainstPrompt({
+            resultUrl,
+            userPrompt: prompt,
+            finalPrompt,
+          });
+        } catch (error) {
+          console.warn("IMAGE_RESULT_VALIDATION_ERROR:", error?.message || error);
+          lastValidation = {
+            checked: false,
+            passed: !imageResultValidationRequired(),
+            reason: "validator_error",
+            unexpectedElements: [],
+            missingElements: [],
+          };
+        }
+      }
+
+      console.log("IMAGE_RESULT_VALIDATION:", {
+        requestId,
+        attempt,
+        seed: attemptSeed,
+        model: request.model,
+        ...lastValidation,
+      });
+
+      if (lastValidation.passed) {
+        return {
+          provider: "wavespeed",
+          model: request.model,
+          finalPrompt,
+          seed: attemptSeed,
+          resultUrl,
+          validation: lastValidation,
+          raw: request.initial,
         };
       }
     }
 
-    console.log("IMAGE_RESULT_VALIDATION:", {
-      requestId,
-      attempt,
-      seed: attemptSeed,
-      model: request.model,
-      ...lastValidation,
-    });
-
-    if (lastValidation.passed) {
+    if (lastValidation && imageResultValidationBypassEnabled() && !validationIndicatesPanelArtifact(lastValidation)) {
+      console.warn("IMAGE_RESULT_VALIDATION_BYPASS:", {
+        reason: lastValidation.reason || "validation_not_passed",
+        unexpectedElements: lastValidation.unexpectedElements || [],
+        missingElements: lastValidation.missingElements || [],
+      });
+      if (!lastGeneratedResult) {
+        throw serviceError("تعذر إتمام الطلب مؤقتًا، حاول لاحقًا. لم يتم خصم أي رصيد.", 502);
+      }
       return {
         provider: "wavespeed",
-        model: request.model,
+        model: lastGeneratedResult.request.model,
         finalPrompt,
-        seed: attemptSeed,
-        resultUrl,
-        validation: lastValidation,
-        raw: request.initial,
+        seed: lastGeneratedResult.seed,
+        resultUrl: lastGeneratedResult.resultUrl,
+        validation: {
+          ...lastValidation,
+          bypassed: true,
+        },
+        raw: lastGeneratedResult.request.initial,
       };
     }
+
+    throw serviceError(
+      "تعذر إخراج نتيجة مطابقة للوصف بدقة في الوقت الحالي. لم يتم خصم أي رصيد.",
+      422
+    );
   }
 
-  if (lastValidation && !imageResultValidationRequired() && !validationIndicatesPanelArtifact(lastValidation)) {
-    console.warn("IMAGE_RESULT_VALIDATION_BYPASS:", {
-      reason: lastValidation.reason || "validation_not_passed",
-      unexpectedElements: lastValidation.unexpectedElements || [],
-      missingElements: lastValidation.missingElements || [],
-    });
-    if (!lastGeneratedResult) {
-      throw serviceError("تعذر إتمام الطلب مؤقتًا، حاول لاحقًا. لم يتم خصم أي رصيد.", 502);
+  const geminiResult = await generateImageWithGemini({ prompt: finalPrompt });
+  if (!geminiResult?.resultUrl) {
+    throw serviceError("تعذر إتمام الطلب مؤقتًا، حاول لاحقًا. لم يتم خصم أي رصيد.", 502);
+  }
+
+  let geminiValidation = {
+    checked: false,
+    passed: true,
+    reason: "gemini_fallback_without_wavespeed",
+    unexpectedElements: [],
+    missingElements: [],
+  };
+
+  if (strictValidationActive) {
+    try {
+      geminiValidation = await validateGeneratedImageAgainstPrompt({
+        resultUrl: geminiResult.resultUrl,
+        userPrompt: prompt,
+        finalPrompt,
+      });
+    } catch (error) {
+      console.warn("IMAGE_RESULT_VALIDATION_ERROR:", error?.message || error);
+      geminiValidation = {
+        checked: false,
+        passed: !imageResultValidationRequired(),
+        reason: "validator_error",
+        unexpectedElements: [],
+        missingElements: [],
+      };
     }
-    return {
-      provider: "wavespeed",
-      model: lastGeneratedResult.request.model,
-      finalPrompt,
-      seed: lastGeneratedResult.seed,
-      resultUrl: lastGeneratedResult.resultUrl,
-      validation: {
-        ...lastValidation,
-        bypassed: true,
-      },
-      raw: lastGeneratedResult.request.initial,
-    };
+
+    console.log("IMAGE_RESULT_VALIDATION:", {
+      requestId,
+      attempt: 1,
+      seed: safeSeed,
+      model: geminiResult.model || "gemini-image-fallback",
+      ...geminiValidation,
+    });
+
+    if (!geminiValidation.passed) {
+      throw serviceError(
+        "تعذر إخراج نتيجة مطابقة للوصف بدقة في الوقت الحالي. لم يتم خصم أي رصيد.",
+        422
+      );
+    }
   }
 
-  throw serviceError(
-    "تعذر إخراج نتيجة مطابقة للوصف بدقة في الوقت الحالي. لم يتم خصم أي رصيد.",
-    422
-  );
+  return {
+    provider: "gemini",
+    model: geminiResult.model || "gemini-image-fallback",
+    finalPrompt,
+    seed: safeSeed,
+    resultUrl: geminiResult.resultUrl,
+    validation: geminiValidation,
+    raw: geminiResult,
+  };
 }
 
 export async function generateVideoWithWaveSpeed({
@@ -3853,14 +4092,13 @@ async function generateNativeVideoWithWaveSpeed({
   allowFallback = true,
 }) {
   const safeDuration = validateDuration(model, endpoint, duration);
-  const translatedPromptOverride = await translateArabicPromptForGeneration(prompt);
-  const finalPrompt = buildFinalPrompt({
+  const promptPipeline = await buildSmartPromptEnhancementAsync({
     userPrompt: prompt,
     quality,
     style,
     type: "video",
-    translatedPromptOverride,
   });
+  const finalPrompt = promptPipeline.finalPrompt;
   const safeSeed = randomSeed(seed);
   const body = {
     prompt: finalPrompt,
@@ -3876,6 +4114,7 @@ async function generateNativeVideoWithWaveSpeed({
   console.log("WAVESPEED MODEL:", model);
   console.log("REQUEST_ID:", requestId);
   logPromptDiagnostics({ userPrompt: prompt, finalPrompt });
+  console.log("PROMPT_TRANSLATION_CHAIN_MODE:", promptPipeline.debug?.translationMode || "translation-unavailable");
   console.log(
     "WAVESPEED BODY SENT:",
     JSON.stringify({

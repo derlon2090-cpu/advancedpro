@@ -9,6 +9,6 @@
     "start": "npm --prefix backend start",
     "model:smoke": "npm --prefix backend run model:smoke",
     "model:monitor": "npm --prefix backend run model:monitor",
-    "test:prompt": "node --test backend/tests/prompt-pipeline.test.js"
+    "test:prompt": "node --test backend/tests/prompt-pipeline.test.js backend/tests/b2-storage.test.js"
   }
 }

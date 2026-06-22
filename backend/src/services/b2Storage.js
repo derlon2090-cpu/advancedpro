@@ -105,6 +105,29 @@ export function buildGenerationStorageKey({ workspaceId, generationId, mimeType 
 }
 
 export async function downloadRemoteAsset(sourceUrl) {
+  const value = String(sourceUrl || "").trim();
+  if (value.startsWith("data:")) {
+    const match = value.match(/^data:([^;,]+)?(?:;charset=[^;,]+)?(;base64)?,(.*)$/i);
+    if (!match) {
+      const error = new Error("Failed to decode generated asset data URL.");
+      error.statusCode = 502;
+      throw error;
+    }
+
+    const mimeType = String(match[1] || "application/octet-stream").trim();
+    const isBase64 = Boolean(match[2]);
+    const payload = match[3] || "";
+    const bytes = isBase64
+      ? Buffer.from(payload, "base64")
+      : Buffer.from(decodeURIComponent(payload), "utf8");
+
+    return {
+      bytes,
+      mimeType,
+      fileSize: bytes.length,
+    };
+  }
+
   const response = await fetch(sourceUrl, {
     cache: "no-store",
     headers: {

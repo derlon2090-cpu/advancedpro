@@ -21,6 +21,15 @@ function build(userPrompt) {
   });
 }
 
+function buildNormal(userPrompt) {
+  return buildSmartPromptEnhancement({
+    userPrompt,
+    quality: "normal",
+    style: "realistic",
+    type: "image",
+  });
+}
+
 test("generation UI uses one submit path and keeps background jobs inside the dashboard", async () => {
   const { readFile } = await import("node:fs/promises");
   const dashboardHtml = await readFile(new URL("../../dashboard.html", import.meta.url), "utf8");
@@ -54,6 +63,11 @@ test("generation UI uses one submit path and keeps background jobs inside the da
   assert.match(resultScript, /if \(isPending\(state\.result\)\) startPolling\(\)/);
   assert.match(resultScript, /if \(wasPending && isCompleted\(state\.result\)\)/);
   assert.match(resultScript, /if \(wasPending && isFailed\(state\.result\)\)/);
+  assert.match(dashboardHtml, /<strong data-cost-value>5 XP<\/strong>/);
+  assert.match(dashboardHtml, /<option value="normal">/);
+  assert.match(dashboardHtml, /<option value="high">/);
+  assert.doesNotMatch(dashboardHtml, /<option value="high" selected>/);
+  assert.match(dashboardScript, /quality:\s*"normal"/);
 });
 
 test("explicit sexual prompts are rejected with the safe educational message", () => {
@@ -112,6 +126,51 @@ test("businessman Ferrari prompt keeps the dog color separate from the car color
   assert.match(result.finalPrompt, /black dog/i);
   assert.match(result.finalPrompt, /sitting inside|riding in/i);
   assert.match(result.finalPrompt, /next to him/i);
+});
+
+test("five normal image smoke prompts stay isolated and provider-ready", () => {
+  const cases = [
+    {
+      prompt: "\u062f\u062c\u0627\u062c\u0629 \u0628\u064a\u0636\u0627\u0621 \u0641\u064a \u0645\u0632\u0631\u0639\u0629",
+      must: [/white chicken/i, /farm/i],
+      mustNot: [/business/i, /office/i, /meeting/i],
+    },
+    {
+      prompt:
+        "\u0642\u0637 \u0623\u0633\u0648\u062f \u0628\u062c\u0627\u0646\u0628 \u0643\u0644\u0628 \u0623\u0633\u0648\u062f \u062f\u0627\u062e\u0644 \u062d\u062f\u064a\u0642\u0629",
+      must: [/black cat/i, /black dog/i, /garden/i, /side by side|next to/i],
+      mustNot: [/business/i, /office/i, /meeting/i],
+    },
+    {
+      prompt:
+        "\u0631\u0648\u0628\u0648\u062a \u0623\u062e\u0636\u0631 \u0628\u062c\u0627\u0646\u0628 \u0631\u0648\u0628\u0648\u062a \u0623\u0635\u0641\u0631 \u0639\u0644\u0649 \u0627\u0644\u0642\u0645\u0631",
+      must: [/green robot/i, /yellow robot/i, /moon surface/i, /side by side/i],
+      mustNot: [/business/i, /office/i, /meeting/i],
+    },
+    {
+      prompt:
+        "\u0631\u062c\u0644 \u0623\u0639\u0645\u0627\u0644 \u0631\u0627\u0643\u0628 \u0633\u064a\u0627\u0631\u0629 \u0641\u0631\u0627\u0631\u064a \u0648\u0645\u0639\u0647 \u0643\u0644\u0628 \u0623\u0633\u0648\u062f \u0628\u062c\u0627\u0646\u0628\u0647",
+      must: [/businessman/i, /Ferrari/i, /black dog/i, /all.*visible/i],
+      mustNot: [/meeting room/i],
+    },
+    {
+      prompt:
+        "\u0633\u064a\u0627\u0631\u0629 \u0631\u064a\u0627\u0636\u064a\u0629 \u0633\u0648\u062f\u0627\u0621 \u0641\u064a \u0634\u0627\u0631\u0639 \u0645\u0636\u0627\u0621 \u0644\u064a\u0644\u0627",
+      must: [/black sports car/i, /night/i, /lit street|illuminated street/i],
+      mustNot: [/business/i, /office/i, /meeting/i],
+    },
+  ];
+
+  for (const item of cases) {
+    const result = buildNormal(item.prompt);
+    assert.doesNotMatch(result.finalPrompt, /[\u0600-\u06ff]/);
+    for (const pattern of item.must) {
+      assert.match(result.finalPrompt, pattern, `${item.prompt} should include ${pattern}`);
+    }
+    for (const pattern of item.mustNot) {
+      assert.doesNotMatch(result.finalPrompt, pattern, `${item.prompt} should not include ${pattern}`);
+    }
+  }
 });
 
 test("common robot misspelling in space never falls back to a businessman scene", () => {
@@ -351,6 +410,63 @@ test("Arabic man beside a large yellow bear in the forest preserves every reques
   assert.match(result.finalPrompt, /next to|beside/i);
   assert.doesNotMatch(result.finalPrompt, /business meeting|modern office|conference room|corporate office/i);
   assert.equal(result.debug.translationMode, "local-structured");
+});
+
+test("structured local translation strips negative instructions before provider use", async () => {
+  const result = await buildSmartPromptEnhancementAsync({
+    userPrompt: "رجل بجانبه دب كبير لونه اصفر في الغابة",
+    quality: "high",
+    style: "realistic",
+    type: "image",
+  });
+
+  const positiveSection = result.finalPrompt.split("\n\nStrict rules:")[0];
+  assert.match(positiveSection, /large yellow bear/i);
+  assert.doesNotMatch(positiveSection, /^.*Do not add offices/im);
+  assert.doesNotMatch(positiveSection, /business scenes|restaurant elements/i);
+});
+
+test("translator outages fall back to structured local prompts instead of aborting Arabic image requests", async () => {
+  const result = await buildSmartPromptEnhancementAsync(
+    {
+      userPrompt: "ذئب كبير مع صغاره",
+      quality: "high",
+      style: "realistic",
+      type: "image",
+    },
+    {
+      translatePrompt: async () => {
+        throw new Error("translator offline");
+      },
+    }
+  );
+
+  assert.match(result.finalPrompt, /large wolf/i);
+  assert.match(result.finalPrompt, /pups|baby wolves|young wolves/i);
+  assert.doesNotMatch(result.finalPrompt, /businessman|office|meeting room|conference room/i);
+  assert.equal(result.debug.translationMode, "local-structured");
+});
+
+test("Arabic car prompts still resolve into English when the remote translator is unavailable", async () => {
+  const result = await buildSmartPromptEnhancementAsync(
+    {
+      userPrompt: "سيارة رياضية سوداء في شارع مضاء ليلا",
+      quality: "high",
+      style: "cinematic",
+      type: "image",
+    },
+    {
+      translatePrompt: async () => {
+        throw new Error("translator offline");
+      },
+    }
+  );
+
+  assert.match(result.finalPrompt, /black sports car/i);
+  assert.match(result.finalPrompt, /street/i);
+  assert.match(result.finalPrompt, /night|well-lit/i);
+  assert.doesNotMatch(result.finalPrompt, /businessman|corporate office|meeting room/i);
+  assert.doesNotMatch(result.finalPrompt, /[\u0600-\u06ff]/);
 });
 
 test("multi-subject marine prompts preserve dolphins beside a huge whale in one frame", () => {
