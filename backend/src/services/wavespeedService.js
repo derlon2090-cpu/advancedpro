@@ -248,6 +248,7 @@ const COLOR_TERMS = {
 const ENTITY_TERMS = {
   cat: ["\u0642\u0637\u0629", "\u0642\u0637", "cat"],
   dog: ["\u0643\u0644\u0628", "dog"],
+  fish: ["\u0633\u0645\u0643\u0629", "\u0633\u0645\u0643", "fish", "fishes"],
   bird: ["\u0637\u0627\u0626\u0631", "\u0637\u064a\u0631", "\u0639\u0635\u0641\u0648\u0631", "\u0639\u0635\u0641\u0648\u0631\u0629", "bird", "birds"],
   falcon: ["\u0635\u0642\u0631", "\u0635\u0642\u0648\u0631", "falcon", "falcons"],
   eagle: ["\u0646\u0633\u0631", "\u0646\u0633\u0648\u0631", "eagle", "eagles"],
@@ -334,6 +335,12 @@ const COUNTABLE_ENTITIES = [
     dualTerms: ["\u0643\u0644\u0628\u0627\u0646", "\u0643\u0644\u0628\u064a\u0646"],
   },
   {
+    singular: "fish",
+    plural: "fish",
+    terms: ["\u0633\u0645\u0643\u0627\u062a", "\u0633\u0645\u0643\u0629", "\u0633\u0645\u0643", "fishes", "fish"],
+    dualTerms: ["\u0633\u0645\u0643\u062a\u0627\u0646", "\u0633\u0645\u0643\u062a\u064a\u0646"],
+  },
+  {
     singular: "chicken",
     plural: "chickens",
     terms: ["\u062f\u062c\u0627\u062c\u0627\u062a", "\u062f\u062c\u0627\u062c", "\u062f\u062c\u0627\u062c\u0629", "\u0641\u0631\u062e\u0627\u062a", "\u0641\u0631\u062e\u0629", "\u0643\u062a\u0627\u0643\u064a\u062a", "\u0643\u062a\u0643\u0648\u062a", "chickens", "chicken", "hens", "hen", "roosters", "rooster", "chicks", "chick"],
@@ -404,6 +411,65 @@ const COUNT_LABELS = {
   10: "ten",
 };
 
+const SINGLE_SUBJECT_KEYWORDS = [
+  { key: "fish", terms: ["\u0633\u0645\u0643\u0629", "\u0633\u0645\u0643", "fish"] },
+  { key: "chicken", terms: ["\u062f\u062c\u0627\u062c\u0629", "\u0641\u0631\u062e\u0629", "\u0643\u062a\u0643\u0648\u062a", "chicken", "hen", "rooster", "chick"] },
+  { key: "cat", terms: ["\u0642\u0637\u0629", "\u0642\u0637", "cat"] },
+  { key: "dog", terms: ["\u0643\u0644\u0628", "dog"] },
+  { key: "person", terms: ["\u0631\u062c\u0644", "\u0627\u0645\u0631\u0623\u0629", "\u0627\u0645\u0631\u0627\u0629", "\u0634\u062e\u0635", "\u0625\u0646\u0633\u0627\u0646", "\u0627\u0646\u0633\u0627\u0646", "man", "woman", "person", "human"] },
+  { key: "robot", terms: ["\u0631\u0648\u0628\u0648\u062a", "\u0631\u0628\u0648\u062a", "\u0631\u064a\u0628\u0648\u062a", "\u0631\u0648\u0628\u0637", "robot"] },
+  { key: "car", terms: ["\u0633\u064a\u0627\u0631\u0629", "\u0639\u0631\u0628\u0629", "car", "vehicle"] },
+];
+
+const MULTI_SUBJECT_MARKERS = [
+  "\u0639\u062f\u0629",
+  "\u0645\u062a\u0639\u062f\u062f",
+  "\u0645\u062c\u0645\u0648\u0639\u0629",
+  "\u0643\u062b\u064a\u0631",
+  "\u0643\u062b\u064a\u0631\u0629",
+  "\u0643\u062b\u064a\u0631 \u0645\u0646",
+  "\u0642\u0637\u0637",
+  "\u0643\u0644\u0627\u0628",
+  "\u0633\u0645\u0643\u0627\u062a",
+  "\u062f\u062c\u0627\u062c\u0627\u062a",
+  "\u0631\u062c\u0627\u0644",
+  "\u0646\u0633\u0627\u0621",
+  "\u0623\u0634\u062e\u0627\u0635",
+  "\u0627\u0634\u062e\u0627\u0635",
+  "\u0631\u0648\u0628\u0648\u062a\u0627\u062a",
+  "\u0633\u064a\u0627\u0631\u0627\u062a",
+  "many",
+  "multiple",
+  "several",
+  "group of",
+  "collection of",
+  "cats",
+  "dogs",
+  "fishes",
+  "chickens",
+  "people",
+  "robots",
+  "cars",
+];
+
+const GLOBAL_COLLAGE_NEGATIVE_RULES = [
+  "collage",
+  "contact sheet",
+  "multiple images",
+  "grid layout",
+  "photo grid",
+  "tiled images",
+  "tiled layout",
+  "duplicate subject",
+  "duplicate subjects",
+  "repeated object",
+  "image mosaic",
+  "gallery layout",
+  "multiple frames",
+  "comic panel",
+  "storyboard",
+];
+
 function detectProfession(text) {
   for (const [profession, terms] of Object.entries(PROFESSION_TERMS)) {
     if (includesAny(text, terms)) return profession;
@@ -456,7 +522,9 @@ function buildCountRules(userPrompt) {
   const countLabel = COUNT_LABELS[requested.count] || String(requested.count);
   const entityLabel = requested.count === 1 ? requested.singular : requested.plural;
   const visibility =
-    requested.count === 2
+    requested.count === 1
+      ? `The single ${requested.singular} must be fully visible.`
+      : requested.count === 2
       ? `Both ${requested.plural} must be fully visible.`
       : `All ${countLabel} ${requested.plural} must be fully visible.`;
 
@@ -465,6 +533,56 @@ function buildCountRules(userPrompt) {
     visibility,
     `Do not add or remove any ${requested.singular}.`,
     "Do not duplicate any subject.",
+  ];
+}
+
+function includesKeywordTerm(value, term) {
+  const text = String(value || "").toLowerCase();
+  const expected = String(term || "").toLowerCase().trim();
+  if (!expected) return false;
+  return expected.includes(" ") ? text.includes(expected) : includesWholePhrase(text, expected);
+}
+
+function includesAnyKeywordTerm(value, terms) {
+  return terms.some((term) => includesKeywordTerm(value, term));
+}
+
+function detectSingleSubjectIntent(userPrompt) {
+  const text = normalizeArabicDigits(userPrompt).toLowerCase();
+  const requested = detectRequestedCount(userPrompt);
+  if (requested && requested.count !== 1) {
+    return null;
+  }
+
+  if (includesAny(text, MULTI_SUBJECT_MARKERS)) {
+    return null;
+  }
+
+  const matchedSubjects = SINGLE_SUBJECT_KEYWORDS
+    .filter((entry) => includesAnyKeywordTerm(text, entry.terms))
+    .map((entry) => entry.key);
+
+  if (matchedSubjects.length !== 1) {
+    return null;
+  }
+
+  return matchedSubjects[0];
+}
+
+function buildSingleSubjectRules(userPrompt) {
+  if (!detectSingleSubjectIntent(userPrompt)) {
+    return [];
+  }
+
+  return [
+    "ONE SUBJECT ONLY.",
+    "NO DUPLICATES.",
+    "NO COLLAGE.",
+    "NO GRID.",
+    "Use a full-frame composition.",
+    "Keep the single main subject centered and clearly visible.",
+    "Do not create multiple images, repeated subjects, or repeated objects.",
+    "Use a professional photography composition.",
   ];
 }
 
@@ -1729,6 +1847,8 @@ function buildNegativeRules(userPrompt) {
   const asksForAnimal = includesAny(lower, [
     "\u0642\u0637",
     "\u0643\u0644\u0628",
+    "\u0633\u0645\u0643",
+    "\u0633\u0645\u0643\u0629",
     "\u062f\u062c\u0627\u062c",
     "\u062f\u062c\u0627\u062c\u0629",
     "\u0641\u0631\u062e\u0629",
@@ -1744,6 +1864,7 @@ function buildNegativeRules(userPrompt) {
     "\u0627\u0641\u0639\u0649",
     "cat",
     "dog",
+    "fish",
     "chicken",
     "hen",
     "rooster",
@@ -1775,9 +1896,7 @@ function buildNegativeRules(userPrompt) {
     "split screen",
     "split panel",
     "multi-panel composition",
-    "collage",
-    "contact sheet",
-    "storyboard",
+    ...GLOBAL_COLLAGE_NEGATIVE_RULES,
     "mosaic",
     "window panes",
     "window frame",
@@ -1794,10 +1913,20 @@ function buildNegativeRules(userPrompt) {
     "framed tiles",
     "captions",
     "subtitles",
-    "duplicate subjects",
     "cropped subjects",
     "unrequested extra subjects",
   ];
+
+  if (detectSingleSubjectIntent(userPrompt)) {
+    rules.push(
+      "multiple subjects",
+      "extra copies",
+      "repeated subject",
+      "subject duplication",
+      "multiple images",
+      "repeated object"
+    );
+  }
 
   if (!asksForHuman) {
     rules.push("humans", "men", "women", "faces", "businessman", "suit", "portrait");
@@ -1991,6 +2120,7 @@ function buildFinalPrompt({
   const styleText = STYLE_LABELS[style] || STYLE_LABELS.realistic;
   const colorRules = buildColorRules(userPrompt, analysis);
   const countRules = buildCountRules(userPrompt);
+  const singleSubjectRules = buildSingleSubjectRules(userPrompt);
   const exactness = buildRelationshipExactness(userPrompt);
 
   if (analysis) {
@@ -2013,6 +2143,7 @@ function buildFinalPrompt({
     "- Follow the subject exactly.",
     `- ${exactness}`,
     ...countRules.map((rule) => `- ${rule}`),
+    ...singleSubjectRules.map((rule) => `- ${rule}`),
     ...colorRules.map((rule) => `- ${rule}`),
     "Mandatory composition rules:",
     "- All requested subjects must appear.",
@@ -2023,10 +2154,10 @@ function buildFinalPrompt({
     "- Do not introduce any unrequested subject, object, or secondary scene.",
     "- Use one coherent full-frame scene only.",
     "- The output must be one natural single image, not a designed layout.",
-    "- No inset image, picture-in-picture, collage, split panel, poster, framed photo, overlay, contact sheet, storyboard, mosaic, tiled layout, segmented frame, or split-screen composition.",
+    "- No inset image, picture-in-picture, collage, split panel, poster, framed photo, overlay, contact sheet, storyboard, comic panel, gallery layout, multiple frames, image mosaic, tiled images, grid layout, or split-screen composition.",
     "- No window-pane layout, panel dividers, thick white borders, or white separator lines across the image.",
     "- Do not add extra subjects beyond the requested count.",
-    "- Keep every requested subject fully inside the frame. Do not crop or duplicate subjects.",
+    "- Keep every requested subject fully inside the frame. Do not crop, repeat, or duplicate subjects or objects.",
     "- No text, no watermark, no logo, no UI overlay, no grid lines.",
     `- Style: ${styleText}.`,
     `- Quality: ${qualityText}, clean composition, professional lighting, main subject clearly visible.`,
@@ -2676,7 +2807,7 @@ function validationIndicatesPanelArtifact(validation) {
     .join(" ")
     .toLowerCase();
 
-  return /(grid|photo grid|window-pane|window pane|window|panel|divider|separator|split screen|split-screen|split panel|collage|mosaic|checkerboard|white border|white line|rectangular)/i.test(
+  return /(grid|grid layout|photo grid|window-pane|window pane|window|panel|comic panel|divider|separator|split screen|split-screen|split panel|collage|contact sheet|storyboard|gallery layout|multiple frames|mosaic|image mosaic|tiled image|checkerboard|white border|white line|rectangular|duplicate subject|repeated object)/i.test(
     haystack
   );
 }
@@ -2785,8 +2916,8 @@ async function validateGeneratedImageAgainstPrompt({ resultUrl, userPrompt, fina
                     "Compare the generated image with the current user request and final English prompt.",
                     "Reject the image when a main requested subject, action, count, color, size, or spatial relationship is missing or materially wrong.",
                     "Reject any human, office, business meeting, food, inset image, picture-in-picture, collage, framed photo, poster, caption, or unrelated secondary scene unless the current request explicitly asks for it.",
-                    "Reject any tiled layout, multi-panel composition, contact sheet, storyboard, segmented image, split-screen composition, window-pane layout, mosaic, visible panel dividers, thick white separator lines, or white borders that divide the frame into parts.",
-                    "Reject duplicated or substituted subjects.",
+                    "Reject any tiled layout, multi-panel composition, contact sheet, storyboard, comic panel, gallery layout, multiple frames, grid layout, segmented image, split-screen composition, window-pane layout, mosaic, visible panel dividers, thick white separator lines, or white borders that divide the frame into parts.",
+                    "Reject duplicated, repeated, or substituted subjects and repeated objects.",
                     "Minor artistic differences are acceptable only when every requested concept remains correct.",
                     `Current user request: ${String(userPrompt || "").trim()}`,
                     `Current final prompt: ${String(finalPrompt || "").trim()}`,
