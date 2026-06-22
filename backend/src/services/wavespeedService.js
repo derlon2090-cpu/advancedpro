@@ -2537,7 +2537,18 @@ export async function buildSmartPromptEnhancementAsync(
 ) {
   const prompt = String(userPrompt || "").trim();
   const analysis = analyzePromptV3(prompt);
-  const translatedPromptOverride = hasArabicText(prompt) ? await translatePrompt(prompt) : "";
+  const hasStructuredLocalPrompt =
+    type === "image" &&
+    normalizeQuality(quality) === "normal" &&
+    Boolean(analysis?.finalPrompt && !hasArabicText(analysis.finalPrompt)) &&
+    !analysis?.promptRules?.length &&
+    Boolean(detectSingleSubjectIntent(prompt));
+  const translatedPromptOverride =
+    hasStructuredLocalPrompt
+      ? analysis.finalPrompt
+      : hasArabicText(prompt)
+        ? await translatePrompt(prompt)
+        : "";
   if (translatedPromptOverride) {
     assertSemanticTranslation(prompt, translatedPromptOverride);
   }
@@ -2564,7 +2575,11 @@ export async function buildSmartPromptEnhancementAsync(
       negativePrompt,
       debug: {
         ...(analysis?.debug || {}),
-        translationMode: translatedPromptOverride ? "server-semantic" : analysis?.finalPrompt ? "local-structured" : "translation-unavailable",
+        translationMode: translatedPromptOverride
+          ? "server-semantic"
+          : hasStructuredLocalPrompt
+            ? "local-structured"
+            : "translation-unavailable",
       },
     };
 }
@@ -3073,8 +3088,18 @@ async function pollWaveSpeedResult({ apiKey, initial, mediaType }) {
     throw serviceError("لم يرجع WaveSpeed رابط نتيجة أو رقم طلب.");
   }
 
-  const attempts = Math.max(Number(process.env.WAVESPEED_POLL_ATTEMPTS || 60), 1);
-  const intervalMs = Math.max(Number(process.env.WAVESPEED_POLL_INTERVAL_MS || 3000), 500);
+  const attemptsEnvName = mediaType === "image" ? "WAVESPEED_IMAGE_POLL_ATTEMPTS" : "WAVESPEED_VIDEO_POLL_ATTEMPTS";
+  const intervalEnvName = mediaType === "image" ? "WAVESPEED_IMAGE_POLL_INTERVAL_MS" : "WAVESPEED_VIDEO_POLL_INTERVAL_MS";
+  const defaultAttempts = mediaType === "image" ? 20 : 60;
+  const defaultIntervalMs = mediaType === "image" ? 1500 : 3000;
+  const attempts = Math.max(
+    Number(process.env[attemptsEnvName] || process.env.WAVESPEED_POLL_ATTEMPTS || defaultAttempts),
+    1
+  );
+  const intervalMs = Math.max(
+    Number(process.env[intervalEnvName] || process.env.WAVESPEED_POLL_INTERVAL_MS || defaultIntervalMs),
+    500
+  );
 
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     await wait(intervalMs);
@@ -3343,8 +3368,11 @@ export async function generateImageWithWaveSpeed({
   const baseConfig = getImageConfig(normalizedQuality);
   const model = String(modelOverride || baseConfig.model || "").trim();
   const endpoint = String(endpointOverride || (modelOverride ? buildEndpointFromModelPath(modelOverride) : baseConfig.endpoint) || "").trim();
-  const translatedPromptOverride = await translateArabicPromptForGeneration(prompt);
   const analysis = analyzePromptV3(prompt);
+  const hasStructuredLocalPrompt = Boolean(analysis?.finalPrompt && !hasArabicText(analysis.finalPrompt));
+  const translatedPromptOverride = hasStructuredLocalPrompt
+    ? analysis.finalPrompt
+    : await translateArabicPromptForGeneration(prompt);
   const finalPrompt = buildFinalPrompt({
     userPrompt: prompt,
     quality: normalizedQuality,
@@ -3361,6 +3389,11 @@ export async function generateImageWithWaveSpeed({
     seed: safeSeed,
     enable_base64_output: false,
   };
+  const shouldSkipValidation =
+    normalizedQuality === "normal" &&
+    hasStructuredLocalPrompt &&
+    !analysis?.promptRules?.length &&
+    detectSingleSubjectIntent(prompt);
 
   console.log("PROVIDER:", "wavespeed");
   console.log("TYPE:", "image");
@@ -3369,6 +3402,7 @@ export async function generateImageWithWaveSpeed({
   console.log("WAVESPEED MODEL:", model);
   console.log("REQUEST_ID:", requestId);
   logPromptDiagnostics({ userPrompt: prompt, finalPrompt });
+  console.log("IMAGE_VALIDATION_MODE:", shouldSkipValidation ? "fast-path-skip" : "standard");
   console.log(
     "WAVESPEED BODY SENT:",
     JSON.stringify({
@@ -3378,7 +3412,7 @@ export async function generateImageWithWaveSpeed({
     })
   );
 
-  const attempts = getPromptTranslationKey() && imageResultValidationEnabled()
+  const attempts = !shouldSkipValidation && getPromptTranslationKey() && imageResultValidationEnabled()
     ? imageResultValidationAttempts()
     : 1;
   let lastValidation = null;
@@ -3418,21 +3452,31 @@ export async function generateImageWithWaveSpeed({
 
     console.log("NEW RESULT URL:", resultUrl);
 
-    try {
-      lastValidation = await validateGeneratedImageAgainstPrompt({
-        resultUrl,
-        userPrompt: prompt,
-        finalPrompt,
-      });
-    } catch (error) {
-      console.warn("IMAGE_RESULT_VALIDATION_ERROR:", error?.message || error);
+    if (shouldSkipValidation) {
       lastValidation = {
         checked: false,
-        passed: !imageResultValidationRequired(),
-        reason: "validator_error",
+        passed: true,
+        reason: "fast_path_simple_single_subject",
         unexpectedElements: [],
         missingElements: [],
       };
+    } else {
+      try {
+        lastValidation = await validateGeneratedImageAgainstPrompt({
+          resultUrl,
+          userPrompt: prompt,
+          finalPrompt,
+        });
+      } catch (error) {
+        console.warn("IMAGE_RESULT_VALIDATION_ERROR:", error?.message || error);
+        lastValidation = {
+          checked: false,
+          passed: !imageResultValidationRequired(),
+          reason: "validator_error",
+          unexpectedElements: [],
+          missingElements: [],
+        };
+      }
     }
 
     console.log("IMAGE_RESULT_VALIDATION:", {
