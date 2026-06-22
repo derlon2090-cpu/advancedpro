@@ -266,6 +266,56 @@ test("simple animal prompts explicitly forbid grid and collage style outputs", (
   assert.match(result.negativePrompt, /mosaic/i);
 });
 
+test("short Arabic shark prompts enforce single-subject anti-collage rules", () => {
+  const result = buildSmartPromptEnhancement({
+    userPrompt: "اعمل صورة قرش احمر",
+    quality: "high",
+    style: "realistic",
+    type: "image",
+  });
+
+  assert.match(result.finalPrompt, /shark/i);
+  assert.match(result.finalPrompt, /red/i);
+  assert.match(result.finalPrompt, /ONE SUBJECT ONLY/i);
+  assert.match(result.finalPrompt, /NO DUPLICATES/i);
+  assert.match(result.finalPrompt, /NO COLLAGE/i);
+  assert.match(result.finalPrompt, /NO GRID/i);
+  assert.match(result.negativePrompt, /duplicate subject/i);
+  assert.match(result.negativePrompt, /multiple subjects/i);
+  assert.match(result.negativePrompt, /collage/i);
+});
+
+test("short Arabic whale prompts enforce single-subject anti-collage rules", () => {
+  const result = buildSmartPromptEnhancement({
+    userPrompt: "اعمل صورة حوت ازرق",
+    quality: "high",
+    style: "realistic",
+    type: "image",
+  });
+
+  assert.match(result.finalPrompt, /whale/i);
+  assert.match(result.finalPrompt, /blue/i);
+  assert.match(result.finalPrompt, /ONE SUBJECT ONLY/i);
+  assert.match(result.finalPrompt, /NO COLLAGE/i);
+  assert.match(result.negativePrompt, /duplicate subject/i);
+  assert.match(result.negativePrompt, /multiple subjects/i);
+});
+
+test("short Arabic dolphin prompts enforce single-subject anti-collage rules", () => {
+  const result = buildSmartPromptEnhancement({
+    userPrompt: "اعمل صورة دلفين",
+    quality: "high",
+    style: "realistic",
+    type: "image",
+  });
+
+  assert.match(result.finalPrompt, /dolphin/i);
+  assert.match(result.finalPrompt, /ONE SUBJECT ONLY/i);
+  assert.match(result.finalPrompt, /NO GRID/i);
+  assert.match(result.negativePrompt, /duplicate subject/i);
+  assert.match(result.negativePrompt, /collage/i);
+});
+
 test("semantic translation preserves arbitrary Arabic subjects, actions, and relations", async () => {
   const result = await buildSmartPromptEnhancementAsync(
     {

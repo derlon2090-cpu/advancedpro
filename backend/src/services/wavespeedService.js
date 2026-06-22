@@ -249,6 +249,9 @@ const ENTITY_TERMS = {
   cat: ["\u0642\u0637\u0629", "\u0642\u0637", "cat"],
   dog: ["\u0643\u0644\u0628", "dog"],
   fish: ["\u0633\u0645\u0643\u0629", "\u0633\u0645\u0643", "fish", "fishes"],
+  shark: ["\u0642\u0631\u0634", "\u0642\u0631\u0634\u0629", "\u0642\u0631\u0648\u0634", "shark", "sharks"],
+  whale: ["\u062d\u0648\u062a", "\u062d\u064a\u062a\u0627\u0646", "whale", "whales"],
+  dolphin: ["\u062f\u0644\u0641\u064a\u0646", "\u062f\u0644\u0627\u0641\u064a\u0646", "dolphin", "dolphins"],
   bird: ["\u0637\u0627\u0626\u0631", "\u0637\u064a\u0631", "\u0639\u0635\u0641\u0648\u0631", "\u0639\u0635\u0641\u0648\u0631\u0629", "bird", "birds"],
   falcon: ["\u0635\u0642\u0631", "\u0635\u0642\u0648\u0631", "falcon", "falcons"],
   eagle: ["\u0646\u0633\u0631", "\u0646\u0633\u0648\u0631", "eagle", "eagles"],
@@ -341,6 +344,24 @@ const COUNTABLE_ENTITIES = [
     dualTerms: ["\u0633\u0645\u0643\u062a\u0627\u0646", "\u0633\u0645\u0643\u062a\u064a\u0646"],
   },
   {
+    singular: "shark",
+    plural: "sharks",
+    terms: ["\u0642\u0631\u0648\u0634", "\u0642\u0631\u0634", "\u0642\u0631\u0634\u0629", "sharks", "shark"],
+    dualTerms: ["\u0642\u0631\u0634\u0627\u0646", "\u0642\u0631\u0634\u064a\u0646"],
+  },
+  {
+    singular: "whale",
+    plural: "whales",
+    terms: ["\u062d\u064a\u062a\u0627\u0646", "\u062d\u0648\u062a", "whales", "whale"],
+    dualTerms: ["\u062d\u0648\u062a\u0627\u0646", "\u062d\u0648\u062a\u064a\u0646"],
+  },
+  {
+    singular: "dolphin",
+    plural: "dolphins",
+    terms: ["\u062f\u0644\u0627\u0641\u064a\u0646", "\u062f\u0644\u0641\u064a\u0646", "dolphins", "dolphin"],
+    dualTerms: ["\u062f\u0644\u0641\u064a\u0646\u0627\u0646", "\u062f\u0644\u0641\u064a\u0646\u064a\u0646"],
+  },
+  {
     singular: "chicken",
     plural: "chickens",
     terms: ["\u062f\u062c\u0627\u062c\u0627\u062a", "\u062f\u062c\u0627\u062c", "\u062f\u062c\u0627\u062c\u0629", "\u0641\u0631\u062e\u0627\u062a", "\u0641\u0631\u062e\u0629", "\u0643\u062a\u0627\u0643\u064a\u062a", "\u0643\u062a\u0643\u0648\u062a", "chickens", "chicken", "hens", "hen", "roosters", "rooster", "chicks", "chick"],
@@ -413,6 +434,9 @@ const COUNT_LABELS = {
 
 const SINGLE_SUBJECT_KEYWORDS = [
   { key: "fish", terms: ["\u0633\u0645\u0643\u0629", "\u0633\u0645\u0643", "fish"] },
+  { key: "shark", terms: ["\u0642\u0631\u0634", "\u0642\u0631\u0634\u0629", "shark"] },
+  { key: "whale", terms: ["\u062d\u0648\u062a", "whale"] },
+  { key: "dolphin", terms: ["\u062f\u0644\u0641\u064a\u0646", "dolphin"] },
   { key: "chicken", terms: ["\u062f\u062c\u0627\u062c\u0629", "\u0641\u0631\u062e\u0629", "\u0643\u062a\u0643\u0648\u062a", "chicken", "hen", "rooster", "chick"] },
   { key: "cat", terms: ["\u0642\u0637\u0629", "\u0642\u0637", "cat"] },
   { key: "dog", terms: ["\u0643\u0644\u0628", "dog"] },
@@ -431,6 +455,9 @@ const MULTI_SUBJECT_MARKERS = [
   "\u0642\u0637\u0637",
   "\u0643\u0644\u0627\u0628",
   "\u0633\u0645\u0643\u0627\u062a",
+  "\u0642\u0631\u0648\u0634",
+  "\u062d\u064a\u062a\u0627\u0646",
+  "\u062f\u0644\u0627\u0641\u064a\u0646",
   "\u062f\u062c\u0627\u062c\u0627\u062a",
   "\u0631\u062c\u0627\u0644",
   "\u0646\u0633\u0627\u0621",
@@ -446,6 +473,9 @@ const MULTI_SUBJECT_MARKERS = [
   "cats",
   "dogs",
   "fishes",
+  "sharks",
+  "whales",
+  "dolphins",
   "chickens",
   "people",
   "robots",
@@ -741,6 +771,10 @@ function analyzePromptV3(userPrompt) {
   const hasGirl = includesAny(lower, ["\u0628\u0646\u062a", "\u0641\u062a\u0627\u0629", "\u0637\u0641\u0644\u0629", "girl"]);
   const hasChild = includesAny(lower, ["\u0637\u0641\u0644", "\u0648\u0644\u062f", "\u0635\u0628\u064a", "\u0628\u0646\u062a", "\u0641\u062a\u0627\u0629", "\u0637\u0641\u0644\u0629", "child", "kid", "boy", "girl"]);
   const hasChicken = includesAny(lower, ENTITY_TERMS.chicken);
+  const hasFish = includesAny(lower, ENTITY_TERMS.fish);
+  const hasShark = includesAny(lower, ENTITY_TERMS.shark);
+  const hasWhale = includesAny(lower, ENTITY_TERMS.whale);
+  const hasDolphin = includesAny(lower, ENTITY_TERMS.dolphin);
   const hasTurtle = includesAny(lower, ENTITY_TERMS.turtle);
   const hasWolf = includesAny(lower, ENTITY_TERMS.wolf);
   const hasWolfPups = includesAny(lower, [
@@ -777,6 +811,16 @@ function analyzePromptV3(userPrompt) {
     "turtle hatchlings",
   ]);
   const hasBeach = includesAny(lower, ENTITY_TERMS.beach);
+  const hasWaterScene = includesAny(lower, [
+    "\u0627\u0644\u0645\u0627\u0621",
+    "\u0645\u0627\u0621",
+    "\u062a\u062d\u062a \u0627\u0644\u0645\u0627\u0621",
+    "\u0641\u064a \u0627\u0644\u0645\u0627\u0621",
+    "underwater",
+    "ocean",
+    "sea",
+    "water",
+  ]);
   const hasLargeSize = includesAny(lower, [
     "\u0643\u0628\u064a\u0631\u0629 \u0627\u0644\u062d\u062c\u0645",
     "\u0643\u0628\u064a\u0631 \u0627\u0644\u062d\u062c\u0645",
@@ -854,7 +898,107 @@ function analyzePromptV3(userPrompt) {
     (hasBird ? firstDetectedColor(lower) : null);
   const chickenColor =
     detectColorForEntity(lower, "chicken") || (hasChicken && hasWhite ? "white" : hasChicken ? firstDetectedColor(lower) : null);
+  const fishColor = detectColorForEntity(lower, "fish") || (hasFish ? firstDetectedColor(lower) : null);
+  const sharkColor = detectColorForEntity(lower, "shark") || (hasShark ? firstDetectedColor(lower) : null);
+  const whaleColor = detectColorForEntity(lower, "whale") || (hasWhale ? firstDetectedColor(lower) : null);
+  const dolphinColor = detectColorForEntity(lower, "dolphin") || (hasDolphin ? firstDetectedColor(lower) : null);
   const houseColor = detectColorForEntity(lower, "house") || (hasHouse && hasYellow ? "yellow" : null);
+  const requestedCount = detectRequestedCount(userPrompt);
+  const singleSubjectIntent = detectSingleSubjectIntent(userPrompt);
+
+  if (
+    (
+      singleSubjectIntent === "fish" ||
+      singleSubjectIntent === "shark" ||
+      singleSubjectIntent === "whale" ||
+      singleSubjectIntent === "dolphin" ||
+      hasShark ||
+      hasWhale ||
+      hasDolphin
+    ) &&
+    (!requestedCount || requestedCount.count === 1)
+  ) {
+    const subject =
+      hasShark || singleSubjectIntent === "shark"
+        ? "shark"
+        : hasWhale || singleSubjectIntent === "whale"
+          ? "whale"
+          : hasDolphin || singleSubjectIntent === "dolphin"
+            ? "dolphin"
+            : "fish";
+    const subjectColor =
+      subject === "shark"
+        ? sharkColor
+        : subject === "whale"
+          ? whaleColor
+          : subject === "dolphin"
+            ? dolphinColor
+            : fishColor;
+    const arabicSubjectLabel =
+      subject === "shark" ? "قرش" : subject === "whale" ? "حوت" : subject === "dolphin" ? "دلفين" : "سمكة";
+    const arabicDefiniteSubject =
+      subject === "shark" ? "القرش" : subject === "whale" ? "الحوت" : subject === "dolphin" ? "الدلفين" : "السمكة";
+    const colorPrefix = subjectColor ? `${subjectColor} ` : "";
+    const scene = hasWaterScene || hasBeach ? "underwater in a natural sea environment" : "in a natural aquatic environment";
+
+    return {
+      subject,
+      subjectColor,
+      object: hasWaterScene || hasBeach ? "sea environment" : "aquatic environment",
+      objectColor: null,
+      relation: "swimming in",
+      enhancedPrompt: [
+        `صورة واقعية واضحة لـ${arabicSubjectLabel}${subjectColor === "red" ? " حمراء" : ""} يكون ${arabicDefiniteSubject} هو العنصر الرئيسي الوحيد داخل الإطار.`,
+        hasWaterScene || hasBeach ? `يظهر ${arabicDefiniteSubject} داخل البحر أو الماء بوضوح طبيعي.` : `يظهر ${arabicDefiniteSubject} داخل بيئة مائية طبيعية واضحة.`,
+        "ممنوع تكرار الكائن أو تقسيم الصورة إلى عدة إطارات أو إضافة أشخاص أو مشاهد جانبية.",
+      ].join(" "),
+      finalPrompt: [
+        `A realistic photo of one ${colorPrefix}${subject} ${scene}.`,
+        `The ${subject} must be the only main subject and must be fully visible in the frame.`,
+        subjectColor ? `Keep the ${subject} clearly ${subjectColor}.` : `Keep the ${subject} natural and clearly visible.`,
+        "ONE SUBJECT ONLY.",
+        "NO DUPLICATES.",
+        "NO COLLAGE.",
+        "NO GRID.",
+        "Use a natural full-frame underwater composition with no tiled layout, no segmented frame, and no split-screen composition.",
+        "Do not add extra fish, extra sharks, extra whales, extra dolphins, people, boats, offices, meetings, food, text, watermark, logo, panel dividers, or white separator lines.",
+        "Professional wildlife photography, realistic lighting, sharp details, clean composition.",
+      ].join(" "),
+      negativeRules: [
+        "multiple subjects",
+        "extra copies",
+        "duplicate subject",
+        "duplicate subjects",
+        "repeated object",
+        "collage",
+        "contact sheet",
+        "multiple images",
+        "grid layout",
+        "photo grid",
+        "tiled images",
+        "split screen",
+        "split panel",
+        "panel dividers",
+        "white borders",
+        "white separator lines",
+        "humans",
+        "people",
+        "business meeting",
+        "meeting room",
+        "office",
+        "food",
+        "text",
+        "watermark",
+        "logo",
+      ],
+      debug: {
+        subjects: [subject],
+        relations: [scene],
+        scene,
+        style: "realistic wildlife photo",
+      },
+    };
+  }
 
   if (hasBird) {
     const birdLabel = hasFalcon ? "falcon" : hasEagle ? "eagle" : "bird";
@@ -1849,6 +1993,8 @@ function buildNegativeRules(userPrompt) {
     "\u0643\u0644\u0628",
     "\u0633\u0645\u0643",
     "\u0633\u0645\u0643\u0629",
+    "\u0642\u0631\u0634",
+    "\u0642\u0631\u0634\u0629",
     "\u062f\u062c\u0627\u062c",
     "\u062f\u062c\u0627\u062c\u0629",
     "\u0641\u0631\u062e\u0629",
@@ -1865,6 +2011,7 @@ function buildNegativeRules(userPrompt) {
     "cat",
     "dog",
     "fish",
+    "shark",
     "chicken",
     "hen",
     "rooster",
