@@ -3,6 +3,7 @@ import { Readable } from "node:stream";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { prisma } from "../lib/prisma.js";
 import { getAuthWorkspace } from "../middleware/auth.js";
+import { fetchObjectFromB2 } from "../services/b2Storage.js";
 import { withDbRetry } from "../utils/dbRetry.js";
 
 const router = Router();
@@ -14,6 +15,124 @@ function sanitizeFilename(name) {
     .slice(0, 120);
 }
 
+function isSupportedRemoteUrl(value) {
+  try {
+    const parsed = new URL(String(value || ""));
+    return ["http:", "https:"].includes(parsed.protocol);
+  } catch {
+    return false;
+  }
+}
+
+async function fetchRemoteAsset(url, req) {
+  if (!isSupportedRemoteUrl(url)) {
+    return null;
+  }
+
+  const response = await fetch(url, {
+    headers: req.headers.range ? { Range: req.headers.range } : undefined,
+  }).catch(() => null);
+
+  if (!response?.ok || !response.body) {
+    return null;
+  }
+
+  return response;
+}
+
+async function fetchStoredGenerationAsset(generation, req) {
+  if (generation?.storage_key) {
+    const storageResponse = await fetchObjectFromB2({
+      key: generation.storage_key,
+      range: req.headers.range,
+    }).catch(() => null);
+
+    if (storageResponse?.ok && storageResponse.body) {
+      return {
+        response: storageResponse,
+        sourceUrl: generation.storage_url || generation.result_url || "",
+      };
+    }
+  }
+
+  const remoteCandidates = [generation?.storage_url, generation?.result_url].filter(Boolean);
+  for (const candidate of remoteCandidates) {
+    const response = await fetchRemoteAsset(candidate, req);
+    if (response) {
+      return {
+        response,
+        sourceUrl: candidate,
+      };
+    }
+  }
+
+  return null;
+}
+
+function applyStreamingHeaders({ res, response, generationId, sourceUrl, mimeType, inline }) {
+  let fallbackName = `advancedpro-${generationId}`;
+
+  try {
+    fallbackName = sanitizeFilename(new URL(sourceUrl).pathname.split("/").pop()) || fallbackName;
+  } catch {
+    // Keep fallback name when sourceUrl is not absolute.
+  }
+
+  res.status(response.status === 206 ? 206 : 200);
+  res.setHeader(
+    "Content-Type",
+    response.headers.get("content-type") || mimeType || "application/octet-stream"
+  );
+  res.setHeader(
+    "Content-Disposition",
+    `${inline ? "inline" : "attachment"}; filename="${fallbackName}"`
+  );
+
+  const length = response.headers.get("content-length");
+  const contentRange = response.headers.get("content-range");
+  const acceptRanges = response.headers.get("accept-ranges");
+
+  if (length) {
+    res.setHeader("Content-Length", length);
+  }
+  if (contentRange) {
+    res.setHeader("Content-Range", contentRange);
+  }
+  if (acceptRanges) {
+    res.setHeader("Accept-Ranges", acceptRanges);
+  }
+}
+
+async function streamWorkspaceGeneration(req, res, { id, keyId, workspaceId }) {
+  const rows = await withDbRetry(() =>
+    prisma.$queryRaw`
+      SELECT id, result_url, storage_url, storage_key, mime_type
+      FROM generations
+      WHERE id = ${id}
+        AND (workspace_id = ${workspaceId} OR (workspace_id IS NULL AND key_id = ${keyId}))
+        AND deleted_at IS NULL
+      LIMIT 1
+    `
+  );
+
+  const generation = rows[0] || null;
+  const asset = generation ? await fetchStoredGenerationAsset(generation, req) : null;
+  if (!generation || !asset) {
+    return false;
+  }
+
+  applyStreamingHeaders({
+    res,
+    response: asset.response,
+    generationId: id,
+    sourceUrl: asset.sourceUrl,
+    mimeType: generation.mime_type,
+    inline: req.query.inline === "1",
+  });
+  Readable.fromWeb(asset.response.body).pipe(res);
+  return true;
+}
+
 router.get(
   "/v2/:id",
   asyncHandler(async (req, res) => {
@@ -23,70 +142,13 @@ router.get(
     const workspaceId = auth.workspaceId;
 
     if (!Number.isFinite(id) || !Number.isFinite(keyId) || !Number.isFinite(workspaceId)) {
-      return res.status(401).json({ message: "جلسة المفتاح غير صالحة للتحميل." });
+      return res.status(401).json({ message: "���� ������� ��� ����� �������." });
     }
 
-    const rows = await withDbRetry(() =>
-      prisma.$queryRaw`
-        SELECT id, result_url, storage_url, mime_type
-        FROM generations
-        WHERE id = ${id}
-          AND (workspace_id = ${workspaceId} OR (workspace_id IS NULL AND key_id = ${keyId}))
-          AND deleted_at IS NULL
-        LIMIT 1
-      `
-    );
-
-    const generation = rows[0] || null;
-    const url = generation?.storage_url || generation?.result_url || null;
-    if (!generation || !url) {
-      return res.status(404).json({ message: "الملف غير متوفر للتحميل." });
+    const streamed = await streamWorkspaceGeneration(req, res, { id, keyId, workspaceId });
+    if (!streamed) {
+      return res.status(404).json({ message: "����� ��� ����� �������." });
     }
-
-    let parsed;
-    try {
-      parsed = new URL(url);
-    } catch (_error) {
-      return res.status(400).json({ message: "رابط غير صالح للتحميل." });
-    }
-
-    if (!["http:", "https:"].includes(parsed.protocol)) {
-      return res.status(400).json({ message: "رابط غير صالح للتحميل." });
-    }
-
-    const response = await fetch(url, {
-      headers: req.headers.range ? { Range: req.headers.range } : undefined,
-    });
-
-    if (!response.ok || !response.body) {
-      return res.status(502).json({ message: "تعذر تنزيل الملف حاليًا." });
-    }
-
-    const contentType =
-      response.headers.get("content-type") ||
-      generation.mime_type ||
-      "application/octet-stream";
-    const length = response.headers.get("content-length");
-    const contentRange = response.headers.get("content-range");
-    const acceptRanges = response.headers.get("accept-ranges");
-    const fallbackName = sanitizeFilename(parsed.pathname.split("/").pop());
-    const filename = fallbackName || `advancedpro-${id}`;
-    const disposition = req.query.inline === "1" ? "inline" : "attachment";
-
-    res.status(response.status === 206 ? 206 : 200);
-    res.setHeader("Content-Type", contentType);
-    res.setHeader("Content-Disposition", `${disposition}; filename="${filename}"`);
-    if (length) {
-      res.setHeader("Content-Length", length);
-    }
-    if (contentRange) {
-      res.setHeader("Content-Range", contentRange);
-    }
-    if (acceptRanges) {
-      res.setHeader("Accept-Ranges", acceptRanges);
-    }
-
-    Readable.fromWeb(response.body).pipe(res);
   })
 );
 
@@ -99,64 +161,12 @@ router.get(
     const workspaceId = Number(authWorkspace?.workspaceId);
 
     if (Number.isFinite(id) && Number.isFinite(activationKeyId) && Number.isFinite(workspaceId)) {
-      const rows = await withDbRetry(() =>
-        prisma.$queryRaw`
-          SELECT id, result_url, storage_url, mime_type
-          FROM generations
-          WHERE id = ${id}
-            AND (workspace_id = ${workspaceId} OR (workspace_id IS NULL AND key_id = ${activationKeyId}))
-            AND deleted_at IS NULL
-          LIMIT 1
-        `
-      );
-
-      const generation = rows[0] || null;
-      const downloadUrl = generation?.storage_url || generation?.result_url || null;
-      if (generation && downloadUrl) {
-        let parsedStorageUrl;
-        try {
-          parsedStorageUrl = new URL(downloadUrl);
-        } catch (_error) {
-          return res.status(400).json({ message: "رابط غير صالح للتحميل." });
-        }
-
-        if (!["http:", "https:"].includes(parsedStorageUrl.protocol)) {
-          return res.status(400).json({ message: "رابط غير صالح للتحميل." });
-        }
-
-        const response = await fetch(downloadUrl, {
-          headers: req.headers.range ? { Range: req.headers.range } : undefined,
-        });
-
-        if (!response.ok || !response.body) {
-          return res.status(502).json({ message: "تعذر تنزيل الملف حاليًا." });
-        }
-
-        const contentType =
-          response.headers.get("content-type") ||
-          generation.mime_type ||
-          "application/octet-stream";
-        const length = response.headers.get("content-length");
-        const contentRange = response.headers.get("content-range");
-        const acceptRanges = response.headers.get("accept-ranges");
-        const fallbackName = sanitizeFilename(parsedStorageUrl.pathname.split("/").pop());
-        const filename = fallbackName || `advancedpro-${id}`;
-        const disposition = req.query.inline === "1" ? "inline" : "attachment";
-
-        res.status(response.status === 206 ? 206 : 200);
-        res.setHeader("Content-Type", contentType);
-        res.setHeader("Content-Disposition", `${disposition}; filename="${filename}"`);
-        if (length) {
-          res.setHeader("Content-Length", length);
-        }
-        if (contentRange) {
-          res.setHeader("Content-Range", contentRange);
-        }
-        if (acceptRanges) {
-          res.setHeader("Accept-Ranges", acceptRanges);
-        }
-
-        Readable.fromWeb(response.body).pipe(res);
+      const streamed = await streamWorkspaceGeneration(req, res, {
+        id,
+        keyId: activationKeyId,
+        workspaceId,
+      });
+      if (streamed) {
         return;
       }
     }
@@ -164,7 +174,7 @@ router.get(
     const keyId = Number(req.cookies?.key_session);
 
     if (!Number.isFinite(id) || !Number.isFinite(keyId)) {
-      return res.status(401).json({ message: "جلسة المفتاح غير صالحة للتحميل." });
+      return res.status(401).json({ message: "���� ������� ��� ����� �������." });
     }
 
     const generation = await prisma.generationJob.findFirst({
@@ -172,50 +182,22 @@ router.get(
     });
 
     if (!generation || !generation.resultUrl) {
-      return res.status(404).json({ message: "الملف غير متوفر للتحميل." });
+      return res.status(404).json({ message: "����� ��� ����� �������." });
     }
 
-    const url = generation.resultUrl;
-    let parsed;
-    try {
-      parsed = new URL(url);
-    } catch (error) {
-      return res.status(400).json({ message: "رابط غير صالح للتحميل." });
+    const response = await fetchRemoteAsset(generation.resultUrl, req);
+    if (!response) {
+      return res.status(502).json({ message: "���� ����� ����� ������." });
     }
 
-    if (!["http:", "https:"].includes(parsed.protocol)) {
-      return res.status(400).json({ message: "رابط غير صالح للتحميل." });
-    }
-
-    const response = await fetch(url, {
-      headers: req.headers.range ? { Range: req.headers.range } : undefined,
+    applyStreamingHeaders({
+      res,
+      response,
+      generationId: id,
+      sourceUrl: generation.resultUrl,
+      mimeType: null,
+      inline: req.query.inline === "1",
     });
-
-    if (!response.ok || !response.body) {
-      return res.status(502).json({ message: "تعذر تنزيل الملف حاليًا." });
-    }
-
-    const contentType = response.headers.get("content-type") || "application/octet-stream";
-    const length = response.headers.get("content-length");
-    const contentRange = response.headers.get("content-range");
-    const acceptRanges = response.headers.get("accept-ranges");
-    const fallbackName = sanitizeFilename(parsed.pathname.split("/").pop());
-    const filename = fallbackName || `advancedpro-${id}`;
-    const disposition = req.query.inline === "1" ? "inline" : "attachment";
-
-    res.status(response.status === 206 ? 206 : 200);
-    res.setHeader("Content-Type", contentType);
-    res.setHeader("Content-Disposition", `${disposition}; filename="${filename}"`);
-    if (length) {
-      res.setHeader("Content-Length", length);
-    }
-    if (contentRange) {
-      res.setHeader("Content-Range", contentRange);
-    }
-    if (acceptRanges) {
-      res.setHeader("Accept-Ranges", acceptRanges);
-    }
-
     Readable.fromWeb(response.body).pipe(res);
   })
 );

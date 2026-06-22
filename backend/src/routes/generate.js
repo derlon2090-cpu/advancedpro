@@ -242,7 +242,7 @@ async function resolveQualityForPrompt({ type, quality, prompt }) {
 
   const order = ["normal", "high", "ultra"];
   const requestedIndex = Math.max(order.indexOf(quality), 0);
-  const startIndex = type === "image" && quality === "normal" ? 1 : requestedIndex;
+  const startIndex = requestedIndex;
   for (const candidateQuality of order.slice(startIndex)) {
     const model = modelForQuality(type, candidateQuality);
     const monitorDecision = await getModelMonitorDecision(type, model);

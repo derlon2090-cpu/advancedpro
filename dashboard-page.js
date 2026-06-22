@@ -674,6 +674,8 @@
     } catch {
       state.favorites = new Set();
     }
+    restoreCachedKey();
+    hydrateCachedGenerations();
   }
 
   function saveFavorites() {
@@ -682,6 +684,98 @@
     } catch {
       // Local persistence is optional; the current session remains functional.
     }
+  }
+
+  function resultsSortValue(item) {
+    return Date.parse(item?.createdAt || item?.completedAt || "") || 0;
+  }
+
+  function sortGenerations(items) {
+    return items.slice().sort((a, b) => resultsSortValue(b) - resultsSortValue(a));
+  }
+
+  function getCachedKeySnapshot() {
+    const snapshots = [];
+    try {
+      const sessionKey = sessionStorage.getItem("pixigen:key");
+      if (sessionKey) snapshots.push(JSON.parse(sessionKey));
+    } catch {
+      // Ignore broken session cache.
+    }
+    try {
+      const localAccessCode = localStorage.getItem("advancedpro_access_code");
+      if (localAccessCode) snapshots.push(JSON.parse(localAccessCode));
+    } catch {
+      // Ignore broken local cache.
+    }
+    return snapshots.find((entry) => entry && typeof entry === "object") || null;
+  }
+
+  function getGenerationCacheKey(keyLike = state.key) {
+    const snapshot = keyLike || {};
+    const activationKeyId = Number(snapshot.activationKeyId || snapshot.id || snapshot.keyId || 0);
+    const workspaceId = Number(snapshot.workspace?.id || snapshot.workspaceId || 0);
+    const codeMasked = String(snapshot.codeMasked || snapshot.maskedCode || snapshot.code || "").trim();
+    if (activationKeyId) return `pixigen:generations:${activationKeyId}`;
+    if (workspaceId) return `pixigen:generations:workspace:${workspaceId}`;
+    if (codeMasked) return `pixigen:generations:${codeMasked}`;
+    return "";
+  }
+
+  function persistKeySnapshot(keyLike = state.key) {
+    const normalized = normalizeKey(keyLike || {});
+    if (!Object.keys(normalized).length) return;
+    try {
+      sessionStorage.setItem("pixigen:key", JSON.stringify(normalized));
+    } catch {
+      // Ignore storage failures; the API remains the source of truth.
+    }
+    try {
+      localStorage.setItem("advancedpro_access_code", JSON.stringify(normalized));
+    } catch {
+      // Ignore storage failures; the current session remains functional.
+    }
+  }
+
+  function restoreCachedKey() {
+    const snapshot = getCachedKeySnapshot();
+    if (!snapshot) return;
+    state.key = normalizeKey(snapshot);
+  }
+
+  function persistGenerationCache(items = state.results) {
+    const cacheKey = getGenerationCacheKey();
+    if (!cacheKey) return;
+    const normalizedItems = sortGenerations((items || []).map(normalizeGeneration));
+    try {
+      localStorage.setItem(cacheKey, JSON.stringify(normalizedItems));
+      sessionStorage.setItem(cacheKey, JSON.stringify(normalizedItems));
+    } catch {
+      // Ignore storage failures; rendering can still rely on live API data.
+    }
+  }
+
+  function hydrateCachedGenerations(keyLike = state.key) {
+    const cacheKey = getGenerationCacheKey(keyLike);
+    if (!cacheKey) return false;
+    const candidates = [];
+    try {
+      const sessionValue = sessionStorage.getItem(cacheKey);
+      if (sessionValue) candidates.push(JSON.parse(sessionValue));
+    } catch {
+      // Ignore broken session cache.
+    }
+    try {
+      const localValue = localStorage.getItem(cacheKey);
+      if (localValue) candidates.push(JSON.parse(localValue));
+    } catch {
+      // Ignore broken local cache.
+    }
+    const storedItems = candidates.find(Array.isArray);
+    if (!Array.isArray(storedItems) || !storedItems.length) return false;
+    state.results = sortGenerations(storedItems.map(normalizeGeneration));
+    state.generationsHydrated = true;
+    return true;
   }
 
   function sectionItemMatches(item) {
@@ -1093,6 +1187,7 @@
         if (item.isFavorite) state.favorites.add(String(item.id));
         else state.favorites.delete(String(item.id));
         saveFavorites();
+        persistGenerationCache();
         showToast(item.isFavorite ? "تمت الإضافة للمفضلة" : "تمت الإزالة من المفضلة");
       } catch (error) {
         showToast(error.message || "تعذر تحديث المفضلة.", "error");
@@ -1112,6 +1207,7 @@
       state.results = state.results.filter((result) => String(result.id) !== String(id));
       state.favorites.delete(String(id));
       saveFavorites();
+      persistGenerationCache();
       showToast("تم حذف المشروع");
     }
     renderAll();
@@ -1613,11 +1709,9 @@
         generation,
         ...state.results.filter((item) => String(item.id) !== String(generation.id)),
       ];
-      try {
-        sessionStorage.setItem("pixigen:key", JSON.stringify(state.key || {}));
-      } catch {
-        // Ignore storage failures; the API remains the source of truth.
-      }
+      state.results = sortGenerations(state.results);
+      persistKeySnapshot(state.key);
+      persistGenerationCache();
       state.autoOpenGenerationId = String(generation.id);
       state.autoOpenGenerationHandled = false;
       state.pendingGenerationId = String(generation.id);
@@ -1659,6 +1753,10 @@
     try {
       const data = await requestJson("/api/me/key");
       state.key = normalizeKey(data);
+      persistKeySnapshot(state.key);
+      if (!state.results.length) {
+        hydrateCachedGenerations(state.key);
+      }
       updateKeyUi();
     } catch (error) {
       if (error.status === 401 || error.status === 403) {
@@ -1678,7 +1776,8 @@
       );
       const data = await requestJson("/api/generate");
       const list = data.generations || data.items || data.results || [];
-      state.results = list.map(normalizeGeneration);
+      state.results = sortGenerations(list.map(normalizeGeneration));
+      persistGenerationCache();
       const completed = state.results.find(
         (item) =>
           item.status === "completed" &&
@@ -1853,11 +1952,12 @@
     setType("image");
     setDashboardView(window.location.hash.slice(1) || "home", { updateHistory: false });
     document.body.classList.add("is-dashboard-loading");
+    if (state.results.length) {
+      state.generationsHydrated = true;
+    }
     renderAll();
-    await Promise.all([
-      refreshKey({ silent: true }),
-      refreshGenerations({ silent: true }),
-    ]);
+    await refreshKey({ silent: true });
+    await refreshGenerations({ silent: true });
     document.body.classList.remove("is-dashboard-loading");
     renderAll();
   }

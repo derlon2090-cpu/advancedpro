@@ -85,6 +85,10 @@ function authorizationHeader({ accessKeyId, secretAccessKey, region, host, metho
   return `AWS4-HMAC-SHA256 Credential=${accessKeyId}/${scope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
 }
 
+function emptyPayloadHash() {
+  return sha256Hex("");
+}
+
 function extensionFromMimeType(mimeType = "") {
   const normalized = String(mimeType || "").toLowerCase();
   if (normalized.includes("image/png")) return "png";
@@ -173,4 +177,39 @@ export async function uploadBufferToB2({ key, bytes, mimeType }) {
     storageKey: key,
     storageUrl,
   };
+}
+
+export async function fetchObjectFromB2({ key, range } = {}) {
+  const config = getConfig();
+  const endpoint = new URL(config.endpoint);
+  const host = endpoint.host;
+  const pathname = `/${config.bucketName}/${String(key || "").replace(/^\/+/, "")}`;
+  const url = `${config.endpoint}${pathname}`;
+  const amzDate = isoDate(new Date());
+  const payloadHash = emptyPayloadHash();
+  const authorization = authorizationHeader({
+    accessKeyId: config.accessKeyId,
+    secretAccessKey: config.secretAccessKey,
+    region: config.region,
+    host,
+    method: "GET",
+    pathname,
+    payloadHash,
+    amzDate,
+  });
+
+  const headers = {
+    "x-amz-content-sha256": payloadHash,
+    "x-amz-date": amzDate,
+    Authorization: authorization,
+  };
+
+  if (range) {
+    headers.Range = range;
+  }
+
+  return fetch(url, {
+    method: "GET",
+    headers,
+  });
 }
