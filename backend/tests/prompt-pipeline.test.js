@@ -196,11 +196,20 @@ test("simple Arabic child prompt is generated locally instead of being rejected"
   assert.doesNotMatch(result.finalPrompt, /[\u0600-\u06ff]/);
 });
 
-test("unknown Arabic prompt is blocked instead of leaking raw Arabic to the provider", () => {
+test.skip("unknown Arabic prompt is blocked instead of leaking raw Arabic to the provider", () => {
   assert.throws(
     () => build("\u0645\u0634\u0647\u062f \u062e\u064a\u0627\u0644\u064a \u063a\u064a\u0631 \u0645\u0623\u0644\u0648\u0641"),
     (error) => error?.statusCode === 422 && /رصيد/.test(error.message)
   );
+});
+
+test("unknown Arabic prompt uses a safe English fallback instead of leaking raw Arabic", () => {
+  const result = build("\u0645\u0634\u0647\u062f \u062e\u064a\u0627\u0644\u064a \u063a\u064a\u0631 \u0645\u0623\u0644\u0648\u0641");
+
+  assert.doesNotMatch(result.finalPrompt, /[\u0600-\u06ff]/);
+  assert.match(result.finalPrompt, /scene|visual|imaginative|unusual|fantasy/i);
+  assert.match(result.finalPrompt, /No text|no watermark|Do not add/i);
+  assert.match(result.negativePrompt, /business|office|meeting/i);
 });
 
 test("large turtle prompt cannot become a rose or business portrait", () => {

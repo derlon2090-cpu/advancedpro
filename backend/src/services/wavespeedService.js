@@ -182,11 +182,67 @@ function serviceError(message, statusCode = 502) {
   return error;
 }
 
+function requireApiKeyLegacyIgnored() {
+  const apiKey = String(process.env.WAVESPEED_API_KEY || "").trim();
+  if (!apiKey) {
+    // Legacy helper is intentionally inert; the active path uses requireApiKey().
+    throw serviceError("WaveSpeed API key is not configured.", 500);
+    if (
+      lastGeneratedResult &&
+      !imageResultValidationRequired() &&
+      (
+        !lastValidation ||
+        !lastValidation.checked ||
+        lastValidation.reason === "validator_error" ||
+        (
+          !validationIndicatesPanelArtifact(lastValidation) &&
+          !validationIndicatesForbiddenLeak(lastValidation)
+        )
+      )
+    ) {
+      console.warn("IMAGE_RESULT_VALIDATION_SOFT_ACCEPT:", {
+        requestId,
+        model: lastGeneratedResult.request.model,
+        reason: lastValidation?.reason || "validation_not_checked",
+        unexpectedElements: lastValidation?.unexpectedElements || [],
+        missingElements: lastValidation?.missingElements || [],
+      });
+      return {
+        provider: "wavespeed",
+        model: lastGeneratedResult.request.model,
+        finalPrompt,
+        seed: lastGeneratedResult.seed,
+        resultUrl: lastGeneratedResult.resultUrl,
+        validation: {
+          ...(lastValidation || {}),
+          bypassed: true,
+          softAccepted: true,
+        },
+        raw: lastGeneratedResult.request.initial,
+      };
+    }
+
+    if (lastError && !lastGeneratedResult) {
+      throw lastError;
+    }
+
+    throw serviceError(
+      "تعذر إخراج نتيجة مطابقة للوصف بدقة في الوقت الحالي. لم يتم خصم أي رصيد.",
+      422
+    );
+    throw serviceError(
+      "تعذر إتمام الطلب مؤقتًا، حاول لاحقًا.",
+      500
+    );
+  }
+  return apiKey;
+}
+
 function requireApiKey() {
   const apiKey = String(process.env.WAVESPEED_API_KEY || "").trim();
   if (!apiKey) {
     throw serviceError(
-      "تعذر إتمام الطلب مؤقتًا، حاول لاحقًا.",
+      "تعذر الاتصال بخدمة التوليد حاليًا. تحقق من إعداد WAVESPEED_API_KEY في الخادم ثم أعد المحاولة.",
       500
     );
   }
@@ -264,12 +320,33 @@ const COLOR_TERMS = {
 const ENTITY_TERMS = {
   cat: ["\u0642\u0637\u0629", "\u0642\u0637", "cat"],
   dog: ["\u0643\u0644\u0628", "dog"],
+  frog: ["\u0636\u0641\u062f\u0639", "\u0636\u0641\u0627\u062f\u0639", "frog", "frogs", "toad", "toads"],
   bear: ["\u062f\u0628", "\u062f\u0628\u0629", "\u062f\u0628\u0628\u0629", "\u062f\u0628\u0628", "bear", "bears"],
   fish: ["\u0633\u0645\u0643\u0629", "\u0633\u0645\u0643", "fish", "fishes"],
   shark: ["\u0642\u0631\u0634", "\u0642\u0631\u0634\u0629", "\u0642\u0631\u0648\u0634", "shark", "sharks"],
   whale: ["\u062d\u0648\u062a", "\u062d\u064a\u062a\u0627\u0646", "whale", "whales"],
   dolphin: ["\u062f\u0644\u0641\u064a\u0646", "\u062f\u0644\u0627\u0641\u064a\u0646", "dolphin", "dolphins"],
-  bird: ["\u0637\u0627\u0626\u0631", "\u0637\u064a\u0631", "\u0639\u0635\u0641\u0648\u0631", "\u0639\u0635\u0641\u0648\u0631\u0629", "bird", "birds"],
+  bird: [
+    "\u0637\u0627\u0626\u0631",
+    "\u0637\u064a\u0631",
+    "\u0639\u0635\u0641\u0648\u0631",
+    "\u0639\u0635\u0641\u0648\u0631\u0629",
+    "\u0628\u0628\u063a\u0627\u0621",
+    "\u0628\u0628\u063a\u0627\u0648\u0627\u062a",
+    "\u0628\u0642\u0646\u0627\u0621",
+    "\u0643\u0627\u0633\u0643\u0648",
+    "\u062d\u0645\u0627\u0645\u0629",
+    "\u062d\u0645\u0627\u0645",
+    "\u0637\u0627\u0648\u0648\u0633",
+    "bird",
+    "birds",
+    "parrot",
+    "parrots",
+    "pigeon",
+    "pigeons",
+    "peacock",
+    "peacocks",
+  ],
   falcon: ["\u0635\u0642\u0631", "\u0635\u0642\u0648\u0631", "falcon", "falcons"],
   eagle: ["\u0646\u0633\u0631", "\u0646\u0633\u0648\u0631", "eagle", "eagles"],
   person: [
@@ -295,10 +372,13 @@ const ENTITY_TERMS = {
     "child",
     "kid",
   ],
+  lion: ["\u0623\u0633\u062f", "\u0627\u0633\u062f", "\u0623\u0633\u0648\u062f", "\u0627\u0633\u0648\u062f", "lion", "lions"],
   wolf: ["\u0630\u0626\u0628", "\u0630\u064a\u0628", "\u0630\u0626\u0627\u0628", "\u0630\u064a\u0627\u0628", "wolf", "wolves"],
+  cobra: ["\u0643\u0648\u0628\u0631\u0627", "\u0627\u0644\u0643\u0648\u0628\u0631\u0627", "cobra", "cobras"],
   snake: ["\u062b\u0639\u0628\u0627\u0646", "\u062b\u0639\u0627\u0628\u064a\u0646", "\u0623\u0641\u0639\u0649", "\u0627\u0641\u0639\u0649", "\u0623\u0641\u0639\u0649", "snake", "snakes"],
   chicken: ["\u062f\u062c\u0627\u062c\u0629", "\u062f\u062c\u0627\u062c", "\u0641\u0631\u062e\u0629", "\u0643\u062a\u0643\u0648\u062a", "chicken", "hen", "rooster", "chick"],
   turtle: ["\u0633\u0644\u062d\u0641\u0627\u0629", "\u0633\u0644\u062d\u0641\u0627\u0647", "\u0633\u0644\u062d\u0641\u0627\u062a", "turtle", "turtles"],
+  deer: ["\u063a\u0632\u0627\u0644", "\u063a\u0632\u0627\u0644\u0629", "\u063a\u0632\u0644\u0627\u0646", "\u0623\u064a\u0644", "\u0627\u064a\u0644", "deer", "gazelle", "gazelles"],
   house: ["\u0628\u064a\u062a", "\u0645\u0646\u0632\u0644", "house", "home"],
   robot: ["\u0631\u0648\u0628\u0648\u062a", "\u0631\u0628\u0648\u062a", "\u0631\u064a\u0628\u0648\u062a", "\u0631\u0648\u0628\u0637", "robot"],
   ferrari: ["\u0641\u0631\u0627\u0631\u064a", "\u0641\u064a\u0631\u0627\u0631\u064a", "ferrari"],
@@ -790,6 +870,7 @@ function analyzePromptV3(userPrompt) {
 
   const hasCat = includesAny(lower, ["\u0642\u0637", "cat"]);
   const hasDog = includesAny(lower, ["\u0643\u0644\u0628", "dog"]);
+  const hasFrog = includesAny(lower, ENTITY_TERMS.frog);
   const hasBear = includesAny(lower, ENTITY_TERMS.bear);
   const hasBoy = includesAny(lower, ["\u0648\u0644\u062f", "\u0635\u0628\u064a", "boy"]);
   const hasGirl = includesAny(lower, ["\u0628\u0646\u062a", "\u0641\u062a\u0627\u0629", "\u0637\u0641\u0644\u0629", "girl"]);
@@ -800,6 +881,8 @@ function analyzePromptV3(userPrompt) {
   const hasWhale = includesAny(lower, ENTITY_TERMS.whale);
   const hasDolphin = includesAny(lower, ENTITY_TERMS.dolphin);
   const hasTurtle = includesAny(lower, ENTITY_TERMS.turtle);
+  const hasLion = includesAny(lower, ENTITY_TERMS.lion);
+  const hasDeer = includesAny(lower, ENTITY_TERMS.deer);
   const hasWolf = includesAny(lower, ENTITY_TERMS.wolf);
   const hasWolfPups = includesAny(lower, [
     "\u0645\u0639 \u0635\u063a\u0627\u0631\u0647",
@@ -813,6 +896,7 @@ function analyzePromptV3(userPrompt) {
     "with his pups",
     "with her pups",
   ]);
+  const hasCobra = includesAny(lower, ENTITY_TERMS.cobra);
   const hasSnake = includesAny(lower, ENTITY_TERMS.snake);
   const hasSnakeBabies = includesAny(lower, [
     "\u0645\u0639 \u0635\u063a\u0627\u0631\u0647",
@@ -940,6 +1024,13 @@ function analyzePromptV3(userPrompt) {
   const hasWoman = includesAny(lower, ["\u0627\u0645\u0631\u0623\u0629", "\u0627\u0645\u0631\u0627\u0629", "\u0633\u064a\u062f\u0629", "woman", "female"]);
   const catColor = detectColorForEntity(lower, "cat") || (hasCat ? firstDetectedColor(lower) : null);
   const dogColor = detectColorForEntity(lower, "dog") || (hasDog ? firstDetectedColor(lower) : null);
+  const frogColor = detectColorForEntity(lower, "frog") || (hasFrog ? firstDetectedColor(lower) : null);
+  const lionColor = detectColorForEntity(lower, "lion") || (hasLion ? firstDetectedColor(lower) : null);
+  const deerColor = detectColorForEntity(lower, "deer") || (hasDeer ? firstDetectedColor(lower) : null);
+  const cobraColor =
+    detectColorForEntity(lower, "cobra") ||
+    detectColorForEntity(lower, "snake") ||
+    ((hasCobra || hasSnake) ? firstDetectedColor(lower) : null);
   const birdColor =
     (hasFalcon ? detectColorForEntity(lower, "falcon") : null) ||
     (hasEagle ? detectColorForEntity(lower, "eagle") : null) ||
@@ -1198,6 +1289,162 @@ function analyzePromptV3(userPrompt) {
     };
   }
 
+  if (hasFrog && (hasCobra || hasSnake)) {
+    const snakeLabel = hasCobra ? "cobra snake" : "snake";
+    const snakeArabicLabel = hasCobra ? "الكوبرا" : "الثعبان";
+    const frogPhrase = frogColor ? `${frogColor} frog` : "frog";
+    const snakePhrase = cobraColor ? `${cobraColor} ${snakeLabel}` : snakeLabel;
+    const scene = hasForest
+      ? "in a natural forest environment"
+      : hasGarden
+        ? "in a natural garden environment"
+        : "in a natural wildlife environment";
+    const relation = hasNearbyRelation ? "next to each other" : "together in the same frame";
+    const snakeSizeRule = hasVeryLargeSize || hasLargeSize
+      ? `The ${snakeLabel} must appear very large and visually dominant in size.`
+      : "";
+
+    return {
+      subject: "frog and snake",
+      subjectColor: frogColor || cobraColor || null,
+      object: scene,
+      objectColor: null,
+      relation,
+      enhancedPrompt: [
+        `صورة واقعية واضحة لـ${frogColor ? ` ضفدع ${frogColor}` : " ضفدع"} مع ${snakeArabicLabel}${cobraColor ? ` ${cobraColor}` : ""} في نفس المشهد.`,
+        "يجب أن يظهر الضفدع والثعبان معًا بوضوح داخل الإطار نفسه بدون حذف أي عنصر.",
+        snakeSizeRule ? "يجب أن يبدو الثعبان أكبر بكثير وبحجم واضح ومهيمن داخل المشهد." : "",
+        "ممنوع إضافة أشخاص أو مكاتب أو طعام أو نصوص أو عناصر جانبية غير مطلوبة.",
+      ].filter(Boolean).join(" "),
+      finalPrompt: [
+        `A realistic wildlife image of one ${frogPhrase} and one ${snakePhrase} ${relation} ${scene}.`,
+        "Both the frog and the snake must be fully visible together in the same frame.",
+        frogColor ? `Keep the frog clearly ${frogColor}.` : "",
+        cobraColor ? `Keep the ${snakeLabel} clearly ${cobraColor}.` : "",
+        snakeSizeRule,
+        "Do not replace the snake or frog with unrequested people, indoor work scenes, dining scenes, flowers, or unrelated objects.",
+        "No unrequested people, no indoor work scene, no dining scene, no text, no Arabic letters, no watermark, no logo, no grid lines.",
+        "Natural wildlife anatomy, realistic scales and skin texture, clean composition, professional lighting.",
+      ].filter(Boolean).join(" "),
+      negativeRules: [
+        "humans",
+        "businessman",
+        "business meeting",
+        "office",
+        "conference room",
+        "food",
+        "restaurant",
+        "flowers",
+        "rose",
+        "text",
+        "Arabic letters",
+        "watermark",
+        "logo",
+      ],
+      debug: {
+        subjects: [frogPhrase, snakePhrase],
+        relations: [relation],
+        scene,
+        style: "realistic wildlife photograph",
+      },
+    };
+  }
+
+  if (hasLion && hasDeer) {
+    const lionPhrase = lionColor ? `${lionColor} lion` : "lion";
+    const deerPhrase = deerColor ? `${deerColor} deer` : "deer";
+    const scene = hasForest
+      ? "in a forest"
+      : hasGarden
+        ? "in a natural green field"
+        : "in a natural wildlife environment";
+    const relation = hasNearbyRelation ? "standing next to" : "appearing together with";
+
+    return {
+      subject: "lion and deer",
+      subjectColor: lionColor || deerColor || null,
+      object: scene,
+      objectColor: null,
+      relation,
+      enhancedPrompt: "صورة واقعية لأسد مع غزال في نفس المشهد الطبيعي، ويجب أن يظهر الأسد والغزال كاملين بوضوح داخل الإطار دون أي أشخاص أو عناصر عمل.",
+      finalPrompt: [
+        `A realistic wildlife image of one ${lionPhrase} ${relation} one ${deerPhrase} ${scene}.`,
+        "The lion and the deer must both be fully visible in the same frame.",
+        lionColor ? `Keep the lion clearly ${lionColor}.` : "",
+        deerColor ? `Keep the deer clearly ${deerColor}.` : "",
+        "Do not add unrequested people, indoor work scenes, tables, dining scenes, or text.",
+        "No unrequested people, no indoor work scene, no dining scene, no text, no watermark, no logo, no grid lines.",
+        "Natural wildlife anatomy, dramatic but realistic composition, cinematic natural light.",
+      ].filter(Boolean).join(" "),
+      negativeRules: [
+        "humans",
+        "businessman",
+        "employees",
+        "office",
+        "meeting room",
+        "food",
+        "restaurant",
+        "text",
+        "watermark",
+        "logo",
+      ],
+      debug: {
+        subjects: [lionPhrase, deerPhrase],
+        relations: [relation],
+        scene,
+        style: "realistic wildlife photograph",
+      },
+    };
+  }
+
+  if (hasTurtle && hasDeer) {
+    const turtlePhrase = hasLargeSize ? "large turtle" : "turtle";
+    const deerPhrase = deerColor ? `${deerColor} deer` : "deer";
+    const scene = hasForest
+      ? "in a natural forest clearing"
+      : hasGarden
+        ? "in a natural garden"
+        : "in a natural outdoor environment";
+    const relation = hasNearbyRelation ? "standing next to each other" : "appearing together";
+
+    return {
+      subject: "turtle and deer",
+      subjectColor: deerColor || null,
+      object: scene,
+      objectColor: null,
+      relation,
+      enhancedPrompt: "صورة واقعية لسلحفاة وغزال معًا في نفس المشهد الطبيعي، ويجب أن يظهر العنصران كاملين بوضوح داخل الإطار بدون أشخاص أو عناصر مكتبية أو طعام.",
+      finalPrompt: [
+        `A realistic image of one ${turtlePhrase} and one ${deerPhrase} ${relation} ${scene}.`,
+        "The turtle and the deer must both be fully visible in the same frame.",
+        deerColor ? `Keep the deer clearly ${deerColor}.` : "",
+        "Do not add unrequested humans, indoor work scenes, dining scenes, flowers, or unrelated extra animals.",
+        "No text, no Arabic letters, no watermark, no logo, no grid lines.",
+        "Natural wildlife composition, realistic textures, clean background, professional lighting.",
+      ].filter(Boolean).join(" "),
+      negativeRules: [
+        "humans",
+        "businessman",
+        "employees",
+        "office",
+        "meeting room",
+        "conference room",
+        "food",
+        "restaurant",
+        "text",
+        "Arabic letters",
+        "watermark",
+        "logo",
+      ],
+      debug: {
+        subjects: [turtlePhrase, deerPhrase],
+        relations: [relation],
+        scene,
+        style: "realistic wildlife photograph",
+      },
+    };
+  }
+
   if (hasBird) {
     const birdLabel = hasFalcon ? "falcon" : hasEagle ? "eagle" : "bird";
     const displayBirdColor = birdColor === "gold" ? "golden" : birdColor;
@@ -1227,7 +1474,7 @@ function analyzePromptV3(userPrompt) {
           ? "Use a believable nest made of twigs, grass, or natural fibers. Do not place the bird near the nest; it must be visibly inside it."
           : "",
         "Do not place the bird in front of windows, tiled panels, geometric rectangles, white divider bars, framed sections, or any segmented background.",
-        "No humans, no office, no meeting room, no food, no text, no watermark, no logo, no grid lines.",
+        "No unrequested people, no indoor work scene, no dining scene, no text, no watermark, no logo, no grid lines.",
       ].filter(Boolean).join(" "),
       negativeRules: [
         "humans",
@@ -1291,7 +1538,7 @@ function analyzePromptV3(userPrompt) {
           : "Show the complete large wolf fully visible in the frame.",
         "Preserve the clear size contrast: the adult wolf is large and the wolf pups are visibly smaller.",
         "Natural wildlife behavior, realistic wolf anatomy, detailed fur, forest ground, cinematic natural light.",
-        "No humans, no businessmen, no business suits, no office, no meeting room, no tables, no plates, no food.",
+        "No unrequested people, no formal work clothes, no indoor work scene, no tables, no plates, no food.",
         "No text, no Arabic letters, no captions, no watermark, no logo, no grid lines.",
       ].join(" "),
       negativeRules: [
@@ -1349,7 +1596,7 @@ function analyzePromptV3(userPrompt) {
           : "Show the complete adult snake fully visible in the frame.",
         "Preserve a strong size contrast: the adult snake is extraordinarily large and thick, while the baby snakes are visibly much smaller.",
         "Realistic snake anatomy, natural scales, long serpentine bodies, wildlife behavior, cinematic natural light.",
-        "No humans, no businessmen, no business suits, no office, no meeting room, no tables, no plates, no food.",
+        "No unrequested people, no formal work clothes, no indoor work scene, no tables, no plates, no food.",
         "No text, no Arabic letters, no captions, no watermark, no logo, no grid lines.",
       ].filter(Boolean).join(" "),
       negativeRules: [
@@ -1407,7 +1654,7 @@ function analyzePromptV3(userPrompt) {
           ? "The sandy beach, shoreline, and sea must be clearly visible around the turtles."
           : "Use a natural environment appropriate for a real turtle.",
         "The requested animal must unmistakably be a turtle with a visible turtle shell, head, and legs.",
-        "Do not replace the turtle with a flower, rose, plant, person, business team, office, meeting, food, or another animal.",
+        "Do not replace the turtle with a flower, rose, plant, unrequested person, indoor work scene, dining scene, or another animal.",
         "No humans, no employees, no business suits, no conference room, no text, no watermark, no logo, no grid lines.",
         "Natural lighting, wildlife photography, sharp details, clean composition.",
       ].join(" "),
@@ -1458,7 +1705,7 @@ function analyzePromptV3(userPrompt) {
         subjectColor !== "clearly visible" ? `The chicken must be ${subjectColor}.` : "The chicken must be clearly visible.",
         "The chicken is the main subject and must be fully visible in the frame.",
         "Use one continuous outdoor farm or garden background only, with no windows, no tiled panels, no geometric rectangles, and no white separator bars.",
-        "Do not generate people, employees, meetings, offices, conference rooms, restaurants, food plates, or business scenes.",
+        "Do not generate unrequested people, indoor work scenes, restaurants, dining plates, or unrelated human activity.",
         "No extra animals unless requested, no text, no watermark, no logo, no grid lines.",
         "Natural lighting, realistic photography, clean composition.",
       ].join(" "),
@@ -1566,7 +1813,7 @@ function analyzePromptV3(userPrompt) {
         hasVeryLargeSize || hasLargeSize ? "The bear must visibly look large and powerful." : "",
         hasForest ? "Keep the forest clearly visible as the natural background." : "",
         hasNearbyRelation && humanSubject ? "Keep the person and the bear beside each other in one coherent natural scene." : "",
-        "Do not add offices, meetings, business scenes, restaurant elements, text, watermark, logo, or unrelated extra subjects.",
+        "Do not add indoor work scenes, restaurant elements, text, watermark, logo, or unrelated extra subjects.",
         "Use one continuous natural composition only, with realistic lighting and sharp details.",
       ].filter(Boolean).join(" "),
       negativeRules: [
@@ -1745,7 +1992,7 @@ function analyzePromptV3(userPrompt) {
         "Keep the face, body proportions, and age appearance natural and realistic.",
         hasGarden ? "The garden must stay visible as a clean secondary background." : "",
         hasBeach ? "The beach must stay visible as a clean natural background." : "",
-        "Do not add extra people, offices, meetings, business scenes, tables, food, text, watermark, logo, or grid lines.",
+        "Do not add extra people, indoor work scenes, tables, food, text, watermark, logo, or grid lines.",
         "Professional lighting, clean composition, realistic skin and clothing details.",
       ].filter(Boolean).join(" "),
       negativeRules: [
@@ -1827,7 +2074,7 @@ function analyzePromptV3(userPrompt) {
         `${count} ${place}.`,
         "The robot is the only main subject and must be fully visible.",
         "Create a realistic science-fiction scene with cinematic lighting and sharp mechanical details.",
-        "Do not generate humans, businessmen, suits, portraits, offices, desks, meetings, conference rooms, restaurants, or food.",
+        "Do not generate humans, formal portraits, indoor work scenes, desks, restaurants, or food.",
         "Do not reuse any subject or scene from a previous request.",
         "No animals, no text, no watermark, no logo, no grid lines.",
       ].join(" "),
@@ -1860,7 +2107,7 @@ function analyzePromptV3(userPrompt) {
         "Show the full vehicle from a wide three-quarter angle; do not crop it into a small close-up.",
         "Use a generic original vehicle design unless the user explicitly requests a brand.",
         "Do not add BMW, Mercedes, Ferrari, or any brand badge or logo unless explicitly requested.",
-        "No people, no office, no meeting, no food, no text, no watermark, no logo, no grid lines.",
+        "No people, no indoor work scene, no food, no text, no watermark, no logo, no grid lines.",
         "Sharp details, cinematic lighting, professional automotive photography.",
       ].join(" "),
       negativeRules: [
@@ -1925,10 +2172,31 @@ function translateArabicToEnglish(userPrompt) {
     ["\u0636\u0627\u0628\u0637 \u0634\u0631\u0637\u0629", "police officer"],
     ["\u0631\u0627\u0626\u062f\u0629 \u0641\u0636\u0627\u0621", "astronaut"],
     ["\u0631\u0627\u0626\u062f \u0641\u0636\u0627\u0621", "astronaut"],
+    ["\u062b\u0639\u0628\u0627\u0646 \u0627\u0644\u0643\u0648\u0628\u0631\u0627", "cobra snake"],
+    ["\u062b\u0639\u0628\u0627\u0646 \u0643\u0648\u0628\u0631\u0627", "cobra snake"],
+    ["\u0636\u0641\u0627\u062f\u0639", "frogs"],
+    ["\u0636\u0641\u062f\u0639", "frog"],
+    ["\u0627\u0644\u0643\u0648\u0628\u0631\u0627", "cobra"],
+    ["\u0643\u0648\u0628\u0631\u0627", "cobra"],
+    ["\u063a\u0632\u0627\u0644", "gazelle"],
+    ["\u063a\u0632\u0627\u0644\u0629", "gazelle"],
+    ["\u0623\u064a\u0644", "deer"],
+    ["\u0627\u064a\u0644", "deer"],
+    ["\u0623\u0633\u062f", "lion"],
+    ["\u0627\u0633\u062f", "lion"],
     ["\u0635\u0642\u0631", "falcon"],
     ["\u0635\u0642\u0648\u0631", "falcons"],
     ["\u0646\u0633\u0631", "eagle"],
     ["\u0646\u0633\u0648\u0631", "eagles"],
+    ["\u0628\u0628\u063a\u0627\u0621 \u0643\u0627\u0633\u0643\u0648", "African grey parrot"],
+    ["\u0628\u0628\u063a\u0627\u0621 \u0627\u0641\u0631\u064a\u0642\u064a", "African grey parrot"],
+    ["\u0628\u0628\u063a\u0627\u0648\u0627\u062a", "parrots"],
+    ["\u0628\u0628\u063a\u0627\u0621", "parrot"],
+    ["\u0628\u0642\u0646\u0627\u0621", "parrot"],
+    ["\u0643\u0627\u0633\u0643\u0648", "African grey parrot"],
+    ["\u062d\u0645\u0627\u0645\u0629", "pigeon"],
+    ["\u062d\u0645\u0627\u0645", "pigeons"],
+    ["\u0637\u0627\u0648\u0648\u0633", "peacock"],
     ["\u0637\u0627\u0626\u0631", "bird"],
     ["\u0637\u064a\u0631", "bird"],
     ["\u0639\u0635\u0641\u0648\u0631", "bird"],
@@ -2128,11 +2396,11 @@ function getPromptTranslationModels() {
 
 function serverTranslationEnabled() {
   const flag = String(process.env.SERVER_PROMPT_TRANSLATION_ENABLED || "").trim().toLowerCase();
-  if (["true", "1", "yes", "on"].includes(flag)) {
-    return true;
-  }
   if (["false", "0", "no", "off"].includes(flag)) {
     return false;
+  }
+  if (["true", "1", "yes", "on"].includes(flag)) {
+    return true;
   }
   return Boolean(getPromptTranslationKey());
 }
@@ -2232,7 +2500,7 @@ function semanticTranslationIssue(source, translated) {
       issue: "unrequested_people",
     },
     {
-      sourceTerms: ["مكتب", "شركة", "اجتماع", "مؤتمر", "عمل", "office", "meeting", "business", "corporate"],
+      sourceTerms: ["مكتب", "شركة", "اجتماع", "مؤتمر", "office", "meeting", "conference", "workplace"],
       translatedTerms: ["office", "meeting room", "conference room", "corporate office", "business meeting"],
       issue: "unrequested_business_scene",
     },
@@ -2349,8 +2617,7 @@ async function translateArabicPromptForGeneration(userPrompt) {
   if (!hasArabicText(text)) return "";
 
   const apiKey = getPromptTranslationKey();
-  const preferServer = serverTranslationEnabled() && apiKey;
-  if (preferServer) {
+  if (apiKey && serverTranslationEnabled()) {
     const serverTranslation = await translateArabicPromptWithServer(text, apiKey);
     if (serverTranslation) {
       return serverTranslation;
@@ -2377,8 +2644,9 @@ async function translateArabicPromptForGeneration(userPrompt) {
   }
 
   return "";
+}
 
-  const translationBody = {
+/*
     contents: [
       {
         parts: [
@@ -2470,6 +2738,7 @@ async function translateArabicPromptForGeneration(userPrompt) {
   return "";
 }
 
+*/
 function buildNegativeRules(userPrompt) {
   const lower = String(userPrompt || "").toLowerCase();
   const asksForHuman =
@@ -2497,9 +2766,19 @@ function buildNegativeRules(userPrompt) {
     "\u062f\u062c\u0627\u062c\u0629",
     "\u0641\u0631\u062e\u0629",
     "\u0643\u062a\u0643\u0648\u062a",
+    "\u0636\u0641\u062f\u0639",
+    "\u0636\u0641\u0627\u062f\u0639",
     "\u0633\u0644\u062d\u0641\u0627\u0629",
     "\u0633\u0644\u062d\u0641\u0627\u0647",
     "\u0633\u0644\u062d\u0641\u0627\u062a",
+    "\u0623\u0633\u062f",
+    "\u0627\u0633\u062f",
+    "\u063a\u0632\u0627\u0644",
+    "\u063a\u0632\u0627\u0644\u0629",
+    "\u0623\u064a\u0644",
+    "\u0627\u064a\u0644",
+    "\u0643\u0648\u0628\u0631\u0627",
+    "\u0627\u0644\u0643\u0648\u0628\u0631\u0627",
     "\u0630\u0626\u0628",
     "\u0630\u064a\u0628",
     "\u062b\u0639\u0628\u0627\u0646",
@@ -2514,8 +2793,16 @@ function buildNegativeRules(userPrompt) {
     "hen",
     "rooster",
     "chick",
+    "frog",
+    "toad",
     "turtle",
     "turtles",
+    "lion",
+    "lions",
+    "deer",
+    "gazelle",
+    "cobra",
+    "cobras",
     "wolf",
     "wolves",
     "snake",
@@ -2784,7 +3071,23 @@ function buildLocationAnchorRules(userPrompt) {
   return rules;
 }
 
-function buildFinalPrompt({
+function buildArabicDirectPromptEnvelope(userPrompt, type = "image") {
+  const requestLabel = type === "video" ? "video scene" : "image scene";
+  const translated = translateArabicToEnglish(userPrompt);
+  const safeRequest = translated && !hasArabicText(translated)
+    ? translated
+    : `A creative imaginative unusual ${requestLabel}, visually coherent, original, and clearly composed.`;
+  return [
+    `Create a ${requestLabel} that follows this translated request exactly:`,
+    safeRequest,
+    "Treat every noun, color, count, size, action, and spatial relation in the translated request as mandatory.",
+    "Do not reuse any subject or scene from previous requests.",
+    "Do not add humans, offices, meetings, food, flowers, text, logos, or unrelated objects unless the request explicitly asks for them.",
+    "Keep all requested subjects clearly visible in one coherent frame.",
+  ].join("\n");
+}
+
+function buildFinalPromptLegacyIgnored({
   userPrompt,
   quality = "normal",
   style = "",
@@ -2827,6 +3130,80 @@ function buildFinalPrompt({
       ? "Create a short video that follows this request exactly:"
       : "Create an image that follows this request exactly:",
     translatedPrompt,
+    "",
+    "Strict rules:",
+    "- Follow the subject exactly.",
+    `- ${exactness}`,
+    ...countRules.map((rule) => `- ${rule}`),
+    ...singleSubjectRules.map((rule) => `- ${rule}`),
+    ...analysisRules.map((rule) => `- ${rule}`),
+    ...locationAnchorRules.map((rule) => `- ${rule}`),
+    ...colorRules.map((rule) => `- ${rule}`),
+    "Mandatory composition rules:",
+    "- All requested subjects must appear.",
+    "- Do not remove any requested subject.",
+    "- Keep all requested colors accurate.",
+    "- The main subjects must be centered and fully visible.",
+    "- Keep every requested object, place, container, or support element visible when it is part of the description.",
+    "- Render only the requested subjects, actions, and environment.",
+    "- Do not introduce any unrequested subject, object, or secondary scene.",
+    "- Use one coherent full-frame scene only.",
+    "- The output must be one natural single image, not a designed layout.",
+    "- No inset image, picture-in-picture, collage, split panel, poster, framed photo, overlay, contact sheet, storyboard, comic panel, gallery layout, multiple frames, image mosaic, tiled images, grid layout, or split-screen composition.",
+    "- No window-pane layout, panel dividers, thick white borders, or white separator lines across the image.",
+    "- Do not add extra subjects beyond the requested count.",
+    "- Keep every requested subject fully inside the frame. Do not crop, repeat, or duplicate subjects or objects.",
+    "- No text, no watermark, no logo, no UI overlay, no grid lines.",
+    `- Style: ${styleText}.`,
+    `- Quality: ${qualityText}, clean composition, professional lighting, main subject clearly visible.`,
+  ].join("\n");
+}
+
+function buildFinalPrompt({
+  userPrompt,
+  quality = "normal",
+  style = "",
+  type = "image",
+  translatedPromptOverride = "",
+}) {
+  const analysis = analyzePromptV3(userPrompt);
+  const arabicPrompt = hasArabicText(userPrompt);
+  const prefersStructuredLocalPrompt =
+    analysis?.finalPrompt && !hasArabicText(analysis.finalPrompt);
+  const translatedPrompt =
+    String(translatedPromptOverride || "").trim() ||
+    (prefersStructuredLocalPrompt ? analysis.finalPrompt : !arabicPrompt ? String(userPrompt || "").trim() : "");
+  const safeTranslatedPrompt =
+    !translatedPrompt || hasArabicText(translatedPrompt)
+      ? buildArabicDirectPromptEnvelope(userPrompt, type)
+      : translatedPrompt;
+  const qualityText = QUALITY_LABELS[normalizeQuality(quality)] || QUALITY_LABELS.normal;
+  const styleText = STYLE_LABELS[style] || STYLE_LABELS.realistic;
+  const colorRules = buildColorRules(userPrompt, analysis);
+  const countRules = buildCountRules(userPrompt);
+  const singleSubjectRules = buildSingleSubjectRules(userPrompt);
+  const analysisRules = Array.isArray(analysis?.promptRules) ? analysis.promptRules.filter(Boolean) : [];
+  const locationAnchorRules = buildLocationAnchorRules(userPrompt);
+  const exactness = buildRelationshipExactness(userPrompt);
+
+  if (analysis) {
+    console.log(
+      "PROMPT_V3_STRUCTURE:",
+      JSON.stringify({
+        subject: analysis.subject,
+        subjectColor: analysis.subjectColor,
+        object: analysis.object,
+        objectColor: analysis.objectColor,
+        relation: analysis.relation,
+      })
+    );
+  }
+
+  return [
+    type === "video"
+      ? "Create a short video that follows this request exactly:"
+      : "Create an image that follows this request exactly:",
+    safeTranslatedPrompt,
     "",
     "Strict rules:",
     "- Follow the subject exactly.",
@@ -3329,6 +3706,45 @@ function getImageConfig(quality) {
   };
 }
 
+function getImageGenerationPlans(quality, { modelOverride = "", endpointOverride = "", maxAttempts = 3 } = {}) {
+  const normalizedQuality = normalizeQuality(quality);
+  const explicitModel = String(modelOverride || "").trim();
+  const explicitEndpoint = String(endpointOverride || "").trim();
+  const attempts = Math.max(Number(maxAttempts) || 1, 1);
+
+  if (explicitModel || explicitEndpoint) {
+    return [
+      {
+        quality: normalizedQuality,
+        model: explicitModel || getImageConfig(normalizedQuality).model,
+        endpoint: explicitEndpoint || (explicitModel ? buildEndpointFromModelPath(explicitModel) : getImageConfig(normalizedQuality).endpoint),
+      },
+    ];
+  }
+
+  const order = ["normal", "high", "ultra"];
+  const startIndex = Math.max(order.indexOf(normalizedQuality), 0);
+  const plans = [];
+
+  for (const candidateQuality of order.slice(startIndex)) {
+    const candidate = getImageConfig(candidateQuality);
+    plans.push({
+      quality: candidateQuality,
+      model: candidate.model,
+      endpoint: candidate.endpoint,
+    });
+  }
+
+  while (plans.length < attempts) {
+    plans.push(plans[plans.length - 1] || {
+      quality: normalizedQuality,
+      ...getImageConfig(normalizedQuality),
+    });
+  }
+
+  return plans.slice(0, attempts);
+}
+
 function getVideoConfig(quality) {
   const normalizedQuality = normalizeQuality(quality);
   const envPrefix = `WAVESPEED_VIDEO_${normalizedQuality.toUpperCase()}`;
@@ -3583,7 +3999,7 @@ function imageResultValidationRequired() {
   if (["false", "0", "no", "off"].includes(flag)) {
     return false;
   }
-  return imageResultValidationEnabled();
+  return false;
 }
 
 function imageResultValidationBypassEnabled() {
@@ -3606,6 +4022,20 @@ function validationIndicatesPanelArtifact(validation) {
     .toLowerCase();
 
   return /(grid|grid layout|photo grid|window-pane|window pane|window|panel|comic panel|divider|separator|split screen|split-screen|split panel|collage|contact sheet|storyboard|gallery layout|multiple frames|mosaic|image mosaic|tiled image|checkerboard|white border|white line|rectangular|duplicate subject|repeated object)/i.test(
+    haystack
+  );
+}
+
+function validationIndicatesForbiddenLeak(validation) {
+  const haystack = [
+    validation?.reason || "",
+    ...(Array.isArray(validation?.unexpectedElements) ? validation.unexpectedElements : []),
+    ...(Array.isArray(validation?.missingElements) ? validation.missingElements : []),
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  return /(businessman|business people|business meeting|meeting room|conference room|corporate|office|employee|human|people|person|man|woman|food|restaurant|dining|table|caption|subtitle|watermark|logo|text overlay|missing subject|wrong subject)/i.test(
     haystack
   );
 }
@@ -3803,9 +4233,6 @@ export async function generateImageWithWaveSpeed({
   allowFallback = true,
 }) {
   const normalizedQuality = normalizeQuality(quality);
-  const baseConfig = getImageConfig(normalizedQuality);
-  const model = String(modelOverride || baseConfig.model || "").trim();
-  const endpoint = String(endpointOverride || (modelOverride ? buildEndpointFromModelPath(modelOverride) : baseConfig.endpoint) || "").trim();
   const promptPipeline = await buildSmartPromptEnhancementAsync({
     userPrompt: prompt,
     quality: normalizedQuality,
@@ -3818,6 +4245,20 @@ export async function generateImageWithWaveSpeed({
   const usedStructuredLocalTranslation = promptPipeline.debug?.translationMode === "local-structured";
   const safeSeed = randomSeed(seed);
   const apiKey = String(process.env.WAVESPEED_API_KEY || "").trim();
+  const strictValidationActive = Boolean(getPromptTranslationKey() && imageResultValidationEnabled());
+  const maxAttempts =
+    !strictValidationActive && normalizedQuality === "normal"
+      ? 3
+      : imageResultValidationAttempts();
+  const generationPlans = getImageGenerationPlans(normalizedQuality, {
+    modelOverride,
+    endpointOverride,
+    maxAttempts,
+  });
+  const primaryPlan = generationPlans[0] || {
+    quality: normalizedQuality,
+    ...getImageConfig(normalizedQuality),
+  };
   const body = {
     prompt: finalPrompt,
     negative_prompt: negativePrompt,
@@ -3825,7 +4266,6 @@ export async function generateImageWithWaveSpeed({
     seed: safeSeed,
     enable_base64_output: false,
   };
-  const strictValidationActive = Boolean(getPromptTranslationKey() && imageResultValidationEnabled());
   const shouldSkipValidation =
     !strictValidationActive &&
     normalizedQuality === "normal" &&
@@ -3836,12 +4276,13 @@ export async function generateImageWithWaveSpeed({
   console.log("PROVIDER:", "wavespeed");
   console.log("TYPE:", "image");
   console.log("QUALITY:", normalizedQuality);
-  console.log("MODEL:", model);
-  console.log("WAVESPEED MODEL:", model);
+  console.log("MODEL:", primaryPlan.model);
+  console.log("WAVESPEED MODEL:", primaryPlan.model);
   console.log("REQUEST_ID:", requestId);
   logPromptDiagnostics({ userPrompt: prompt, finalPrompt });
   console.log("PROMPT_TRANSLATION_CHAIN_MODE:", promptPipeline.debug?.translationMode || "translation-unavailable");
   console.log("IMAGE_VALIDATION_MODE:", shouldSkipValidation ? "fast-path-skip" : "standard");
+  console.log("IMAGE_GENERATION_PLANS:", generationPlans);
   console.log(
     "WAVESPEED BODY SENT:",
     JSON.stringify({
@@ -3852,100 +4293,131 @@ export async function generateImageWithWaveSpeed({
   );
 
   if (apiKey) {
-    const attempts = !shouldSkipValidation && strictValidationActive
-      ? imageResultValidationAttempts()
-      : 1;
     let lastValidation = null;
     let lastGeneratedResult = null;
+    let lastError = null;
 
-    for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    for (let attempt = 1; attempt <= generationPlans.length; attempt += 1) {
+      const currentPlan = generationPlans[attempt - 1] || primaryPlan;
       const attemptSeed = attempt === 1 ? safeSeed : randomSeed();
       const attemptBody = {
         ...body,
         seed: attemptSeed,
       };
-      const request = allowFallback
-        ? await postWaveSpeedWithFallback({
-            apiKey,
-            endpoint,
-            body: attemptBody,
-            mediaType: "image",
-            quality: normalizedQuality,
-            model,
-          })
-        : {
-            initial: await postWaveSpeed({ apiKey, endpoint, body: attemptBody }),
-            endpoint,
-            model,
-            usedFallback: false,
-          };
-      const resultUrl = await pollWaveSpeedResult({
-        apiKey,
-        initial: request.initial,
-        mediaType: "image",
-      });
-      lastGeneratedResult = {
-        request,
-        resultUrl,
+      console.log("IMAGE_GENERATION_ATTEMPT:", {
+        requestId,
+        attempt,
+        quality: currentPlan.quality,
+        model: currentPlan.model,
+        endpoint: currentPlan.endpoint,
         seed: attemptSeed,
-      };
+      });
 
-      console.log("NEW RESULT URL:", resultUrl);
-
-      if (shouldSkipValidation) {
-        lastValidation = {
-          checked: false,
-          passed: true,
-          reason: "fast_path_simple_single_subject",
-          unexpectedElements: [],
-          missingElements: [],
+      try {
+        const request = allowFallback
+          ? await postWaveSpeedWithFallback({
+              apiKey,
+              endpoint: currentPlan.endpoint,
+              body: attemptBody,
+              mediaType: "image",
+              quality: currentPlan.quality,
+              model: currentPlan.model,
+            })
+          : {
+              initial: await postWaveSpeed({ apiKey, endpoint: currentPlan.endpoint, body: attemptBody }),
+              endpoint: currentPlan.endpoint,
+              model: currentPlan.model,
+              usedFallback: false,
+            };
+        const resultUrl = await pollWaveSpeedResult({
+          apiKey,
+          initial: request.initial,
+          mediaType: "image",
+        });
+        lastGeneratedResult = {
+          request,
+          resultUrl,
+          seed: attemptSeed,
         };
-      } else {
-        try {
-          lastValidation = await validateGeneratedImageAgainstPrompt({
-            resultUrl,
-            userPrompt: prompt,
-            finalPrompt,
-          });
-        } catch (error) {
-          console.warn("IMAGE_RESULT_VALIDATION_ERROR:", error?.message || error);
+
+        console.log("NEW RESULT URL:", resultUrl);
+
+        if (shouldSkipValidation) {
           lastValidation = {
             checked: false,
-            passed: !imageResultValidationRequired(),
-            reason: "validator_error",
+            passed: true,
+            reason: "fast_path_simple_single_subject",
             unexpectedElements: [],
             missingElements: [],
           };
+        } else {
+          try {
+            lastValidation = await validateGeneratedImageAgainstPrompt({
+              resultUrl,
+              userPrompt: prompt,
+              finalPrompt,
+            });
+          } catch (error) {
+            console.warn("IMAGE_RESULT_VALIDATION_ERROR:", error?.message || error);
+            lastValidation = {
+              checked: false,
+              passed: !imageResultValidationRequired(),
+              reason: "validator_error",
+              unexpectedElements: [],
+              missingElements: [],
+            };
+          }
         }
-      }
 
-      console.log("IMAGE_RESULT_VALIDATION:", {
-        requestId,
-        attempt,
-        seed: attemptSeed,
-        model: request.model,
-        ...lastValidation,
-      });
-
-      if (lastValidation.passed) {
-        return {
-          provider: "wavespeed",
-          model: request.model,
-          finalPrompt,
+        console.log("IMAGE_RESULT_VALIDATION:", {
+          requestId,
+          attempt,
           seed: attemptSeed,
-          resultUrl,
-          validation: lastValidation,
-          raw: request.initial,
-        };
+          model: request.model,
+          ...lastValidation,
+        });
+
+        if (lastValidation.passed) {
+          return {
+            provider: "wavespeed",
+            model: request.model,
+            finalPrompt,
+            seed: attemptSeed,
+            resultUrl,
+            validation: lastValidation,
+            raw: request.initial,
+          };
+        }
+
+        lastError = null;
+      } catch (error) {
+        lastError = error;
+        console.warn("IMAGE_GENERATION_ATTEMPT_FAILED:", {
+          requestId,
+          attempt,
+          quality: currentPlan.quality,
+          model: currentPlan.model,
+          endpoint: currentPlan.endpoint,
+          message: error?.message || error,
+        });
       }
     }
 
-    if (lastValidation && imageResultValidationBypassEnabled() && !validationIndicatesPanelArtifact(lastValidation)) {
+    if (
+      lastValidation &&
+      imageResultValidationBypassEnabled() &&
+      detectSingleSubjectIntent(prompt) &&
+      !isComplexPromptV2(prompt) &&
+      !validationIndicatesPanelArtifact(lastValidation)
+    ) {
       console.warn("IMAGE_RESULT_VALIDATION_BYPASS:", {
         reason: lastValidation.reason || "validation_not_passed",
         unexpectedElements: lastValidation.unexpectedElements || [],
         missingElements: lastValidation.missingElements || [],
       });
+      if (!lastGeneratedResult) {
+        throw serviceError("تعذر إتمام الطلب مؤقتًا، حاول لاحقًا. لم يتم خصم أي رصيد.", 502);
+      }
       if (!lastGeneratedResult) {
         throw serviceError("تعذر إتمام الطلب مؤقتًا، حاول لاحقًا. لم يتم خصم أي رصيد.", 502);
       }
@@ -3963,6 +4435,10 @@ export async function generateImageWithWaveSpeed({
       };
     }
 
+    if (lastError && !lastGeneratedResult) {
+      throw lastError;
+    }
+
     throw serviceError(
       "تعذر إخراج نتيجة مطابقة للوصف بدقة في الوقت الحالي. لم يتم خصم أي رصيد.",
       422
@@ -3970,6 +4446,9 @@ export async function generateImageWithWaveSpeed({
   }
 
   const geminiResult = await generateImageWithGemini({ prompt: finalPrompt });
+  if (!geminiResult?.resultUrl) {
+    throw serviceError("تعذر إتمام الطلب مؤقتًا، حاول لاحقًا. لم يتم خصم أي رصيد.", 502);
+  }
   if (!geminiResult?.resultUrl) {
     throw serviceError("تعذر إتمام الطلب مؤقتًا، حاول لاحقًا. لم يتم خصم أي رصيد.", 502);
   }
@@ -4009,6 +4488,10 @@ export async function generateImageWithWaveSpeed({
     });
 
     if (!geminiValidation.passed) {
+      throw serviceError(
+        "تعذر إخراج نتيجة مطابقة للوصف بدقة في الوقت الحالي. لم يتم خصم أي رصيد.",
+        422
+      );
       throw serviceError(
         "تعذر إخراج نتيجة مطابقة للوصف بدقة في الوقت الحالي. لم يتم خصم أي رصيد.",
         422

@@ -377,6 +377,7 @@
       rawResultUrl,
       rawThumbnailUrl,
       status: item.status || ((rawResultUrl || protectedDownloadUrl) ? "completed" : "processing"),
+      errorMessage: item.errorMessage || item.error_message || item.message || null,
       isFavorite: Boolean(item.isFavorite || state.favorites.has(String(generationId))),
     };
   }
@@ -1832,12 +1833,16 @@
         state.autoOpenGenerationId &&
         String(failed.id) === String(state.autoOpenGenerationId)
       ) {
+        const failureMessage = sanitizeUserMessage(
+          failed.errorMessage || "تعذر إتمام الطلب مؤقتًا، حاول مرة أخرى بعد قليل. لم يتم خصم أي رصيد.",
+          "تعذر إتمام الطلب مؤقتًا، حاول لاحقًا."
+        );
         state.pendingGenerationId = null;
         setLoading(false);
         state.autoOpenGenerationHandled = true;
         state.autoOpenGenerationId = null;
-        setMessage("تعذر إتمام الطلب مؤقتًا، حاول مرة أخرى بعد قليل. لم يتم خصم أي رصيد.", "error");
-        showToast("تعذر إتمام الطلب مؤقتًا، حاول لاحقًا.", "error");
+        setMessage(failureMessage, "error");
+        showToast(failureMessage, "error");
       }
       if (!state.activeMenuId) {
         renderAll();

@@ -71,19 +71,27 @@ function httpError(message, statusCode = 400) {
 }
 
 function providerFailureMessage(error, type) {
-  const fallback = "طھط¹ط°ط± ط¥طھظ…ط§ظ… ط§ظ„ط·ظ„ط¨ ظ…ط¤ظ‚طھظ‹ط§طŒ ط­ط§ظˆظ„ ظ„ط§ط­ظ‚ظ‹ط§. ظ„ظ… ظٹطھظ… ط®طµظ… ط£ظٹ ط±طµظٹط¯.";
+  const fallback = "تعذر إتمام الطلب مؤقتًا، حاول لاحقًا. لم يتم خصم أي رصيد.";
   const raw = String(error?.message || "").trim();
 
   if (!raw) {
     return fallback;
   }
 
-  if (/unauthorized|invalid api|invalid key|api key|forbidden|401|403/i.test(raw)) {
+  if (/wav?espeed|gemini|deepseek|api[_\s-]*key|prompt_translation_api_key|google[_\s-]*api|authorization|bearer/i.test(raw)) {
     return fallback;
   }
 
-  if (error?.statusCode && error.statusCode < 500) {
-    return fallback;
+  if (error?.statusCode && error.statusCode >= 400 && error.statusCode < 500) {
+    if (/تعذر فهم الوصف|تعذر إخراج نتيجة مطابقة|غير مدعومة|غير متاحة|رصيدك غير كاف|محتوى غير مسموح/i.test(raw)) {
+      return raw;
+    }
+    if (/translation|translate|semantic|arabic/i.test(raw)) {
+      return "تعذر فهم الوصف العربي بدقة الآن. أعد صياغته بشكل أوضح، ولم يتم خصم أي رصيد.";
+    }
+    if (/timeout|timed out|poll|result/i.test(raw)) {
+      return "استغرقت خدمة التوليد وقتًا أطول من المتوقع. حاول مرة أخرى بعد قليل، ولم يتم خصم أي رصيد.";
+    }
   }
 
   return fallback;
@@ -380,6 +388,7 @@ function serializeGeneration(row) {
     mimeType: row.mime_type || null,
     fileSize: row.file_size == null ? null : Number(row.file_size),
     isFavorite: Boolean(row.is_favorite),
+    errorMessage: row.error_message || null,
     createdAt: row.created_at,
     completedAt: row.completed_at,
     generationTimeMs:
@@ -920,7 +929,7 @@ async function runGenerationCompletionTask({
       });
     }
   } catch (error) {
-    await markGenerationFailed({ generationId, message: error.message });
+    await markGenerationFailed({ generationId, message: providerFailureMessage(error, type) });
     await upsertPromptAnalytics({
       generationId,
       prompt,
@@ -1132,6 +1141,7 @@ router.get(
                      g.thumbnail_url,
                      g.mime_type,
                      g.file_size,
+                     g.error_message,
                      g.is_favorite,
                      g.created_at,
                      g.completed_at,
@@ -1173,6 +1183,7 @@ router.get(
                      g.thumbnail_url,
                      g.mime_type,
                      g.file_size,
+                     g.error_message,
                      g.is_favorite,
                      g.created_at,
                      g.completed_at,
@@ -1410,6 +1421,7 @@ router.get(
                g.thumbnail_url,
                g.mime_type,
                g.file_size,
+               g.error_message,
                g.is_favorite,
                g.created_at,
                g.completed_at,
