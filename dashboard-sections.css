@@ -282,6 +282,25 @@
   font-weight: 700;
 }
 
+.user-dashboard-v3 .udv3-creations-grid .udv6-creation-placeholder span,
+.user-dashboard-v3 .udv3-creations-grid .udv6-creation-placeholder small {
+  display: none;
+}
+
+.user-dashboard-v3 .udv3-creations-grid .udv3-creation-card.is-processing .udv3-creation-preview > b {
+  display: none;
+}
+
+.user-dashboard-v3 .udv3-creations-grid .udv6-creation-placeholder {
+  align-content: center;
+  min-height: 100%;
+}
+
+.user-dashboard-v3 .udv3-creations-grid .udv6-creation-placeholder strong {
+  font-size: clamp(18px, 2.4vw, 24px);
+  color: #7b35f4;
+}
+
 .user-dashboard-v3 .udv3-creation-placeholder small,
 .user-dashboard-v3 .udv6-creation-placeholder small,
 .user-dashboard-v3 .udv6-media-placeholder small {

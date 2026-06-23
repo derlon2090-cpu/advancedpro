@@ -545,7 +545,7 @@
       `).join("");
       return;
     }
-    const list = state.results.slice(0, 5);
+    const list = uniqueGenerations(state.results).slice(0, 5);
     grid.innerHTML = list.length
       ? list.map(renderCreationCardFixed).join("")
       : `<div class="udv3-empty-state udv3-empty-state--recent">لم تنشئ أي محتوى بعد. ابدأ الآن بإنشاء أول صورة أو فيديو.</div>`;
@@ -700,6 +700,28 @@
     return items.slice().sort((a, b) => resultsSortValue(b) - resultsSortValue(a));
   }
 
+  function generationUniqueKey(item) {
+    const id = String(item?.id || "").trim();
+    if (id) return `id:${id}`;
+    const requestId = String(item?.requestId || "").trim();
+    if (requestId) return `request:${requestId}`;
+    const url = String(item?.rawResultUrl || item?.resultUrl || item?.thumbnailUrl || "").trim();
+    if (url) return `url:${url.replace(/[?&]v=[^&]+/g, "")}`;
+    return `prompt:${String(item?.prompt || "").trim()}|${String(item?.createdAt || "").trim()}`;
+  }
+
+  function uniqueGenerations(items = []) {
+    const seen = new Set();
+    const unique = [];
+    for (const item of items || []) {
+      const key = generationUniqueKey(item);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      unique.push(item);
+    }
+    return unique;
+  }
+
   function getCachedKeySnapshot() {
     const snapshots = [];
     try {
@@ -752,7 +774,7 @@
   function persistGenerationCache(items = state.results) {
     const cacheKey = getGenerationCacheKey();
     if (!cacheKey) return;
-    const normalizedItems = sortGenerations((items || []).map(normalizeGeneration));
+    const normalizedItems = uniqueGenerations(sortGenerations((items || []).map(normalizeGeneration)));
     try {
       localStorage.setItem(cacheKey, JSON.stringify(normalizedItems));
       sessionStorage.setItem(cacheKey, JSON.stringify(normalizedItems));
@@ -779,7 +801,7 @@
     }
     const storedItems = candidates.find(Array.isArray);
     if (!Array.isArray(storedItems) || !storedItems.length) return false;
-    state.results = sortGenerations(storedItems.map(normalizeGeneration));
+    state.results = uniqueGenerations(sortGenerations(storedItems.map(normalizeGeneration)));
     state.generationsHydrated = true;
     return true;
   }
@@ -1790,7 +1812,7 @@
       );
       const data = await requestJson("/api/generate");
       const list = data.generations || data.items || data.results || [];
-      state.results = sortGenerations(list.map(normalizeGeneration));
+      state.results = uniqueGenerations(sortGenerations(list.map(normalizeGeneration)));
       persistGenerationCache();
       const completed = state.results.find(
         (item) =>

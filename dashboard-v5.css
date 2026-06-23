@@ -449,6 +449,20 @@
   overflow: hidden;
 }
 
+.user-dashboard-v3 .udv3-cost-card button::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(120deg, transparent 0%, rgba(255, 255, 255, .18) 44%, transparent 72%);
+  transform: translateX(120%);
+}
+
+.user-dashboard-v3 .udv3-cost-card button.is-loading::before {
+  animation: udv3-submit-sheen 1.6s ease-in-out infinite;
+}
+
 .user-dashboard-v3 .udv3-submit-spinner {
   position: absolute;
   inset-inline-start: 16px;
@@ -472,6 +486,8 @@
   text-align: center;
   margin-inline: auto;
   color: #fff;
+  position: relative;
+  z-index: 1;
 }
 
 .user-dashboard-v3 .udv3-cost-card button.is-loading .udv3-submit-spinner {
@@ -489,6 +505,15 @@
   }
   to {
     transform: translateY(-50%) rotate(360deg);
+  }
+}
+
+@keyframes udv3-submit-sheen {
+  from {
+    transform: translateX(120%);
+  }
+  to {
+    transform: translateX(-120%);
   }
 }
 
