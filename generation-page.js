@@ -87,6 +87,20 @@
     return `${base}${base.includes("?") ? "&" : "?"}v=${version}`;
   }
 
+  function generationShareUrl(item = state.result) {
+    const id = String(item?.id || state.currentId || "").trim();
+    if (id) {
+      return new URL(`/generation?id=${encodeURIComponent(id)}`, window.location.origin).toString();
+    }
+    const url = String(item?.originalResultUrl || item?.resultUrl || item?.thumbnailUrl || "").trim();
+    if (!url) return "";
+    try {
+      return new URL(url, window.location.origin).toString();
+    } catch {
+      return url;
+    }
+  }
+
   function safeMediaAlt(item) {
     const prompt = String(item?.prompt || "").trim();
     if (!prompt) {
@@ -142,14 +156,16 @@
       raw.output_url ||
       raw.url ||
       "";
-    const protectedDownloadUrl = generationId ? `/api/download/${encodeURIComponent(generationId)}?inline=1` : "";
+    const explicitStatus = raw.status || "";
+    const hasMedia = Boolean(rawResultUrl || rawThumbnailUrl);
+    const protectedDownloadUrl = generationId && hasMedia ? `/api/download/${encodeURIComponent(generationId)}?inline=1` : "";
     return {
       id: generationId,
       requestId: raw.requestId || raw.request_id || null,
       type: raw.type === "video" ? "video" : "image",
       prompt: raw.userPrompt || raw.prompt || raw.description || "",
       quality: raw.quality || "normal",
-      status: raw.status || ((rawResultUrl || protectedDownloadUrl) ? "completed" : "processing"),
+      status: explicitStatus || (hasMedia ? "completed" : "processing"),
       resultUrl: protectedDownloadUrl || rawResultUrl,
       thumbnailUrl: protectedDownloadUrl || rawThumbnailUrl || rawResultUrl,
       originalResultUrl: rawResultUrl,
@@ -320,7 +336,7 @@
   }
 
   function buildShareLink(service, result) {
-    const url = encodeURIComponent(result.resultUrl);
+    const url = encodeURIComponent(generationShareUrl(result) || result.resultUrl);
     const text = encodeURIComponent(result.prompt || "تم الإنشاء عبر PixiGenI");
 
     if (service === "x") {
@@ -729,7 +745,12 @@
       triggerDownload(result.resultUrl, `${fileBaseName(result)}.mp4`);
       showToast("بدأ تنزيل الفيديو");
     } else if (action === "copy-link") {
-      await copyText(result.resultUrl, "تم نسخ الرابط");
+      const shareUrl = generationShareUrl(result);
+      if (!shareUrl) {
+        showToast("تعذر تجهيز رابط النتيجة.", "error");
+        return;
+      }
+      await copyText(shareUrl, "تم نسخ رابط النتيجة");
     } else if (action === "share-x") {
       openShareWindow(buildShareLink("x", result));
     } else if (action === "share-whatsapp") {

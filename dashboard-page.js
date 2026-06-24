@@ -353,7 +353,9 @@
     const generationId = item.id || item.generationId || crypto.randomUUID();
     const rawResultUrl = item.resultUrl || item.url || item.outputUrl || item.imageUrl || item.videoUrl || "";
     const rawThumbnailUrl = item.thumbnailUrl || item.resultUrl || item.url || item.outputUrl || "";
-    const protectedDownloadUrl = generationId ? `/api/download/${encodeURIComponent(generationId)}?inline=1` : "";
+    const explicitStatus = item.status || "";
+    const hasMedia = Boolean(rawResultUrl || rawThumbnailUrl);
+    const protectedDownloadUrl = generationId && hasMedia ? `/api/download/${encodeURIComponent(generationId)}?inline=1` : "";
     return {
       id: generationId,
       requestId: item.requestId,
@@ -376,7 +378,7 @@
       thumbnailUrl: protectedDownloadUrl || rawThumbnailUrl || rawResultUrl,
       rawResultUrl,
       rawThumbnailUrl,
-      status: item.status || ((rawResultUrl || protectedDownloadUrl) ? "completed" : "processing"),
+      status: explicitStatus || (hasMedia ? "completed" : "processing"),
       errorMessage: item.errorMessage || item.error_message || item.message || null,
       isFavorite: Boolean(item.isFavorite || state.favorites.has(String(generationId))),
     };
@@ -701,25 +703,67 @@
   }
 
   function generationUniqueKey(item) {
-    const id = String(item?.id || "").trim();
-    if (id) return `id:${id}`;
+    return generationUniqueKeys(item)[0] || `unknown:${Math.random()}`;
+  }
+
+  function generationUniqueKeys(item) {
+    const keys = [];
     const requestId = String(item?.requestId || "").trim();
-    if (requestId) return `request:${requestId}`;
-    const url = String(item?.rawResultUrl || item?.resultUrl || item?.thumbnailUrl || "").trim();
-    if (url) return `url:${url.replace(/[?&]v=[^&]+/g, "")}`;
-    return `prompt:${String(item?.prompt || "").trim()}|${String(item?.createdAt || "").trim()}`;
+    if (requestId) keys.push(`request:${requestId}`);
+    const url = String(item?.rawResultUrl || item?.rawThumbnailUrl || "").trim();
+    if (url) keys.push(`url:${url.replace(/[?&]v=[^&]+/g, "").split("#")[0]}`);
+    const prompt = String(item?.prompt || "").trim().replace(/\s+/g, " ").slice(0, 180);
+    const createdAt = Date.parse(item?.createdAt || item?.completedAt || "");
+    const timeBucket = Number.isFinite(createdAt) ? Math.floor(createdAt / 120000) : "";
+    if (prompt) keys.push(`prompt:${item?.type || "image"}:${prompt}:${timeBucket}`);
+    const id = String(item?.id || "").trim();
+    if (id) keys.push(`id:${id}`);
+    return keys;
   }
 
   function uniqueGenerations(items = []) {
-    const seen = new Set();
+    const seen = new Map();
     const unique = [];
     for (const item of items || []) {
-      const key = generationUniqueKey(item);
-      if (seen.has(key)) continue;
-      seen.add(key);
+      const keys = generationUniqueKeys(item);
+      const existingIndex = keys
+        .map((key) => seen.get(key))
+        .find((index) => Number.isInteger(index));
+      if (Number.isInteger(existingIndex)) {
+        const existing = unique[existingIndex];
+        const shouldReplace =
+          item.status === "completed" &&
+          existing?.status !== "completed" &&
+          (item.resultUrl || item.thumbnailUrl);
+        if (shouldReplace) {
+          unique[existingIndex] = {
+            ...existing,
+            ...item,
+            isFavorite: Boolean(existing?.isFavorite || item.isFavorite),
+          };
+          generationUniqueKeys(unique[existingIndex]).forEach((key) => seen.set(key, existingIndex));
+        }
+        continue;
+      }
+      const index = unique.length;
+      keys.forEach((key) => seen.set(key, index));
       unique.push(item);
     }
     return unique;
+  }
+
+  function generationShareUrl(item) {
+    const id = String(item?.id || "").trim();
+    if (id) {
+      return new URL(`/generation?id=${encodeURIComponent(id)}`, window.location.origin).toString();
+    }
+    const url = String(item?.rawResultUrl || item?.resultUrl || item?.thumbnailUrl || "").trim();
+    if (!url) return "";
+    try {
+      return new URL(url, window.location.origin).toString();
+    } catch {
+      return url;
+    }
   }
 
   function getCachedKeySnapshot() {
@@ -907,14 +951,15 @@
   }
 
   function renderProjectsSection() {
-    const items = state.results.filter(sectionItemMatches);
+    const sourceItems = uniqueGenerations(state.results);
+    const items = sourceItems.filter(sectionItemMatches);
     return `
       <div class="udv6-section-shell">
         <header class="udv6-section-head">
           <div><h1>مشاريعي</h1><p>كل الصور والفيديوهات التي أنشأتها في مكان واحد.</p></div>
           <button class="udv6-primary-button" type="button" data-section-create>＋ مشروع جديد</button>
         </header>
-        ${renderSectionStats(state.results)}
+        ${renderSectionStats(sourceItems)}
         <section class="udv6-panel">
           <div class="udv6-toolbar">
             <input class="udv6-search" type="search" placeholder="ابحث في مشاريعك..." value="${escapeHtml(state.sectionSearch)}" data-section-search />
@@ -941,7 +986,7 @@
   }
 
   function renderFavoritesSection() {
-    const items = state.results
+    const items = uniqueGenerations(state.results)
       .filter((item) => item.isFavorite || state.favorites.has(String(item.id)))
       .filter(sectionItemMatches);
     return `
@@ -1210,7 +1255,12 @@
       anchor.target = "_blank";
       anchor.click();
     } else if (action === "copy") {
-      await copyText(item.resultUrl, "تم نسخ الرابط");
+      const shareUrl = generationShareUrl(item);
+      if (!shareUrl) {
+        showToast("تعذر تجهيز رابط النتيجة.", "error");
+        return;
+      }
+      await copyText(shareUrl, "تم نسخ رابط النتيجة");
     } else if (action === "favorite") {
       const nextValue = !Boolean(item.isFavorite);
       try {
@@ -1743,9 +1793,12 @@
 
       state.results = [
         generation,
-        ...state.results.filter((item) => String(item.id) !== String(generation.id)),
+        ...state.results.filter((item) => (
+          String(item.id) !== String(generation.id) &&
+          (!generation.requestId || String(item.requestId || "") !== String(generation.requestId))
+        )),
       ];
-      state.results = sortGenerations(state.results);
+      state.results = uniqueGenerations(sortGenerations(state.results));
       persistKeySnapshot(state.key);
       persistGenerationCache();
       state.autoOpenGenerationId = String(generation.id);
