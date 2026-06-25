@@ -972,7 +972,51 @@
   }
 }
 
-@media (max-width: 1100px) {
+html[data-theme="dark"] body,
+html[data-theme="dark"] .user-dashboard-v3 {
+  background: #10111f;
+  color: #f7f7ff;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-sidebar,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-topbar,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-create-card,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-recent-card,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-tips-card,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-balance-widget,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-usage-widget,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-transactions-widget,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-stat-card,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-panel,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-settings-card,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-work-card,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-template-card,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-model-card {
+  background: #17182a;
+  border-color: rgba(255, 255, 255, .09);
+  color: #f7f7ff;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, .22);
+}
+
+html[data-theme="dark"] .user-dashboard-v3 input,
+html[data-theme="dark"] .user-dashboard-v3 select,
+html[data-theme="dark"] .user-dashboard-v3 textarea,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-search,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-segmented,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-prompt-box {
+  background: #111325;
+  border-color: rgba(255, 255, 255, .12);
+  color: #fff;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 p,
+html[data-theme="dark"] .user-dashboard-v3 span,
+html[data-theme="dark"] .user-dashboard-v3 small,
+html[data-theme="dark"] .user-dashboard-v3 time {
+  color: rgba(247, 247, 255, .72);
+}
+
+@media (max-width: 760px) {
   .user-dashboard-v3 .udv6-card-grid,
   .user-dashboard-v3 .udv6-template-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -101,6 +101,22 @@
     }
   }
 
+  function generationDirectMediaUrl(item = state.result) {
+    const url = String(
+      item?.originalResultUrl ||
+        item?.resultUrl ||
+        item?.thumbnailUrl ||
+        item?.storageUrl ||
+        ""
+    ).trim();
+    if (!url) return "";
+    try {
+      return new URL(url, window.location.origin).toString();
+    } catch {
+      return url;
+    }
+  }
+
   function safeMediaAlt(item) {
     const prompt = String(item?.prompt || "").trim();
     if (!prompt) {
@@ -700,7 +716,13 @@
       body: JSON.stringify({ isFavorite: nextValue }),
     });
 
-    const isFavorite = Boolean(payload.isFavorite);
+    const isFavorite = Boolean(
+      payload.isFavorite ??
+        payload.is_favorite ??
+        payload.generation?.isFavorite ??
+        payload.generation?.is_favorite ??
+        nextValue
+    );
     state.results = state.results.map((item) =>
       String(item.id) === String(id) ? { ...item, isFavorite } : item
     );
@@ -745,12 +767,12 @@
       triggerDownload(result.resultUrl, `${fileBaseName(result)}.mp4`);
       showToast("بدأ تنزيل الفيديو");
     } else if (action === "copy-link") {
-      const shareUrl = generationShareUrl(result);
-      if (!shareUrl) {
+      const directUrl = generationDirectMediaUrl(result);
+      if (!directUrl) {
         showToast("تعذر تجهيز رابط النتيجة.", "error");
         return;
       }
-      await copyText(shareUrl, "تم نسخ رابط النتيجة");
+      await copyText(directUrl, "تم نسخ رابط الملف");
     } else if (action === "share-x") {
       openShareWindow(buildShareLink("x", result));
     } else if (action === "share-whatsapp") {

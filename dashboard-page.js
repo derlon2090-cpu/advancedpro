@@ -380,7 +380,14 @@
       rawThumbnailUrl,
       status: explicitStatus || (hasMedia ? "completed" : "processing"),
       errorMessage: item.errorMessage || item.error_message || item.message || null,
-      isFavorite: Boolean(item.isFavorite || state.favorites.has(String(generationId))),
+      isFavorite: Boolean(
+        item.isFavorite ||
+          item.is_favorite ||
+          item.favorite ||
+          item.generation?.isFavorite ||
+          item.generation?.is_favorite ||
+          state.favorites.has(String(generationId))
+      ),
     };
   }
 
@@ -766,6 +773,24 @@
     }
   }
 
+  function generationDirectMediaUrl(item) {
+    const url = String(
+      item?.rawResultUrl ||
+        item?.rawThumbnailUrl ||
+        item?.originalResultUrl ||
+        item?.storageUrl ||
+        item?.resultUrl ||
+        item?.thumbnailUrl ||
+        ""
+    ).trim();
+    if (!url) return "";
+    try {
+      return new URL(url, window.location.origin).toString();
+    } catch {
+      return url;
+    }
+  }
+
   function getCachedKeySnapshot() {
     const snapshots = [];
     try {
@@ -1126,6 +1151,7 @@
         explicitQualityPreference: false,
         emailNotifications: true,
         systemNotifications: true,
+        theme: "light",
         ...JSON.parse(localStorage.getItem("pixigen:settings") || "{}"),
       };
     } catch {
@@ -1135,8 +1161,18 @@
         explicitQualityPreference: false,
         emailNotifications: true,
         systemNotifications: true,
+        theme: "light",
       };
     }
+  }
+
+  function applyUserSettings(settings = getSettings()) {
+    const language = settings.language === "en" ? "en" : "ar";
+    const theme = settings.theme === "dark" ? "dark" : "light";
+    document.documentElement.lang = language;
+    document.documentElement.dir = language === "en" ? "ltr" : "rtl";
+    document.documentElement.dataset.theme = theme;
+    document.body.dataset.theme = theme;
   }
 
   function renderSettingsSection() {
@@ -1156,6 +1192,7 @@
             <h2>التفضيلات</h2>
             <label class="udv6-field"><span>الجودة الافتراضية</span><select name="quality"><option value="normal" ${settings.quality === "normal" ? "selected" : ""}>عادية</option><option value="high" ${settings.quality === "high" ? "selected" : ""}>عالية</option><option value="ultra" ${settings.quality === "ultra" ? "selected" : ""}>فائقة</option></select></label>
             <label class="udv6-field"><span>اللغة</span><select name="language"><option value="ar" ${settings.language === "ar" ? "selected" : ""}>العربية</option><option value="en" ${settings.language === "en" ? "selected" : ""}>English</option></select></label>
+            <label class="udv6-field"><span>المظهر</span><select name="theme"><option value="light" ${settings.theme !== "dark" ? "selected" : ""}>شمسي</option><option value="dark" ${settings.theme === "dark" ? "selected" : ""}>ليلي</option></select></label>
           </section>
           <section class="udv6-settings-card">
             <h2>حماية فائقة للكود</h2>
@@ -1255,12 +1292,12 @@
       anchor.target = "_blank";
       anchor.click();
     } else if (action === "copy") {
-      const shareUrl = generationShareUrl(item);
-      if (!shareUrl) {
+      const directUrl = generationDirectMediaUrl(item);
+      if (!directUrl) {
         showToast("تعذر تجهيز رابط النتيجة.", "error");
         return;
       }
-      await copyText(shareUrl, "تم نسخ رابط النتيجة");
+      await copyText(directUrl, "تم نسخ رابط الملف");
     } else if (action === "favorite") {
       const nextValue = !Boolean(item.isFavorite);
       try {
@@ -1268,7 +1305,14 @@
           method: "PATCH",
           body: JSON.stringify({ isFavorite: nextValue }),
         });
-        item.isFavorite = Boolean(payload.isFavorite);
+        const responseFavorite = Boolean(
+          payload.isFavorite ??
+            payload.is_favorite ??
+            payload.generation?.isFavorite ??
+            payload.generation?.is_favorite ??
+            nextValue
+        );
+        item.isFavorite = responseFavorite;
         if (item.isFavorite) state.favorites.add(String(item.id));
         else state.favorites.delete(String(item.id));
         saveFavorites();
@@ -1463,12 +1507,14 @@
     settings.quality = form.get("quality") || settings.quality;
     settings.explicitQualityPreference = true;
     settings.language = form.get("language") || settings.language;
+    settings.theme = form.get("theme") || settings.theme || "light";
     localStorage.setItem("pixigen:settings", JSON.stringify(settings));
     state.key = {
       ...(state.key || {}),
       customerName: String(form.get("customerName") || state.key?.customerName || ""),
       customerEmail: String(form.get("customerEmail") || state.key?.customerEmail || ""),
     };
+    applyUserSettings(settings);
     updateKeyUi();
     showToast("تم حفظ إعدادات الحساب.");
   }
@@ -2040,6 +2086,7 @@
 
   async function init() {
     loadLocalPreferences();
+    applyUserSettings();
     bindEvents();
     bindSectionEvents();
     setType("image");
