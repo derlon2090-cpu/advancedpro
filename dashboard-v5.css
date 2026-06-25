@@ -880,7 +880,7 @@
   border-radius: 13px;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 640px) {
   .user-dashboard-v3 {
     grid-template-columns: 200px minmax(0, 1fr);
   }
@@ -901,7 +901,7 @@
   }
 }
 
-@media (min-width: 641px) and (max-width: 760px) {
+@media (max-width: 640px) {
   .user-dashboard-v3 {
     grid-template-columns: 190px minmax(0, 1fr);
   }

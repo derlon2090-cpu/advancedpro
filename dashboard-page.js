@@ -1,6 +1,6 @@
 (function () {
   const API_BASE_URL = window.AdvancedProConfig?.apiBaseUrl || "";
-  const BUILD_VERSION = "2026.06.22-generation-fix-v2";
+  const BUILD_VERSION = "2026.06.25-settings-theme-results-v1";
   console.info("PIXIGEN_BUILD:", BUILD_VERSION);
 
   const state = {
@@ -1173,15 +1173,46 @@
     document.documentElement.dir = language === "en" ? "ltr" : "rtl";
     document.documentElement.dataset.theme = theme;
     document.body.dataset.theme = theme;
+    document.body.dataset.language = language;
   }
 
   function renderSettingsSection() {
     const settings = getSettings();
     const key = state.key || {};
+    const language = settings.language === "en" ? "en" : "ar";
+    const theme = settings.theme === "dark" ? "dark" : "light";
+    const languageChoices = [
+      ["ar", "العربية", "ا", "اتجاه عربي كامل"],
+      ["en", "English", "A", "English interface"],
+    ];
+    const themeChoices = [
+      ["light", "شمسي", "☀", "سطوع واضح ومريح"],
+      ["dark", "ليلي", "☾", "تباين هادئ في الليل"],
+    ];
     return `
       <div class="udv6-section-shell">
         <header class="udv6-section-head"><div><h1>إعدادات الحساب</h1><p>حدّث معلوماتك وتفضيلات التوليد والإشعارات.</p></div></header>
         <form class="udv6-settings-grid" data-settings-form>
+          <div class="udv6-setting-group">
+            <div class="udv6-setting-group__head"><span>اللغة</span><small>يتم تطبيق الاتجاه فورًا</small></div>
+            <div class="udv6-setting-pills" role="group" aria-label="اللغة">
+              ${languageChoices.map(([value, label, icon, copy]) => `
+                <button type="button" class="udv6-setting-pill ${language === value ? "is-active" : ""}" data-setting-choice data-setting-key="language" data-setting-value="${value}" aria-pressed="${language === value}">
+                  <span aria-hidden="true">${icon}</span><strong>${label}</strong><small>${copy}</small>
+                </button>
+              `).join("")}
+            </div>
+          </div>
+          <div class="udv6-setting-group">
+            <div class="udv6-setting-group__head"><span>الوضع</span><small>شمسي أو ليلي حسب وقتك</small></div>
+            <div class="udv6-setting-pills" role="group" aria-label="الوضع">
+              ${themeChoices.map(([value, label, icon, copy]) => `
+                <button type="button" class="udv6-setting-pill ${theme === value ? "is-active" : ""}" data-setting-choice data-setting-key="theme" data-setting-value="${value}" aria-pressed="${theme === value}">
+                  <span aria-hidden="true">${icon}</span><strong>${label}</strong><small>${copy}</small>
+                </button>
+              `).join("")}
+            </div>
+          </div>
           <section class="udv6-settings-card">
             <h2>المعلومات الشخصية</h2>
             <label class="udv6-field"><span>الاسم</span><input name="customerName" value="${escapeHtml(key.customerName || "")}" /></label>
@@ -1454,6 +1485,24 @@
         settings[key] = !settings[key];
         localStorage.setItem("pixigen:settings", JSON.stringify(settings));
         toggle.setAttribute("aria-pressed", String(settings[key]));
+        return;
+      }
+
+      const settingChoice = event.target.closest("[data-setting-choice]");
+      if (settingChoice) {
+        const key = settingChoice.dataset.settingKey;
+        const value = settingChoice.dataset.settingValue;
+        const form = settingChoice.closest("[data-settings-form]");
+        const field = form?.querySelector(`[name="${key}"]`);
+        if (field && key && value) {
+          field.value = value;
+          form.querySelectorAll(`[data-setting-choice][data-setting-key="${key}"]`).forEach((button) => {
+            const isActive = button.dataset.settingValue === value;
+            button.classList.toggle("is-active", isActive);
+            button.setAttribute("aria-pressed", String(isActive));
+          });
+          saveSettingsForm(form);
+        }
         return;
       }
 
@@ -1911,7 +1960,8 @@
       );
       const data = await requestJson("/api/generate");
       const list = data.generations || data.items || data.results || [];
-      state.results = uniqueGenerations(sortGenerations(list.map(normalizeGeneration)));
+      const incoming = list.map(normalizeGeneration);
+      state.results = uniqueGenerations(sortGenerations([...incoming, ...state.results]));
       persistGenerationCache();
       const completed = state.results.find(
         (item) =>

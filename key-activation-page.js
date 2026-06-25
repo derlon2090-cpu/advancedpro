@@ -7,6 +7,7 @@
   const submitLabel = document.querySelector("[data-activation-label]");
   const toastStack = document.querySelector("[data-toast-stack]");
   const successModal = document.querySelector("[data-success-modal]");
+  const themeButtons = Array.from(document.querySelectorAll("[data-activation-theme]"));
   let redirectTimer = null;
 
   const ERROR_META = {
@@ -49,6 +50,43 @@
 
   function apiUrl(path) {
     return `${API_BASE_URL}${path}`;
+  }
+
+  function getStoredSettings() {
+    try {
+      return {
+        theme: "light",
+        ...JSON.parse(window.localStorage.getItem("pixigen:settings") || "{}"),
+      };
+    } catch {
+      return { theme: "light" };
+    }
+  }
+
+  function saveStoredSettings(settings) {
+    try {
+      window.localStorage.setItem("pixigen:settings", JSON.stringify(settings));
+    } catch {
+      // Keep the visual state for this page even if storage is blocked.
+    }
+  }
+
+  function applyActivationTheme(themeValue = getStoredSettings().theme) {
+    const theme = themeValue === "dark" ? "dark" : "light";
+    document.documentElement.dataset.theme = theme;
+    document.body.dataset.theme = theme;
+    themeButtons.forEach((button) => {
+      const isActive = button.dataset.activationTheme === theme;
+      button.classList.toggle("is-active", isActive);
+      button.setAttribute("aria-pressed", String(isActive));
+    });
+  }
+
+  function setActivationTheme(themeValue) {
+    const settings = getStoredSettings();
+    settings.theme = themeValue === "dark" ? "dark" : "light";
+    saveStoredSettings(settings);
+    applyActivationTheme(settings.theme);
   }
 
   function formatKey(value) {
@@ -308,6 +346,11 @@
       window.location.href = info.redirectTo;
     }, 2000);
   }
+
+  applyActivationTheme();
+  themeButtons.forEach((button) => {
+    button.addEventListener("click", () => setActivationTheme(button.dataset.activationTheme));
+  });
 
   if (!form || !input) return;
 

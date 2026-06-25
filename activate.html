@@ -11,7 +11,7 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800;900&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260621-activation-portal-v3" />
+    <link rel="stylesheet" href="/styles.css?v=20260625-activation-theme-v1" />
   </head>
   <body class="activate-page-v2 activation-portal" data-page="activate-key-v2">
     <main class="activation-portal__page">
@@ -19,6 +19,22 @@
         <img src="/ap-mark.svg" alt="" />
         <span><strong>PixiGenI</strong><small><i></i>بوابة التفعيل<i></i></small></span>
       </a>
+
+      <div class="activation-portal__controls" aria-label="الوضع">
+        <button type="button" data-activation-theme="light" aria-pressed="true">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.8"></circle>
+            <path d="M12 2.8v2.1M12 19.1v2.1M4.9 4.9l1.5 1.5m11.2 11.2 1.5 1.5M2.8 12h2.1m14.2 0h2.1M4.9 19.1l1.5-1.5M17.6 6.4l1.5-1.5" stroke="currentColor" stroke-linecap="round" stroke-width="1.8"></path>
+          </svg>
+          <span>شمسي</span>
+        </button>
+        <button type="button" data-activation-theme="dark" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M20.2 14.4A7.9 7.9 0 0 1 9.6 3.8 8.8 8.8 0 1 0 20.2 14.4Z" stroke="currentColor" stroke-linejoin="round" stroke-width="1.8"></path>
+          </svg>
+          <span>ليلي</span>
+        </button>
+      </div>
 
       <section class="activation-portal__card" aria-labelledby="activateTitle">
         <div class="activation-portal__glow activation-portal__glow--left" aria-hidden="true"></div>
@@ -160,7 +176,7 @@
     </div>
 
     <script src="/config.js"></script>
-    <script src="/key-activation-page.js?v=20260621-activation-portal-v3"></script>
+    <script src="/key-activation-page.js?v=20260625-activation-theme-v1"></script>
     <script src="/assistant-widget.js?v=20260621-assistant-v3"></script>
   </body>
 </html>

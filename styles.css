@@ -16326,6 +16326,48 @@ html[data-theme="dark"] .create-chat-bubble__state {
   background: linear-gradient(90deg, transparent, #d7dced, transparent);
 }
 
+.activation-portal__controls {
+  width: max-content;
+  margin: 18px auto 0;
+  padding: 5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid rgba(199, 203, 231, 0.82);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 14px 30px rgba(30, 20, 80, 0.08);
+  backdrop-filter: blur(16px);
+}
+
+.activation-portal__controls button {
+  min-width: 96px;
+  height: 42px;
+  border: 0;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #5e6786;
+  background: transparent;
+  font: 800 14px/1 "IBM Plex Sans Arabic", sans-serif;
+  cursor: pointer;
+  transition: background 180ms ease, color 180ms ease, box-shadow 180ms ease;
+}
+
+.activation-portal__controls button svg {
+  width: 19px;
+  height: 19px;
+}
+
+.activation-portal__controls button.is-active,
+.activation-portal__controls button[aria-pressed="true"] {
+  color: #ffffff;
+  background: linear-gradient(135deg, #6840ff, #a334f1);
+  box-shadow: 0 10px 22px rgba(106, 64, 255, 0.2);
+}
+
 .activation-portal__card {
   position: relative;
   max-width: 1146px;
@@ -16734,6 +16776,55 @@ html[data-theme="dark"] .create-chat-bubble__state {
   color: #5b3fff;
 }
 
+html[data-theme="dark"] .activation-portal {
+  background:
+    radial-gradient(circle at 8% 42%, rgba(41, 124, 255, 0.18), transparent 28%),
+    radial-gradient(circle at 88% 30%, rgba(145, 50, 255, 0.2), transparent 30%),
+    repeating-linear-gradient(165deg, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 14px),
+    linear-gradient(180deg, #0d1020 0%, #11162d 100%);
+}
+
+html[data-theme="dark"] .activation-portal__brand,
+html[data-theme="dark"] .activation-portal__card h1,
+html[data-theme="dark"] .activation-portal__steps h2,
+html[data-theme="dark"] .activation-portal__steps article strong {
+  color: #f7f8ff;
+}
+
+html[data-theme="dark"] .activation-portal__brand small,
+html[data-theme="dark"] .activation-portal__card > p,
+html[data-theme="dark"] .activation-portal__steps article p,
+html[data-theme="dark"] .activation-portal__trust {
+  color: rgba(247, 248, 255, 0.72);
+}
+
+html[data-theme="dark"] .activation-portal__controls,
+html[data-theme="dark"] .activation-portal__steps,
+html[data-theme="dark"] .activation-portal__steps article > span,
+html[data-theme="dark"] .activation-portal__trust {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(20, 24, 43, 0.9);
+}
+
+html[data-theme="dark"] .activation-portal__controls button {
+  color: rgba(247, 248, 255, 0.72);
+}
+
+html[data-theme="dark"] .activation-portal__card {
+  border-color: rgba(255, 255, 255, 0.11);
+  background:
+    linear-gradient(180deg, rgba(24, 27, 48, 0.98), rgba(16, 20, 38, 0.95)),
+    radial-gradient(circle at 14% 48%, rgba(106, 154, 255, 0.16), transparent 28%),
+    radial-gradient(circle at 87% 45%, rgba(180, 98, 255, 0.18), transparent 29%);
+  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.34);
+}
+
+html[data-theme="dark"] .activation-portal__input input {
+  color: #ffffff;
+  background: rgba(10, 13, 27, 0.72);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
 /* Floating platform assistant */
 .pixi-assistant {
   position: fixed;
@@ -17001,6 +17092,16 @@ html[data-theme="dark"] .create-chat-bubble__state {
 
   .activation-portal__brand small {
     font-size: 14px;
+  }
+
+  .activation-portal__controls {
+    margin-top: 14px;
+  }
+
+  .activation-portal__controls button {
+    min-width: 82px;
+    height: 38px;
+    font-size: 13px;
   }
 
   .activation-portal__card {
