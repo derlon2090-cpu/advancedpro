@@ -11,7 +11,7 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800;900&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260625-activation-theme-v1" />
+    <link rel="stylesheet" href="/styles.css?v=20260625-activation-theme-v2" />
   </head>
   <body class="activate-page-v2 activation-portal" data-page="activate-key-v2">
     <main class="activation-portal__page">
@@ -20,7 +20,15 @@
         <span><strong>PixiGenI</strong><small><i></i>بوابة التفعيل<i></i></small></span>
       </a>
 
-      <div class="activation-portal__controls" aria-label="الوضع">
+      <div class="activation-portal__controls" aria-label="تفضيلات العرض">
+        <button type="button" data-activation-language="ar" aria-pressed="true">
+          <span aria-hidden="true">ع</span>
+          <span data-activation-language-label="ar">عربي</span>
+        </button>
+        <button type="button" data-activation-language="en" aria-pressed="false">
+          <span aria-hidden="true">EN</span>
+          <span data-activation-language-label="en">English</span>
+        </button>
         <button type="button" data-activation-theme="light" aria-pressed="true">
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.8"></circle>
@@ -176,7 +184,7 @@
     </div>
 
     <script src="/config.js"></script>
-    <script src="/key-activation-page.js?v=20260625-activation-theme-v1"></script>
+    <script src="/key-activation-page.js?v=20260625-activation-theme-v2"></script>
     <script src="/assistant-widget.js?v=20260621-assistant-v3"></script>
   </body>
 </html>

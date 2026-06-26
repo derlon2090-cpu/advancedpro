@@ -1014,6 +1014,43 @@
   overflow: visible;
 }
 
+.user-dashboard-v3 .udv6-logout-box {
+  margin-top: 16px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid #ead7de;
+  border-radius: 16px;
+  background: #fff7fa;
+}
+
+.user-dashboard-v3 .udv6-logout-box strong {
+  display: block;
+  color: #8c1f45;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.user-dashboard-v3 .udv6-logout-box span {
+  color: var(--section-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.user-dashboard-v3 .udv6-logout-box button {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 12px;
+  color: #fff;
+  background: linear-gradient(135deg, #dc3562, #b61f52);
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+
 .user-dashboard-v3 .udv6-toggle-row {
   min-height: 57px;
   display: flex;

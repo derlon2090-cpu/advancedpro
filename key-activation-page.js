@@ -8,6 +8,7 @@
   const toastStack = document.querySelector("[data-toast-stack]");
   const successModal = document.querySelector("[data-success-modal]");
   const themeButtons = Array.from(document.querySelectorAll("[data-activation-theme]"));
+  const languageButtons = Array.from(document.querySelectorAll("[data-activation-language]"));
   let redirectTimer = null;
 
   const ERROR_META = {
@@ -55,11 +56,12 @@
   function getStoredSettings() {
     try {
       return {
+        language: "ar",
         theme: "light",
         ...JSON.parse(window.localStorage.getItem("pixigen:settings") || "{}"),
       };
     } catch {
-      return { theme: "light" };
+      return { language: "ar", theme: "light" };
     }
   }
 
@@ -87,6 +89,25 @@
     settings.theme = themeValue === "dark" ? "dark" : "light";
     saveStoredSettings(settings);
     applyActivationTheme(settings.theme);
+  }
+
+  function applyActivationLanguage(languageValue = getStoredSettings().language) {
+    const language = languageValue === "en" ? "en" : "ar";
+    document.documentElement.lang = language;
+    document.documentElement.dir = language === "en" ? "ltr" : "rtl";
+    document.body.dataset.language = language;
+    languageButtons.forEach((button) => {
+      const isActive = button.dataset.activationLanguage === language;
+      button.classList.toggle("is-active", isActive);
+      button.setAttribute("aria-pressed", String(isActive));
+    });
+  }
+
+  function setActivationLanguage(languageValue) {
+    const settings = getStoredSettings();
+    settings.language = languageValue === "en" ? "en" : "ar";
+    saveStoredSettings(settings);
+    applyActivationLanguage(settings.language);
   }
 
   function formatKey(value) {
@@ -348,8 +369,12 @@
   }
 
   applyActivationTheme();
+  applyActivationLanguage();
   themeButtons.forEach((button) => {
     button.addEventListener("click", () => setActivationTheme(button.dataset.activationTheme));
+  });
+  languageButtons.forEach((button) => {
+    button.addEventListener("click", () => setActivationLanguage(button.dataset.activationLanguage));
   });
 
   if (!form || !input) return;

@@ -1176,26 +1176,109 @@
     document.body.dataset.language = language;
   }
 
+  async function signOutFromCode() {
+    const endpoints = ["/api/keys/logout", "/api/auth/logout"];
+    for (const endpoint of endpoints) {
+      try {
+        await requestJson(endpoint, { method: "POST" });
+        break;
+      } catch (error) {
+        if (endpoint === endpoints[endpoints.length - 1]) {
+          console.warn("LOGOUT WARNING:", error);
+        }
+      }
+    }
+
+    try {
+      localStorage.removeItem("advancedpro_token");
+      sessionStorage.removeItem("advancedpro_token");
+      localStorage.removeItem("advancedpro_access_code");
+      sessionStorage.removeItem("advancedpro_access_code");
+      localStorage.removeItem("pixigen:key");
+      sessionStorage.removeItem("pixigen:key");
+      sessionStorage.removeItem("pixigen:active-generation");
+      localStorage.removeItem("pixigen:active-generation");
+    } catch {
+      // Ignore cleanup failures.
+    }
+
+    showToast("تم تسجيل الخروج من الكود.");
+    window.location.href = "/activate";
+  }
+
   function renderSettingsSection() {
     const settings = getSettings();
     const key = state.key || {};
     const language = settings.language === "en" ? "en" : "ar";
     const theme = settings.theme === "dark" ? "dark" : "light";
+    const copy = language === "en"
+      ? {
+          title: "Account Settings",
+          subtitle: "Manage your profile, generation defaults, appearance, and access code.",
+          language: "Language",
+          languageHint: "Applies direction immediately",
+          appearance: "Appearance",
+          appearanceHint: "Light or dark mode",
+          personal: "Profile",
+          name: "Name",
+          email: "Email",
+          save: "Save information",
+          preferences: "Preferences",
+          quality: "Default quality",
+          security: "Access code",
+          changeEmail: "Change email",
+          changePassword: "Change password",
+          logoutTitle: "Sign out from this code",
+          logoutCopy: "Remove this activation code from this browser and return to the activation page.",
+          logout: "Sign out",
+          notifications: "Notifications",
+          emailNotifications: "Email notifications",
+          systemNotifications: "System notifications",
+          normal: "Normal",
+          high: "High",
+          ultra: "Ultra",
+        }
+      : {
+          title: "إعدادات الحساب",
+          subtitle: "حدّث معلوماتك وتفضيلات التوليد والمظهر والكود.",
+          language: "اللغة",
+          languageHint: "يتم تطبيق الاتجاه فورًا",
+          appearance: "الوضع",
+          appearanceHint: "شمسي أو ليلي حسب وقتك",
+          personal: "المعلومات الشخصية",
+          name: "الاسم",
+          email: "البريد الإلكتروني",
+          save: "حفظ المعلومات",
+          preferences: "التفضيلات",
+          quality: "الجودة الافتراضية",
+          security: "حماية فائقة للكود",
+          changeEmail: "تغيير البريد",
+          changePassword: "تغيير كلمة المرور",
+          logoutTitle: "تسجيل خروج من الكود",
+          logoutCopy: "إزالة كود التفعيل من هذا المتصفح والعودة إلى صفحة التفعيل.",
+          logout: "تسجيل خروج",
+          notifications: "الإشعارات",
+          emailNotifications: "إشعارات البريد",
+          systemNotifications: "إشعارات النظام",
+          normal: "عادية",
+          high: "عالية",
+          ultra: "فائقة",
+        };
     const languageChoices = [
-      ["ar", "العربية", "ا", "اتجاه عربي كامل"],
+      ["ar", "العربية", "ا", language === "en" ? "Arabic interface" : "اتجاه عربي كامل"],
       ["en", "English", "A", "English interface"],
     ];
     const themeChoices = [
-      ["light", "شمسي", "☀", "سطوع واضح ومريح"],
-      ["dark", "ليلي", "☾", "تباين هادئ في الليل"],
+      ["light", language === "en" ? "Light" : "شمسي", "☀", language === "en" ? "Bright and clear" : "سطوع واضح ومريح"],
+      ["dark", language === "en" ? "Dark" : "ليلي", "☾", language === "en" ? "Comfortable at night" : "تباين هادئ في الليل"],
     ];
     return `
       <div class="udv6-section-shell">
-        <header class="udv6-section-head"><div><h1>إعدادات الحساب</h1><p>حدّث معلوماتك وتفضيلات التوليد والإشعارات.</p></div></header>
+        <header class="udv6-section-head"><div><h1>${copy.title}</h1><p>${copy.subtitle}</p></div></header>
         <form class="udv6-settings-grid" data-settings-form>
           <div class="udv6-setting-group">
-            <div class="udv6-setting-group__head"><span>اللغة</span><small>يتم تطبيق الاتجاه فورًا</small></div>
-            <div class="udv6-setting-pills" role="group" aria-label="اللغة">
+            <div class="udv6-setting-group__head"><span>${copy.language}</span><small>${copy.languageHint}</small></div>
+            <div class="udv6-setting-pills" role="group" aria-label="${copy.language}">
               ${languageChoices.map(([value, label, icon, copy]) => `
                 <button type="button" class="udv6-setting-pill ${language === value ? "is-active" : ""}" data-setting-choice data-setting-key="language" data-setting-value="${value}" aria-pressed="${language === value}">
                   <span aria-hidden="true">${icon}</span><strong>${label}</strong><small>${copy}</small>
@@ -1204,8 +1287,8 @@
             </div>
           </div>
           <div class="udv6-setting-group">
-            <div class="udv6-setting-group__head"><span>الوضع</span><small>شمسي أو ليلي حسب وقتك</small></div>
-            <div class="udv6-setting-pills" role="group" aria-label="الوضع">
+            <div class="udv6-setting-group__head"><span>${copy.appearance}</span><small>${copy.appearanceHint}</small></div>
+            <div class="udv6-setting-pills" role="group" aria-label="${copy.appearance}">
               ${themeChoices.map(([value, label, icon, copy]) => `
                 <button type="button" class="udv6-setting-pill ${theme === value ? "is-active" : ""}" data-setting-choice data-setting-key="theme" data-setting-value="${value}" aria-pressed="${theme === value}">
                   <span aria-hidden="true">${icon}</span><strong>${label}</strong><small>${copy}</small>
@@ -1214,26 +1297,30 @@
             </div>
           </div>
           <section class="udv6-settings-card">
-            <h2>المعلومات الشخصية</h2>
-            <label class="udv6-field"><span>الاسم</span><input name="customerName" value="${escapeHtml(key.customerName || "")}" /></label>
-            <label class="udv6-field"><span>البريد الإلكتروني</span><input name="customerEmail" type="email" value="${escapeHtml(key.customerEmail || "")}" /></label>
-            <button class="udv6-primary-button" type="button" data-settings-save>حفظ المعلومات</button>
+            <h2>${copy.personal}</h2>
+            <label class="udv6-field"><span>${copy.name}</span><input name="customerName" value="${escapeHtml(key.customerName || "")}" /></label>
+            <label class="udv6-field"><span>${copy.email}</span><input name="customerEmail" type="email" value="${escapeHtml(key.customerEmail || "")}" /></label>
+            <button class="udv6-primary-button" type="button" data-settings-save>${copy.save}</button>
           </section>
           <section class="udv6-settings-card">
-            <h2>التفضيلات</h2>
-            <label class="udv6-field"><span>الجودة الافتراضية</span><select name="quality"><option value="normal" ${settings.quality === "normal" ? "selected" : ""}>عادية</option><option value="high" ${settings.quality === "high" ? "selected" : ""}>عالية</option><option value="ultra" ${settings.quality === "ultra" ? "selected" : ""}>فائقة</option></select></label>
-            <label class="udv6-field"><span>اللغة</span><select name="language"><option value="ar" ${settings.language === "ar" ? "selected" : ""}>العربية</option><option value="en" ${settings.language === "en" ? "selected" : ""}>English</option></select></label>
-            <label class="udv6-field"><span>المظهر</span><select name="theme"><option value="light" ${settings.theme !== "dark" ? "selected" : ""}>شمسي</option><option value="dark" ${settings.theme === "dark" ? "selected" : ""}>ليلي</option></select></label>
+            <h2>${copy.preferences}</h2>
+            <label class="udv6-field"><span>${copy.quality}</span><select name="quality"><option value="normal" ${settings.quality === "normal" ? "selected" : ""}>${copy.normal}</option><option value="high" ${settings.quality === "high" ? "selected" : ""}>${copy.high}</option><option value="ultra" ${settings.quality === "ultra" ? "selected" : ""}>${copy.ultra}</option></select></label>
+            <label class="udv6-field"><span>${copy.language}</span><select name="language"><option value="ar" ${settings.language === "ar" ? "selected" : ""}>العربية</option><option value="en" ${settings.language === "en" ? "selected" : ""}>English</option></select></label>
+            <label class="udv6-field"><span>${copy.appearance}</span><select name="theme"><option value="light" ${settings.theme !== "dark" ? "selected" : ""}>${themeChoices[0][1]}</option><option value="dark" ${settings.theme === "dark" ? "selected" : ""}>${themeChoices[1][1]}</option></select></label>
           </section>
           <section class="udv6-settings-card">
-            <h2>حماية فائقة للكود</h2>
-            <button class="udv6-secondary-button" type="button" data-security-action="email">تغيير البريد</button>
-            <button class="udv6-secondary-button" style="margin-right:8px" type="button" data-security-action="password">تغيير كلمة المرور</button>
+            <h2>${copy.security}</h2>
+            <button class="udv6-secondary-button" type="button" data-security-action="email">${copy.changeEmail}</button>
+            <button class="udv6-secondary-button" style="margin-right:8px" type="button" data-security-action="password">${copy.changePassword}</button>
+            <div class="udv6-logout-box">
+              <div><strong>${copy.logoutTitle}</strong><span>${copy.logoutCopy}</span></div>
+              <button type="button" data-key-logout>${copy.logout}</button>
+            </div>
           </section>
           <section class="udv6-settings-card">
-            <h2>الإشعارات</h2>
-            <div class="udv6-toggle-row"><span>إشعارات البريد</span><button class="udv6-toggle" type="button" aria-pressed="${settings.emailNotifications}" data-setting-toggle="emailNotifications"></button></div>
-            <div class="udv6-toggle-row"><span>إشعارات النظام</span><button class="udv6-toggle" type="button" aria-pressed="${settings.systemNotifications}" data-setting-toggle="systemNotifications"></button></div>
+            <h2>${copy.notifications}</h2>
+            <div class="udv6-toggle-row"><span>${copy.emailNotifications}</span><button class="udv6-toggle" type="button" aria-pressed="${settings.emailNotifications}" data-setting-toggle="emailNotifications"></button></div>
+            <div class="udv6-toggle-row"><span>${copy.systemNotifications}</span><button class="udv6-toggle" type="button" aria-pressed="${settings.systemNotifications}" data-setting-toggle="systemNotifications"></button></div>
           </section>
         </form>
       </div>
@@ -1458,6 +1545,14 @@
           event.preventDefault();
           event.stopPropagation();
           saveSettingsForm(settingsSave.closest("[data-settings-form]"));
+          return;
+        }
+
+        const keyLogout = event.target.closest("[data-key-logout]");
+        if (keyLogout) {
+          event.preventDefault();
+          event.stopPropagation();
+          signOutFromCode();
         }
       },
       true
@@ -1565,6 +1660,9 @@
     };
     applyUserSettings(settings);
     updateKeyUi();
+    if (state.activeView === "settings") {
+      renderDashboardSection();
+    }
     showToast("تم حفظ إعدادات الحساب.");
   }
 

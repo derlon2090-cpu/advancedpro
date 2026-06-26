@@ -16328,7 +16328,11 @@ html[data-theme="dark"] .create-chat-bubble__state {
 
 .activation-portal__controls {
   width: max-content;
-  margin: 18px auto 0;
+  position: fixed;
+  top: 18px;
+  left: 18px;
+  z-index: 20;
+  margin: 0;
   padding: 5px;
   display: inline-flex;
   align-items: center;
@@ -16341,7 +16345,7 @@ html[data-theme="dark"] .create-chat-bubble__state {
 }
 
 .activation-portal__controls button {
-  min-width: 96px;
+  min-width: 74px;
   height: 42px;
   border: 0;
   border-radius: 999px;
@@ -16366,6 +16370,22 @@ html[data-theme="dark"] .create-chat-bubble__state {
   color: #ffffff;
   background: linear-gradient(135deg, #6840ff, #a334f1);
   box-shadow: 0 10px 22px rgba(106, 64, 255, 0.2);
+}
+
+.activation-portal__controls button[data-activation-language] > span:first-child {
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(104, 64, 255, 0.12);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.activation-portal__controls button[data-activation-language].is-active > span:first-child,
+.activation-portal__controls button[data-activation-language][aria-pressed="true"] > span:first-child {
+  background: rgba(255, 255, 255, 0.22);
 }
 
 .activation-portal__card {
@@ -17095,13 +17115,16 @@ html[data-theme="dark"] .activation-portal__input input {
   }
 
   .activation-portal__controls {
-    margin-top: 14px;
+    top: 10px;
+    left: 10px;
+    max-width: calc(100vw - 20px);
+    overflow-x: auto;
   }
 
   .activation-portal__controls button {
-    min-width: 82px;
+    min-width: 66px;
     height: 38px;
-    font-size: 13px;
+    font-size: 12px;
   }
 
   .activation-portal__card {
