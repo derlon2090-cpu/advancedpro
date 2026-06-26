@@ -374,6 +374,22 @@
         animation: gr-result-in 0.4s ease both;
       }
 
+      .gr-media-broken {
+        width: min(520px, 100%);
+        min-height: 260px;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        border-radius: 22px;
+        border: 1px dashed rgba(94, 70, 180, 0.28);
+        color: #5f6689;
+        background:
+          linear-gradient(135deg, rgba(255, 255, 255, 0.86), rgba(245, 242, 255, 0.92)),
+          #f8f7ff;
+        font-weight: 900;
+        text-align: center;
+      }
+
       .gr-empty-state,
       .gr-processing-state {
         width: min(640px, 100%);
@@ -1191,6 +1207,6 @@
     <div class="gr-toast" data-toast hidden></div>
 
     <script src="/config.js"></script>
-    <script src="/generation-page.js?v=20260626-generation-media-fix-v1"></script>
+    <script src="/generation-page.js?v=20260626-generation-media-fix-v2"></script>
   </body>
 </html>

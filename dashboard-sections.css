@@ -251,6 +251,25 @@
   overflow: hidden;
 }
 
+.user-dashboard-v3 .udv3-creation-media.is-media-broken,
+.user-dashboard-v3 .udv6-work-media.is-media-broken {
+  min-height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  color: #6b35ff;
+  text-align: center;
+  background:
+    radial-gradient(circle at top left, rgba(140, 92, 255, 0.16), transparent 38%),
+    linear-gradient(145deg, rgba(247, 243, 255, 0.98), rgba(255, 255, 255, 0.96));
+}
+
+.user-dashboard-v3 .udv3-creation-media.is-media-broken::after,
+.user-dashboard-v3 .udv6-work-media.is-media-broken::after {
+  content: "تعذر تحميل المعاينة";
+  font-weight: 900;
+}
+
 .user-dashboard-v3 .udv3-creation-placeholder::before,
 .user-dashboard-v3 .udv6-creation-placeholder::before,
 .user-dashboard-v3 .udv6-media-placeholder::before {

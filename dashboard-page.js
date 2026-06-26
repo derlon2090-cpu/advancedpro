@@ -1,6 +1,6 @@
 (function () {
   const API_BASE_URL = window.AdvancedProConfig?.apiBaseUrl || "";
-  const BUILD_VERSION = "2026.06.26-generation-media-fix-v1";
+  const BUILD_VERSION = "2026.06.26-generation-media-fix-v2";
   console.info("PIXIGEN_BUILD:", BUILD_VERSION);
 
   const state = {
@@ -24,6 +24,7 @@
     activeMenuScope: null,
     favorites: new Set(),
     refreshTimer: null,
+    generationTimeoutTimer: null,
     autoOpenGenerationId: null,
     autoOpenGenerationHandled: false,
     pendingGenerationId: null,
@@ -617,6 +618,7 @@
 
   function renderCreationCardFixed(item) {
     const mediaUrl = item.thumbnailUrl || item.resultUrl;
+    const fallbackUrl = item.downloadUrl || "";
     const prompt = escapeHtml(item.prompt);
     const meta = `${qualityLabel(item.quality)} · ${relativeTime(item.createdAt)}`;
     const targetUrl = `/generation?id=${encodeURIComponent(item.id)}`;
@@ -625,7 +627,7 @@
       ? `<div class="udv6-creation-placeholder"><strong>جاري الإنشاء...</strong><span>${escapeHtml(item.prompt || "نحن نحضر نتيجتك الآن")}</span><i></i><small>يتم حفظ النتيجة تلقائيًا داخل حسابك</small></div>`
       : item.type === "video"
         ? `<video src="${escapeHtml(mediaUrl)}" muted playsinline preload="metadata"></video>`
-        : `<img src="${escapeHtml(mediaUrl)}" alt="${prompt}" loading="lazy" />`;
+        : `<img src="${escapeHtml(mediaUrl)}"${fallbackUrl && fallbackUrl !== mediaUrl ? ` data-fallback-src="${escapeHtml(fallbackUrl)}"` : ""} alt="${prompt}" loading="lazy" onerror="if(this.dataset.fallbackSrc&&!this.dataset.fallbackTried){this.dataset.fallbackTried='1';this.src=this.dataset.fallbackSrc}else{this.closest('.udv3-creation-media')?.classList.add('is-media-broken');this.remove();}" />`;
 
     return `
       <article class="udv3-creation-card ${isProcessing ? "is-processing" : ""}">
@@ -922,13 +924,14 @@
   function generationMedia(item) {
     const resultUrl = escapeHtml(item.resultUrl || item.thumbnailUrl || "/ap-mark.svg");
     const thumbnailUrl = escapeHtml(item.thumbnailUrl || "");
+    const fallbackUrl = escapeHtml(item.downloadUrl || "");
     if (!item.resultUrl && !item.thumbnailUrl) {
       return `<div class="udv6-media-placeholder"><span>جاري الإنشاء...</span><i></i><small>سيظهر المشروع هنا فور اكتماله</small></div>`;
     }
     if (item.type === "video") {
       return `<video src="${resultUrl}"${thumbnailUrl && thumbnailUrl !== resultUrl ? ` poster="${thumbnailUrl}"` : ""} muted playsinline preload="metadata"></video>`;
     }
-    return `<img src="${resultUrl}" alt="${escapeHtml(item.prompt)}" loading="lazy" />`;
+    return `<img src="${resultUrl}"${fallbackUrl && fallbackUrl !== resultUrl ? ` data-fallback-src="${fallbackUrl}"` : ""} alt="${escapeHtml(item.prompt)}" loading="lazy" onerror="if(this.dataset.fallbackSrc&&!this.dataset.fallbackTried){this.dataset.fallbackTried='1';this.src=this.dataset.fallbackSrc}else{this.closest('.udv6-work-media,.udv3-creation-media')?.classList.add('is-media-broken');this.remove();}" />`;
   }
 
   function renderGenerationMenu(item) {
@@ -2009,6 +2012,7 @@
       state.autoOpenGenerationHandled = false;
       state.pendingGenerationId = String(generation.id);
       sessionStorage.setItem("pixigen:active-generation", String(generation.id));
+      startGenerationTimeout(generation.id, generation.type);
       setMessage(
         generation.type === "video"
           ? "تم بدء إنشاء الفيديو. يمكنك متابعة استخدام اللوحة، وسنفتح النتيجة تلقائيًا عند الاكتمال."
@@ -2025,6 +2029,7 @@
       if (generation.status === "completed" && generation.resultUrl) {
         state.pendingGenerationId = null;
         state.autoOpenGenerationHandled = true;
+        clearGenerationTimeout();
         setLoading(false);
         await refreshKey({ silent: true });
         window.location.assign(`/generation?id=${encodeURIComponent(generation.id)}`);
@@ -2041,6 +2046,7 @@
         setMessage(error.message || "فشل التوليد، لم يتم خصم أي رصيد.", "error");
         showToast(error.message || "فشل التوليد، لم يتم خصم أي رصيد.", "error");
       }
+      clearGenerationTimeout();
     } finally {
       state.activeRequestId = null;
       state.abortController = null;
@@ -2099,6 +2105,7 @@
           !state.autoOpenGenerationHandled
         ) {
           state.pendingGenerationId = null;
+          clearGenerationTimeout();
           setLoading(false);
           state.autoOpenGenerationHandled = true;
           window.location.assign(`/generation?id=${encodeURIComponent(completed.id)}`);
@@ -2106,6 +2113,7 @@
         }
         if (state.pendingGenerationId && String(completed.id) === String(state.pendingGenerationId)) {
           state.pendingGenerationId = null;
+          clearGenerationTimeout();
           setLoading(false);
         }
       }
@@ -2126,6 +2134,7 @@
           "تعذر إتمام الطلب مؤقتًا، حاول لاحقًا."
         );
         state.pendingGenerationId = null;
+        clearGenerationTimeout();
         setLoading(false);
         state.autoOpenGenerationHandled = true;
         state.autoOpenGenerationId = null;
@@ -2154,6 +2163,28 @@
     renderTransactions();
     updateUsageUi();
     if (state.activeView !== "home") renderDashboardSection();
+  }
+
+  function clearGenerationTimeout() {
+    clearTimeout(state.generationTimeoutTimer);
+    state.generationTimeoutTimer = null;
+  }
+
+  function startGenerationTimeout(generationId, type) {
+    clearGenerationTimeout();
+    if (type !== "image") return;
+    state.generationTimeoutTimer = setTimeout(async () => {
+      if (!state.pendingGenerationId || String(state.pendingGenerationId) !== String(generationId)) return;
+      await refreshGenerations({ silent: true });
+      const current = findGeneration(generationId);
+      if (!current || current.status === "completed") return;
+      state.pendingGenerationId = null;
+      state.autoOpenGenerationHandled = true;
+      state.autoOpenGenerationId = null;
+      setLoading(false);
+      setMessage("استغرق إنشاء الصورة أكثر من 30 ثانية. حاول مرة أخرى، ولن يتم خصم الرصيد إلا عند نجاح إنشاء نتيجة ظاهرة.", "error");
+      showToast("استغرق إنشاء الصورة أكثر من 30 ثانية. حاول مرة أخرى.", "error");
+    }, 35_000);
   }
 
   function scheduleGenerationsRefresh() {

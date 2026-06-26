@@ -87,6 +87,14 @@
     return `${base}${base.includes("?") ? "&" : "?"}v=${version}`;
   }
 
+  function imageTagWithFallback(item, className = "", loading = "lazy") {
+    const src = escapeHtml(mediaUrlWithVersion(item));
+    const fallback = escapeHtml(item?.downloadUrl || "");
+    const classAttr = className ? ` class="${escapeHtml(className)}"` : "";
+    const fallbackAttr = fallback && fallback !== src ? ` data-fallback-src="${fallback}"` : "";
+    return `<img${classAttr} src="${src}"${fallbackAttr} alt="${escapeHtml(safeMediaAlt(item))}" loading="${escapeHtml(loading)}" onerror="if(this.dataset.fallbackSrc&&!this.dataset.fallbackTried){this.dataset.fallbackTried='1';this.src=this.dataset.fallbackSrc}else{this.replaceWith(Object.assign(document.createElement('div'),{className:'gr-media-broken',textContent:'تعذر تحميل الصورة'}));}" />`;
+  }
+
   function generationShareUrl(item = state.result) {
     const id = String(item?.id || state.currentId || "").trim();
     if (id) {
@@ -188,6 +196,7 @@
       status: explicitStatus || (hasMedia ? "completed" : "processing"),
       resultUrl: rawResultUrl || protectedDownloadUrl,
       thumbnailUrl: rawThumbnailUrl || rawResultUrl || protectedDownloadUrl,
+      downloadUrl: protectedDownloadUrl || rawResultUrl,
       originalResultUrl: rawResultUrl,
       storageUrl: raw.storageUrl || raw.storage_url || "",
       createdAt: raw.createdAt || raw.created_at || null,
@@ -521,7 +530,7 @@
       const previewMedia = mediaUrlWithVersion(result)
         ? result.type === "video"
           ? `<video src="${escapeHtml(mediaUrlWithVersion(result))}" muted playsinline preload="metadata"></video>`
-          : `<img src="${escapeHtml(mediaUrlWithVersion(result))}" alt="${escapeHtml(safeMediaAlt(result))}" loading="eager" />`
+          : imageTagWithFallback(result, "", "eager")
         : "";
 
       frame.innerHTML = `
@@ -545,7 +554,7 @@
     frame.innerHTML =
       result.type === "video"
         ? `<video class="gr-ready-asset" src="${escapeHtml(assetUrl)}" controls playsinline preload="metadata"></video>`
-        : `<img class="gr-ready-asset" src="${escapeHtml(assetUrl)}" alt="${escapeHtml(safeMediaAlt(result))}" loading="eager" />`;
+        : imageTagWithFallback(result, "gr-ready-asset", "eager");
   }
 
   function renderLatestGrid() {
@@ -566,7 +575,7 @@
       .map((item) => {
         const media = item.type === "video"
           ? `<video src="${escapeHtml(mediaUrlWithVersion(item))}" muted playsinline preload="metadata"></video>`
-          : `<img src="${escapeHtml(mediaUrlWithVersion(item))}" alt="${escapeHtml(safeMediaAlt(item))}" loading="lazy" />`;
+          : imageTagWithFallback(item);
 
         return `
           <article class="gr-latest-item">

@@ -42,6 +42,7 @@ import {
 } from "../utils/promptComplexity.js";
 
 const router = Router();
+const IMAGE_GENERATION_TIMEOUT_MS = 30_000;
 
 function promptVerboseLogsEnabled() {
   return String(process.env.PROMPT_VERBOSE_LOGS || "false").trim().toLowerCase() === "true";
@@ -68,6 +69,19 @@ function httpError(message, statusCode = 400) {
   const error = new Error(message);
   error.statusCode = statusCode;
   throw error;
+}
+
+function withTimeout(promise, ms, message) {
+  let timeoutId;
+  const timeout = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => {
+      const error = new Error(message);
+      error.statusCode = 408;
+      reject(error);
+    }, ms);
+  });
+
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timeoutId));
 }
 
 function providerFailureMessage(error, type) {
@@ -909,14 +923,18 @@ async function runGenerationCompletionTask({
 
   try {
     if (type === "image") {
-      result = await generateImageWithWaveSpeed({
-        prompt,
-        quality,
-        aspectRatio,
-        style,
-        requestId,
-        seed,
-      });
+      result = await withTimeout(
+        generateImageWithWaveSpeed({
+          prompt,
+          quality,
+          aspectRatio,
+          style,
+          requestId,
+          seed,
+        }),
+        IMAGE_GENERATION_TIMEOUT_MS,
+        "استغرقت خدمة إنشاء الصورة أكثر من 30 ثانية. حاول مرة أخرى، ولم يتم خصم أي رصيد."
+      );
     } else {
       result = await generateVideoWithWaveSpeed({
         prompt,
