@@ -606,6 +606,7 @@ async function backfillLegacyProjectsForWorkspace({ keyId, workspaceId }) {
           END AS completed_at
         FROM projects p
         WHERE p.key_id = ${keyId}
+          AND p.generation_id IS NULL
           AND NOT EXISTS (
             SELECT 1
             FROM generations g
@@ -677,6 +678,22 @@ async function backfillLegacyProjectsForWorkspace({ keyId, workspaceId }) {
           p.workspace_id IS NULL OR
           p.generation_id IS NULL
         )
+    `
+  );
+}
+
+async function hideDuplicatedLegacyProjectGenerations({ keyId, workspaceId }) {
+  await withDbRetry(() =>
+    prisma.$executeRaw`
+      UPDATE generations g
+      SET deleted_at = COALESCE(g.deleted_at, NOW())
+      FROM projects p
+      WHERE g.key_id = ${keyId}
+        AND (g.workspace_id = ${workspaceId} OR g.workspace_id IS NULL)
+        AND g.request_id = CONCAT('legacy-project-', p.id::text)
+        AND p.generation_id IS NOT NULL
+        AND p.generation_id <> g.id
+        AND g.deleted_at IS NULL
     `
   );
 }
@@ -1104,6 +1121,7 @@ router.get(
     const keyId = auth.activationKeyId;
     const workspaceId = auth.workspaceId;
     await backfillLegacyProjectsForWorkspace({ keyId, workspaceId });
+    await hideDuplicatedLegacyProjectGenerations({ keyId, workspaceId });
     const page = Math.max(Number(req.query.page || 1), 1);
     const limit = Math.min(Math.max(Number(req.query.limit || 60), 1), 60);
     const offset = (page - 1) * limit;
