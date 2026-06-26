@@ -16337,18 +16337,18 @@ html[data-theme="dark"] .create-chat-bubble__state {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  border: 1px solid rgba(199, 203, 231, 0.82);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.86);
-  box-shadow: 0 14px 30px rgba(30, 20, 80, 0.08);
+  border: 0;
+  border-radius: 0;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: none;
   backdrop-filter: blur(16px);
 }
 
 .activation-portal__controls button {
-  min-width: 74px;
+  min-width: 50px;
   height: 42px;
   border: 0;
-  border-radius: 999px;
+  border-radius: 12px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -16367,25 +16367,28 @@ html[data-theme="dark"] .create-chat-bubble__state {
 
 .activation-portal__controls button.is-active,
 .activation-portal__controls button[aria-pressed="true"] {
-  color: #ffffff;
-  background: linear-gradient(135deg, #6840ff, #a334f1);
-  box-shadow: 0 10px 22px rgba(106, 64, 255, 0.2);
+  color: #202333;
+  background: transparent;
+  box-shadow: none;
 }
 
-.activation-portal__controls button[data-activation-language] > span:first-child {
-  width: 20px;
-  height: 20px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: rgba(104, 64, 255, 0.12);
-  font-size: 11px;
-  font-weight: 900;
+.activation-portal__controls [data-activation-language-toggle] {
+  min-width: 116px;
+  font-size: 22px;
 }
 
-.activation-portal__controls button[data-activation-language].is-active > span:first-child,
-.activation-portal__controls button[data-activation-language][aria-pressed="true"] > span:first-child {
-  background: rgba(255, 255, 255, 0.22);
+.activation-portal__controls [data-activation-language-label] {
+  font-size: 22px;
+  font-weight: 500;
+}
+
+.activation-portal__controls [data-activation-theme-toggle] {
+  min-width: 48px;
+}
+
+.activation-portal__controls [data-activation-theme-toggle] svg {
+  width: 32px;
+  height: 32px;
 }
 
 .activation-portal__card {
@@ -16830,6 +16833,16 @@ html[data-theme="dark"] .activation-portal__controls button {
   color: rgba(247, 248, 255, 0.72);
 }
 
+html[data-theme="dark"] .activation-portal__controls {
+  background: rgba(20, 21, 27, 0.82);
+}
+
+html[data-theme="dark"] .activation-portal__controls button.is-active,
+html[data-theme="dark"] .activation-portal__controls button[aria-pressed="true"] {
+  color: rgba(247, 248, 255, 0.72);
+  background: transparent;
+}
+
 html[data-theme="dark"] .activation-portal__card {
   border-color: rgba(255, 255, 255, 0.11);
   background:
@@ -17125,6 +17138,19 @@ html[data-theme="dark"] .activation-portal__input input {
     min-width: 66px;
     height: 38px;
     font-size: 12px;
+  }
+
+  .activation-portal__controls [data-activation-language-toggle] {
+    min-width: 92px;
+  }
+
+  .activation-portal__controls [data-activation-language-label] {
+    font-size: 18px;
+  }
+
+  .activation-portal__controls [data-activation-theme-toggle] svg {
+    width: 28px;
+    height: 28px;
   }
 
   .activation-portal__card {

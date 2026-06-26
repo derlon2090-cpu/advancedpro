@@ -151,6 +151,8 @@
     const raw = item?.generation || item?.result || item || {};
     const generationId = raw.id || raw.generationId || raw.generation_id || null;
     const rawResultUrl =
+      raw.storageUrl ||
+      raw.storage_url ||
       raw.resultUrl ||
       raw.originalResultUrl ||
       raw.original_result_url ||
@@ -164,6 +166,8 @@
     const rawThumbnailUrl =
       raw.thumbnailUrl ||
       raw.thumbnail_url ||
+      raw.storageUrl ||
+      raw.storage_url ||
       raw.originalResultUrl ||
       raw.original_result_url ||
       raw.resultUrl ||
@@ -182,8 +186,8 @@
       prompt: raw.userPrompt || raw.prompt || raw.description || "",
       quality: raw.quality || "normal",
       status: explicitStatus || (hasMedia ? "completed" : "processing"),
-      resultUrl: protectedDownloadUrl || rawResultUrl,
-      thumbnailUrl: protectedDownloadUrl || rawThumbnailUrl || rawResultUrl,
+      resultUrl: rawResultUrl || protectedDownloadUrl,
+      thumbnailUrl: rawThumbnailUrl || rawResultUrl || protectedDownloadUrl,
       originalResultUrl: rawResultUrl,
       storageUrl: raw.storageUrl || raw.storage_url || "",
       createdAt: raw.createdAt || raw.created_at || null,

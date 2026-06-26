@@ -11,7 +11,7 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800;900&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/styles.css?v=20260625-activation-theme-v2" />
+    <link rel="stylesheet" href="/styles.css?v=20260626-activation-controls-v1" />
   </head>
   <body class="activate-page-v2 activation-portal" data-page="activate-key-v2">
     <main class="activation-portal__page">
@@ -21,26 +21,21 @@
       </a>
 
       <div class="activation-portal__controls" aria-label="تفضيلات العرض">
-        <button type="button" data-activation-language="ar" aria-pressed="true">
-          <span aria-hidden="true">ع</span>
-          <span data-activation-language-label="ar">عربي</span>
-        </button>
-        <button type="button" data-activation-language="en" aria-pressed="false">
-          <span aria-hidden="true">EN</span>
-          <span data-activation-language-label="en">English</span>
-        </button>
-        <button type="button" data-activation-theme="light" aria-pressed="true">
+        <button type="button" data-activation-language-toggle aria-label="تغيير اللغة">
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"></circle>
+            <path d="M3.5 12h17M12 3c2.4 2.4 3.6 5.4 3.6 9s-1.2 6.6-3.6 9c-2.4-2.4-3.6-5.4-3.6-9S9.6 5.4 12 3Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"></path>
+          </svg>
+          <span data-activation-language-label>عربي</span>
+        </button>
+        <button type="button" data-activation-theme-toggle aria-label="تغيير الوضع">
+          <svg data-theme-icon="sun" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.8"></circle>
             <path d="M12 2.8v2.1M12 19.1v2.1M4.9 4.9l1.5 1.5m11.2 11.2 1.5 1.5M2.8 12h2.1m14.2 0h2.1M4.9 19.1l1.5-1.5M17.6 6.4l1.5-1.5" stroke="currentColor" stroke-linecap="round" stroke-width="1.8"></path>
           </svg>
-          <span>شمسي</span>
-        </button>
-        <button type="button" data-activation-theme="dark" aria-pressed="false">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <svg data-theme-icon="moon" viewBox="0 0 24 24" fill="none" aria-hidden="true" hidden>
             <path d="M20.2 14.4A7.9 7.9 0 0 1 9.6 3.8 8.8 8.8 0 1 0 20.2 14.4Z" stroke="currentColor" stroke-linejoin="round" stroke-width="1.8"></path>
           </svg>
-          <span>ليلي</span>
         </button>
       </div>
 
@@ -184,7 +179,7 @@
     </div>
 
     <script src="/config.js"></script>
-    <script src="/key-activation-page.js?v=20260625-activation-theme-v2"></script>
+    <script src="/key-activation-page.js?v=20260626-activation-controls-v1"></script>
     <script src="/assistant-widget.js?v=20260621-assistant-v3"></script>
   </body>
 </html>

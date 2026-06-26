@@ -7,8 +7,11 @@
   const submitLabel = document.querySelector("[data-activation-label]");
   const toastStack = document.querySelector("[data-toast-stack]");
   const successModal = document.querySelector("[data-success-modal]");
-  const themeButtons = Array.from(document.querySelectorAll("[data-activation-theme]"));
-  const languageButtons = Array.from(document.querySelectorAll("[data-activation-language]"));
+  const themeToggle = document.querySelector("[data-activation-theme-toggle]");
+  const languageToggle = document.querySelector("[data-activation-language-toggle]");
+  const languageLabel = document.querySelector("[data-activation-language-label]");
+  const sunIcon = document.querySelector('[data-theme-icon="sun"]');
+  const moonIcon = document.querySelector('[data-theme-icon="moon"]');
   let redirectTimer = null;
 
   const ERROR_META = {
@@ -77,11 +80,9 @@
     const theme = themeValue === "dark" ? "dark" : "light";
     document.documentElement.dataset.theme = theme;
     document.body.dataset.theme = theme;
-    themeButtons.forEach((button) => {
-      const isActive = button.dataset.activationTheme === theme;
-      button.classList.toggle("is-active", isActive);
-      button.setAttribute("aria-pressed", String(isActive));
-    });
+    if (themeToggle) themeToggle.setAttribute("aria-pressed", String(theme === "dark"));
+    if (sunIcon) sunIcon.hidden = theme === "dark";
+    if (moonIcon) moonIcon.hidden = theme !== "dark";
   }
 
   function setActivationTheme(themeValue) {
@@ -91,16 +92,19 @@
     applyActivationTheme(settings.theme);
   }
 
+  function toggleActivationTheme() {
+    const current = getStoredSettings().theme === "dark" ? "dark" : "light";
+    setActivationTheme(current === "dark" ? "light" : "dark");
+  }
+
   function applyActivationLanguage(languageValue = getStoredSettings().language) {
     const language = languageValue === "en" ? "en" : "ar";
     document.documentElement.lang = language;
     document.documentElement.dir = language === "en" ? "ltr" : "rtl";
     document.body.dataset.language = language;
-    languageButtons.forEach((button) => {
-      const isActive = button.dataset.activationLanguage === language;
-      button.classList.toggle("is-active", isActive);
-      button.setAttribute("aria-pressed", String(isActive));
-    });
+    if (languageToggle) languageToggle.setAttribute("aria-pressed", String(language === "en"));
+    if (languageLabel) languageLabel.textContent = language === "en" ? "English" : "عربي";
+    applyActivationCopy(language);
   }
 
   function setActivationLanguage(languageValue) {
@@ -108,6 +112,31 @@
     settings.language = languageValue === "en" ? "en" : "ar";
     saveStoredSettings(settings);
     applyActivationLanguage(settings.language);
+  }
+
+  function toggleActivationLanguage() {
+    const current = getStoredSettings().language === "en" ? "en" : "ar";
+    setActivationLanguage(current === "en" ? "ar" : "en");
+  }
+
+  function applyActivationCopy(language) {
+    const isEnglish = language === "en";
+    const brand = document.querySelector(".activation-portal__brand small");
+    const title = document.querySelector("#activateTitle");
+    const intro = document.querySelector(".activation-portal__card > p");
+    const stepsTitle = document.querySelector(".activation-portal__steps h2");
+    if (brand) brand.innerHTML = isEnglish ? "<i></i>Activation Portal<i></i>" : "<i></i>بوابة التفعيل<i></i>";
+    if (title) title.textContent = isEnglish ? "Activate your digital key" : "فعّل مفتاحك الرقمي";
+    if (intro) {
+      intro.innerHTML = isEnglish
+        ? "Enter your activation code to access the AI image<br />and video generation workspace."
+        : "أدخل كود التفعيل الخاص بك للوصول إلى منصة<br />إنشاء الصور والفيديو بالذكاء الاصطناعي.";
+    }
+    if (input) input.placeholder = "APRO-XXXX-XXXX-XXXX";
+    if (submitLabel && !submitButton?.classList.contains("is-loading")) {
+      submitLabel.textContent = isEnglish ? "Activate code now" : "تفعيل الكود الآن";
+    }
+    if (stepsTitle) stepsTitle.textContent = isEnglish ? "Activation steps" : "خطوات التفعيل";
   }
 
   function formatKey(value) {
@@ -125,11 +154,14 @@
 
   function setBusy(isBusy) {
     if (!submitButton || !input) return;
+    const isEnglish = getStoredSettings().language === "en";
     submitButton.disabled = isBusy;
     input.disabled = isBusy;
     submitButton.classList.toggle("is-loading", isBusy);
     submitButton.setAttribute("aria-busy", isBusy ? "true" : "false");
-    submitLabel.textContent = isBusy ? "جارِ التحقق..." : "تفعيل الكود الآن";
+    submitLabel.textContent = isBusy
+      ? (isEnglish ? "Checking..." : "جارِ التحقق...")
+      : (isEnglish ? "Activate code now" : "تفعيل الكود الآن");
   }
 
   function setInlineMessage(text, tone = "error") {
@@ -370,12 +402,8 @@
 
   applyActivationTheme();
   applyActivationLanguage();
-  themeButtons.forEach((button) => {
-    button.addEventListener("click", () => setActivationTheme(button.dataset.activationTheme));
-  });
-  languageButtons.forEach((button) => {
-    button.addEventListener("click", () => setActivationLanguage(button.dataset.activationLanguage));
-  });
+  themeToggle?.addEventListener("click", toggleActivationTheme);
+  languageToggle?.addEventListener("click", toggleActivationLanguage);
 
   if (!form || !input) return;
 

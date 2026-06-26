@@ -1,6 +1,6 @@
 (function () {
   const API_BASE_URL = window.AdvancedProConfig?.apiBaseUrl || "";
-  const BUILD_VERSION = "2026.06.25-settings-theme-results-v1";
+  const BUILD_VERSION = "2026.06.26-generation-media-fix-v1";
   console.info("PIXIGEN_BUILD:", BUILD_VERSION);
 
   const state = {
@@ -351,8 +351,30 @@
 
   function normalizeGeneration(item) {
     const generationId = item.id || item.generationId || crypto.randomUUID();
-    const rawResultUrl = item.resultUrl || item.url || item.outputUrl || item.imageUrl || item.videoUrl || "";
-    const rawThumbnailUrl = item.thumbnailUrl || item.resultUrl || item.url || item.outputUrl || "";
+    const rawResultUrl =
+      item.storageUrl ||
+      item.storage_url ||
+      item.resultUrl ||
+      item.result_url ||
+      item.url ||
+      item.outputUrl ||
+      item.output_url ||
+      item.imageUrl ||
+      item.image_url ||
+      item.videoUrl ||
+      item.video_url ||
+      "";
+    const rawThumbnailUrl =
+      item.thumbnailUrl ||
+      item.thumbnail_url ||
+      item.storageUrl ||
+      item.storage_url ||
+      item.resultUrl ||
+      item.result_url ||
+      item.url ||
+      item.outputUrl ||
+      item.output_url ||
+      "";
     const explicitStatus = item.status || "";
     const hasMedia = Boolean(rawResultUrl || rawThumbnailUrl);
     const protectedDownloadUrl = generationId && hasMedia ? `/api/download/${encodeURIComponent(generationId)}?inline=1` : "";
@@ -374,8 +396,9 @@
       seed: item.seed,
       creditsUsed: Number(item.creditsUsed ?? item.credits_used ?? item.xpCost ?? item.cost ?? calculateCredits()),
       createdAt: item.createdAt || item.created_at || new Date().toISOString(),
-      resultUrl: protectedDownloadUrl || rawResultUrl,
-      thumbnailUrl: protectedDownloadUrl || rawThumbnailUrl || rawResultUrl,
+      resultUrl: rawResultUrl || protectedDownloadUrl,
+      thumbnailUrl: rawThumbnailUrl || rawResultUrl || protectedDownloadUrl,
+      downloadUrl: protectedDownloadUrl || rawResultUrl,
       rawResultUrl,
       rawThumbnailUrl,
       status: explicitStatus || (hasMedia ? "completed" : "processing"),
@@ -1225,9 +1248,7 @@
           save: "Save information",
           preferences: "Preferences",
           quality: "Default quality",
-          security: "Access code",
-          changeEmail: "Change email",
-          changePassword: "Change password",
+          access: "Access",
           logoutTitle: "Sign out from this code",
           logoutCopy: "Remove this activation code from this browser and return to the activation page.",
           logout: "Sign out",
@@ -1251,9 +1272,7 @@
           save: "حفظ المعلومات",
           preferences: "التفضيلات",
           quality: "الجودة الافتراضية",
-          security: "حماية فائقة للكود",
-          changeEmail: "تغيير البريد",
-          changePassword: "تغيير كلمة المرور",
+          access: "الوصول",
           logoutTitle: "تسجيل خروج من الكود",
           logoutCopy: "إزالة كود التفعيل من هذا المتصفح والعودة إلى صفحة التفعيل.",
           logout: "تسجيل خروج",
@@ -1309,9 +1328,7 @@
             <label class="udv6-field"><span>${copy.appearance}</span><select name="theme"><option value="light" ${settings.theme !== "dark" ? "selected" : ""}>${themeChoices[0][1]}</option><option value="dark" ${settings.theme === "dark" ? "selected" : ""}>${themeChoices[1][1]}</option></select></label>
           </section>
           <section class="udv6-settings-card">
-            <h2>${copy.security}</h2>
-            <button class="udv6-secondary-button" type="button" data-security-action="email">${copy.changeEmail}</button>
-            <button class="udv6-secondary-button" style="margin-right:8px" type="button" data-security-action="password">${copy.changePassword}</button>
+            <h2>${copy.access}</h2>
             <div class="udv6-logout-box">
               <div><strong>${copy.logoutTitle}</strong><span>${copy.logoutCopy}</span></div>
               <button type="button" data-key-logout>${copy.logout}</button>
@@ -1604,12 +1621,6 @@
       const planAction = event.target.closest("[data-plan-action]");
       if (planAction) {
         showToast(planAction.dataset.planAction === "upgrade" ? "سيتم عرض الباقات المتاحة قريبًا." : "سيتم فتح خيارات شحن الرصيد قريبًا.");
-        return;
-      }
-
-      const securityAction = event.target.closest("[data-security-action]");
-      if (securityAction) {
-        showToast("حماية فائقة للكود");
         return;
       }
 
@@ -2011,6 +2022,14 @@
         "success"
       );
       renderAll();
+      if (generation.status === "completed" && generation.resultUrl) {
+        state.pendingGenerationId = null;
+        state.autoOpenGenerationHandled = true;
+        setLoading(false);
+        await refreshKey({ silent: true });
+        window.location.assign(`/generation?id=${encodeURIComponent(generation.id)}`);
+        return;
+      }
       scheduleGenerationsRefresh();
       return;
     } catch (error) {
