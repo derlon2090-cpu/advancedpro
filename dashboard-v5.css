@@ -1064,6 +1064,93 @@
   }
 }
 
+@media (min-width: 721px) and (max-width: 1366px) {
+  .user-dashboard-v3 {
+    grid-template-columns: 248px minmax(0, 1fr);
+  }
+
+  .user-dashboard-v3 .udv3-app {
+    min-width: 0;
+  }
+
+  .user-dashboard-v3:not(.is-dashboard-section) .udv3-workspace {
+    width: 100%;
+    max-width: none;
+    grid-template-columns:
+      minmax(350px, 1.28fr)
+      minmax(166px, .62fr)
+      minmax(166px, .62fr)
+      minmax(188px, .72fr);
+    grid-template-areas:
+      "create transactions usage balance"
+      "recent recent recent recent"
+      "tips tips tips tips";
+    align-items: stretch;
+    gap: 14px;
+    direction: ltr;
+  }
+
+  .user-dashboard-v3:not(.is-dashboard-section) .udv3-main,
+  .user-dashboard-v3:not(.is-dashboard-section) .udv6-home-view,
+  .user-dashboard-v3:not(.is-dashboard-section) .udv3-widgets {
+    display: contents;
+  }
+
+  .user-dashboard-v3:not(.is-dashboard-section) .udv3-create-card,
+  .user-dashboard-v3:not(.is-dashboard-section) .udv3-recent-card,
+  .user-dashboard-v3:not(.is-dashboard-section) .udv3-tips-card,
+  .user-dashboard-v3:not(.is-dashboard-section) .udv3-balance-widget,
+  .user-dashboard-v3:not(.is-dashboard-section) .udv3-usage-widget,
+  .user-dashboard-v3:not(.is-dashboard-section) .udv3-transactions-widget {
+    width: 100%;
+    min-width: 0;
+    direction: rtl;
+  }
+
+  .user-dashboard-v3:not(.is-dashboard-section) .udv3-create-card {
+    grid-area: create;
+  }
+
+  .user-dashboard-v3:not(.is-dashboard-section) .udv3-transactions-widget {
+    grid-area: transactions;
+  }
+
+  .user-dashboard-v3:not(.is-dashboard-section) .udv3-usage-widget {
+    grid-area: usage;
+  }
+
+  .user-dashboard-v3:not(.is-dashboard-section) .udv3-balance-widget {
+    grid-area: balance;
+  }
+
+  .user-dashboard-v3:not(.is-dashboard-section) .udv3-recent-card {
+    grid-area: recent;
+  }
+
+  .user-dashboard-v3:not(.is-dashboard-section) .udv3-tips-card {
+    grid-area: tips;
+  }
+
+  .user-dashboard-v3:not(.is-dashboard-section) .udv3-type-tabs {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .user-dashboard-v3:not(.is-dashboard-section) .udv3-form-grid {
+    grid-template-columns: minmax(126px, .72fr) minmax(0, 1fr);
+  }
+
+  .user-dashboard-v3:not(.is-dashboard-section) .udv3-options-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .user-dashboard-v3:not(.is-dashboard-section) .udv3-balance-widget,
+  .user-dashboard-v3:not(.is-dashboard-section) .udv3-usage-widget,
+  .user-dashboard-v3:not(.is-dashboard-section) .udv3-transactions-widget {
+    min-height: 547px;
+  }
+}
+
 @media (max-width: 560px) {
   .user-dashboard-v3 .udv3-topbar {
     display: grid;
