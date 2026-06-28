@@ -16389,6 +16389,8 @@ html[data-theme="dark"] .create-chat-bubble__state {
 .activation-portal__controls [data-activation-theme-toggle] svg {
   width: 32px;
   height: 32px;
+  color: #6f7892;
+  stroke: currentColor;
 }
 
 .activation-portal__card {
@@ -16835,7 +16837,7 @@ html[data-theme="dark"] .activation-portal__trust {
 }
 
 html[data-theme="dark"] .activation-portal__controls button {
-  color: rgba(247, 248, 255, 0.72);
+  color: #aab2c5;
 }
 
 html[data-theme="dark"] .activation-portal__controls {
@@ -16845,8 +16847,12 @@ html[data-theme="dark"] .activation-portal__controls {
 
 html[data-theme="dark"] .activation-portal__controls button.is-active,
 html[data-theme="dark"] .activation-portal__controls button[aria-pressed="true"] {
-  color: rgba(247, 248, 255, 0.72);
+  color: #aab2c5;
   background: transparent;
+}
+
+html[data-theme="dark"] .activation-portal__controls [data-activation-theme-toggle] svg {
+  color: #aab2c5;
 }
 
 html[data-theme="dark"] .activation-portal__card {

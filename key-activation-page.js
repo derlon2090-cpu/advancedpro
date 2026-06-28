@@ -92,12 +92,22 @@
     }
     if (themeToggle) themeToggle.dataset.themeState = theme;
     if (sunIcon) {
-      sunIcon.hidden = theme === "dark";
-      sunIcon.style.display = theme === "dark" ? "none" : "";
+      if (theme === "dark") {
+        sunIcon.setAttribute("hidden", "");
+        sunIcon.style.display = "none";
+      } else {
+        sunIcon.removeAttribute("hidden");
+        sunIcon.style.display = "";
+      }
     }
     if (moonIcon) {
-      moonIcon.hidden = theme !== "dark";
-      moonIcon.style.display = theme === "dark" ? "" : "none";
+      if (theme === "dark") {
+        moonIcon.removeAttribute("hidden");
+        moonIcon.style.display = "";
+      } else {
+        moonIcon.setAttribute("hidden", "");
+        moonIcon.style.display = "none";
+      }
     }
   }
 
