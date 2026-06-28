@@ -1,6 +1,6 @@
 (function () {
   const API_BASE_URL = window.AdvancedProConfig?.apiBaseUrl || "";
-  const BUILD_VERSION = "2026.06.28-advproai-links-v1";
+  const BUILD_VERSION = "2026.06.28-usage-links-v1";
   console.info("PIXIGEN_BUILD:", BUILD_VERSION);
 
   const state = {
@@ -1847,8 +1847,13 @@
     const generatedVideos = state.results.filter((item) => item.type === "video").length;
     const imagesUsed = Number(key.imagesUsed ?? key.imageUsed ?? generatedImages);
     const videosUsed = Number(key.videosUsed ?? key.videoUsed ?? generatedVideos);
-    const imagesLimit = Number(key.imagesLimit ?? key.imageLimit ?? Math.max(imagesUsed, generatedImages));
-    const videosLimit = Number(key.videosLimit ?? key.videoLimit ?? Math.max(videosUsed, generatedVideos));
+    const totalCredits = Math.max(keyTotalCredits(), keyCredits(), 0);
+    const imagesLimitFromXp = Math.max(imagesUsed, generatedImages, Math.floor(totalCredits / IMAGE_XP_COST.normal));
+    const videosLimitFromXp = Math.max(videosUsed, generatedVideos, Math.floor(totalCredits / VIDEO_XP_COST[5].normal));
+    const rawImagesLimit = Number(key.imagesLimit ?? key.imageLimit ?? 0);
+    const rawVideosLimit = Number(key.videosLimit ?? key.videoLimit ?? 0);
+    const imagesLimit = rawImagesLimit > 0 ? rawImagesLimit : imagesLimitFromXp;
+    const videosLimit = rawVideosLimit > 0 ? rawVideosLimit : videosLimitFromXp;
 
     $("[data-images-count]").textContent = `${imagesUsed} / ${imagesLimit}`;
     $("[data-videos-count]").textContent = `${videosUsed} / ${videosLimit}`;
