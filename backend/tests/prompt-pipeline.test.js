@@ -68,6 +68,22 @@ test("generation UI uses one submit path and keeps background jobs inside the da
   assert.match(dashboardHtml, /<option value="high">/);
   assert.doesNotMatch(dashboardHtml, /<option value="high" selected>/);
   assert.match(dashboardScript, /quality:\s*"normal"/);
+  assert.match(dashboardScript, /function applyDashboardLanguage/);
+  assert.match(dashboardScript, /What would you like to create today\?/);
+  assert.match(dashboardScript, /Latest Creations/);
+  assert.match(dashboardScript, /Account Settings/);
+});
+
+test("activation language toggle translates the full activation page", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const activationScript = await readFile(new URL("../../key-activation-page.js", import.meta.url), "utf8");
+
+  assert.match(activationScript, /Activation steps/);
+  assert.match(activationScript, /Enter code/);
+  assert.match(activationScript, /Verify activation/);
+  assert.match(activationScript, /Instant access/);
+  assert.match(activationScript, /Thousands of users trust us/);
+  assert.match(activationScript, /Key activated successfully/);
 });
 
 test("explicit sexual prompts are rejected with the safe educational message", () => {
@@ -403,6 +419,63 @@ test("semantic translation preserves arbitrary Arabic subjects, actions, and rel
   assert.match(result.finalPrompt, /ancient castle/i);
   assert.doesNotMatch(result.finalPrompt, /Create an image.*businessman.*office/is);
   assert.doesNotMatch(result.finalPrompt, /[\u0600-\u06ff]/);
+});
+
+test("Gemini server translation is the required source when its API key is configured", async () => {
+  const originalFetch = globalThis.fetch;
+  const previousKey = process.env.PROMPT_TRANSLATION_API_KEY;
+  const previousEnabled = process.env.SERVER_PROMPT_TRANSLATION_ENABLED;
+  const previousModel = process.env.PROMPT_TRANSLATION_MODEL;
+  const calls = [];
+
+  process.env.PROMPT_TRANSLATION_API_KEY = "test-gemini-key";
+  process.env.SERVER_PROMPT_TRANSLATION_ENABLED = "true";
+  process.env.PROMPT_TRANSLATION_MODEL = "gemini-2.5-flash";
+  globalThis.fetch = async (url, options = {}) => {
+    calls.push({ url: String(url), options });
+    return {
+      ok: true,
+      json: async () => ({
+        candidates: [
+          {
+            content: {
+              parts: [
+                {
+                  text: "A frightened man standing inside a dark cave. The man and the cave interior must be clearly visible.",
+                },
+              ],
+            },
+          },
+        ],
+      }),
+    };
+  };
+
+  try {
+    const result = await buildSmartPromptEnhancementAsync({
+      userPrompt: "رجل داخل كهف مظلم وخائف",
+      quality: "high",
+      style: "realistic",
+      type: "image",
+    });
+
+    assert.equal(result.debug.translationMode, "server-semantic");
+    assert.equal(calls.length, 1);
+    assert.match(calls[0].url, /generativelanguage\.googleapis\.com\/v1beta\/models\/gemini-2\.5-flash:generateContent/);
+    assert.equal(calls[0].options.headers["x-goog-api-key"], "test-gemini-key");
+    assert.match(result.finalPrompt, /frightened man/i);
+    assert.match(result.finalPrompt, /dark cave/i);
+    assert.doesNotMatch(result.finalPrompt, /businessman|office|meeting room/i);
+    assert.doesNotMatch(result.finalPrompt, /[\u0600-\u06ff]/);
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (previousKey === undefined) delete process.env.PROMPT_TRANSLATION_API_KEY;
+    else process.env.PROMPT_TRANSLATION_API_KEY = previousKey;
+    if (previousEnabled === undefined) delete process.env.SERVER_PROMPT_TRANSLATION_ENABLED;
+    else process.env.SERVER_PROMPT_TRANSLATION_ENABLED = previousEnabled;
+    if (previousModel === undefined) delete process.env.PROMPT_TRANSLATION_MODEL;
+    else process.env.PROMPT_TRANSLATION_MODEL = previousModel;
+  }
 });
 
 test("Arabic man beside a large yellow bear in the forest preserves every requested concept", async () => {

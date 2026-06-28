@@ -125,6 +125,12 @@
     const title = document.querySelector("#activateTitle");
     const intro = document.querySelector(".activation-portal__card > p");
     const stepsTitle = document.querySelector(".activation-portal__steps h2");
+    const note = document.querySelector(".activation-portal__note");
+    const trustItems = document.querySelectorAll(".activation-portal__trust span");
+    const successTitle = document.querySelector("#successTitle");
+    const successCopy = document.querySelector(".success-dialog > p");
+    const successSummary = document.querySelectorAll(".success-summary article span");
+    const successActions = document.querySelectorAll(".success-actions a");
     if (brand) brand.innerHTML = isEnglish ? "<i></i>Activation Portal<i></i>" : "<i></i>بوابة التفعيل<i></i>";
     if (title) title.textContent = isEnglish ? "Activate your digital key" : "فعّل مفتاحك الرقمي";
     if (intro) {
@@ -137,6 +143,53 @@
       submitLabel.textContent = isEnglish ? "Activate code now" : "تفعيل الكود الآن";
     }
     if (stepsTitle) stepsTitle.textContent = isEnglish ? "Activation steps" : "خطوات التفعيل";
+    if (note) {
+      const icon = note.querySelector("span")?.outerHTML || "";
+      note.innerHTML = `${icon}${isEnglish
+        ? " Credits are consumed only after the first successful generation."
+        : " يتم استهلاك الرصيد بعد تنفيذ أول عملية إنشاء ناجحة."}`;
+    }
+
+    const steps = [
+      isEnglish
+        ? ["Enter code", "Enter your activation code<br />in the dedicated field"]
+        : ["أدخل الكود", "أدخل كود التفعيل<br />في الحقل المخصص"],
+      isEnglish
+        ? ["Verify activation", "We securely verify<br />the code validity"]
+        : ["التحقق من التفعيل", "يتم التحقق من صحة<br />الكود بأمان"],
+      isEnglish
+        ? ["Instant access", "Start using the platform<br />right away"]
+        : ["الوصول الفوري", "ابدأ استخدام المنصة<br />ببساطة"],
+    ];
+    document.querySelectorAll(".activation-portal__steps article").forEach((article, index) => {
+      const copy = steps[index];
+      if (!copy) return;
+      const heading = article.querySelector("strong");
+      const paragraph = article.querySelector("p");
+      if (heading) heading.textContent = copy[0];
+      if (paragraph) paragraph.innerHTML = copy[1];
+    });
+
+    if (trustItems[0]) {
+      const icon = trustItems[0].querySelector("svg")?.outerHTML || "";
+      trustItems[0].innerHTML = `${icon}${isEnglish ? "Thousands of users trust us" : "آلاف المستخدمين يثقون بنا"}`;
+    }
+    if (trustItems[1]) trustItems[1].textContent = isEnglish ? "A trusted platform for everyone" : "منصة موثوقة للجميع";
+    if (successTitle) successTitle.textContent = isEnglish ? "Key activated successfully" : "تم تفعيل المفتاح بنجاح";
+    if (successCopy) {
+      successCopy.textContent = isEnglish
+        ? "Your account is ready and you will be redirected to the dashboard shortly."
+        : "تم تجهيز حسابك وسيتم تحويلك للوحة التحكم خلال لحظات.";
+    }
+    const summaryLabels = isEnglish ? ["Plan", "Balance", "Validity"] : ["الباقة", "الرصيد", "الصلاحية"];
+    successSummary.forEach((label, index) => {
+      label.textContent = summaryLabels[index] || label.textContent;
+    });
+    if (successActions[0]) successActions[0].textContent = isEnglish ? "Go to dashboard" : "الدخول إلى لوحة التحكم";
+    if (successActions[1]) successActions[1].textContent = isEnglish ? "Create first project" : "إنشاء أول مشروع";
+    document.title = isEnglish ? "Activation Portal | PixiGenI" : "بوابة التفعيل | PixiGenI";
+    languageToggle?.setAttribute("aria-label", isEnglish ? "Change language" : "تغيير اللغة");
+    themeToggle?.setAttribute("aria-label", isEnglish ? "Change theme" : "تغيير الوضع");
   }
 
   function formatKey(value) {

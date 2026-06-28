@@ -1,6 +1,6 @@
 (function () {
   const API_BASE_URL = window.AdvancedProConfig?.apiBaseUrl || "";
-  const BUILD_VERSION = "2026.06.26-generation-media-fix-v2";
+  const BUILD_VERSION = "2026.06.28-gemini-i18n-v1";
   console.info("PIXIGEN_BUILD:", BUILD_VERSION);
 
   const state = {
@@ -53,6 +53,123 @@
 
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
+
+  const DASHBOARD_EN_TEXT = new Map([
+    ["لوحة التحكم", "Dashboard"],
+    ["إنشاء جديد", "Create"],
+    ["صورة", "Image"],
+    ["فيديو", "Video"],
+    ["المحتوى", "Content"],
+    ["مشاريعي", "Projects"],
+    ["المفضلة", "Favorites"],
+    ["النماذج", "Models"],
+    ["القوالب", "Templates"],
+    ["الحساب", "Account"],
+    ["باقتي", "Plan"],
+    ["معاملاتي", "Transactions"],
+    ["إعدادات الحساب", "Account Settings"],
+    ["مركز الدعم", "Support Center"],
+    ["تحتاج إلى مساعدة؟", "Need help?"],
+    ["تواصل معنا", "Contact us"],
+    ["العميل", "Customer"],
+    ["ماذا ترغب في إنشاء اليوم؟", "What would you like to create today?"],
+    ["اختر نوع المحتوى وابدأ تجربة الإبداع", "Choose a content type and start creating."],
+    ["اكتب وصف الصورة التي تريد إنشاءها...", "Describe the image you want to create..."],
+    ["التكلفة المتوقعة", "Estimated cost"],
+    ["صورة عادية", "Normal image"],
+    ["إنشاء الآن ✨", "Create now ✨"],
+    ["✨ تحسين ذكي", "✨ Smart enhance"],
+    ["عرض البرومبت المحسن", "Show enhanced prompt"],
+    ["يرتب الوصف ويحافظ على الألوان والعلاقات قبل الإرسال.", "Refines the prompt and preserves colors and relationships before sending."],
+    ["النمط", "Style"],
+    ["المقاس", "Aspect ratio"],
+    ["المدة", "Duration"],
+    ["الجودة", "Quality"],
+    ["واقعي", "Realistic"],
+    ["سينمائي", "Cinematic"],
+    ["أنمي", "Anime"],
+    ["ثلاثي الأبعاد", "3D"],
+    ["إعلاني", "Commercial"],
+    ["عادية", "Normal"],
+    ["عالية", "High"],
+    ["فائقة", "Ultra"],
+    ["أحدث الإبداعات", "Latest Creations"],
+    ["عرض الكل", "View all"],
+    ["نصائح للإبداع", "Creative Tips"],
+    ["استخدم تفاصيل دقيقة", "Use precise details"],
+    ["كلما كان وصفك دقيقًا كانت النتيجة أفضل.", "The more precise your prompt, the better the result."],
+    ["اختر الجودة المناسبة", "Choose the right quality"],
+    ["الجودة الأعلى تعطي تفاصيل أدق بتكلفة أكبر.", "Higher quality gives finer details at a higher cost."],
+    ["جرّب أنماطًا مختلفة", "Try different styles"],
+    ["اكتشف جمال الفكرة بأكثر من أسلوب.", "Explore your idea through different styles."],
+    ["الأبعاد تؤثر على النتيجة", "Aspect ratio matters"],
+    ["اختر المقاس المناسب لاستخدامك.", "Choose the right size for your use case."],
+    ["رصيدي الحالي", "Current balance"],
+    ["ترقية الباقة ✨", "Upgrade plan ✨"],
+    ["استهلاكك سريع", "Quick usage"],
+    ["صور", "Images"],
+    ["عرض كل الإحصائيات", "View all stats"],
+    ["معاملات حديثة", "Recent Transactions"],
+    ["عرض كل المعاملات", "View all transactions"],
+    ["هل أنت متأكد؟", "Are you sure?"],
+    ["سيتم حذف هذا المشروع.", "This project will be deleted."],
+    ["إلغاء", "Cancel"],
+    ["حذف", "Delete"],
+    ["البرومبت المحسن", "Enhanced prompt"],
+    ["هذا العرض للمشرف فقط لمراجعة البرومبت النهائي قبل الإرسال.", "This admin-only preview shows the final prompt before sending."],
+    ["فتح القائمة", "Open menu"],
+    ["إغلاق القائمة", "Close menu"],
+    ["التنبيهات", "Notifications"],
+    ["رصيدك الحالي", "Current balance"],
+  ]);
+
+  const DASHBOARD_EN_PLACEHOLDERS = new Map([
+    [
+      "مثال: رجل أعمال وسيم يرتدي بدلة فاخرة داخل مكتب حديث، إضاءة سينمائية...",
+      "Example: a frightened man inside a dark cave, cinematic lighting, realistic details..."
+    ],
+  ]);
+
+  function applyDashboardLanguage(settings = getSettings()) {
+    const language = settings.language === "en" ? "en" : "ar";
+    const root = document.body;
+    root.querySelectorAll("input[placeholder], textarea[placeholder]").forEach((field) => {
+      if (!field.dataset.originalPlaceholder) {
+        field.dataset.originalPlaceholder = field.getAttribute("placeholder") || "";
+      }
+      const original = field.dataset.originalPlaceholder;
+      field.setAttribute(
+        "placeholder",
+        language === "en" ? (DASHBOARD_EN_PLACEHOLDERS.get(original) || original) : original
+      );
+    });
+
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        if (!node.nodeValue || !node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+        if (node.parentElement?.closest("textarea,input,script,style,pre,[data-prompt-input],[data-enhanced-prompt-preview]")) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        return NodeFilter.FILTER_ACCEPT;
+      },
+    });
+
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach((node) => {
+      if (!node.__pixigenOriginalText) {
+        node.__pixigenOriginalText = node.nodeValue;
+      }
+      const original = node.__pixigenOriginalText;
+      const trimmed = original.trim();
+      const translated = DASHBOARD_EN_TEXT.get(trimmed);
+      if (language === "en" && translated) {
+        node.nodeValue = original.replace(trimmed, translated);
+      } else {
+        node.nodeValue = original;
+      }
+    });
+  }
 
   function apiUrl(path) {
     return `${API_BASE_URL}${path}`;
@@ -1200,6 +1317,7 @@
     document.documentElement.dataset.theme = theme;
     document.body.dataset.theme = theme;
     document.body.dataset.language = language;
+    applyDashboardLanguage({ ...settings, language });
   }
 
   async function signOutFromCode() {
@@ -2163,6 +2281,7 @@
     renderTransactions();
     updateUsageUi();
     if (state.activeView !== "home") renderDashboardSection();
+    applyDashboardLanguage();
   }
 
   function clearGenerationTimeout() {

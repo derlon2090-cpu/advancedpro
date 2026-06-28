@@ -2386,9 +2386,10 @@ function getPromptTranslationKey() {
 function getPromptTranslationModels() {
   return [
     process.env.PROMPT_TRANSLATION_MODEL,
-    "gemini-2.5-flash-lite",
     "gemini-2.5-flash",
-    "gemini-3.1-flash-lite-preview",
+    "gemini-2.5-flash-lite",
+    "gemini-3.5-flash",
+    "gemini-1.5-flash",
   ]
     .map((value) => String(value || "").trim())
     .filter((value, index, list) => value && list.indexOf(value) === index);
@@ -2622,6 +2623,8 @@ async function translateArabicPromptForGeneration(userPrompt) {
     if (serverTranslation) {
       return serverTranslation;
     }
+    console.warn("PROMPT_TRANSLATION_UNAVAILABLE:", "Gemini server translation returned no valid prompt.");
+    return "";
   }
 
   const cachedTranslation = await getValidCachedPromptTranslation(text);
@@ -3297,6 +3300,10 @@ export async function buildSmartPromptEnhancementAsync(
   const analysis = analyzePromptV3(prompt);
   const complexity = analyzePromptComplexity(prompt);
   const usingCustomTranslator = translatePrompt !== translateArabicPromptForGeneration;
+  const strictGeminiTranslation =
+    !usingCustomTranslator &&
+    Boolean(getPromptTranslationKey()) &&
+    serverTranslationEnabled();
   const positiveStructuredPrompt =
     analysis?.finalPrompt && !hasArabicText(analysis.finalPrompt)
       ? extractPositiveTranslationCandidate(analysis.finalPrompt)
@@ -3309,6 +3316,7 @@ export async function buildSmartPromptEnhancementAsync(
   const preferStructuredLocalTranslation =
     Boolean(positiveStructuredPrompt) &&
     !usingCustomTranslator &&
+    !serverTranslationEnabled() &&
     Boolean(
       localStructuredIsSimple &&
         (detectSingleSubjectIntent(prompt) ||
@@ -3348,8 +3356,15 @@ export async function buildSmartPromptEnhancementAsync(
       }
     }
 
-    if (!translatedPromptOverride && !preferStructuredLocalTranslation) {
+    if (!translatedPromptOverride && !preferStructuredLocalTranslation && !strictGeminiTranslation) {
       tryStructuredLocal();
+    }
+
+    if (!translatedPromptOverride && strictGeminiTranslation) {
+      throw serviceError(
+        "تعذر ترجمة الوصف عبر Gemini بدقة الآن. أعد المحاولة بصياغة أوضح، ولم يتم خصم أي رصيد.",
+        422
+      );
     }
 
     if (!translatedPromptOverride) {
