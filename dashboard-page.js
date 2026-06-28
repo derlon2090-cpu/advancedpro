@@ -1,6 +1,6 @@
 (function () {
   const API_BASE_URL = window.AdvancedProConfig?.apiBaseUrl || "";
-  const BUILD_VERSION = "2026.06.28-gemini-i18n-v1";
+  const BUILD_VERSION = "2026.06.28-advproai-links-v1";
   console.info("PIXIGEN_BUILD:", BUILD_VERSION);
 
   const state = {
@@ -37,6 +37,7 @@
     8: { normal: 80, high: 160, ultra: 320 },
   };
   const VIDEO_DURATIONS = [5, 8];
+  const ADVPROAI_URL = "https://advproai.com";
   const MAX_VIDEO_DURATION_BY_QUALITY = { normal: 8, high: 8, ultra: 8 };
   const USER_FACING_MODEL_NAMES = {
     image: {
@@ -1741,7 +1742,8 @@
 
       const planAction = event.target.closest("[data-plan-action]");
       if (planAction) {
-        showToast(planAction.dataset.planAction === "upgrade" ? "سيتم عرض الباقات المتاحة قريبًا." : "سيتم فتح خيارات شحن الرصيد قريبًا.");
+        event.preventDefault();
+        window.location.href = ADVPROAI_URL;
         return;
       }
 
