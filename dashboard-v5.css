@@ -1076,20 +1076,23 @@
   .user-dashboard-v3:not(.is-dashboard-section) .udv3-workspace {
     width: 100%;
     max-width: none;
-    grid-template-columns: minmax(0, 1fr) clamp(236px, 24vw, 294px);
+    grid-template-columns: clamp(236px, 24vw, 294px) minmax(0, 1fr);
+    grid-template-areas:
+      "widgets create"
+      "recent recent"
+      "tips tips";
     align-items: start;
     gap: 14px;
-    direction: rtl;
+    direction: ltr;
   }
 
   .user-dashboard-v3:not(.is-dashboard-section) .udv3-main,
   .user-dashboard-v3:not(.is-dashboard-section) .udv6-home-view {
-    display: grid;
-    gap: 14px;
-    min-width: 0;
+    display: contents;
   }
 
   .user-dashboard-v3:not(.is-dashboard-section) .udv3-widgets {
+    grid-area: widgets;
     display: flex;
     flex-direction: column;
     gap: 14px;
@@ -1105,6 +1108,18 @@
     width: 100%;
     min-width: 0;
     direction: rtl;
+  }
+
+  .user-dashboard-v3:not(.is-dashboard-section) .udv3-create-card {
+    grid-area: create;
+  }
+
+  .user-dashboard-v3:not(.is-dashboard-section) .udv3-recent-card {
+    grid-area: recent;
+  }
+
+  .user-dashboard-v3:not(.is-dashboard-section) .udv3-tips-card {
+    grid-area: tips;
   }
 
   .user-dashboard-v3:not(.is-dashboard-section) .udv3-type-tabs {
