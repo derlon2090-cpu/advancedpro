@@ -1076,24 +1076,24 @@
   .user-dashboard-v3:not(.is-dashboard-section) .udv3-workspace {
     width: 100%;
     max-width: none;
-    grid-template-columns:
-      minmax(360px, 1.18fr)
-      minmax(176px, .58fr)
-      minmax(176px, .58fr)
-      minmax(212px, .7fr);
-    grid-template-areas:
-      "create transactions usage balance"
-      "recent recent recent recent"
-      "tips tips tips tips";
-    align-items: stretch;
+    grid-template-columns: minmax(0, 1fr) clamp(236px, 24vw, 294px);
+    align-items: start;
     gap: 14px;
-    direction: ltr;
+    direction: rtl;
   }
 
   .user-dashboard-v3:not(.is-dashboard-section) .udv3-main,
-  .user-dashboard-v3:not(.is-dashboard-section) .udv6-home-view,
+  .user-dashboard-v3:not(.is-dashboard-section) .udv6-home-view {
+    display: grid;
+    gap: 14px;
+    min-width: 0;
+  }
+
   .user-dashboard-v3:not(.is-dashboard-section) .udv3-widgets {
-    display: contents;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-width: 0;
   }
 
   .user-dashboard-v3:not(.is-dashboard-section) .udv3-create-card,
@@ -1107,37 +1107,13 @@
     direction: rtl;
   }
 
-  .user-dashboard-v3:not(.is-dashboard-section) .udv3-create-card {
-    grid-area: create;
-  }
-
-  .user-dashboard-v3:not(.is-dashboard-section) .udv3-transactions-widget {
-    grid-area: transactions;
-  }
-
-  .user-dashboard-v3:not(.is-dashboard-section) .udv3-usage-widget {
-    grid-area: usage;
-  }
-
-  .user-dashboard-v3:not(.is-dashboard-section) .udv3-balance-widget {
-    grid-area: balance;
-  }
-
-  .user-dashboard-v3:not(.is-dashboard-section) .udv3-recent-card {
-    grid-area: recent;
-  }
-
-  .user-dashboard-v3:not(.is-dashboard-section) .udv3-tips-card {
-    grid-area: tips;
-  }
-
   .user-dashboard-v3:not(.is-dashboard-section) .udv3-type-tabs {
     width: 100%;
     min-width: 0;
   }
 
   .user-dashboard-v3:not(.is-dashboard-section) .udv3-form-grid {
-    grid-template-columns: minmax(126px, .72fr) minmax(0, 1fr);
+    grid-template-columns: minmax(150px, .42fr) minmax(0, 1fr);
   }
 
   .user-dashboard-v3:not(.is-dashboard-section) .udv3-options-grid {
@@ -1148,32 +1124,30 @@
   .user-dashboard-v3:not(.is-dashboard-section) .udv3-usage-widget,
   .user-dashboard-v3:not(.is-dashboard-section) .udv3-transactions-widget {
     min-height: 0;
-    align-self: stretch;
-    align-content: start;
   }
 
   .user-dashboard-v3:not(.is-dashboard-section) .udv3-balance-widget {
-    grid-template-columns: 58px minmax(0, 1fr);
-    gap: 8px;
+    grid-template-columns: 68px minmax(0, 1fr);
+    gap: 10px;
   }
 
   .user-dashboard-v3:not(.is-dashboard-section) .udv3-stack-icon {
-    width: 58px;
-    height: 58px;
+    width: 68px;
+    height: 68px;
   }
 
   .user-dashboard-v3:not(.is-dashboard-section) .udv3-stack-icon svg {
-    width: 58px;
-    height: 58px;
+    width: 66px;
+    height: 66px;
   }
 
   .user-dashboard-v3:not(.is-dashboard-section) .udv3-balance-widget strong {
-    font-size: clamp(28px, 2.7vw, 36px);
+    font-size: clamp(30px, 3vw, 40px);
   }
 
   .user-dashboard-v3:not(.is-dashboard-section) .udv3-transactions-widget article {
-    grid-template-columns: 26px minmax(0, 1fr) auto;
-    gap: 7px;
+    grid-template-columns: 27px minmax(0, 1fr) auto;
+    gap: 8px;
   }
 }
 
