@@ -821,24 +821,37 @@
   ];
 
   function loadLocalPreferences() {
-    try {
-      const favorites = JSON.parse(localStorage.getItem("pixigen:favorites") || "[]");
-      state.favorites = new Set(Array.isArray(favorites) ? favorites.map(String) : []);
-    } catch {
-      state.favorites = new Set();
-    }
+    restoreCachedKey();
+    loadFavorites();
     const settings = getSettings();
     state.quality =
       settings.explicitQualityPreference && ["normal", "high", "ultra"].includes(settings.quality)
         ? settings.quality
         : "normal";
-    restoreCachedKey();
     hydrateCachedGenerations();
+  }
+
+  function getFavoritesCacheKey(keyLike = state.key) {
+    const generationCacheKey = getGenerationCacheKey(keyLike);
+    return generationCacheKey ? generationCacheKey.replace("pixigen:generations:", "pixigen:favorites:") : "pixigen:favorites";
+  }
+
+  function loadFavorites(keyLike = state.key) {
+    try {
+      const scopedFavorites = localStorage.getItem(getFavoritesCacheKey(keyLike));
+      const legacyFavorites = localStorage.getItem("pixigen:favorites");
+      const favorites = JSON.parse(scopedFavorites || legacyFavorites || "[]");
+      state.favorites = new Set(Array.isArray(favorites) ? favorites.map(String) : []);
+    } catch {
+      state.favorites = new Set();
+    }
   }
 
   function saveFavorites() {
     try {
-      localStorage.setItem("pixigen:favorites", JSON.stringify(Array.from(state.favorites)));
+      const payload = JSON.stringify(Array.from(state.favorites));
+      localStorage.setItem(getFavoritesCacheKey(), payload);
+      localStorage.setItem("pixigen:favorites", payload);
     } catch {
       // Local persistence is optional; the current session remains functional.
     }
@@ -2186,6 +2199,7 @@
       const data = await requestJson("/api/me/key");
       state.key = normalizeKey(data);
       persistKeySnapshot(state.key);
+      loadFavorites(state.key);
       if (!state.results.length) {
         hydrateCachedGenerations(state.key);
       }

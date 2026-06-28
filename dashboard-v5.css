@@ -1077,10 +1077,10 @@
     width: 100%;
     max-width: none;
     grid-template-columns:
-      minmax(350px, 1.28fr)
-      minmax(166px, .62fr)
-      minmax(166px, .62fr)
-      minmax(188px, .72fr);
+      minmax(360px, 1.18fr)
+      minmax(176px, .58fr)
+      minmax(176px, .58fr)
+      minmax(212px, .7fr);
     grid-template-areas:
       "create transactions usage balance"
       "recent recent recent recent"
@@ -1147,7 +1147,33 @@
   .user-dashboard-v3:not(.is-dashboard-section) .udv3-balance-widget,
   .user-dashboard-v3:not(.is-dashboard-section) .udv3-usage-widget,
   .user-dashboard-v3:not(.is-dashboard-section) .udv3-transactions-widget {
-    min-height: 547px;
+    min-height: 0;
+    align-self: stretch;
+    align-content: start;
+  }
+
+  .user-dashboard-v3:not(.is-dashboard-section) .udv3-balance-widget {
+    grid-template-columns: 58px minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .user-dashboard-v3:not(.is-dashboard-section) .udv3-stack-icon {
+    width: 58px;
+    height: 58px;
+  }
+
+  .user-dashboard-v3:not(.is-dashboard-section) .udv3-stack-icon svg {
+    width: 58px;
+    height: 58px;
+  }
+
+  .user-dashboard-v3:not(.is-dashboard-section) .udv3-balance-widget strong {
+    font-size: clamp(28px, 2.7vw, 36px);
+  }
+
+  .user-dashboard-v3:not(.is-dashboard-section) .udv3-transactions-widget article {
+    grid-template-columns: 26px minmax(0, 1fr) auto;
+    gap: 7px;
   }
 }
 
