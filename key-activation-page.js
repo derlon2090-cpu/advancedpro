@@ -80,9 +80,25 @@
     const theme = themeValue === "dark" ? "dark" : "light";
     document.documentElement.dataset.theme = theme;
     document.body.dataset.theme = theme;
-    if (themeToggle) themeToggle.setAttribute("aria-pressed", String(theme === "dark"));
-    if (sunIcon) sunIcon.hidden = theme === "dark";
-    if (moonIcon) moonIcon.hidden = theme !== "dark";
+    if (themeToggle) {
+      const isEnglish = getStoredSettings().language === "en";
+      themeToggle.setAttribute("aria-pressed", String(theme === "dark"));
+      themeToggle.setAttribute(
+        "aria-label",
+        isEnglish
+          ? (theme === "dark" ? "Switch to light mode" : "Switch to dark mode")
+          : (theme === "dark" ? "التحويل إلى الوضع الشمسي" : "التحويل إلى الوضع الليلي")
+      );
+    }
+    if (themeToggle) themeToggle.dataset.themeState = theme;
+    if (sunIcon) {
+      sunIcon.hidden = theme === "dark";
+      sunIcon.style.display = theme === "dark" ? "none" : "";
+    }
+    if (moonIcon) {
+      moonIcon.hidden = theme !== "dark";
+      moonIcon.style.display = theme === "dark" ? "" : "none";
+    }
   }
 
   function setActivationTheme(themeValue) {
@@ -189,7 +205,13 @@
     if (successActions[1]) successActions[1].textContent = isEnglish ? "Create first project" : "إنشاء أول مشروع";
     document.title = isEnglish ? "Activation Portal | PixiGenI" : "بوابة التفعيل | PixiGenI";
     languageToggle?.setAttribute("aria-label", isEnglish ? "Change language" : "تغيير اللغة");
-    themeToggle?.setAttribute("aria-label", isEnglish ? "Change theme" : "تغيير الوضع");
+    const currentTheme = getStoredSettings().theme === "dark" ? "dark" : "light";
+    themeToggle?.setAttribute(
+      "aria-label",
+      isEnglish
+        ? (currentTheme === "dark" ? "Switch to light mode" : "Switch to dark mode")
+        : (currentTheme === "dark" ? "التحويل إلى الوضع الشمسي" : "التحويل إلى الوضع الليلي")
+    );
   }
 
   function formatKey(value) {

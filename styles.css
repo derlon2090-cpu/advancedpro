@@ -16333,15 +16333,15 @@ html[data-theme="dark"] .create-chat-bubble__state {
   left: 18px;
   z-index: 20;
   margin: 0;
-  padding: 5px;
+  padding: 0;
   display: inline-flex;
   align-items: center;
   gap: 5px;
   border: 0;
   border-radius: 0;
-  background: rgba(255, 255, 255, 0.78);
+  background: transparent;
   box-shadow: none;
-  backdrop-filter: blur(16px);
+  backdrop-filter: none;
 }
 
 .activation-portal__controls button {
@@ -16826,6 +16826,11 @@ html[data-theme="dark"] .activation-portal__steps,
 html[data-theme="dark"] .activation-portal__steps article > span,
 html[data-theme="dark"] .activation-portal__trust {
   border-color: rgba(255, 255, 255, 0.1);
+}
+
+html[data-theme="dark"] .activation-portal__steps,
+html[data-theme="dark"] .activation-portal__steps article > span,
+html[data-theme="dark"] .activation-portal__trust {
   background: rgba(20, 24, 43, 0.9);
 }
 
@@ -16834,7 +16839,8 @@ html[data-theme="dark"] .activation-portal__controls button {
 }
 
 html[data-theme="dark"] .activation-portal__controls {
-  background: rgba(20, 21, 27, 0.82);
+  background: transparent;
+  backdrop-filter: none;
 }
 
 html[data-theme="dark"] .activation-portal__controls button.is-active,
