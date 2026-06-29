@@ -748,7 +748,7 @@
     showToast(isFavorite ? "تمت الإضافة للمفضلة" : "تمت الإزالة من المفضلة");
   }
 
-  function navigateToCreate() {
+  function storeCreateIntent(intent = {}) {
     try {
       if (state.result) {
         sessionStorage.setItem(
@@ -756,14 +756,61 @@
           JSON.stringify({
             type: state.result.type,
             prompt: state.result.prompt,
+            ...intent,
           })
         );
       }
     } catch {
       // Optional enhancement only.
     }
+  }
+
+  function navigateToCreate(intent = {}) {
+    storeCreateIntent(intent);
 
     window.location.href = "/dashboard#create";
+  }
+
+  async function handleEnhanceResult(button) {
+    const result = state.result;
+    if (!isCompleted(result) || result.type !== "image") {
+      showToast("تحسين الصورة متاح بعد اكتمال إنشاء الصورة.");
+      return;
+    }
+
+    const label = button?.querySelector("[data-enhance-label]");
+    const originalLabel = label?.textContent || button?.textContent || "تحسين الصورة";
+    if (button) button.disabled = true;
+    if (label) label.textContent = "جاري تحليل الصورة...";
+
+    try {
+      const data = await requestJson(`/api/generations/${encodeURIComponent(result.id)}/enhance`, {
+        method: "POST",
+        body: JSON.stringify({}),
+      });
+      const enhancedPrompt = String(data.enhancedPrompt || "").trim();
+      if (!enhancedPrompt) {
+        throw new Error("تعذر تجهيز وصف محسّن للصورة.");
+      }
+
+      navigateToCreate({
+        type: "image",
+        prompt: enhancedPrompt,
+        originalPrompt: result.prompt,
+        sourceGenerationId: result.id,
+        enhancedPrompt,
+        finalPrompt: data.finalPrompt || "",
+        negativePrompt: data.negativePrompt || "",
+        imageDescription: data.imageDescription || "",
+        missingImprovements: data.missingImprovements || [],
+        debug: data.debug || null,
+      });
+    } catch (error) {
+      console.error("RESULT ENHANCE ERROR:", error);
+      showToast(error.message || "تعذر تحسين الصورة الآن.");
+      if (button) button.disabled = false;
+      if (label) label.textContent = originalLabel;
+    }
   }
 
   async function handleMenuAction(action) {
@@ -860,7 +907,7 @@
       if (enhanceButton) {
         event.preventDefault();
         event.stopPropagation();
-        navigateToCreate();
+        await handleEnhanceResult(enhanceButton);
         return;
       }
 

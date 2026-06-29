@@ -2015,6 +2015,57 @@
     if (debugButton) debugButton.hidden = true;
   }
 
+  function consumeCreateIntent() {
+    let intent = null;
+    try {
+      const raw = sessionStorage.getItem("pixigen:create-intent");
+      if (raw) {
+        intent = JSON.parse(raw);
+        sessionStorage.removeItem("pixigen:create-intent");
+      }
+    } catch {
+      intent = null;
+    }
+
+    const prompt = String(intent?.enhancedPrompt || intent?.prompt || "").trim();
+    if (!prompt) return;
+
+    setDashboardView("home", { updateHistory: false });
+    setType(intent?.type === "video" ? "video" : "image");
+
+    const promptInput = $("[data-prompt-input]");
+    if (promptInput) {
+      promptInput.value = prompt.slice(0, 2000);
+      $("[data-char-count]").textContent = promptInput.value.length;
+      setTimeout(() => {
+        $("#create")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        promptInput.focus({ preventScroll: true });
+      }, 80);
+    }
+
+    state.enhancedFinalPrompt = String(intent.finalPrompt || "").trim();
+    state.enhancedPromptDebug = {
+      enhancedPrompt: prompt,
+      finalPrompt: state.enhancedFinalPrompt,
+      negativePrompt: intent.negativePrompt || "",
+      debug: {
+        ...(intent.debug || {}),
+        imageDescription: intent.imageDescription || "",
+        missingImprovements: intent.missingImprovements || [],
+        sourceGenerationId: intent.sourceGenerationId || null,
+      },
+    };
+
+    const debugButton = $("[data-show-enhanced-prompt]");
+    if (debugButton) {
+      debugButton.hidden = !isPromptDebugEnabled() || !state.enhancedFinalPrompt;
+    }
+    state.upgradeRecommendationDismissed = false;
+    updateUpgradeRecommendation();
+    setMessage("تم تحليل الصورة وتجهيز وصف محسّن لإنشاء نسخة أفضل.", "info");
+    showToast("تم تجهيز وصف محسّن من الصورة.");
+  }
+
   function updateEnhancedPromptPreview() {
     const preview = $("[data-enhanced-prompt-preview]");
     if (!preview) return;
@@ -2549,6 +2600,7 @@
     bindSectionEvents();
     setType("image");
     setDashboardView(window.location.hash.slice(1) || "home", { updateHistory: false });
+    consumeCreateIntent();
     document.body.classList.add("is-dashboard-loading");
     if (state.results.length) {
       state.generationsHydrated = true;

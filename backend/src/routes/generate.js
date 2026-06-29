@@ -25,6 +25,7 @@ import {
 import {
   buildGenerationStorageKey,
   downloadRemoteAsset,
+  fetchObjectFromB2,
   uploadBufferToB2,
 } from "../services/b2Storage.js";
 import { ensureWorkspacesTable } from "../services/workspaces.js";
@@ -63,6 +64,218 @@ function logGenerationPromptDiagnostics({ prompt, diagnostics, requestId, seed }
       translationMode: diagnostics.debug?.translationMode || "local",
     });
   }
+}
+
+function resolveEnvKey(names) {
+  for (const name of names) {
+    const value = String(process.env[name] || "").trim();
+    if (value && !/your-api-key|replace-me|changeme|placeholder/i.test(value)) {
+      return value;
+    }
+  }
+  return "";
+}
+
+function extractJsonPayload(text) {
+  const value = String(text || "").trim();
+  if (!value) return null;
+  try {
+    return JSON.parse(value);
+  } catch {
+    const match = value.match(/\{[\s\S]*\}/);
+    if (!match) return null;
+    try {
+      return JSON.parse(match[0]);
+    } catch {
+      return null;
+    }
+  }
+}
+
+function normalizeEnhancedImagePrompt(value, fallbackPrompt) {
+  const prompt = String(value || "").replace(/\s+/g, " ").trim();
+  if (prompt.length >= 20) return prompt.slice(0, 1800);
+  return [
+    `حسّن هذه الصورة بناءً على الوصف الأصلي: ${fallbackPrompt || "الصورة الحالية"}.`,
+    "اجعل العناصر الرئيسية أوضح، وأصلح الإضاءة والتكوين والتفاصيل، وحافظ على نفس الفكرة بدون إضافة نصوص أو شعارات.",
+  ].join(" ");
+}
+
+async function downloadGenerationImageForEnhancement(generation) {
+  if (generation.storage_key) {
+    const response = await fetchObjectFromB2({ key: generation.storage_key }).catch(() => null);
+    if (response?.ok) {
+      const bytes = Buffer.from(await response.arrayBuffer());
+      return {
+        bytes,
+        mimeType: String(response.headers.get("content-type") || generation.mime_type || "image/jpeg").split(";")[0],
+      };
+    }
+  }
+
+  const sourceUrl = generation.storage_url || generation.result_url;
+  return downloadRemoteAsset(sourceUrl);
+}
+
+async function buildGeminiImageEnhancement({ generation, image }) {
+  const apiKey = resolveEnvKey([
+    "GEMINI_API_KEY",
+    "GOOGLE_API_KEY",
+    "GOOGLE_GENERATIVE_AI_API_KEY",
+    "GENAI_API_KEY",
+    "PROMPT_TRANSLATION_API_KEY",
+  ]);
+  if (!apiKey) return null;
+
+  const model = String(process.env.IMAGE_ENHANCEMENT_GEMINI_MODEL || process.env.GEMINI_VISION_MODEL || "gemini-2.5-flash").trim();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 18_000);
+
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+      {
+        method: "POST",
+        signal: controller.signal,
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": apiKey,
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: [
+                    "حلل الصورة الحالية ثم اكتب وصفًا عربيًا محسّنًا لإعادة إنشائها بجودة أفضل.",
+                    "اعتمد على ما تراه في الصورة والوصف الأصلي، وحدد ما ينقصها مثل الإضاءة، الحدة، التكوين، التفاصيل، وضوح العناصر، الألوان، أو الخلفية.",
+                    "لا تذكر أسماء مزودي الذكاء الاصطناعي ولا مفاتيح API.",
+                    "أرجع JSON فقط بهذا الشكل:",
+                    '{"imageDescription":"وصف مختصر لما يظهر في الصورة","missingImprovements":["نقطة تحسين"],"enhancedPrompt":"وصف عربي جاهز لإنشاء نسخة أفضل"}',
+                    `الوصف الأصلي: ${generation.prompt || ""}`,
+                    `الوصف النهائي السابق: ${generation.final_prompt || ""}`,
+                  ].join("\n"),
+                },
+                {
+                  inlineData: {
+                    mimeType: image.mimeType || "image/jpeg",
+                    data: image.bytes.toString("base64"),
+                  },
+                },
+              ],
+            },
+          ],
+          generationConfig: {
+            temperature: 0.35,
+            maxOutputTokens: 900,
+          },
+        }),
+      }
+    );
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(payload?.error?.message || `Gemini enhancement failed with status ${response.status}`);
+    }
+    const text = String(payload?.candidates?.[0]?.content?.parts?.map((part) => part.text || "").join("\n") || "").trim();
+    const parsed = extractJsonPayload(text);
+    if (!parsed?.enhancedPrompt) return null;
+    return {
+      provider: "gemini-vision",
+      imageDescription: String(parsed.imageDescription || "").trim(),
+      missingImprovements: Array.isArray(parsed.missingImprovements) ? parsed.missingImprovements.map(String).slice(0, 8) : [],
+      enhancedPrompt: normalizeEnhancedImagePrompt(parsed.enhancedPrompt, generation.prompt),
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function buildDeepSeekImageEnhancementFallback({ generation }) {
+  const apiKey = resolveEnvKey(["DEEPSEEK_API_KEY"]);
+  if (!apiKey) return null;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12_000);
+  try {
+    const response = await fetch("https://api.deepseek.com/chat/completions", {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: String(process.env.DEEPSEEK_MODEL || "deepseek-chat").trim(),
+        temperature: 0.25,
+        max_tokens: 650,
+        stream: false,
+        messages: [
+          {
+            role: "system",
+            content:
+              "أنت خبير تحسين برومبت صور لمنصة PixiGenI. أجب JSON فقط ولا تذكر مزودات الذكاء الاصطناعي أو المفاتيح.",
+          },
+          {
+            role: "user",
+            content: [
+              "حسّن وصف هذه النتيجة لإعادة إنشاء صورة أفضل وأكثر وضوحًا.",
+              "اعتمد على الوصف الأصلي والبرومبت النهائي السابق، واذكر تحسينات الإضاءة والتكوين والحدة والتفاصيل دون تغيير الفكرة.",
+              'أرجع JSON بهذا الشكل: {"imageDescription":"","missingImprovements":[""],"enhancedPrompt":""}',
+              `الوصف الأصلي: ${generation.prompt || ""}`,
+              `البرومبت النهائي السابق: ${generation.final_prompt || ""}`,
+            ].join("\n"),
+          },
+        ],
+      }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload?.error?.message || `DeepSeek enhancement failed ${response.status}`);
+    const text = String(payload?.choices?.[0]?.message?.content || "").trim();
+    const parsed = extractJsonPayload(text);
+    if (!parsed?.enhancedPrompt) return null;
+    return {
+      provider: "deepseek-text",
+      imageDescription: String(parsed.imageDescription || "").trim(),
+      missingImprovements: Array.isArray(parsed.missingImprovements) ? parsed.missingImprovements.map(String).slice(0, 8) : [],
+      enhancedPrompt: normalizeEnhancedImagePrompt(parsed.enhancedPrompt, generation.prompt),
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function enhanceCompletedGenerationImage(generation) {
+  const fallback = {
+    provider: "local-fallback",
+    imageDescription: generation.prompt || "",
+    missingImprovements: ["تحسين الإضاءة", "زيادة الحدة", "توضيح العناصر الرئيسية", "تحسين التكوين"],
+    enhancedPrompt: normalizeEnhancedImagePrompt("", generation.prompt),
+  };
+
+  let image = null;
+  try {
+    image = await downloadGenerationImageForEnhancement(generation);
+  } catch (error) {
+    logError(error, { scope: "downloadGenerationImageForEnhancement", generationId: generation.id });
+  }
+
+  if (image?.bytes?.length && /^image\//i.test(image.mimeType || "")) {
+    try {
+      const gemini = await buildGeminiImageEnhancement({ generation, image });
+      if (gemini?.enhancedPrompt) return gemini;
+    } catch (error) {
+      logError(error, { scope: "buildGeminiImageEnhancement", generationId: generation.id });
+    }
+  }
+
+  try {
+    const deepseek = await buildDeepSeekImageEnhancementFallback({ generation });
+    if (deepseek?.enhancedPrompt) return deepseek;
+  } catch (error) {
+    logError(error, { scope: "buildDeepSeekImageEnhancementFallback", generationId: generation.id });
+  }
+
+  return fallback;
 }
 
 function httpError(message, statusCode = 400) {
@@ -1306,6 +1519,53 @@ router.post(
       success: true,
       feedback,
       modelStats: stats[0] || null,
+    });
+  })
+);
+
+router.post(
+  "/:id/enhance",
+  aiLimiter,
+  asyncHandler(async (req, res) => {
+    await ensureGenerationTable();
+
+    const auth = await getAuthWorkspace(req);
+    const keyId = auth.activationKeyId;
+    const workspaceId = auth.workspaceId;
+    const generationId = Number(req.params.id);
+    if (!Number.isFinite(generationId)) {
+      httpError("معرف النتيجة غير صالح.", 400);
+    }
+
+    const generation = await loadCompletedGenerationById({ keyId, workspaceId, generationId });
+    if (!generation) {
+      httpError("لم يتم العثور على النتيجة المطلوبة.", 404);
+    }
+    if (generation.type !== "image") {
+      httpError("تحسين النتيجة من الصورة متاح للصور فقط حاليًا.", 400);
+    }
+
+    const enhancement = await enhanceCompletedGenerationImage(generation);
+    const promptDiagnostics = await buildSmartPromptEnhancementAsync({
+      userPrompt: enhancement.enhancedPrompt,
+      type: "image",
+      quality: normalizeQuality(generation.quality || "normal"),
+      style: String(generation.style || "").trim(),
+    });
+
+    return res.json({
+      success: true,
+      generationId,
+      enhancedPrompt: enhancement.enhancedPrompt,
+      imageDescription: enhancement.imageDescription,
+      missingImprovements: enhancement.missingImprovements,
+      finalPrompt: promptDiagnostics.finalPrompt,
+      negativePrompt: promptDiagnostics.negativePrompt,
+      debug: {
+        provider: enhancement.provider,
+        sourceGenerationId: generationId,
+        promptDebug: promptDiagnostics.debug || null,
+      },
     });
   })
 );

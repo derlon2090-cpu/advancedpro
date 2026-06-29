@@ -79,6 +79,13 @@ test("generation UI uses one submit path and keeps background jobs inside the da
   assert.doesNotMatch(dashboardScript, /setLoading\(false\);\s*scheduleGenerationsRefresh\(\);/);
   assert.match(generateRoute, /IMAGE_GENERATION_TIMEOUT_MS\s*=\s*Number\(process\.env\.IMAGE_GENERATION_TIMEOUT_MS\s*\|\|\s*120_000\)/);
   assert.doesNotMatch(generateRoute, /إنشاء الصورة أكثر من 30 ثانية/);
+  assert.match(generateRoute, /"\/:id\/enhance"/);
+  assert.match(generateRoute, /buildGeminiImageEnhancement/);
+  assert.match(generateRoute, /buildDeepSeekImageEnhancementFallback/);
+  assert.match(resultScript, /\/api\/generations\/\$\{encodeURIComponent\(result\.id\)\}\/enhance/);
+  assert.match(resultScript, /enhancedPrompt/);
+  assert.match(dashboardScript, /sessionStorage\.getItem\("pixigen:create-intent"\)/);
+  assert.match(dashboardScript, /تم تحليل الصورة وتجهيز وصف محسّن/);
 });
 
 test("activation language toggle translates the full activation page", async () => {
