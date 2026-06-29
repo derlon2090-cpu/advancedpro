@@ -1562,12 +1562,12 @@
       anchor.target = "_blank";
       anchor.click();
     } else if (action === "copy") {
-      const directUrl = generationDirectMediaUrl(item);
-      if (!directUrl) {
+      const shareUrl = generationShareUrl(item);
+      if (!shareUrl) {
         showToast("تعذر تجهيز رابط النتيجة.", "error");
         return;
       }
-      await copyText(directUrl, "تم نسخ رابط الملف");
+      await copyText(shareUrl, "تم نسخ رابط النتيجة");
     } else if (action === "favorite") {
       const nextValue = !Boolean(item.isFavorite);
       try {

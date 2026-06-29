@@ -780,12 +780,12 @@
       triggerDownload(result.resultUrl, `${fileBaseName(result)}.mp4`);
       showToast("بدأ تنزيل الفيديو");
     } else if (action === "copy-link") {
-      const directUrl = generationDirectMediaUrl(result);
-      if (!directUrl) {
+      const shareUrl = generationShareUrl(result);
+      if (!shareUrl) {
         showToast("تعذر تجهيز رابط النتيجة.", "error");
         return;
       }
-      await copyText(directUrl, "تم نسخ رابط الملف");
+      await copyText(shareUrl, "تم نسخ رابط النتيجة");
     } else if (action === "share-x") {
       openShareWindow(buildShareLink("x", result));
     } else if (action === "share-whatsapp") {

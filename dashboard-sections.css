@@ -1169,6 +1169,36 @@ html[data-theme="dark"] .user-dashboard-v3 time {
   color: rgba(247, 247, 255, .72);
 }
 
+html[data-theme="dark"] .user-dashboard-v3 h1,
+html[data-theme="dark"] .user-dashboard-v3 h2,
+html[data-theme="dark"] .user-dashboard-v3 h3,
+html[data-theme="dark"] .user-dashboard-v3 strong,
+html[data-theme="dark"] .user-dashboard-v3 b,
+html[data-theme="dark"] .user-dashboard-v3 label,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-section-title,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-balance-widget strong,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-meter-row b,
+html[data-theme="dark"] .user-dashboard-v3 [data-widget-xp],
+html[data-theme="dark"] .user-dashboard-v3 [data-cost-value],
+html[data-theme="dark"] .user-dashboard-v3 [data-images-count],
+html[data-theme="dark"] .user-dashboard-v3 [data-videos-count] {
+  color: #f7f9ff;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-balance-widget a,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-usage-widget a,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-transactions-widget a,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-primary-button {
+  color: #ffffff;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-cost-card strong,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-option strong,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-work-meta,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-stat-card strong {
+  color: #dfe7ff;
+}
+
 html[data-theme="dark"] .user-dashboard-v3 .udv6-setting-pill {
   background: #111325;
   border-color: rgba(255, 255, 255, .12);

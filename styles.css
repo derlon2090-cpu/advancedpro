@@ -16870,6 +16870,23 @@ html[data-theme="dark"] .activation-portal__input input {
   border-color: rgba(255, 255, 255, 0.12);
 }
 
+html[data-theme="dark"] .activation-portal__key,
+html[data-theme="dark"] .activation-success-modal .success-dialog {
+  color: #f7f9ff;
+  background: rgba(24, 27, 48, 0.96);
+}
+
+html[data-theme="dark"] .activation-portal__input input::placeholder,
+html[data-theme="dark"] .activation-message-v2,
+html[data-theme="dark"] .success-summary article span {
+  color: rgba(226, 232, 255, 0.78);
+}
+
+html[data-theme="dark"] .success-summary article strong,
+html[data-theme="dark"] .activation-portal__controls [data-activation-language-label] {
+  color: #f7f9ff;
+}
+
 /* Floating platform assistant */
 .pixi-assistant {
   position: fixed;
@@ -17140,10 +17157,11 @@ html[data-theme="dark"] .activation-portal__input input {
   }
 
   .activation-portal__controls {
-    top: 10px;
-    left: 10px;
-    max-width: calc(100vw - 20px);
-    overflow-x: auto;
+    position: static;
+    max-width: calc(100vw - 28px);
+    margin: 8px auto 4px;
+    overflow-x: visible;
+    justify-content: center;
   }
 
   .activation-portal__controls button {
