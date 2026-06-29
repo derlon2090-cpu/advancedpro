@@ -132,6 +132,29 @@
     sendMessage(input.value);
   });
 
+  function consumeAssistantIntent() {
+    let intent = null;
+    try {
+      const raw = sessionStorage.getItem("pixigen:assistant-intent");
+      if (raw) {
+        intent = JSON.parse(raw);
+        sessionStorage.removeItem("pixigen:assistant-intent");
+      }
+    } catch {
+      intent = null;
+    }
+
+    const message = String(intent?.message || "").trim();
+    if (message.length < 2) return;
+
+    setLauncherVisible(true);
+    setOpen(true);
+    input.value = message.slice(0, 1200);
+    window.setTimeout(() => {
+      sendMessage(input.value);
+    }, 250);
+  }
+
   if (contactLink) {
     setLauncherVisible(false);
     contactLink.addEventListener("click", (event) => {
@@ -142,4 +165,6 @@
   } else {
     setLauncherVisible(shouldStartVisible || !isDashboardPage);
   }
+
+  consumeAssistantIntent();
 })();

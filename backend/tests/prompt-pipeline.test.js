@@ -36,6 +36,8 @@ test("generation UI uses one submit path and keeps background jobs inside the da
   const dashboardHtml = await readFile(new URL("../../dashboard.html", import.meta.url), "utf8");
   const dashboardScript = await readFile(new URL("../../dashboard-page.js", import.meta.url), "utf8");
   const resultScript = await readFile(new URL("../../generation-page.js", import.meta.url), "utf8");
+  const assistantScript = await readFile(new URL("../../assistant-widget.js", import.meta.url), "utf8");
+  const platformAssistant = await readFile(new URL("../src/services/platformAssistant.js", import.meta.url), "utf8");
   const generateRoute = await readFile(new URL("../src/routes/generate.js", import.meta.url), "utf8");
 
   assert.match(dashboardHtml, /<button type="submit" data-submit-button>/);
@@ -84,8 +86,11 @@ test("generation UI uses one submit path and keeps background jobs inside the da
   assert.match(generateRoute, /buildDeepSeekImageEnhancementFallback/);
   assert.match(resultScript, /\/api\/generations\/\$\{encodeURIComponent\(result\.id\)\}\/enhance/);
   assert.match(resultScript, /enhancedPrompt/);
-  assert.match(dashboardScript, /sessionStorage\.getItem\("pixigen:create-intent"\)/);
-  assert.match(dashboardScript, /تم تحليل الصورة وتجهيز وصف محسّن/);
+  assert.match(resultScript, /pixigen:assistant-intent/);
+  assert.match(resultScript, /buildAssistantEnhancementMessage/);
+  assert.match(assistantScript, /sessionStorage\.getItem\("pixigen:assistant-intent"\)/);
+  assert.match(assistantScript, /sendMessage\(input\.value\)/);
+  assert.match(platformAssistant, /تحسين أوصاف الصور والبرومبتات/);
 });
 
 test("activation language toggle translates the full activation page", async () => {

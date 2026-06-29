@@ -771,6 +771,37 @@
     window.location.href = "/dashboard#create";
   }
 
+  function navigateToAssistantChat(message) {
+    try {
+      sessionStorage.setItem(
+        "pixigen:assistant-intent",
+        JSON.stringify({
+          message: String(message || "").trim(),
+          source: "generation-image-enhance",
+          createdAt: Date.now(),
+        })
+      );
+    } catch {
+      // Optional assistant handoff only.
+    }
+
+    window.location.href = "/dashboard#home";
+  }
+
+  function buildAssistantEnhancementMessage(result, data) {
+    const missing = Array.isArray(data.missingImprovements)
+      ? data.missingImprovements.filter(Boolean).join("، ")
+      : "";
+    return [
+      "حلّل هذه الصورة التي أنشأتها للتو وساعدني أحسنها لإعادة إنشائها بشكل أقوى.",
+      `الوصف الأصلي: ${result.prompt || "غير متوفر"}`,
+      data.imageDescription ? `وصف الصورة بعد التحليل: ${data.imageDescription}` : "",
+      missing ? `النواقص أو التحسينات المقترحة: ${missing}` : "",
+      `الوصف المحسّن المقترح: ${data.enhancedPrompt || ""}`,
+      "اكتب لي نسخة نهائية أفضل للبرومبت، واذكر باختصار لماذا هذه النسخة أقوى. ركّز على الإضاءة، التكوين، التفاصيل، وضوح العناصر، والألوان.",
+    ].filter(Boolean).join("\n");
+  }
+
   async function handleEnhanceResult(button) {
     const result = state.result;
     if (!isCompleted(result) || result.type !== "image") {
@@ -793,18 +824,10 @@
         throw new Error("تعذر تجهيز وصف محسّن للصورة.");
       }
 
-      navigateToCreate({
-        type: "image",
-        prompt: enhancedPrompt,
-        originalPrompt: result.prompt,
-        sourceGenerationId: result.id,
+      navigateToAssistantChat(buildAssistantEnhancementMessage(result, {
+        ...data,
         enhancedPrompt,
-        finalPrompt: data.finalPrompt || "",
-        negativePrompt: data.negativePrompt || "",
-        imageDescription: data.imageDescription || "",
-        missingImprovements: data.missingImprovements || [],
-        debug: data.debug || null,
-      });
+      }));
     } catch (error) {
       console.error("RESULT ENHANCE ERROR:", error);
       showToast(error.message || "تعذر تحسين الصورة الآن.");
