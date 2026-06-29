@@ -1152,6 +1152,10 @@
     overflow-x: clip;
   }
 
+  .user-dashboard-v3 .udv3-tips-card {
+    display: none;
+  }
+
   .user-dashboard-v3 .udv3-widgets {
     order: 2;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1252,6 +1256,7 @@
 
   .user-dashboard-v3:not(.is-dashboard-section) .udv3-tips-card {
     grid-area: tips;
+    display: none;
   }
 
   .user-dashboard-v3:not(.is-dashboard-section) .udv3-type-tabs {
@@ -1390,8 +1395,7 @@
   }
 
   .user-dashboard-v3 .udv3-create-card,
-  .user-dashboard-v3 .udv3-recent-card,
-  .user-dashboard-v3 .udv3-tips-card {
+  .user-dashboard-v3 .udv3-recent-card {
     padding: 14px;
   }
 }
