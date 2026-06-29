@@ -895,12 +895,12 @@
 
 .user-dashboard-v3 .udv3-daily-tip-widget .udv3-daily-tip {
   width: min(100%, 238px);
-  min-height: 226px;
+  min-height: 198px;
   grid-template-rows: auto 1fr auto;
 }
 
 .user-dashboard-v3 .udv3-daily-tip-widget .udv3-daily-tip__body {
-  min-height: 132px;
+  min-height: 104px;
 }
 
 .user-dashboard-v3 .udv3-balance-widget,
