@@ -887,14 +887,14 @@
 }
 
 .user-dashboard-v3 .udv3-daily-tip-widget {
-  min-height: 284px;
-  padding: 16px;
+  min-height: 248px;
+  padding: 14px;
   display: grid;
   place-items: center;
 }
 
 .user-dashboard-v3 .udv3-daily-tip-widget .udv3-daily-tip {
-  width: min(100%, 238px);
+  width: min(100%, 226px);
   grid-template-rows: auto 1fr auto;
 }
 
