@@ -86,16 +86,17 @@
       }
 
       .gr-page {
-        width: min(1240px, calc(100% - 32px));
+        width: 100%;
+        max-width: none;
         min-height: 100vh;
         margin: 0 auto;
         display: block;
         direction: rtl;
         background: rgba(255, 255, 255, 0.94);
-        border-inline: 1px solid rgba(98, 85, 170, 0.12);
-        border-radius: 0 0 30px 30px;
+        border-inline: 0;
+        border-radius: 0;
         overflow: hidden;
-        box-shadow: var(--gr-shadow);
+        box-shadow: none;
         backdrop-filter: blur(18px);
       }
 
@@ -840,7 +841,7 @@
 
       @media (max-width: 1390px) {
         .gr-page {
-          width: min(1240px, calc(100% - 32px));
+          width: 100%;
         }
 
         .gr-latest-grid {

@@ -884,6 +884,17 @@
   background: #7b3cff;
 }
 
+.user-dashboard-v3 .udv3-transactions-tip {
+  margin-top: 2px;
+  display: grid;
+  place-items: center;
+}
+
+.user-dashboard-v3 .udv3-transactions-tip .udv3-daily-tip {
+  width: 100%;
+  max-width: 238px;
+}
+
 .user-dashboard-v3 .udv3-balance-widget,
 .user-dashboard-v3 .udv3-usage-widget,
 .user-dashboard-v3 .udv3-transactions-widget {
