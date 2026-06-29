@@ -186,7 +186,8 @@
       "";
     const explicitStatus = raw.status || "";
     const hasMedia = Boolean(rawResultUrl || rawThumbnailUrl);
-    const protectedDownloadUrl = generationId && hasMedia ? `/api/download/${encodeURIComponent(generationId)}?inline=1` : "";
+    const protectedPreviewUrl = generationId && hasMedia ? `/api/download/${encodeURIComponent(generationId)}?inline=1` : "";
+    const protectedDownloadUrl = generationId && hasMedia ? `/api/download/${encodeURIComponent(generationId)}` : "";
     return {
       id: generationId,
       requestId: raw.requestId || raw.request_id || null,
@@ -194,8 +195,8 @@
       prompt: raw.userPrompt || raw.prompt || raw.description || "",
       quality: raw.quality || "normal",
       status: explicitStatus || (hasMedia ? "completed" : "processing"),
-      resultUrl: rawResultUrl || protectedDownloadUrl,
-      thumbnailUrl: rawThumbnailUrl || rawResultUrl || protectedDownloadUrl,
+      resultUrl: rawResultUrl || protectedPreviewUrl,
+      thumbnailUrl: rawThumbnailUrl || rawResultUrl || protectedPreviewUrl,
       downloadUrl: protectedDownloadUrl || rawResultUrl,
       originalResultUrl: rawResultUrl,
       storageUrl: raw.storageUrl || raw.storage_url || "",
@@ -291,7 +292,7 @@
   }
 
   async function fetchBlob(url) {
-    const response = await fetch(url, { mode: "cors" });
+    const response = await fetch(url, { credentials: "include", cache: "no-store" });
     if (!response.ok) {
       throw new Error("Failed to fetch asset");
     }
@@ -322,7 +323,7 @@
     const filename = `${fileBaseName(result)}.${extension}`;
 
     try {
-      const sourceBlob = await fetchBlob(result.resultUrl);
+      const sourceBlob = await fetchBlob(result.downloadUrl || result.resultUrl);
       const image = await loadImageFromBlob(sourceBlob);
       const canvas = document.createElement("canvas");
       canvas.width = image.naturalWidth || image.width;
@@ -352,7 +353,7 @@
       window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
       showToast(`بدأ تنزيل ${extension.toUpperCase()}`);
     } catch {
-      triggerDownload(result.resultUrl, filename);
+      triggerDownload(result.downloadUrl || result.resultUrl, filename);
       showToast("بدأ تنزيل الملف");
     }
   }
@@ -847,7 +848,7 @@
     } else if (action === "download-webp") {
       await downloadImageAs("webp");
     } else if (action === "download-video") {
-      triggerDownload(result.resultUrl, `${fileBaseName(result)}.mp4`);
+      triggerDownload(result.downloadUrl || result.resultUrl, `${fileBaseName(result)}.mp4`);
       showToast("بدأ تنزيل الفيديو");
     } else if (action === "copy-link") {
       const shareUrl = generationShareUrl(result);

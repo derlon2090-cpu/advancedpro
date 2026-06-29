@@ -34,6 +34,7 @@ function buildNormal(userPrompt) {
 test("generation UI uses one submit path and keeps background jobs inside the dashboard", async () => {
   const { readFile } = await import("node:fs/promises");
   const dashboardHtml = await readFile(new URL("../../dashboard.html", import.meta.url), "utf8");
+  const generationHtml = await readFile(new URL("../../generation.html", import.meta.url), "utf8");
   const dashboardScript = await readFile(new URL("../../dashboard-page.js", import.meta.url), "utf8");
   const resultScript = await readFile(new URL("../../generation-page.js", import.meta.url), "utf8");
   const assistantScript = await readFile(new URL("../../assistant-widget.js", import.meta.url), "utf8");
@@ -73,6 +74,7 @@ test("generation UI uses one submit path and keeps background jobs inside the da
   assert.doesNotMatch(dashboardHtml, /<option value="high" selected>/);
   assert.match(dashboardHtml, /dashboard-v5\.css\?v=20260629-notifications-v1/);
   assert.match(dashboardHtml, /dashboard-sections\.css\?v=20260629-notifications-v1/);
+  assert.match(generationHtml, /generation-page\.js\?v=20260629-protected-downloads-v1/);
   assert.match(dashboardScript, /quality:\s*"normal"/);
   assert.match(dashboardScript, /function applyDashboardLanguage/);
   assert.match(dashboardScript, /What would you like to create today\?/);
@@ -90,6 +92,10 @@ test("generation UI uses one submit path and keeps background jobs inside the da
   assert.match(resultScript, /enhancedPrompt/);
   assert.match(resultScript, /pixigen:assistant-intent/);
   assert.match(resultScript, /buildAssistantEnhancementMessage/);
+  assert.match(resultScript, /protectedPreviewUrl/);
+  assert.match(resultScript, /protectedDownloadUrl/);
+  assert.match(resultScript, /fetchBlob\(result\.downloadUrl \|\| result\.resultUrl\)/);
+  assert.match(resultScript, /triggerDownload\(result\.downloadUrl \|\| result\.resultUrl, filename\)/);
   assert.match(assistantScript, /sessionStorage\.getItem\("pixigen:assistant-intent"\)/);
   assert.match(assistantScript, /sendMessage\(input\.value\)/);
   assert.match(platformAssistant, /تحسين أوصاف الصور والبرومبتات/);
