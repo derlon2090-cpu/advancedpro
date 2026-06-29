@@ -71,6 +71,8 @@ test("generation UI uses one submit path and keeps background jobs inside the da
   assert.match(dashboardHtml, /<option value="normal">/);
   assert.match(dashboardHtml, /<option value="high">/);
   assert.doesNotMatch(dashboardHtml, /<option value="high" selected>/);
+  assert.match(dashboardHtml, /dashboard-v5\.css\?v=20260629-dark-polish-v1/);
+  assert.match(dashboardHtml, /dashboard-sections\.css\?v=20260629-dark-polish-v1/);
   assert.match(dashboardScript, /quality:\s*"normal"/);
   assert.match(dashboardScript, /function applyDashboardLanguage/);
   assert.match(dashboardScript, /What would you like to create today\?/);
@@ -91,6 +93,18 @@ test("generation UI uses one submit path and keeps background jobs inside the da
   assert.match(assistantScript, /sessionStorage\.getItem\("pixigen:assistant-intent"\)/);
   assert.match(assistantScript, /sendMessage\(input\.value\)/);
   assert.match(platformAssistant, /تحسين أوصاف الصور والبرومبتات/);
+});
+
+test("dashboard dark theme keeps cards and text readable", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const dashboardCss = await readFile(new URL("../../dashboard-v5.css", import.meta.url), "utf8");
+  const sectionCss = await readFile(new URL("../../dashboard-sections.css", import.meta.url), "utf8");
+
+  assert.match(dashboardCss, /Dashboard dark mode polish/);
+  assert.match(dashboardCss, /html\[data-theme="dark"\] \.user-dashboard-v3 \.udv3-xp-pill strong/);
+  assert.match(dashboardCss, /html\[data-theme="dark"\] \.user-dashboard-v3 \.udv3-nav a/);
+  assert.match(sectionCss, /html\[data-theme="dark"\] \.user-dashboard-v3 \.udv6-setting-pill\.is-active/);
+  assert.match(sectionCss, /html\[data-theme="dark"\] \.user-dashboard-v3 \.udv6-field input/);
 });
 
 test("activation language toggle translates the full activation page", async () => {

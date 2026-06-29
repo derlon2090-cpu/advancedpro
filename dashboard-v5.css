@@ -1481,3 +1481,169 @@
   color: #c9253b;
   background: #fff4f5;
 }
+
+/* Dashboard dark mode polish: keep all cards dark and all text legible. */
+html[data-theme="dark"] .user-dashboard-v3 {
+  --ud5-ink: #f4f7ff;
+  --ud5-muted: #aeb8d2;
+  --ud5-line: rgba(158, 177, 214, .16);
+  --ud5-soft: rgba(124, 58, 237, .16);
+  --ud5-page: #080d16;
+  color: var(--ud5-ink);
+  background:
+    radial-gradient(circle at 20% 0%, rgba(109, 56, 244, .16), transparent 30%),
+    radial-gradient(circle at 75% 18%, rgba(50, 127, 255, .10), transparent 26%),
+    linear-gradient(180deg, #090f18 0%, #080b13 100%);
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-app,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-workspace {
+  background: transparent;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-sidebar,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-topbar {
+  border-color: rgba(158, 177, 214, .14);
+  background:
+    linear-gradient(180deg, rgba(17, 22, 34, .98), rgba(12, 16, 27, .98));
+  box-shadow: none;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-sidebar {
+  scrollbar-color: #7c3aed #0b101a;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-sidebar::-webkit-scrollbar-track {
+  background: linear-gradient(180deg, #0b101a 0%, #15112a 50%, #0b101a 100%);
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-sidebar::-webkit-scrollbar-thumb {
+  border-color: rgba(8, 13, 22, .96);
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-brand {
+  border-bottom-color: rgba(158, 177, 214, .15);
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-brand strong,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-profile strong,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-section-title h1,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-card-header h2,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-creation-card h3 {
+  color: #f6f8ff;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-brand-mark,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-card-header a,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-nav a.is-active span,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-nav a:hover span {
+  color: #a78bfa;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-nav p,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-profile span,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-section-title p,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-creation-card p,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-creation-meta {
+  color: #aeb8d2;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-nav a {
+  color: #dbe3f7;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-nav a span {
+  color: #d4dcf2;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-nav a:hover,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-nav a.is-active {
+  color: #f5f7ff;
+  border-color: rgba(124, 58, 237, .38);
+  background: linear-gradient(135deg, rgba(124, 58, 237, .34), rgba(76, 29, 149, .36));
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-create-card,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-recent-card,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-tips-card,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-daily-tip-widget,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-balance-widget,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-usage-widget,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-transactions-widget,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-prompt-box,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-cost-card,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-options-grid label,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-creation-card,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-confirm-modal section {
+  border-color: rgba(158, 177, 214, .16);
+  background:
+    linear-gradient(145deg, rgba(19, 25, 38, .96), rgba(12, 17, 29, .96));
+  color: #f4f7ff;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, .24);
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-type-tabs,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-icon-button,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-xp-pill,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-card-menu,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-confirm-modal button {
+  border-color: rgba(158, 177, 214, .16);
+  background: rgba(15, 21, 34, .92);
+  color: #eef3ff;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-xp-pill strong {
+  color: #f7f9ff;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-type-tabs button {
+  color: #d4dcf2;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-type-tabs button.is-active,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-type-tabs button:hover {
+  color: #f8f5ff;
+  border-color: rgba(124, 58, 237, .64);
+  background: linear-gradient(135deg, rgba(124, 58, 237, .38), rgba(49, 46, 129, .42));
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-prompt-box textarea,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-options-grid select {
+  color: #f6f8ff;
+  background: rgba(8, 13, 22, .64);
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-prompt-box textarea::placeholder {
+  color: #9ca8c2;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-cost-card span,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-cost-card p,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-prompt-box > span,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-prompt-box small,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-options-grid .udv3-option-heading,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-balance-widget p,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-balance-widget small,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-transactions-widget small,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-meter-row p {
+  color: #aeb8d2;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-cost-card strong,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-options-grid .udv3-option-heading b,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-balance-widget strong,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-usage-widget h2,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-transactions-widget h2,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-meter-row b {
+  color: #f5f8ff;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-support-card {
+  border-color: rgba(124, 58, 237, .22);
+  background: linear-gradient(145deg, rgba(124, 58, 237, .15), rgba(15, 21, 34, .92));
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-support-card strong,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-support-card span {
+  color: #f1f5ff;
+}

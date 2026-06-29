@@ -1219,6 +1219,121 @@ html[data-theme="dark"] .user-dashboard-v3 .udv3-daily-tip__body p {
   color: #ffffff;
 }
 
+html[data-theme="dark"] .user-dashboard-v3 {
+  --section-ink: #f4f7ff;
+  --section-muted: #aeb8d2;
+  --section-line: rgba(158, 177, 214, .16);
+  --section-soft: rgba(124, 58, 237, .16);
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv6-section-head h1,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-settings-card h2,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-setting-group__head span,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-setting-pill strong,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-stat-card strong,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-work-card h3,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-empty strong,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-model-card strong,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-template-card strong {
+  color: #f6f8ff;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv6-section-head p,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-setting-group__head small,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-setting-pill small,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-field span,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-stat-card span,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-work-card p,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-work-meta,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-empty p {
+  color: #aeb8d2;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv6-stat-card,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-panel,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-settings-card,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-setting-group,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-work-card,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-template-card,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-model-card,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-empty {
+  border-color: rgba(158, 177, 214, .16);
+  background:
+    linear-gradient(145deg, rgba(19, 25, 38, .96), rgba(12, 17, 29, .96));
+  box-shadow: 0 18px 48px rgba(0, 0, 0, .24);
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv6-search,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-segmented,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-field input,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-field select,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-setting-pill {
+  border-color: rgba(158, 177, 214, .17);
+  background: rgba(8, 13, 22, .64);
+  color: #f6f8ff;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv6-search::placeholder,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-field input::placeholder {
+  color: #8996b5;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv6-segmented button {
+  color: #b7c1d9;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv6-segmented button.is-active,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-setting-pill.is-active {
+  color: #f8f5ff;
+  border-color: rgba(124, 58, 237, .70);
+  background:
+    radial-gradient(circle at top right, rgba(124, 58, 237, .28), transparent 42%),
+    linear-gradient(145deg, rgba(38, 30, 72, .96), rgba(18, 24, 42, .96));
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv6-setting-pill > span {
+  background: rgba(237, 233, 254, .92);
+  color: #7c3aed;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv6-secondary-button,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-card-menu-button,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-menu,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-menu button {
+  border-color: rgba(158, 177, 214, .16);
+  background: rgba(15, 21, 34, .94);
+  color: #e9eefc;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv6-primary-button {
+  color: #fff;
+  box-shadow: 0 16px 30px rgba(124, 58, 237, .24);
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv6-work-media,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-creation-media {
+  background: #0b111c;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-creation-placeholder,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-creation-placeholder,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-media-placeholder,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-creation-media.is-media-broken,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-work-media.is-media-broken {
+  color: #a78bfa;
+  background:
+    radial-gradient(circle at top left, rgba(124, 58, 237, .22), transparent 38%),
+    linear-gradient(145deg, rgba(18, 24, 42, .98), rgba(8, 13, 22, .98));
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-creation-placeholder span,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-creation-placeholder span,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-creation-placeholder small,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-creation-placeholder small,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-media-placeholder small {
+  color: #aeb8d2;
+}
+
 @media (max-width: 640px) {
   .user-dashboard-v3 .udv6-card-grid,
   .user-dashboard-v3 .udv6-template-grid {
