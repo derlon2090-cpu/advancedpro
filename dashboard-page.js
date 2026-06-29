@@ -1,6 +1,6 @@
 (function () {
   const API_BASE_URL = window.AdvancedProConfig?.apiBaseUrl || "";
-  const BUILD_VERSION = "2026.06.29-daily-tips-v1";
+  const BUILD_VERSION = "2026.06.29-daily-tip-card-v3";
   console.info("PIXIGEN_BUILD:", BUILD_VERSION);
 
   const state = {
@@ -1856,7 +1856,7 @@
         event.preventDefault();
         const current = Number.isInteger(state.dailyTipCursor) ? state.dailyTipCursor : 0;
         state.dailyTipCursor = current + (dailyTipNav.matches("[data-daily-tip-next]") ? 1 : -1);
-        renderRecent();
+        renderDailyTips();
         applyDashboardLanguage();
         return;
       }

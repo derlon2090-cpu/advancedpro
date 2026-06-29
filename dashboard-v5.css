@@ -887,7 +887,7 @@
 }
 
 .user-dashboard-v3 .udv3-daily-tip-widget {
-  min-height: 250px;
+  min-height: 284px;
   padding: 16px;
   display: grid;
   place-items: center;
@@ -895,12 +895,12 @@
 
 .user-dashboard-v3 .udv3-daily-tip-widget .udv3-daily-tip {
   width: min(100%, 238px);
-  min-height: 204px;
+  min-height: 226px;
   grid-template-rows: auto 1fr auto;
 }
 
 .user-dashboard-v3 .udv3-daily-tip-widget .udv3-daily-tip__body {
-  min-height: 112px;
+  min-height: 132px;
 }
 
 .user-dashboard-v3 .udv3-balance-widget,
@@ -1079,6 +1079,12 @@
   .user-dashboard-v3 .udv3-usage-widget,
   .user-dashboard-v3 .udv3-transactions-widget {
     min-height: 215px;
+  }
+}
+
+@media (hover: none) and (pointer: coarse), (max-width: 720px) {
+  .user-dashboard-v3 .udv3-daily-tip-widget {
+    display: none;
   }
 }
 
