@@ -42,7 +42,7 @@ import {
 } from "../utils/promptComplexity.js";
 
 const router = Router();
-const IMAGE_GENERATION_TIMEOUT_MS = 30_000;
+const IMAGE_GENERATION_TIMEOUT_MS = Number(process.env.IMAGE_GENERATION_TIMEOUT_MS || 120_000);
 
 function promptVerboseLogsEnabled() {
   return String(process.env.PROMPT_VERBOSE_LOGS || "false").trim().toLowerCase() === "true";
@@ -950,7 +950,7 @@ async function runGenerationCompletionTask({
           seed,
         }),
         IMAGE_GENERATION_TIMEOUT_MS,
-        "استغرقت خدمة إنشاء الصورة أكثر من 30 ثانية. حاول مرة أخرى، ولم يتم خصم أي رصيد."
+        "استغرقت خدمة إنشاء الصورة وقتًا أطول من المتوقع. حاول مرة أخرى بعد قليل، ولم يتم خصم أي رصيد."
       );
     } else {
       result = await generateVideoWithWaveSpeed({

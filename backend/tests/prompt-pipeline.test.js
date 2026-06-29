@@ -36,6 +36,7 @@ test("generation UI uses one submit path and keeps background jobs inside the da
   const dashboardHtml = await readFile(new URL("../../dashboard.html", import.meta.url), "utf8");
   const dashboardScript = await readFile(new URL("../../dashboard-page.js", import.meta.url), "utf8");
   const resultScript = await readFile(new URL("../../generation-page.js", import.meta.url), "utf8");
+  const generateRoute = await readFile(new URL("../src/routes/generate.js", import.meta.url), "utf8");
 
   assert.match(dashboardHtml, /<button type="submit" data-submit-button>/);
   assert.match(dashboardScript, /\[data-create-form\]"\)\.addEventListener\("submit", handleGenerate\)/);
@@ -73,6 +74,10 @@ test("generation UI uses one submit path and keeps background jobs inside the da
   assert.match(dashboardScript, /What would you like to create today\?/);
   assert.match(dashboardScript, /Latest Creations/);
   assert.match(dashboardScript, /Account Settings/);
+  assert.doesNotMatch(dashboardScript, /استغرق إنشاء الصورة أكثر من 30 ثانية/);
+  assert.match(dashboardScript, /ما زال إنشاء الصورة قيد المعالجة/);
+  assert.match(generateRoute, /IMAGE_GENERATION_TIMEOUT_MS\s*=\s*Number\(process\.env\.IMAGE_GENERATION_TIMEOUT_MS\s*\|\|\s*120_000\)/);
+  assert.doesNotMatch(generateRoute, /إنشاء الصورة أكثر من 30 ثانية/);
 });
 
 test("activation language toggle translates the full activation page", async () => {
