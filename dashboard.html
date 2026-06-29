@@ -15,8 +15,8 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/styles.css?v=20260605-brand-v9" />
-    <link rel="stylesheet" href="/dashboard-v5.css?v=20260629-dark-polish-v1" />
-    <link rel="stylesheet" href="/dashboard-sections.css?v=20260629-dark-polish-v1" />
+    <link rel="stylesheet" href="/dashboard-v5.css?v=20260629-notifications-v1" />
+    <link rel="stylesheet" href="/dashboard-sections.css?v=20260629-notifications-v1" />
   </head>
   <body class="user-dashboard-v3" data-page="dashboard-v4">
     <svg class="udv5-symbols" aria-hidden="true">
@@ -157,9 +157,13 @@
           </div>
         </div>
 
-        <button class="udv3-icon-button" type="button" aria-label="التنبيهات">
-          <svg><use href="#udv5-bell"></use></svg>
-        </button>
+        <div class="udv3-notification-host" data-notification-host>
+          <button class="udv3-icon-button" type="button" aria-label="الإشعارات" data-notification-toggle>
+            <svg><use href="#udv5-bell"></use></svg>
+            <span class="udv3-notification-count" data-notification-count hidden>0</span>
+          </button>
+          <div class="udv3-notification-popover" data-notification-popover hidden></div>
+        </div>
 
         <div class="udv3-xp-pill" aria-label="رصيدك الحالي">
           <svg class="udv3-coin-icon" aria-hidden="true"><use href="#udv5-xp-coins"></use></svg>

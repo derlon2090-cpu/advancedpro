@@ -30,6 +30,9 @@
     pendingGenerationId: null,
     generationsHydrated: false,
     dailyTipCursor: null,
+    notifications: [],
+    notificationsOpen: false,
+    notificationReadTimer: null,
   };
 
   const IMAGE_XP_COST = { normal: 5, high: 10, ultra: 20 };
@@ -39,6 +42,7 @@
   };
   const VIDEO_DURATIONS = [5, 8];
   const ADVPROAI_URL = "https://advproai.com";
+  const NOTIFICATION_READ_DELAY_MS = 2000;
   const MAX_VIDEO_DURATION_BY_QUALITY = { normal: 8, high: 8, ultra: 8 };
   const USER_FACING_MODEL_NAMES = {
     image: {
@@ -497,7 +501,8 @@
       "";
     const explicitStatus = item.status || "";
     const hasMedia = Boolean(rawResultUrl || rawThumbnailUrl);
-    const protectedDownloadUrl = generationId && hasMedia ? `/api/download/${encodeURIComponent(generationId)}?inline=1` : "";
+    const protectedPreviewUrl = generationId && hasMedia ? `/api/download/${encodeURIComponent(generationId)}?inline=1` : "";
+    const protectedDownloadUrl = generationId && hasMedia ? `/api/download/${encodeURIComponent(generationId)}` : "";
     return {
       id: generationId,
       requestId: item.requestId,
@@ -516,8 +521,8 @@
       seed: item.seed,
       creditsUsed: Number(item.creditsUsed ?? item.credits_used ?? item.xpCost ?? item.cost ?? calculateCredits()),
       createdAt: item.createdAt || item.created_at || new Date().toISOString(),
-      resultUrl: rawResultUrl || protectedDownloadUrl,
-      thumbnailUrl: rawThumbnailUrl || rawResultUrl || protectedDownloadUrl,
+      resultUrl: rawResultUrl || protectedPreviewUrl,
+      thumbnailUrl: rawThumbnailUrl || rawResultUrl || protectedPreviewUrl,
       downloadUrl: protectedDownloadUrl || rawResultUrl,
       rawResultUrl,
       rawThumbnailUrl,
@@ -1398,6 +1403,208 @@
     `;
   }
 
+  function notificationCacheKey(keyLike = state.key) {
+    const code = keyLike?.code || keyLike?.codeMasked || keyLike?.maskedCode || "guest";
+    return `pixigen:notifications:read:${code}`;
+  }
+
+  function loadReadNotifications() {
+    try {
+      return new Set(JSON.parse(localStorage.getItem(notificationCacheKey()) || "[]").map(String));
+    } catch {
+      return new Set();
+    }
+  }
+
+  function saveReadNotifications(ids) {
+    localStorage.setItem(notificationCacheKey(), JSON.stringify(Array.from(ids)));
+  }
+
+  function notificationTone(type) {
+    if (type === "generation_completed") return { icon: "✓", tone: "success" };
+    if (type === "generation_failed" || type === "plan_expired") return { icon: "!", tone: "danger" };
+    if (type === "plan_expires_soon" || type === "xp_low") return { icon: "↑", tone: "warning" };
+    if (type === "support_message") return { icon: "…", tone: "info" };
+    if (type === "xp_added" || type === "payment_success") return { icon: "▣", tone: "wallet" };
+    return { icon: "•", tone: "system" };
+  }
+
+  function buildNotifications({ includeOld = false } = {}) {
+    const read = loadReadNotifications();
+    const key = state.key || {};
+    const items = [];
+    const completed = uniqueGenerations(state.results)
+      .filter((item) => item.status === "completed" && item.resultUrl)
+      .slice(0, includeOld ? 30 : 1);
+
+    completed.forEach((item) => {
+      const title = item.type === "video" ? "اكتمل إنشاء الفيديو" : "اكتمل إنشاء الصورة";
+      const prompt = String(item.prompt || "إبداع جديد").slice(0, 48);
+      items.push({
+        id: `generation_completed:${item.id}`,
+        type: "generation_completed",
+        title,
+        message: `تم إنشاء ${item.type === "video" ? "فيديو" : "صورة"} "${prompt}" بنجاح.`,
+        createdAt: item.createdAt,
+        actionUrl: `/result.html?id=${encodeURIComponent(item.id)}`,
+        thumbnailUrl: item.thumbnailUrl || item.resultUrl,
+      });
+    });
+
+    items.push(
+      {
+        id: "plan_expires_soon",
+        type: "plan_expires_soon",
+        title: "تذكير ترقية الباقة",
+        message: "ترقية الآن للاستفادة من مزايا إضافية وحدود استخدام أعلى.",
+        createdAt: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+        actionUrl: "#plan",
+      },
+      {
+        id: "support_message",
+        type: "support_message",
+        title: "رسالة جديدة",
+        message: "لديك رسالة جديدة من فريق الدعم.",
+        createdAt: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
+        actionUrl: "mailto:support@advancedpro.com",
+      },
+      {
+        id: "xp_low",
+        type: keyCredits() <= 25 ? "xp_low" : "xp_deducted",
+        title: keyCredits() <= 25 ? "انخفاض في الخبرة" : "تحديث الرصيد",
+        message: keyCredits() <= 25 ? "لديك XP منخفض. اشحن أو رق الباقة للمتابعة بدون توقف." : "تم تحديث رصيد XP في حسابك.",
+        createdAt: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+        actionUrl: "#plan",
+      },
+      {
+        id: "xp_added",
+        type: "xp_added",
+        title: "عملية جديدة",
+        message: `رصيدك الحالي ${formatNumber(keyCredits())} XP في حسابك.`,
+        createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+        actionUrl: "#transactions",
+      }
+    );
+
+    if (includeOld) {
+      state.results.slice(1, 24).forEach((item) => {
+        items.push({
+          id: `xp_deducted:${item.id}`,
+          type: "xp_deducted",
+          title: `خصم ${formatNumber(item.creditsUsed || 5)} XP`,
+          message: `تم خصم الرصيد مقابل إنشاء ${typeLabel(item.type)} ${qualityLabel(item.quality)}.`,
+          createdAt: item.createdAt,
+          actionUrl: "#transactions",
+        });
+      });
+    }
+
+    return items
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .map((item) => ({ ...item, readAt: read.has(item.id) ? new Date().toISOString() : null }));
+  }
+
+  function renderNotificationItem(item, { compact = false } = {}) {
+    const tone = notificationTone(item.type);
+    const unread = !item.readAt;
+    return `
+      <button class="udv3-notification-item ${unread ? "is-unread" : ""}" type="button" data-notification-action="${escapeHtml(item.actionUrl || "")}" data-notification-id="${escapeHtml(item.id)}">
+        <span class="udv3-notification-icon is-${tone.tone}">${tone.icon}</span>
+        <span class="udv3-notification-copy">
+          <strong>${escapeHtml(item.title)}</strong>
+          <small>${escapeHtml(item.message)}</small>
+          <time>${escapeHtml(relativeTime(item.createdAt) || "الآن")}</time>
+        </span>
+        ${item.thumbnailUrl && !compact ? `<img src="${escapeHtml(item.thumbnailUrl)}" alt="" />` : ""}
+      </button>
+    `;
+  }
+
+  function updateNotificationUi() {
+    state.notifications = buildNotifications({ includeOld: state.activeView === "notifications" });
+    const unreadCount = state.notifications.filter((item) => !item.readAt).length;
+    const count = $("[data-notification-count]");
+    if (count) {
+      count.textContent = String(Math.min(unreadCount, 99));
+      count.hidden = unreadCount === 0;
+    }
+    const popover = $("[data-notification-popover]");
+    if (!popover) return;
+    popover.hidden = !state.notificationsOpen;
+    if (!state.notificationsOpen) return;
+    const preview = state.notifications.slice(0, 5);
+    popover.innerHTML = `
+      <div class="udv3-notification-head">
+        <div><strong>الإشعارات</strong><span>${unreadCount}</span></div>
+        <button type="button" data-dashboard-view="settings" aria-label="إعدادات الإشعارات">⚙</button>
+      </div>
+      <div class="udv3-notification-list">
+        ${preview.map((item) => renderNotificationItem(item)).join("")}
+      </div>
+      <button class="udv3-notification-all" type="button" data-dashboard-view="notifications">عرض كل الإشعارات</button>
+    `;
+  }
+
+  function markNotificationsRead(ids = state.notifications.map((item) => item.id)) {
+    const read = loadReadNotifications();
+    ids.forEach((id) => read.add(String(id)));
+    saveReadNotifications(read);
+    updateNotificationUi();
+    if (state.activeView === "notifications") renderDashboardSection();
+  }
+
+  function openNotifications() {
+    state.notificationsOpen = true;
+    updateNotificationUi();
+    clearTimeout(state.notificationReadTimer);
+    state.notificationReadTimer = setTimeout(() => markNotificationsRead(), NOTIFICATION_READ_DELAY_MS);
+  }
+
+  function closeNotifications() {
+    state.notificationsOpen = false;
+    clearTimeout(state.notificationReadTimer);
+    updateNotificationUi();
+  }
+
+  function toggleNotifications() {
+    if (state.notificationsOpen) closeNotifications();
+    else openNotifications();
+  }
+
+  function handleNotificationAction(actionUrl, notificationId) {
+    if (notificationId) markNotificationsRead([notificationId]);
+    closeNotifications();
+    if (!actionUrl) return;
+    if (actionUrl.startsWith("#")) {
+      setDashboardView(actionUrl.slice(1));
+      return;
+    }
+    window.location.href = actionUrl;
+  }
+
+  function renderNotificationsSection() {
+    const items = buildNotifications({ includeOld: true });
+    const unread = items.filter((item) => !item.readAt).length;
+    return `
+      <div class="udv6-section-shell">
+        <header class="udv6-section-head"><div><h1>كل الإشعارات</h1><p>القديمة والجديدة مع حالة القراءة وأحداث الحساب المهمة.</p></div><button class="udv6-secondary-button" type="button" data-notification-mark-all>تعليم الكل كمقروء</button></header>
+        <section class="udv6-panel udv6-notifications-panel">
+          <div class="udv6-notification-tabs">
+            <span>غير مقروءة ${formatNumber(unread)}</span>
+            <span>المعاملات</span>
+            <span>الباقة</span>
+            <span>إنشاء المحتوى</span>
+            <span>الدعم</span>
+            <span>النظام</span>
+          </div>
+          <div class="udv6-notification-list">
+            ${items.map((item) => renderNotificationItem(item, { compact: true })).join("")}
+          </div>
+        </section>
+      </div>
+    `;
+  }
+
   function getSettings() {
     try {
       return {
@@ -1587,13 +1794,14 @@
       templates: renderTemplatesSection,
       plan: renderPlanSection,
       transactions: renderTransactionsSection,
+      notifications: renderNotificationsSection,
       settings: renderSettingsSection,
     };
     section.innerHTML = (renderers[state.activeView] || renderProjectsSection)();
   }
 
   function setDashboardView(view, { updateHistory = true } = {}) {
-    const allowed = ["home", "projects", "favorites", "models", "templates", "plan", "transactions", "settings"];
+    const allowed = ["home", "projects", "favorites", "models", "templates", "plan", "transactions", "notifications", "settings"];
     state.activeView = allowed.includes(view) ? view : "home";
     state.sectionFilter = "all";
     state.sectionSearch = "";
@@ -1655,7 +1863,7 @@
 
     if (action === "download") {
       const anchor = document.createElement("a");
-      anchor.href = item.resultUrl;
+      anchor.href = item.downloadUrl || `/api/download/${encodeURIComponent(item.id)}`;
       anchor.download = "";
       anchor.target = "_blank";
       anchor.click();
@@ -1804,14 +2012,42 @@
           event.stopPropagation();
           signOutFromCode();
         }
+
+        const markAllNotifications = event.target.closest("[data-notification-mark-all]");
+        if (markAllNotifications) {
+          event.preventDefault();
+          event.stopPropagation();
+          markNotificationsRead(buildNotifications({ includeOld: true }).map((item) => item.id));
+          return;
+        }
       },
       true
     );
 
     document.addEventListener("click", async (event) => {
+      const notificationToggle = event.target.closest("[data-notification-toggle]");
+      if (notificationToggle) {
+        event.preventDefault();
+        event.stopPropagation();
+        toggleNotifications();
+        return;
+      }
+
+      const notificationAction = event.target.closest("[data-notification-action]");
+      if (notificationAction) {
+        event.preventDefault();
+        event.stopPropagation();
+        handleNotificationAction(
+          notificationAction.dataset.notificationAction,
+          notificationAction.dataset.notificationId
+        );
+        return;
+      }
+
       const navigation = event.target.closest("a[data-dashboard-view], button[data-dashboard-view]");
       if (navigation && !navigation.matches("[data-type-shortcut]")) {
         event.preventDefault();
+        closeNotifications();
         setDashboardView(navigation.dataset.dashboardView);
         return;
       }
@@ -1888,6 +2124,10 @@
         !event.target.closest("[data-menu-generation-id]")
       ) {
         closeAllMenus();
+      }
+
+      if (state.notificationsOpen && !event.target.closest("[data-notification-host]")) {
+        closeNotifications();
       }
     });
 
@@ -2475,6 +2715,7 @@
     renderDailyTips();
     renderTransactions();
     updateUsageUi();
+    updateNotificationUi();
     if (state.activeView !== "home") renderDashboardSection();
     applyDashboardLanguage();
   }

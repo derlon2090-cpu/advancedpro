@@ -889,6 +889,39 @@
   font-weight: 800;
 }
 
+.user-dashboard-v3 .udv6-notifications-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.user-dashboard-v3 .udv6-notification-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.user-dashboard-v3 .udv6-notification-tabs span {
+  border: 1px solid var(--section-line);
+  border-radius: 999px;
+  padding: 8px 12px;
+  color: var(--section-purple);
+  background: #f7f3ff;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.user-dashboard-v3 .udv6-notification-list {
+  display: grid;
+  gap: 10px;
+}
+
+.user-dashboard-v3 .udv6-notification-list .udv3-notification-item {
+  grid-template-columns: 38px minmax(0, 1fr);
+  border: 1px solid var(--section-line);
+  border-radius: 16px;
+  background: #fff;
+}
+
 .user-dashboard-v3 .udv6-settings-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1332,6 +1365,64 @@ html[data-theme="dark"] .user-dashboard-v3 .udv3-creation-placeholder small,
 html[data-theme="dark"] .user-dashboard-v3 .udv6-creation-placeholder small,
 html[data-theme="dark"] .user-dashboard-v3 .udv6-media-placeholder small {
   color: #aeb8d2;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv6-plan-stat,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-transaction-row {
+  border-color: rgba(158, 177, 214, .16);
+  background:
+    radial-gradient(circle at top right, rgba(124, 58, 237, .13), transparent 42%),
+    linear-gradient(145deg, rgba(19, 25, 38, .96), rgba(12, 17, 29, .96));
+  box-shadow: 0 18px 44px rgba(0, 0, 0, .20);
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv6-plan-stat span,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-transaction-row span,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-transaction-row time {
+  color: #aeb8d2;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv6-plan-stat strong,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-transaction-row strong {
+  color: #f6f8ff;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv6-transaction-row b {
+  color: #fb7185;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv6-transaction-row b.is-positive {
+  color: #34d399;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv6-status {
+  color: #34d399 !important;
+  background: rgba(16, 185, 129, .16);
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv6-template-card button,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-plan-actions button {
+  border-color: rgba(196, 181, 253, .36);
+  background: rgba(124, 58, 237, .20);
+  color: #f5f3ff;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv6-plan-actions button:hover,
+html[data-theme="dark"] .user-dashboard-v3 .udv6-template-card button:hover {
+  background: rgba(124, 58, 237, .32);
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv6-notification-tabs span {
+  border-color: rgba(158, 177, 214, .16);
+  color: #c4b5fd;
+  background: rgba(124, 58, 237, .16);
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv6-notification-list .udv3-notification-item {
+  border-color: rgba(158, 177, 214, .16);
+  background:
+    radial-gradient(circle at top right, rgba(124, 58, 237, .13), transparent 42%),
+    linear-gradient(145deg, rgba(19, 25, 38, .96), rgba(12, 17, 29, .96));
 }
 
 @media (max-width: 640px) {

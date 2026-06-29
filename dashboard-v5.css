@@ -246,6 +246,183 @@
   border: 1px solid #ededf5;
 }
 
+.user-dashboard-v3 .udv3-notification-host {
+  position: relative;
+  order: 2;
+}
+
+.user-dashboard-v3 .udv3-notification-host .udv3-icon-button {
+  order: initial;
+  position: relative;
+}
+
+.user-dashboard-v3 .udv3-notification-count {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: #6d35ff;
+  font-size: 10px;
+  font-weight: 900;
+  box-shadow: 0 8px 20px rgba(109, 53, 255, .28);
+}
+
+.user-dashboard-v3 .udv3-notification-popover {
+  position: absolute;
+  top: calc(100% + 12px);
+  left: 0;
+  z-index: 70;
+  width: min(360px, calc(100vw - 24px));
+  overflow: hidden;
+  border: 1px solid #ebe7f8;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, .98);
+  box-shadow: 0 24px 70px rgba(31, 21, 71, .16);
+  direction: rtl;
+}
+
+.user-dashboard-v3 .udv3-notification-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 10px;
+}
+
+.user-dashboard-v3 .udv3-notification-head div {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-dashboard-v3 .udv3-notification-head strong {
+  color: #10163f;
+  font-weight: 900;
+}
+
+.user-dashboard-v3 .udv3-notification-head span {
+  min-width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  color: #fff;
+  background: #6d35ff;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.user-dashboard-v3 .udv3-notification-head button {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 9px;
+  color: #7c3aed;
+  background: #f4f0ff;
+  cursor: pointer;
+}
+
+.user-dashboard-v3 .udv3-notification-list {
+  display: grid;
+  max-height: 395px;
+  overflow: auto;
+}
+
+.user-dashboard-v3 .udv3-notification-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 56px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: 0;
+  border-top: 1px solid #f0edf8;
+  padding: 12px 14px;
+  text-align: right;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.user-dashboard-v3 .udv3-notification-item.is-unread::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  background: #6d35ff;
+}
+
+.user-dashboard-v3 .udv3-notification-icon {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  font-weight: 900;
+}
+
+.user-dashboard-v3 .udv3-notification-icon.is-success { color: #10b981; background: #dcfce7; }
+.user-dashboard-v3 .udv3-notification-icon.is-warning { color: #7c3aed; background: #f1e9ff; }
+.user-dashboard-v3 .udv3-notification-icon.is-info { color: #2563eb; background: #dbeafe; }
+.user-dashboard-v3 .udv3-notification-icon.is-wallet { color: #0891b2; background: #cffafe; }
+.user-dashboard-v3 .udv3-notification-icon.is-danger { color: #e11d48; background: #ffe4e6; }
+.user-dashboard-v3 .udv3-notification-icon.is-system { color: #64748b; background: #f1f5f9; }
+
+.user-dashboard-v3 .udv3-notification-copy {
+  display: grid;
+  gap: 3px;
+}
+
+.user-dashboard-v3 .udv3-notification-copy strong {
+  color: #10163f;
+  font-size: 13px;
+}
+
+.user-dashboard-v3 .udv3-notification-copy small,
+.user-dashboard-v3 .udv3-notification-copy time {
+  color: #737b98;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.user-dashboard-v3 .udv3-notification-item img {
+  width: 54px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.user-dashboard-v3 .udv3-notification-all {
+  width: 100%;
+  min-height: 42px;
+  border: 0;
+  border-top: 1px solid #f0edf8;
+  color: #6d35ff;
+  background: #fff;
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+@media (max-width: 760px) {
+  .user-dashboard-v3 .udv3-notification-popover {
+    position: fixed;
+    top: 72px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-height: calc(100vh - 92px);
+  }
+}
+
 .user-dashboard-v3 .udv3-icon-button svg {
   width: 17px;
   height: 17px;
@@ -1646,4 +1823,99 @@ html[data-theme="dark"] .user-dashboard-v3 .udv3-support-card {
 html[data-theme="dark"] .user-dashboard-v3 .udv3-support-card strong,
 html[data-theme="dark"] .user-dashboard-v3 .udv3-support-card span {
   color: #f1f5ff;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-notification-popover {
+  border-color: rgba(158, 177, 214, .16);
+  background: rgba(17, 24, 39, .98);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .34);
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-notification-head strong,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-notification-copy strong {
+  color: #f7f9ff;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-notification-head button {
+  color: #c4b5fd;
+  background: rgba(124, 58, 237, .18);
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-notification-item,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-notification-all {
+  border-color: rgba(158, 177, 214, .16);
+  background: transparent;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-notification-copy small,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-notification-copy time {
+  color: #aeb8d2;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-notification-all {
+  color: #c4b5fd;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-balance-widget a,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-usage-widget a,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-transactions-widget a {
+  border: 1px solid rgba(167, 139, 250, .34);
+  background: rgba(17, 24, 39, .82);
+  color: #c4b5fd;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-balance-widget a:hover,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-usage-widget a:hover,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-transactions-widget a:hover {
+  background: rgba(88, 28, 135, .35);
+  color: #f5f3ff;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-ring {
+  background: conic-gradient(var(--ring-color) var(--value), rgba(148, 163, 184, .22) 0);
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-ring::after {
+  background: #17182a;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-ring svg {
+  color: #c4b5fd;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-transactions-widget article {
+  border-bottom-color: rgba(148, 163, 184, .16);
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-transactions-widget article strong {
+  color: #f6f8ff;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-transactions-widget article b {
+  color: #fb7185;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-transactions-widget article > i {
+  color: #c4b5fd;
+  background: rgba(124, 58, 237, .18);
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-tips-card article {
+  border-color: rgba(158, 177, 214, .16);
+  background:
+    radial-gradient(circle at top right, rgba(124, 58, 237, .18), transparent 46%),
+    linear-gradient(145deg, rgba(21, 28, 43, .96), rgba(12, 17, 29, .96));
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-tips-card article i {
+  color: #c4b5fd;
+  background: rgba(124, 58, 237, .20);
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-tips-card strong {
+  color: #f7f9ff;
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-tips-card span {
+  color: #aeb8d2;
 }
