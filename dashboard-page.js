@@ -700,7 +700,7 @@
     const list = uniqueGenerations(state.results).slice(0, 5);
     grid.innerHTML = list.length
       ? list.map(renderCreationCardFixed).join("")
-      : renderDailyTipCard({ compact: true });
+      : `<div class="udv3-empty-state is-compact">لا توجد إبداعات حديثة بعد.</div>`;
   }
 
   function dailyTipIndex(offset = 0) {
@@ -744,10 +744,6 @@
 
   function renderDailyTips() {
     const grid = $("[data-tips-grid]");
-    const widget = $("[data-daily-tip-widget]");
-    if (widget) {
-      widget.innerHTML = renderDailyTipCard({ compact: true });
-    }
     if (!grid) return;
     const start = dailyTipIndex(0);
     const items = Array.from({ length: 4 }, (_, index) => DAILY_TIPS[(start + index) % DAILY_TIPS.length]);

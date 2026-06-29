@@ -690,13 +690,13 @@
 
 .user-dashboard-v3 .udv3-tips-card {
   max-width: none;
-  padding: 16px;
+  padding: 16px 18px 18px;
   border-radius: 13px;
   box-shadow: 0 7px 24px rgba(39, 30, 78, .045);
 }
 
 .user-dashboard-v3 .udv3-tips-card .udv3-card-header {
-  margin-bottom: 12px;
+  margin-bottom: 13px;
 }
 
 .user-dashboard-v3 .udv3-tips-card .udv3-card-header h2 {
@@ -706,7 +706,7 @@
   gap: 7px;
   margin: 0;
   text-align: right;
-  font-size: 17px;
+  font-size: 18px;
 }
 
 .user-dashboard-v3 .udv3-tips-card .udv3-card-header > span {
@@ -724,22 +724,22 @@
 .user-dashboard-v3 .udv3-tips-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+  gap: 12px;
 }
 
 .user-dashboard-v3 .udv3-tips-card article {
-  min-height: 78px;
-  padding: 11px;
+  min-height: 102px;
+  padding: 15px 14px;
   border-radius: 9px;
-  gap: 5px;
+  gap: 7px;
   text-align: center;
-  align-content: start;
+  align-content: center;
   box-shadow: none;
 }
 
 .user-dashboard-v3 .udv3-tips-card article i {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   margin: 0 auto 2px;
   display: grid;
   place-items: center;
@@ -755,12 +755,12 @@
 }
 
 .user-dashboard-v3 .udv3-tips-card strong {
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.4;
 }
 
 .user-dashboard-v3 .udv3-tips-card span {
-  font-size: 9px;
+  font-size: 10px;
   line-height: 1.55;
 }
 
@@ -882,17 +882,6 @@
 .user-dashboard-v3 .udv3-daily-tip footer span.is-active {
   width: 7px;
   background: #7b3cff;
-}
-
-.user-dashboard-v3 .udv3-transactions-tip {
-  margin-top: 2px;
-  display: grid;
-  place-items: center;
-}
-
-.user-dashboard-v3 .udv3-transactions-tip .udv3-daily-tip {
-  width: 100%;
-  max-width: 238px;
 }
 
 .user-dashboard-v3 .udv3-balance-widget,
