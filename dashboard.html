@@ -15,8 +15,8 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/styles.css?v=20260605-brand-v9" />
-    <link rel="stylesheet" href="/dashboard-v5.css?v=20260629-link-dark-v1" />
-    <link rel="stylesheet" href="/dashboard-sections.css?v=20260629-link-dark-v1" />
+    <link rel="stylesheet" href="/dashboard-v5.css?v=20260629-daily-tips-v1" />
+    <link rel="stylesheet" href="/dashboard-sections.css?v=20260629-daily-tips-v1" />
   </head>
   <body class="user-dashboard-v3" data-page="dashboard-v4">
     <svg class="udv5-symbols" aria-hidden="true">
@@ -295,29 +295,11 @@
           </section>
 
           <section class="udv3-tips-card" id="tips">
-            <h2><svg><use href="#udv5-bulb"></use></svg> نصائح للإبداع</h2>
-            <div>
-              <article>
-                <i><svg><use href="#udv5-detail"></use></svg></i>
-                <strong>استخدم تفاصيل دقيقة</strong>
-                <span>كلما كان وصفك دقيقًا كانت النتيجة أفضل.</span>
-              </article>
-              <article>
-                <i><svg><use href="#udv5-quality"></use></svg></i>
-                <strong>اختر الجودة المناسبة</strong>
-                <span>الجودة الأعلى تعطي تفاصيل أدق بتكلفة أكبر.</span>
-              </article>
-              <article>
-                <i><svg><use href="#udv5-palette"></use></svg></i>
-                <strong>جرّب أنماطًا مختلفة</strong>
-                <span>اكتشف جمال الفكرة بأكثر من أسلوب.</span>
-              </article>
-              <article>
-                <i><svg><use href="#udv5-crop"></use></svg></i>
-                <strong>الأبعاد تؤثر على النتيجة</strong>
-                <span>اختر المقاس المناسب لاستخدامك.</span>
-              </article>
+            <div class="udv3-card-header">
+              <h2><svg><use href="#udv5-bulb"></use></svg> نصائح للإبداع</h2>
+              <span data-daily-tip-date>نصائح اليوم</span>
             </div>
+            <div class="udv3-tips-grid" data-tips-grid></div>
           </section>
           </div>
           <section class="udv6-section-view" data-dashboard-section hidden></section>
@@ -386,7 +368,7 @@
     </div>
 
     <script src="/config.js"></script>
-    <script src="/dashboard-page.js?v=20260629-link-dark-v1"></script>
+    <script src="/dashboard-page.js?v=20260629-daily-tips-v1"></script>
     <script src="/assistant-widget.js?v=20260621-assistant-v3"></script>
   </body>
 </html>

@@ -690,19 +690,29 @@
 
 .user-dashboard-v3 .udv3-tips-card {
   max-width: none;
-  padding: 16px 20px;
+  padding: 16px;
   border-radius: 13px;
   box-shadow: 0 7px 24px rgba(39, 30, 78, .045);
 }
 
-.user-dashboard-v3 .udv3-tips-card h2 {
+.user-dashboard-v3 .udv3-tips-card .udv3-card-header {
+  margin-bottom: 12px;
+}
+
+.user-dashboard-v3 .udv3-tips-card .udv3-card-header h2 {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 7px;
-  margin-bottom: 12px;
-  text-align: center;
+  margin: 0;
+  text-align: right;
   font-size: 17px;
+}
+
+.user-dashboard-v3 .udv3-tips-card .udv3-card-header > span {
+  color: var(--ud5-purple);
+  font-size: 11px;
+  font-weight: 800;
 }
 
 .user-dashboard-v3 .udv3-tips-card h2 svg {
@@ -711,7 +721,9 @@
   color: var(--ud5-purple);
 }
 
-.user-dashboard-v3 .udv3-tips-card > div {
+.user-dashboard-v3 .udv3-tips-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
 }
 
@@ -750,6 +762,126 @@
 .user-dashboard-v3 .udv3-tips-card span {
   font-size: 9px;
   line-height: 1.55;
+}
+
+.user-dashboard-v3 .udv3-daily-tip {
+  grid-column: 1 / -1;
+  width: min(238px, 100%);
+  margin: 0 auto;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+  border: 1px solid #ece8ff;
+  border-radius: 11px;
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(52, 36, 112, .08);
+}
+
+.user-dashboard-v3 .udv3-daily-tip header,
+.user-dashboard-v3 .udv3-daily-tip footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.user-dashboard-v3 .udv3-daily-tip header strong {
+  color: #141842;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.user-dashboard-v3 .udv3-daily-tip header svg {
+  width: 14px;
+  height: 14px;
+  color: #8a46ff;
+}
+
+.user-dashboard-v3 .udv3-daily-tip__body {
+  min-height: 92px;
+  padding: 12px;
+  display: grid;
+  place-items: center;
+  gap: 4px;
+  border-radius: 8px;
+  color: #fff;
+  text-align: center;
+  background:
+    radial-gradient(circle at 20% 18%, rgba(255, 255, 255, .28), transparent 20%),
+    linear-gradient(135deg, #8a56ff 0%, #6d35ff 48%, #b036f5 100%);
+}
+
+.user-dashboard-v3 .udv3-daily-tip__body i {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #7b3cff;
+  background: #fff;
+  font-style: normal;
+}
+
+.user-dashboard-v3 .udv3-daily-tip__body svg {
+  width: 15px;
+  height: 15px;
+}
+
+.user-dashboard-v3 .udv3-daily-tip__body h3,
+.user-dashboard-v3 .udv3-daily-tip__body p {
+  margin: 0;
+  color: #fff;
+}
+
+.user-dashboard-v3 .udv3-daily-tip__body h3 {
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.user-dashboard-v3 .udv3-daily-tip__body p {
+  max-width: 174px;
+  font-size: 9px;
+  line-height: 1.6;
+}
+
+.user-dashboard-v3 .udv3-daily-tip__body button {
+  min-height: 22px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  color: #743cff;
+  background: #fff;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.user-dashboard-v3 .udv3-daily-tip footer button {
+  width: 22px;
+  height: 22px;
+  border: 1px solid #e4ddff;
+  border-radius: 50%;
+  color: #7b3cff;
+  background: #fff;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.user-dashboard-v3 .udv3-daily-tip footer div {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.user-dashboard-v3 .udv3-daily-tip footer span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #d8d1ec;
+}
+
+.user-dashboard-v3 .udv3-daily-tip footer span.is-active {
+  width: 7px;
+  background: #7b3cff;
 }
 
 .user-dashboard-v3 .udv3-balance-widget,
@@ -1195,7 +1327,7 @@
   .user-dashboard-v3 .udv3-widgets,
   .user-dashboard-v3 .udv3-form-grid,
   .user-dashboard-v3 .udv3-options-grid,
-  .user-dashboard-v3 .udv3-tips-card > div {
+  .user-dashboard-v3 .udv3-tips-grid {
     grid-template-columns: 1fr;
   }
 

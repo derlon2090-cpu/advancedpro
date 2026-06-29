@@ -1,6 +1,6 @@
 (function () {
   const API_BASE_URL = window.AdvancedProConfig?.apiBaseUrl || "";
-  const BUILD_VERSION = "2026.06.28-usage-links-v1";
+  const BUILD_VERSION = "2026.06.29-daily-tips-v1";
   console.info("PIXIGEN_BUILD:", BUILD_VERSION);
 
   const state = {
@@ -29,6 +29,7 @@
     autoOpenGenerationHandled: false,
     pendingGenerationId: null,
     generationsHydrated: false,
+    dailyTipCursor: null,
   };
 
   const IMAGE_XP_COST = { normal: 5, high: 10, ultra: 20 };
@@ -699,7 +700,67 @@
     const list = uniqueGenerations(state.results).slice(0, 5);
     grid.innerHTML = list.length
       ? list.map(renderCreationCardFixed).join("")
-      : `<div class="udv3-empty-state udv3-empty-state--recent">لم تنشئ أي محتوى بعد. ابدأ الآن بإنشاء أول صورة أو فيديو.</div>`;
+      : renderDailyTipCard({ compact: true });
+  }
+
+  function dailyTipIndex(offset = 0) {
+    const day = Math.floor(Date.now() / 86400000);
+    return (day + offset + DAILY_TIPS.length) % DAILY_TIPS.length;
+  }
+
+  function getDailyTip(offset = 0) {
+    return DAILY_TIPS[dailyTipIndex(offset)] || DAILY_TIPS[0];
+  }
+
+  function renderDailyTipCard({ compact = false } = {}) {
+    const offset = Number.isInteger(state.dailyTipCursor) ? state.dailyTipCursor : 0;
+    const [title, copy, icon] = getDailyTip(offset);
+    const current = dailyTipIndex(offset);
+    const dots = Array.from({ length: 5 }, (_, index) => {
+      const isActive = index === current % 5;
+      return `<span class="${isActive ? "is-active" : ""}" aria-hidden="true"></span>`;
+    }).join("");
+
+    return `
+      <article class="udv3-daily-tip ${compact ? "is-compact" : ""}" data-daily-tip-card>
+        <header>
+          <strong>نصيحة اليوم</strong>
+          <svg><use href="#udv5-bulb"></use></svg>
+        </header>
+        <div class="udv3-daily-tip__body">
+          <i><svg><use href="#${escapeHtml(icon)}"></use></svg></i>
+          <h3>${escapeHtml(title)}</h3>
+          <p>${escapeHtml(copy)}</p>
+          <button type="button" data-daily-tip-apply>تطبيق الآن</button>
+        </div>
+        <footer>
+          <button type="button" data-daily-tip-prev aria-label="النصيحة السابقة">‹</button>
+          <div>${dots}</div>
+          <button type="button" data-daily-tip-next aria-label="النصيحة التالية">›</button>
+        </footer>
+      </article>
+    `;
+  }
+
+  function renderDailyTips() {
+    const grid = $("[data-tips-grid]");
+    if (!grid) return;
+    const start = dailyTipIndex(0);
+    const items = Array.from({ length: 4 }, (_, index) => DAILY_TIPS[(start + index) % DAILY_TIPS.length]);
+    grid.innerHTML = items
+      .map(([title, copy, icon]) => `
+        <article>
+          <i><svg><use href="#${escapeHtml(icon)}"></use></svg></i>
+          <strong>${escapeHtml(title)}</strong>
+          <span>${escapeHtml(copy)}</span>
+        </article>
+      `)
+      .join("");
+
+    const dateLabel = $("[data-daily-tip-date]");
+    if (dateLabel) {
+      dateLabel.textContent = `نصائح اليوم ${new Date().toLocaleDateString("ar-SA", { day: "numeric", month: "short" })}`;
+    }
   }
 
   function renderCreationCard(item) {
@@ -818,6 +879,39 @@
       prompt: "سيارة رياضية سوداء في شارع مدينة مضاء ليلًا، تصوير إعلاني سينمائي وانعكاسات واقعية",
       image: "https://images.unsplash.com/photo-1503736334956-4c8f8e92946d?auto=format&fit=crop&w=900&q=80",
     },
+  ];
+
+  const DAILY_TIPS = [
+    ["استخدم تفاصيل دقيقة", "كلما كان وصفك دقيقًا كانت النتيجة أقرب لما تتخيله.", "udv5-detail"],
+    ["حدد زاوية التصوير", "اكتب لقطة قريبة، واسعة، علوية، أو من مستوى العين.", "udv5-crop"],
+    ["اختر المقاس مبكرًا", "المشهد الأفقي يختلف عن العمودي في توزيع العناصر.", "udv5-crop"],
+    ["جرّب النمط السينمائي", "استخدمه للمشاهد الدرامية والإضاءة القوية.", "udv5-palette"],
+    ["أضف الإضاءة", "اذكر ضوء ناعم، غروب، إضاءة استوديو، أو ظلال قوية.", "udv5-detail"],
+    ["ثبّت الألوان المهمة", "إذا كان اللون مهمًا اكتبه بوضوح بجانب العنصر نفسه.", "udv5-palette"],
+    ["اكتب عدد العناصر", "بدل كلمة عدة، اكتب اثنان أو ثلاثة لتقليل الأخطاء.", "udv5-quality"],
+    ["صف الخلفية", "الخلفية الواضحة تمنع ظهور عناصر غير مرغوبة.", "udv5-detail"],
+    ["حدد مكان الشخص", "داخل كهف، فوق جبل، بجانب سيارة، أو أمام منزل.", "udv5-crop"],
+    ["استخدم جودة أعلى للمشاهد المعقدة", "الجودة الأعلى تساعد عند وجود أكثر من عنصر مهم.", "udv5-quality"],
+    ["اجعل الطلب مشهدًا واحدًا", "اطلب صورة واحدة مترابطة وليس تصميمًا مقسمًا.", "udv5-crop"],
+    ["اكتب ما لا تريده", "أضف بدون نصوص أو شعارات عند الحاجة.", "udv5-detail"],
+    ["استخدم أسلوب إعلاني للمنتجات", "يناسب المنتجات، العطور، السيارات، والعروض التجارية.", "udv5-palette"],
+    ["استخدم أنمي للشخصيات", "يعطي طابعًا مرسومًا وواضحًا للشخصيات الخيالية.", "udv5-palette"],
+    ["حدد حجم العنصر", "كبير جدًا، صغير، قريب من الكاميرا، أو بعيد.", "udv5-crop"],
+    ["صف المشاعر", "خائف، سعيد، هادئ، متوتر، أو واثق.", "udv5-detail"],
+    ["اجعل الموضوع الرئيسي واضحًا", "ابدأ الوصف بالعنصر الأهم في الصورة.", "udv5-quality"],
+    ["اكتب البيئة الطبيعية", "غابة، شاطئ، صحراء، حديقة، أو مدينة ليلية.", "udv5-detail"],
+    ["استخدم 9:16 للجوال", "مناسب للقصص والريلز والشورتس.", "udv5-crop"],
+    ["استخدم 16:9 للمشاهد الواسعة", "مناسب للطبيعة، السينما، والواجهات العريضة.", "udv5-crop"],
+    ["استخدم 1:1 للمنشورات", "مناسب للصور الاجتماعية والبروفايلات.", "udv5-crop"],
+    ["استخدم 4:5 للإعلانات", "يعطي مساحة عمودية جميلة للمنتجات والمنشورات.", "udv5-crop"],
+    ["كرر العلاقة المهمة", "إذا قلت بجانب أو فوق، وضح من بجانب ماذا.", "udv5-detail"],
+    ["اجعل النص قصيرًا عند الحاجة", "الوصف القصير الجيد أفضل من وصف طويل مشتت.", "udv5-quality"],
+    ["استخدم تفاصيل خامة", "زجاج، معدن، خشب، قماش، ضباب، أو انعكاسات.", "udv5-palette"],
+    ["حدد وقت المشهد", "صباح، غروب، ليل، أو ضوء القمر.", "udv5-detail"],
+    ["اطلب صورة واقعية عند الالتباس", "كلمة واقعية تقلل النتائج الكرتونية غير المطلوبة.", "udv5-quality"],
+    ["استخدم ثلاثي الأبعاد للمجسمات", "ممتاز للأيقونات، المنتجات الرقمية، والشخصيات المجسمة.", "udv5-palette"],
+    ["راجع الوصف قبل الإرسال", "تأكد أن كل عنصر مهم مذكور مرة واحدة بوضوح.", "udv5-quality"],
+    ["ابدأ بفكرة بسيطة", "أنشئ نسخة أولى ثم حسّنها بالتدريج.", "udv5-detail"],
   ];
 
   function loadLocalPreferences() {
@@ -1753,6 +1847,30 @@
         return;
       }
 
+      const dailyTipNav = event.target.closest("[data-daily-tip-prev], [data-daily-tip-next]");
+      if (dailyTipNav) {
+        event.preventDefault();
+        const current = Number.isInteger(state.dailyTipCursor) ? state.dailyTipCursor : 0;
+        state.dailyTipCursor = current + (dailyTipNav.matches("[data-daily-tip-next]") ? 1 : -1);
+        renderRecent();
+        applyDashboardLanguage();
+        return;
+      }
+
+      const dailyTipApply = event.target.closest("[data-daily-tip-apply]");
+      if (dailyTipApply) {
+        event.preventDefault();
+        const [, copy] = getDailyTip(Number.isInteger(state.dailyTipCursor) ? state.dailyTipCursor : 0);
+        const input = $("[data-prompt-input]");
+        if (input) {
+          input.value = input.value.trim() ? `${input.value.trim()}\n${copy}` : copy;
+          $("[data-char-count]").textContent = input.value.length;
+          setDashboardView("home");
+          input.focus({ preventScroll: true });
+        }
+        return;
+      }
+
       const planAction = event.target.closest("[data-plan-action]");
       if (planAction) {
         event.preventDefault();
@@ -2299,6 +2417,7 @@
     updateCost();
     updateUpgradeRecommendation();
     renderRecent();
+    renderDailyTips();
     renderTransactions();
     updateUsageUi();
     if (state.activeView !== "home") renderDashboardSection();

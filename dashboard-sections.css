@@ -1209,6 +1209,16 @@ html[data-theme="dark"] .user-dashboard-v3 .udv6-setting-pill.is-active {
   border-color: rgba(139, 99, 255, .72);
 }
 
+html[data-theme="dark"] .user-dashboard-v3 .udv3-daily-tip {
+  background: #17182a;
+  border-color: rgba(255, 255, 255, .1);
+}
+
+html[data-theme="dark"] .user-dashboard-v3 .udv3-daily-tip__body h3,
+html[data-theme="dark"] .user-dashboard-v3 .udv3-daily-tip__body p {
+  color: #ffffff;
+}
+
 @media (max-width: 640px) {
   .user-dashboard-v3 .udv6-card-grid,
   .user-dashboard-v3 .udv6-template-grid {
