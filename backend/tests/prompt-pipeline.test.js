@@ -690,6 +690,135 @@ test("ten unusual Arabic descriptions stay independent and preserve every reques
   }
 });
 
+test("Gemini translation handles bizarre Arabic customer prompts without returning Arabic", async () => {
+  const previousKey = process.env.PROMPT_TRANSLATION_API_KEY;
+  const previousEnabled = process.env.SERVER_PROMPT_TRANSLATION_ENABLED;
+  const previousModel = process.env.PROMPT_TRANSLATION_MODEL;
+  const previousFetch = global.fetch;
+  const calls = [];
+  const cases = [
+    {
+      prompt: "اعمل صورة قرد بعينه تمساح داخل فمه",
+      translation:
+        "A surreal image of a monkey with a crocodile visible inside its eye and inside its mouth. The monkey, crocodile, eye, and mouth are clearly visible.",
+      expected: [/monkey/i, /crocodile/i, /eye/i, /mouth/i],
+    },
+    {
+      prompt: "اصنع أخطبوط زجاجي يعزف بيانو فوق غيمة خضراء",
+      translation:
+        "A glass octopus playing a piano on top of a green cloud. The octopus, piano, and green cloud are clearly visible.",
+      expected: [/glass octopus/i, /piano/i, /green cloud/i],
+    },
+    {
+      prompt: "ارسم نمر بنفسجي يلبس خوذة فضاء داخل ساعة رملية",
+      translation:
+        "A purple tiger wearing a space helmet inside an hourglass. The tiger, helmet, and hourglass are clearly visible.",
+      expected: [/purple tiger/i, /space helmet/i, /hourglass/i],
+    },
+    {
+      prompt: "سوي قلعة مصنوعة من عيون مضيئة فوق ظهر سمكة عملاقة",
+      translation:
+        "A castle made of glowing eyes on the back of a giant fish. The castle, glowing eyes, and giant fish are clearly visible.",
+      expected: [/castle/i, /glowing eyes/i, /giant fish/i],
+    },
+    {
+      prompt: "أبغى كرسي يطير داخل فقاعة فيها بحر صغير",
+      translation:
+        "A flying chair inside a bubble that contains a tiny sea. The chair, bubble, and tiny sea are clearly visible.",
+      expected: [/flying chair/i, /bubble/i, /tiny sea/i],
+    },
+  ];
+
+  try {
+    process.env.PROMPT_TRANSLATION_API_KEY = "test-gemini-key";
+    process.env.SERVER_PROMPT_TRANSLATION_ENABLED = "true";
+    process.env.PROMPT_TRANSLATION_MODEL = "gemini-2.5-flash";
+    global.fetch = async (url, options) => {
+      calls.push({ url: String(url), options });
+      const body = JSON.parse(options.body);
+      const requestText = body.contents[0].parts[0].text;
+      const item = cases.find((entry) => requestText.includes(entry.prompt));
+      return {
+        ok: true,
+        json: async () => ({
+          candidates: [
+            {
+              content: {
+                parts: [{ text: item?.translation || "A clear surreal visual scene." }],
+              },
+            },
+          ],
+        }),
+      };
+    };
+
+    for (const item of cases) {
+      const result = await buildSmartPromptEnhancementAsync({
+        userPrompt: item.prompt,
+        quality: "normal",
+        style: "realistic",
+        type: "image",
+      });
+
+      assert.equal(result.debug.translationMode, "server-semantic", item.prompt);
+      for (const expected of item.expected) {
+        assert.match(result.finalPrompt, expected, item.prompt);
+      }
+      assert.doesNotMatch(result.finalPrompt, /[\u0600-\u06ff]/, item.prompt);
+    }
+
+    assert.equal(calls.length, cases.length);
+    assert.match(calls[0].url, /generativelanguage\.googleapis\.com\/v1beta\/models\/gemini-2\.5-flash:generateContent/);
+  } finally {
+    global.fetch = previousFetch;
+    if (previousKey === undefined) delete process.env.PROMPT_TRANSLATION_API_KEY;
+    else process.env.PROMPT_TRANSLATION_API_KEY = previousKey;
+    if (previousEnabled === undefined) delete process.env.SERVER_PROMPT_TRANSLATION_ENABLED;
+    else process.env.SERVER_PROMPT_TRANSLATION_ENABLED = previousEnabled;
+    if (previousModel === undefined) delete process.env.PROMPT_TRANSLATION_MODEL;
+    else process.env.PROMPT_TRANSLATION_MODEL = previousModel;
+  }
+});
+
+test("Gemini translation outage falls back for monkey crocodile eye mouth prompt", async () => {
+  const previousKey = process.env.PROMPT_TRANSLATION_API_KEY;
+  const previousEnabled = process.env.SERVER_PROMPT_TRANSLATION_ENABLED;
+  const previousModel = process.env.PROMPT_TRANSLATION_MODEL;
+  const previousFetch = global.fetch;
+
+  try {
+    process.env.PROMPT_TRANSLATION_API_KEY = "test-gemini-key";
+    process.env.SERVER_PROMPT_TRANSLATION_ENABLED = "true";
+    process.env.PROMPT_TRANSLATION_MODEL = "gemini-2.5-flash";
+    global.fetch = async () => ({
+      ok: true,
+      json: async () => ({ candidates: [{ content: { parts: [{ text: "" }] } }] }),
+    });
+
+    const result = await buildSmartPromptEnhancementAsync({
+      userPrompt: "اعمل صورة قرد بعينه تمساح داخل فمه",
+      quality: "normal",
+      style: "realistic",
+      type: "image",
+    });
+
+    assert.equal(result.debug.translationMode, "local-fallback");
+    assert.match(result.finalPrompt, /monkey/i);
+    assert.match(result.finalPrompt, /crocodile/i);
+    assert.match(result.finalPrompt, /eye/i);
+    assert.match(result.finalPrompt, /mouth/i);
+    assert.doesNotMatch(result.finalPrompt, /[\u0600-\u06ff]/);
+  } finally {
+    global.fetch = previousFetch;
+    if (previousKey === undefined) delete process.env.PROMPT_TRANSLATION_API_KEY;
+    else process.env.PROMPT_TRANSLATION_API_KEY = previousKey;
+    if (previousEnabled === undefined) delete process.env.SERVER_PROMPT_TRANSLATION_ENABLED;
+    else process.env.SERVER_PROMPT_TRANSLATION_ENABLED = previousEnabled;
+    if (previousModel === undefined) delete process.env.PROMPT_TRANSLATION_MODEL;
+    else process.env.PROMPT_TRANSLATION_MODEL = previousModel;
+  }
+});
+
 test("semantic guard rejects stale business content introduced by a translator", async () => {
   await assert.rejects(
     () =>

@@ -2241,6 +2241,12 @@ function translateArabicToEnglish(userPrompt) {
     ["\u0634\u0627\u0637\u064a", "beach"],
     ["\u062f\u0628\u0628\u0629", "bears"],
     ["\u062f\u0628", "bear"],
+    ["\u062a\u0645\u0627\u0633\u064a\u062d", "crocodiles"],
+    ["\u062a\u0645\u0633\u0627\u062d", "crocodile"],
+    ["\u0642\u0631\u0648\u062f", "monkeys"],
+    ["\u0642\u0631\u062f", "monkey"],
+    ["\u0635\u0648\u0631\u0629", "image"],
+    ["\u0635\u0648\u0631", "images"],
     ["\u0627\u0644\u063a\u0627\u0628\u0629", "the forest"],
     ["\u063a\u0627\u0628\u0629", "forest"],
     ["\u0643\u0628\u064a\u0631\u0629 \u0627\u0644\u062d\u062c\u0645", "large"],
@@ -2261,7 +2267,17 @@ function translateArabicToEnglish(userPrompt) {
     ["\u0627\u0645\u0627\u0645", "in front of"],
     ["\u062e\u0644\u0641", "behind"],
     ["\u0628\u064a\u0646", "between"],
+    ["\u0628\u0639\u064a\u0646\u0647", "inside its eye"],
+    ["\u0628\u0639\u064a\u0646\u0647\u0627", "inside her eye"],
+    ["\u0639\u064a\u0646\u0647", "its eye"],
+    ["\u0639\u064a\u0646\u0647\u0627", "her eye"],
+    ["\u0639\u064a\u0646", "eye"],
+    ["\u062f\u0627\u062e\u0644 \u0641\u0645\u0647", "inside its mouth"],
+    ["\u062f\u0627\u062e\u0644 \u0641\u0645\u0647\u0627", "inside her mouth"],
     ["\u062f\u0627\u062e\u0644", "inside"],
+    ["\u0641\u0645\u0647", "its mouth"],
+    ["\u0641\u0645\u0647\u0627", "her mouth"],
+    ["\u0641\u0645", "mouth"],
     ["\u064a\u0645\u0633\u0643", "holding"],
     ["\u062a\u0645\u0633\u0643", "holding"],
     ["\u0631\u0627\u0643\u0628", "sitting inside"],
@@ -2388,7 +2404,6 @@ function getPromptTranslationModels() {
     process.env.PROMPT_TRANSLATION_MODEL,
     "gemini-2.5-flash",
     "gemini-2.5-flash-lite",
-    "gemini-3.5-flash",
     "gemini-1.5-flash",
   ]
     .map((value) => String(value || "").trim())
@@ -2404,6 +2419,14 @@ function serverTranslationEnabled() {
     return true;
   }
   return Boolean(getPromptTranslationKey());
+}
+
+function promptTranslationTimeoutMs() {
+  const configured = Number(process.env.PROMPT_TRANSLATION_TIMEOUT_MS);
+  if (Number.isFinite(configured) && configured >= 1000 && configured <= 8000) {
+    return configured;
+  }
+  return 3500;
 }
 
 function extractTranslatedPrompt(payload) {
@@ -2564,7 +2587,7 @@ async function translateArabicPromptWithServer(text, apiKey) {
 
   for (const model of getPromptTranslationModels()) {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8_000);
+    const timeout = setTimeout(() => controller.abort(), promptTranslationTimeoutMs());
     try {
       const response = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
@@ -3360,19 +3383,19 @@ export async function buildSmartPromptEnhancementAsync(
       tryStructuredLocal();
     }
 
-    if (!translatedPromptOverride && strictGeminiTranslation) {
-      throw serviceError(
-        "تعذر ترجمة الوصف عبر Gemini بدقة الآن. أعد المحاولة بصياغة أوضح، ولم يتم خصم أي رصيد.",
-        422
-      );
-    }
-
     if (!translatedPromptOverride) {
       const localFallbackTranslation = await getValidLocalFallbackTranslation(prompt, { cacheResult: false });
       if (localFallbackTranslation) {
         translatedPromptOverride = localFallbackTranslation;
         translationMode = "local-fallback";
       }
+    }
+
+    if (!translatedPromptOverride && strictGeminiTranslation) {
+      throw serviceError(
+        "تعذر ترجمة الوصف عبر Gemini بدقة الآن. أعد المحاولة بصياغة أوضح، ولم يتم خصم أي رصيد.",
+        422
+      );
     }
   }
   const enhancedPrompt =
