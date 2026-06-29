@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   buildSmartPromptEnhancement,
   buildSmartPromptEnhancementAsync,
+  normalizeAspectRatio,
   parseImageValidationPayload,
 } from "../src/services/wavespeedService.js";
 import {
@@ -84,6 +85,42 @@ test("activation language toggle translates the full activation page", async () 
   assert.match(activationScript, /Instant access/);
   assert.match(activationScript, /Thousands of users trust us/);
   assert.match(activationScript, /Key activated successfully/);
+});
+
+test("image aspect ratios and styles map to provider-ready requests", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const dashboardHtml = await readFile(new URL("../../dashboard.html", import.meta.url), "utf8");
+  const dashboardScript = await readFile(new URL("../../dashboard-page.js", import.meta.url), "utf8");
+  const serviceSource = await readFile(new URL("../src/services/wavespeedService.js", import.meta.url), "utf8");
+
+  for (const ratio of ["16:9", "1:1", "9:16", "4:5"]) {
+    assert.match(dashboardHtml, new RegExp(`<option value="${ratio.replace(":", "\\:")}">${ratio}</option>`));
+    assert.equal(normalizeAspectRatio(ratio), ratio);
+  }
+
+  assert.equal(normalizeAspectRatio("unsupported"), "16:9");
+  assert.match(dashboardScript, /aspectRatio:\s*state\.aspect/);
+  assert.match(dashboardScript, /aspect:\s*state\.aspect/);
+  assert.match(serviceSource, /aspect_ratio:\s*normalizeAspectRatio\(aspectRatio\)/);
+
+  const styles = [
+    ["realistic", /Style: realistic professional photography\./],
+    ["cinematic", /Style: cinematic lighting and composition\./],
+    ["anime", /Style: anime illustration style\./],
+    ["three-d", /Style: 3D rendered style\./],
+    ["commercial", /Style: premium commercial advertising style\./],
+  ];
+
+  for (const [style, expected] of styles) {
+    assert.match(dashboardHtml, new RegExp(`<option value="${style}">`));
+    const result = buildSmartPromptEnhancement({
+      userPrompt: "A modern car on a city street",
+      quality: "normal",
+      style,
+      type: "image",
+    });
+    assert.match(result.finalPrompt, expected);
+  }
 });
 
 test("explicit sexual prompts are rejected with the safe educational message", () => {

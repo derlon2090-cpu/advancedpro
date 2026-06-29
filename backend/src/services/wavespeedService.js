@@ -276,7 +276,7 @@ function normalizeQuality(quality) {
   return ["normal", "high", "ultra"].includes(quality) ? quality : "normal";
 }
 
-function normalizeAspectRatio(aspectRatio) {
+export function normalizeAspectRatio(aspectRatio) {
   const value = String(aspectRatio || "").trim();
   return ["1:1", "16:9", "9:16", "4:5"].includes(value) ? value : "16:9";
 }
