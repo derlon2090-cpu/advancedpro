@@ -2295,7 +2295,6 @@
         window.location.assign(`/generation?id=${encodeURIComponent(generation.id)}`);
         return;
       }
-      setLoading(false);
       scheduleGenerationsRefresh();
       return;
     } catch (error) {
@@ -2442,7 +2441,6 @@
       await refreshGenerations({ silent: true });
       const current = findGeneration(generationId);
       if (!current || current.status === "completed") return;
-      setLoading(false);
       setMessage("ما زال إنشاء الصورة قيد المعالجة. سنفتح النتيجة تلقائيًا عند اكتمالها، ولن يتم خصم الرصيد إلا عند نجاح نتيجة ظاهرة.", "info");
       showToast("ما زالت الصورة قيد المعالجة، وسنفتحها عند اكتمالها.", "info");
       startGenerationTimeout(generationId, type);

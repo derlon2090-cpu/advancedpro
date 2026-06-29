@@ -76,6 +76,7 @@ test("generation UI uses one submit path and keeps background jobs inside the da
   assert.match(dashboardScript, /Account Settings/);
   assert.doesNotMatch(dashboardScript, /استغرق إنشاء الصورة أكثر من 30 ثانية/);
   assert.match(dashboardScript, /ما زال إنشاء الصورة قيد المعالجة/);
+  assert.doesNotMatch(dashboardScript, /setLoading\(false\);\s*scheduleGenerationsRefresh\(\);/);
   assert.match(generateRoute, /IMAGE_GENERATION_TIMEOUT_MS\s*=\s*Number\(process\.env\.IMAGE_GENERATION_TIMEOUT_MS\s*\|\|\s*120_000\)/);
   assert.doesNotMatch(generateRoute, /إنشاء الصورة أكثر من 30 ثانية/);
 });
