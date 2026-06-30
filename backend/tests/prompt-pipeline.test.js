@@ -74,7 +74,8 @@ test("generation UI uses one submit path and keeps background jobs inside the da
   assert.doesNotMatch(dashboardHtml, /<option value="high" selected>/);
   assert.match(dashboardHtml, /dashboard-v5\.css\?v=20260629-notifications-v1/);
   assert.match(dashboardHtml, /dashboard-sections\.css\?v=20260629-notifications-v1/);
-  assert.match(generationHtml, /generation-page\.js\?v=20260629-protected-downloads-v1/);
+  assert.match(dashboardHtml, /dashboard-page\.js\?v=20260630-video-preview-v1/);
+  assert.match(generationHtml, /generation-page\.js\?v=20260630-video-preview-v1/);
   assert.match(dashboardScript, /quality:\s*"normal"/);
   assert.match(dashboardScript, /function applyDashboardLanguage/);
   assert.match(dashboardScript, /What would you like to create today\?/);
@@ -94,6 +95,9 @@ test("generation UI uses one submit path and keeps background jobs inside the da
   assert.match(resultScript, /buildAssistantEnhancementMessage/);
   assert.match(resultScript, /protectedPreviewUrl/);
   assert.match(resultScript, /protectedDownloadUrl/);
+  assert.match(resultScript, /resultUrl:\s*protectedPreviewUrl \|\| rawResultUrl/);
+  assert.match(dashboardScript, /resultUrl:\s*protectedPreviewUrl \|\| rawResultUrl/);
+  assert.match(resultScript, /تعذر تحميل الفيديو/);
   assert.match(resultScript, /fetchBlob\(result\.downloadUrl \|\| result\.resultUrl\)/);
   assert.match(resultScript, /triggerDownload\(result\.downloadUrl \|\| result\.resultUrl, filename\)/);
   assert.match(assistantScript, /sessionStorage\.getItem\("pixigen:assistant-intent"\)/);

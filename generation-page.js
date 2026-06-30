@@ -195,8 +195,8 @@
       prompt: raw.userPrompt || raw.prompt || raw.description || "",
       quality: raw.quality || "normal",
       status: explicitStatus || (hasMedia ? "completed" : "processing"),
-      resultUrl: rawResultUrl || protectedPreviewUrl,
-      thumbnailUrl: rawThumbnailUrl || rawResultUrl || protectedPreviewUrl,
+      resultUrl: protectedPreviewUrl || rawResultUrl,
+      thumbnailUrl: rawThumbnailUrl || protectedPreviewUrl || rawResultUrl,
       downloadUrl: protectedDownloadUrl || rawResultUrl,
       originalResultUrl: rawResultUrl,
       storageUrl: raw.storageUrl || raw.storage_url || "",
@@ -554,7 +554,7 @@
     const assetUrl = mediaUrlWithVersion(result);
     frame.innerHTML =
       result.type === "video"
-        ? `<video class="gr-ready-asset" src="${escapeHtml(assetUrl)}" controls playsinline preload="metadata"></video>`
+        ? `<video class="gr-ready-asset" src="${escapeHtml(assetUrl)}" controls playsinline preload="metadata" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'gr-media-broken',textContent:'تعذر تحميل الفيديو. جرّب زر التحميل أو أعد فتح النتيجة بعد لحظات.'}));"></video>`
         : imageTagWithFallback(result, "gr-ready-asset", "eager");
   }
 
