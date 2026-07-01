@@ -4792,6 +4792,16 @@ html[data-theme="dark"] .create-chat-bubble__state {
   background: #fbf8ff;
 }
 
+.policy-tabs--single {
+  width: min(320px, 100%);
+  grid-template-columns: 1fr;
+}
+
+.policy-page--refund .policy-illustration i::before {
+  content: "↻";
+  font-size: 52px;
+}
+
 .policy-card-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
