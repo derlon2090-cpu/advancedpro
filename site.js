@@ -358,7 +358,7 @@ function createSiteFooter() {
           <a href="/terms">الشروط والأحكام</a>
           <a href="/privacy">سياسة الخصوصية</a>
           <a href="/site-policy">سياسة الموقع</a>
-          <a href="/refund-policy">سياسة الاسترجاع والاستبدال</a>
+          <a href="https://pixigenl.com/refund-policy">سياسة الاسترجاع والاستبدال</a>
           <a href="/about">من نحن</a>
           <a href="/contact">تواصل معنا</a>
           <a href="/login">تسجيل الدخول</a>

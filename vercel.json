@@ -14,6 +14,10 @@
       "destination": "/advanced-pro-control.html"
     },
     {
+      "source": "/refund-policy",
+      "destination": "/refund-policy.html"
+    },
+    {
       "source": "/admin/plans/create",
       "destination": "/admin/plan-create.html"
     },
