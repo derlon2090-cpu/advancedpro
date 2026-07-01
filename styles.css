@@ -16655,11 +16655,8 @@ html[data-theme="dark"] .create-chat-bubble__state {
 
 .activation-portal__page {
   width: min(1188px, calc(100% - 34px));
-  min-height: 100vh;
   margin: 0 auto;
   padding: 28px 0 0;
-  display: flex;
-  flex-direction: column;
   text-align: center;
 }
 
@@ -17183,9 +17180,9 @@ html[data-theme="dark"] .create-chat-bubble__state {
 }
 
 .activation-portal__legal {
-  width: min(1390px, calc(100vw - 64px));
+  width: min(1146px, 100%);
   min-height: 72px;
-  margin: auto calc((min(1188px, calc(100vw - 34px)) - min(1390px, calc(100vw - 64px))) / 2) 0;
+  margin: 18px auto 0;
   padding: 0 36px;
   border: 1px solid rgba(196, 201, 240, 0.68);
   border-radius: 24px 24px 0 0;
@@ -17196,7 +17193,7 @@ html[data-theme="dark"] .create-chat-bubble__state {
   gap: 22px;
   color: #5b6382;
   background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 -10px 34px rgba(30, 20, 80, 0.035), 0 18px 36px rgba(30, 20, 80, 0.08);
+  box-shadow: 0 -10px 34px rgba(30, 20, 80, 0.035), 0 14px 30px rgba(30, 20, 80, 0.065);
   backdrop-filter: blur(18px);
 }
 
@@ -17701,8 +17698,6 @@ html[data-theme="dark"] .activation-portal__controls [data-activation-language-l
   }
 
   .activation-portal__legal {
-    width: calc(100vw - 20px);
-    margin-inline: calc((min(calc(100vw - 20px), 1180px) - (100vw - 20px)) / 2);
     min-height: auto;
     padding: 14px 16px;
     flex-direction: column-reverse;
