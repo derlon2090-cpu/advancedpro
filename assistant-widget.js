@@ -47,6 +47,8 @@
   const launcher = root.querySelector("[data-assistant-toggle]");
   const collapse = root.querySelector("[data-assistant-collapse]");
   const closeButton = root.querySelector("[data-assistant-close]");
+  const manualOpenTriggers = Array.from(document.querySelectorAll("[data-assistant-open]"));
+  const shouldStartHidden = manualOpenTriggers.length > 0 && !isActivationPage && !isDashboardPage;
   const contactLink = isDashboardPage
     ? document.querySelector(".udv3-support-card a")
     : null;
@@ -62,9 +64,17 @@
 
   function closeAssistant() {
     setOpen(false);
-    if (isDashboardPage) {
+    if (isDashboardPage || shouldStartHidden) {
       setLauncherVisible(false);
     }
+  }
+
+  function openAssistant() {
+    setLauncherVisible(true);
+    setOpen(true);
+    window.setTimeout(() => {
+      input.focus({ preventScroll: true });
+    }, 80);
   }
 
   function escapeHtml(value) {
@@ -159,12 +169,18 @@
     setLauncherVisible(false);
     contactLink.addEventListener("click", (event) => {
       event.preventDefault();
-      setLauncherVisible(true);
-      setOpen(true);
+      openAssistant();
     });
   } else {
-    setLauncherVisible(shouldStartVisible || !isDashboardPage);
+    setLauncherVisible(shouldStartVisible || (!isDashboardPage && !shouldStartHidden));
   }
+
+  manualOpenTriggers.forEach((trigger) => {
+    trigger.addEventListener("click", (event) => {
+      event.preventDefault();
+      openAssistant();
+    });
+  });
 
   consumeAssistantIntent();
 })();
