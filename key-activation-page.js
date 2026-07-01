@@ -157,6 +157,8 @@
     const successCopy = document.querySelector(".success-dialog > p");
     const successSummary = document.querySelectorAll(".success-summary article span");
     const successActions = document.querySelectorAll(".success-actions a");
+    const legalCopy = document.querySelector(".activation-portal__legal p");
+    const legalLinks = document.querySelectorAll("[data-activation-legal-link]");
     if (brand) brand.innerHTML = isEnglish ? "<i></i>Activation Portal<i></i>" : "<i></i>بوابة التفعيل<i></i>";
     if (title) title.textContent = isEnglish ? "Activate your digital key" : "فعّل مفتاحك الرقمي";
     if (intro) {
@@ -213,6 +215,21 @@
     });
     if (successActions[0]) successActions[0].textContent = isEnglish ? "Go to dashboard" : "الدخول إلى لوحة التحكم";
     if (successActions[1]) successActions[1].textContent = isEnglish ? "Create first project" : "إنشاء أول مشروع";
+    if (legalCopy) {
+      legalCopy.textContent = isEnglish
+        ? "© 2026 PixiGenI. All rights reserved."
+        : "© 2026 PixiGenI. جميع الحقوق محفوظة.";
+    }
+    const legalLabels = {
+      help: isEnglish ? "Help" : "المساعدة",
+      usage: isEnglish ? "Usage policy" : "سياسة الاستخدام",
+      privacy: isEnglish ? "Privacy policy" : "سياسة الخصوصية",
+      refund: isEnglish ? "Refund and exchange policy" : "سياسة الاستبدال والاسترجاع",
+    };
+    legalLinks.forEach((link) => {
+      const key = link.dataset.activationLegalLink;
+      if (legalLabels[key]) link.textContent = legalLabels[key];
+    });
     document.title = isEnglish ? "Activation Portal | PixiGenI" : "بوابة التفعيل | PixiGenI";
     languageToggle?.setAttribute("aria-label", isEnglish ? "Change language" : "تغيير اللغة");
     const currentTheme = getStoredSettings().theme === "dark" ? "dark" : "light";

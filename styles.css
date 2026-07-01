@@ -17179,6 +17179,57 @@ html[data-theme="dark"] .create-chat-bubble__state {
   color: #5b3fff;
 }
 
+.activation-portal__legal {
+  width: min(1146px, 100%);
+  min-height: 72px;
+  margin: 18px auto 0;
+  padding: 0 36px;
+  border: 1px solid rgba(196, 201, 240, 0.68);
+  border-radius: 24px 24px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  color: #5b6382;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 -10px 34px rgba(30, 20, 80, 0.035);
+}
+
+.activation-portal__legal p {
+  margin: 0;
+  color: #68708d;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.activation-portal__legal nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+}
+
+.activation-portal__legal a {
+  min-height: 38px;
+  padding: 0 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #36405f;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 800;
+  transition: color 160ms ease, background 160ms ease;
+}
+
+.activation-portal__legal a + a {
+  border-inline-start: 1px solid #dfe3f2;
+}
+
+.activation-portal__legal a:hover {
+  color: #6d35ff;
+}
+
 html[data-theme="dark"] .activation-portal {
   background:
     radial-gradient(circle at 8% 42%, rgba(41, 124, 255, 0.18), transparent 28%),
@@ -17197,21 +17248,37 @@ html[data-theme="dark"] .activation-portal__steps article strong {
 html[data-theme="dark"] .activation-portal__brand small,
 html[data-theme="dark"] .activation-portal__card > p,
 html[data-theme="dark"] .activation-portal__steps article p,
-html[data-theme="dark"] .activation-portal__trust {
+html[data-theme="dark"] .activation-portal__trust,
+html[data-theme="dark"] .activation-portal__legal,
+html[data-theme="dark"] .activation-portal__legal p {
   color: rgba(247, 248, 255, 0.72);
 }
 
 html[data-theme="dark"] .activation-portal__controls,
 html[data-theme="dark"] .activation-portal__steps,
 html[data-theme="dark"] .activation-portal__steps article > span,
-html[data-theme="dark"] .activation-portal__trust {
+html[data-theme="dark"] .activation-portal__trust,
+html[data-theme="dark"] .activation-portal__legal {
   border-color: rgba(255, 255, 255, 0.1);
 }
 
 html[data-theme="dark"] .activation-portal__steps,
 html[data-theme="dark"] .activation-portal__steps article > span,
-html[data-theme="dark"] .activation-portal__trust {
+html[data-theme="dark"] .activation-portal__trust,
+html[data-theme="dark"] .activation-portal__legal {
   background: rgba(20, 24, 43, 0.9);
+}
+
+html[data-theme="dark"] .activation-portal__legal a {
+  color: rgba(247, 248, 255, 0.82);
+}
+
+html[data-theme="dark"] .activation-portal__legal a + a {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+html[data-theme="dark"] .activation-portal__legal a:hover {
+  color: #c9b6ff;
 }
 
 html[data-theme="dark"] .activation-portal__controls button {
@@ -17320,21 +17387,21 @@ html[data-theme="dark"] .activation-portal__controls [data-activation-language-l
 
 .activation-portal .pixi-assistant {
   right: 18px;
-  bottom: 18px;
+  bottom: 92px;
 }
 
 .activation-portal .pixi-assistant__launcher {
-  width: 74px;
-  height: 74px;
+  width: 56px;
+  height: 56px;
   border-color: rgba(255, 255, 255, 0.96);
   box-shadow:
-    0 18px 32px rgba(87, 71, 231, 0.3),
-    0 0 0 6px rgba(96, 82, 238, 0.1);
+    0 14px 24px rgba(87, 71, 231, 0.24),
+    0 0 0 5px rgba(96, 82, 238, 0.09);
 }
 
 .activation-portal .pixi-assistant__launcher img {
-  width: 74px;
-  height: 74px;
+  width: 56px;
+  height: 56px;
 }
 
 .activation-portal .pixi-assistant__collapse {
@@ -17627,19 +17694,48 @@ html[data-theme="dark"] .activation-portal__controls [data-activation-language-l
     font-size: 11px;
   }
 
-  .pixi-assistant {
+  .activation-portal__legal {
+    min-height: auto;
+    padding: 14px 16px;
+    flex-direction: column-reverse;
+    border-radius: 20px 20px 0 0;
+    gap: 10px;
+  }
+
+  .activation-portal__legal nav {
+    width: 100%;
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+
+  .activation-portal__legal a {
+    flex: 1 1 50%;
+    min-height: 32px;
+    padding: 0 8px;
+    font-size: 11px;
+  }
+
+  .activation-portal__legal a + a {
+    border-inline-start: 0;
+  }
+
+  .activation-portal__legal p {
+    font-size: 11px;
+  }
+
+  .activation-portal .pixi-assistant {
     right: 10px;
-    bottom: 10px;
+    bottom: 112px;
   }
 
-  .pixi-assistant__launcher {
-    width: 64px;
-    height: 64px;
+  .activation-portal .pixi-assistant__launcher {
+    width: 50px;
+    height: 50px;
   }
 
-  .pixi-assistant__launcher img {
-    width: 64px;
-    height: 64px;
+  .activation-portal .pixi-assistant__launcher img {
+    width: 50px;
+    height: 50px;
   }
 }
 
