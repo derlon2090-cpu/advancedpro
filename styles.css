@@ -4821,13 +4821,19 @@ html[data-theme="dark"] .create-chat-bubble__state {
 }
 
 .policy-card-grid article i {
-  position: absolute;
-  right: 20px;
-  top: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 22px;
+  margin: 0 0 8px;
+  border-radius: 999px;
+  background: #f4efff;
   color: #17213c;
-  font-size: 14px;
+  font-size: 12px;
   font-style: normal;
   font-weight: 900;
+  line-height: 1;
 }
 
 .policy-card-grid article h2 {
